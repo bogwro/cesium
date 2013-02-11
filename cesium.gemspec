@@ -7,13 +7,13 @@ require "cesium/version"
 Gem::Specification.new do |s|
   s.name        = "cesium"
   s.version     = Cesium::VERSION
-  s.authors     = ["TODO: Your name"]
-  s.email       = ["TODO: Your email"]
-  s.homepage    = "TODO"
-  s.summary     = "TODO: Summary of Cesium."
-  s.description = "TODO: Description of Cesium."
+  s.authors     = ["Bogumil Wrona"]
+  s.email       = ["b.wrona@cre8newmedia.com"]
+  s.homepage    = "http://bogwro.github.com/cesium"
+  s.summary     = "WebGL Virtual Globe and Map Engine as Rails' Engine"
+  s.description = "WebGL Virtual Globe and Map Engine as Rails' Engine"
 
-  s.files = Dir["{app,config,db,lib}/**/*"] + ["MIT-LICENSE", "Rakefile", "README.rdoc"]
+  s.files = Dir["{app,config,db,lib}/**/*"] + ["LICENSE.md", "Rakefile", "README.rdoc"]
   s.test_files = Dir["test/**/*"]
 
   s.add_dependency "rails", "~> 3.2.11"

@@ -1,11 +1,13 @@
 = Cesium
 
+WebGL Virtual Globe and Map Engine
+
 = Requirements
 
 In Gemfile file add line:
 
     gem "requirejs-rails"
-    gem "cesium_rails_requirejs"
+    gem "cesium"
 
 then you are ready to use this gem :)
 in your main application.js(coffee):
