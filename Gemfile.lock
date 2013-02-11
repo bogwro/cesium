@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    cesium (0.0.1)
+    cesium (0.13.0)
       jquery-rails
       rails (~> 3.2.11)
       requirejs-rails

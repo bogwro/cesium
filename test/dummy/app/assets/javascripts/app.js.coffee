@@ -1,5 +1,6 @@
 define [
   'jquery'
+  'Cesium'
 ], ($, Cesium) ->
 
   class App
@@ -7,3 +8,4 @@ define [
     constructor: () ->
       @name = "A"
       @val = "B"
+      @cesium = Cesium
