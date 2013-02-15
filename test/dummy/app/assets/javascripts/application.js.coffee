@@ -1,12 +1,11 @@
 require [
   'jquery'
-  'app'
   'Cesium'
-], ($, App, Cesium) ->
+], ($, Cesium) ->
 
   $ ->
 
-    app = new App();
+    app = new App()
 
     canvas = $('#globe')[0]
     @scene = new Cesium.Scene canvas
@@ -65,9 +64,9 @@ require [
       width = canvas.clientWidth
       height = canvas.clientHeight
       return if canvas.width == width and canvas.height == height
-      canvas.width = width;
-      canvas.height = height;
-      @scene.getCamera().frustum.aspectRatio = width / height;
+      canvas.width = width
+      canvas.height = height
+      @scene.getCamera().frustum.aspectRatio = width / height
 
 
     $(window).on('resize', onResize)
