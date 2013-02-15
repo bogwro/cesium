@@ -15,10 +15,12 @@ Make sure you follow the instruction from:
 and you understand the concept of RequireJS:
     http://requirejs.org
 
-then you are ready to use this gem :)
-in your main application.js (coffee):
+Now you are ready to use this gem :-)
+
 
 = Example:
+
+In your main application.js (coffee):
 
     require [
       'jquery'
