@@ -8,6 +8,8 @@ In Gemfile file add line:
 
     gem "cesium"
 
+Run the bundle command to install it.
+
 This gem relies on 'requirejs-rails' gem.
 
 Make sure you follow the instruction from:
@@ -15,10 +17,40 @@ Make sure you follow the instruction from:
 and you understand the concept of RequireJS:
     http://requirejs.org
 
-then you are ready to use this gem :)
-in your main application.js (coffee):
+Now you are ready to use this gem :-)
 
-= Example:
+= Examples
+
+== Example 1:
+For the convenience there is prepared route that will show you the globe.
+All you need to do is to modify your route.rb and add:
+    get 'cesium', to: 'cesium#index'
+Now you can see the WebGL globe by visiting:
+    http://localhost:3000/cesium
+
+== Example 2:
+Usage of this gem inside your own Rails application.
+
+1. I presume you have a canvas tag in your view with id "globe":
+    <div class="fullSize">
+      <canvas id="globe" class="fullSize"></canvas>
+    </div>
+2. You should have some CSS to define canvas size.
+Here is an example that shows how to display the globe and cover 100% width & height of the wrapper
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .fullSize {
+        width: 100%;
+        height: 100%;
+    }
+
+3. In the javascript module that is related to the view
+Here I use application.js (coffee):
 
     require [
       'jquery'
@@ -30,7 +62,6 @@ in your main application.js (coffee):
         canvas = $('#globe')[0]  # change this to match your needs!!!
 
         @scene = new Cesium.Scene canvas
-        console.log "scene", @scene
         @scene.skyAtmosphere = new Cesium.SkyAtmosphere
 
         skyBoxBaseUrl = '/assets/Assets/Textures/SkyBox/tycho2t3_80'
@@ -56,7 +87,6 @@ in your main application.js (coffee):
         centralBody.getImageryLayers().addImageryProvider(bing)
         primitives.setCentralBody(centralBody)
 
-        #    transitioner = new Cesium.SceneTransitioner(@scene, ellipsoid)
         new Cesium.SceneTransitioner(@scene, ellipsoid)
 
         ##################################################################
@@ -81,10 +111,54 @@ in your main application.js (coffee):
           width = canvas.clientWidth
           height = canvas.clientHeight
           return if canvas.width == width and canvas.height == height
-          canvas.width = width;
-          canvas.height = height;
-          @scene.getCamera().frustum.aspectRatio = width / height;
+          canvas.width = width
+          canvas.height = height
+          @scene.getCamera().frustum.aspectRatio = width / height
 
 
         $(window).on('resize', onResize)
         onResize()
+
+
+= Contribution
+
+== To write new feature or fix a bug:
+
+We follow git-flow branching model which means:
+* "master" branch should be more less stable
+* "develop" branch is the place to integrate features & bug fixes
+
+More about git-flow:
+https://github.com/nvie/gitflow
+
+1. Fork it
+2. Clone it
+3. *Check out "develop" branch*
+4. Create locally feature/fix branch
+5. Write code & test it
+6. Merge it back into local "develop" branch *as one commit*
+7. Test it!
+8. Send "pull request" against "develop" branch on github
+
+== To report an issue/bug:
+
+1. Please check that the issue you are about to report is not already reported
+2. Report it on GitHub Issues:
+    https://github.com/bogwro/cesium/issues
+
+
+== Maintainers
+
+* Bogumil Wrona (https://github.com/bogwro)
+
+= License
+
+* Rails' Engine & all code which is part of this gem AND not part of the Cesium WebGL Globe:
+    MIT License.
+* All of the code that is part of Cesium WebGL:
+    Apache License, Version 2.0
+
+Please check the Cesium website for details:
+    http://cesium.agi.com
+    https://raw.github.com/AnalyticalGraphicsInc/cesium/master/LICENSE.md
+
