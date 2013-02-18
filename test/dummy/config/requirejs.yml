@@ -1,3 +1,4 @@
+waitSeconds: 45
 shim:
   'jquery_ujs': ['jquery']
 

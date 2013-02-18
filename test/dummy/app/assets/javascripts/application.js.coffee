@@ -1,7 +1,8 @@
 require [
   'jquery'
   'Cesium'
-], ($, Cesium) ->
+  'app'
+], ($, Cesium, App) ->
 
   $ ->
 
