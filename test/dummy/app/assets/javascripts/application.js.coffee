@@ -35,9 +35,14 @@ require [
       proxy: if Cesium.FeatureDetection.supportsCrossOriginImagery() then undefined else new Cesium.DefaultProxy('/proxy/')
     )
 
+    terrainProvider = new Cesium.CesiumTerrainProvider(
+      url: 'http://cesium.agi.com/smallterrain'
+    )
+
     ellipsoid = Cesium.Ellipsoid.WGS84
     centralBody = new Cesium.CentralBody(ellipsoid)
     centralBody.getImageryLayers().addImageryProvider(bing)
+    centralBody.terrainProvider = terrainProvider
     primitives.setCentralBody(centralBody)
 
     #    transitioner = new Cesium.SceneTransitioner(@scene, ellipsoid)
