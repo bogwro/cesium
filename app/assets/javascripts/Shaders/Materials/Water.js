@@ -2,7 +2,10 @@
 /*global define*/
 define(function() {
     "use strict";
-    return "uniform sampler2D specularMap;\n\
+    return "// Thanks for the contribution Jonas\n\
+// http://29a.ch/2012/7/19/webgl-terrain-rendering-water-fog\n\
+\n\
+uniform sampler2D specularMap;\n\
 uniform sampler2D normalMap;\n\
 uniform vec4 baseWaterColor;\n\
 uniform vec4 blendColor;\n\
@@ -11,50 +14,48 @@ uniform float animationSpeed;\n\
 uniform float amplitude;\n\
 uniform float specularIntensity;\n\
 uniform float fadeFactor;\n\
-vec4 getNoise(vec2 uv, float time, float angleInRadians) {\n\
-float cosAngle = cos(angleInRadians);\n\
-float sinAngle = sin(angleInRadians);\n\
-vec2 s0 = vec2(1.0/17.0, 0.0);\n\
-vec2 s1 = vec2(-1.0/29.0, 0.0);\n\
-vec2 s2 = vec2(1.0/101.0, 1.0/59.0);\n\
-vec2 s3 = vec2(-1.0/109.0, -1.0/57.0);\n\
-s0 = vec2((cosAngle * s0.x) - (sinAngle * s0.y), (sinAngle * s0.x) + (cosAngle * s0.y));\n\
-s1 = vec2((cosAngle * s1.x) - (sinAngle * s1.y), (sinAngle * s1.x) + (cosAngle * s1.y));\n\
-s2 = vec2((cosAngle * s2.x) - (sinAngle * s2.y), (sinAngle * s2.x) + (cosAngle * s2.y));\n\
-s3 = vec2((cosAngle * s3.x) - (sinAngle * s3.y), (sinAngle * s3.x) + (cosAngle * s3.y));\n\
-vec2 uv0 = (uv/103.0) + (time * s0);\n\
-vec2 uv1 = uv/107.0 + (time * s1) + vec2(0.23);\n\
-vec2 uv2 = uv/vec2(897.0, 983.0) + (time * s2) + vec2(0.51);\n\
-vec2 uv3 = uv/vec2(991.0, 877.0) + (time * s3) + vec2(0.71);\n\
-uv0 = fract(uv0);\n\
-uv1 = fract(uv1);\n\
-uv2 = fract(uv2);\n\
-uv3 = fract(uv3);\n\
-vec4 noise = (texture2D(normalMap, uv0)) +\n\
-(texture2D(normalMap, uv1)) +\n\
-(texture2D(normalMap, uv2)) +\n\
-(texture2D(normalMap, uv3));\n\
-return ((noise / 4.0) - 0.5) * 2.0;\n\
-}\n\
+\n\
 czm_material czm_getMaterial(czm_materialInput materialInput)\n\
 {\n\
-czm_material material = czm_getDefaultMaterial(materialInput);\n\
-float time = czm_frameNumber * animationSpeed;\n\
-float fade = max(1.0, (length(materialInput.positionToEyeEC) / 10000000000.0) * frequency * fadeFactor);\n\
-float specularMapValue = texture2D(specularMap, materialInput.st).r;\n\
-vec4 noise = getNoise(materialInput.st * frequency, time, 0.0);\n\
-vec3 normalTangentSpace = noise.xyz * vec3(1.0, 1.0, (1.0 / amplitude));\n\
-normalTangentSpace.xy /= fade;\n\
-normalTangentSpace = mix(vec3(0.0, 0.0, 50.0), normalTangentSpace, specularMapValue);\n\
-normalTangentSpace = normalize(normalTangentSpace);\n\
-float tsPerturbationRatio = clamp(dot(normalTangentSpace, vec3(0.0, 0.0, 1.0)), 0.0, 1.0);\n\
-material.alpha = specularMapValue;\n\
-material.diffuse = mix(blendColor.rgb, baseWaterColor.rgb, specularMapValue);\n\
-material.diffuse += (0.1 * tsPerturbationRatio);\n\
-material.normal = normalize(materialInput.tangentToEyeMatrix * normalTangentSpace);\n\
-material.specular = specularIntensity;\n\
-material.shininess = 10.0;\n\
-return material;\n\
-}\n\
-";
+    czm_material material = czm_getDefaultMaterial(materialInput);\n\
+\n\
+    float time = czm_frameNumber * animationSpeed;\n\
+    \n\
+    // fade is a function of the distance from the fragment and the frequency of the waves\n\
+    float fade = max(1.0, (length(materialInput.positionToEyeEC) / 10000000000.0) * frequency * fadeFactor);\n\
+            \n\
+    float specularMapValue = texture2D(specularMap, materialInput.st).r;\n\
+    \n\
+    // note: not using directional motion at this time, just set the angle to 0.0;\n\
+    vec4 noise = czm_getWaterNoise(normalMap, materialInput.st * frequency, time, 0.0);\n\
+    vec3 normalTangentSpace = noise.xyz * vec3(1.0, 1.0, (1.0 / amplitude));\n\
+    \n\
+    // fade out the normal perturbation as we move further from the water surface\n\
+    normalTangentSpace.xy /= fade;\n\
+        \n\
+    // attempt to fade out the normal perturbation as we approach non water areas (low specular map value)\n\
+    normalTangentSpace = mix(vec3(0.0, 0.0, 50.0), normalTangentSpace, specularMapValue);\n\
+    \n\
+    normalTangentSpace = normalize(normalTangentSpace);\n\
+    \n\
+    // get ratios for alignment of the new normal vector with a vector perpendicular to the tangent plane\n\
+    float tsPerturbationRatio = clamp(dot(normalTangentSpace, vec3(0.0, 0.0, 1.0)), 0.0, 1.0);\n\
+    \n\
+    // fade out water effect as specular map value decreases\n\
+    material.alpha = specularMapValue;\n\
+    \n\
+    // base color is a blend of the water and non-water color based on the value from the specular map\n\
+    // may need a uniform blend factor to better control this\n\
+    material.diffuse = mix(blendColor.rgb, baseWaterColor.rgb, specularMapValue);\n\
+    \n\
+    // diffuse highlights are based on how perturbed the normal is\n\
+    material.diffuse += (0.1 * tsPerturbationRatio);\n\
+    \n\
+    material.normal = normalize(materialInput.tangentToEyeMatrix * normalTangentSpace);\n\
+    \n\
+    material.specular = specularIntensity;\n\
+    material.shininess = 10.0;\n\
+    \n\
+    return material;\n\
+}";
 });

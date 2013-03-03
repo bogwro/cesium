@@ -4,11 +4,13 @@ define(function() {
     "use strict";
     return "uniform samplerCube u_cubeMap;\n\
 uniform float u_morphTime;\n\
+\n\
 varying vec3 v_texCoord;\n\
+\n\
 void main()\n\
 {\n\
-vec3 rgb = textureCube(u_cubeMap, normalize(v_texCoord)).rgb;\n\
-gl_FragColor = vec4(rgb, u_morphTime);\n\
+    vec3 rgb = textureCube(u_cubeMap, normalize(v_texCoord)).rgb;\n\
+    gl_FragColor = vec4(rgb, u_morphTime);\n\
 }\n\
 ";
 });
