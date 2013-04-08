@@ -1,8 +1,8 @@
-// This file is automatically rebuilt by the Cesium build process.
+//This file is automatically rebuilt by the Cesium build process.
 /*global define*/
 define(function() {
-    "use strict";
-    return "uniform vec4 color;\n\
+"use strict";
+return "uniform vec4 color;\n\
 uniform vec4 rimColor;\n\
 uniform float width;\n\
 \n\

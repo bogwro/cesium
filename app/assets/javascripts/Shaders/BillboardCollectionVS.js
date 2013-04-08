@@ -1,8 +1,8 @@
-// This file is automatically rebuilt by the Cesium build process.
+//This file is automatically rebuilt by the Cesium build process.
 /*global define*/
 define(function() {
-    "use strict";
-    return "attribute vec3 positionHigh;\n\
+"use strict";
+return "attribute vec3 positionHigh;\n\
 attribute vec3 positionLow;\n\
 attribute vec2 direction;                       // in screen space\n\
 attribute vec4 textureCoordinatesAndImageSize;  // size in normalized texture coordinates\n\
@@ -17,7 +17,6 @@ attribute vec4 color;\n\
 #endif\n\
 \n\
 uniform vec2 u_atlasSize;\n\
-uniform float u_clampToPixel; // clamp is 1.0 (true) or 0.0 (false)\n\
 \n\
 uniform float u_morphTime;\n\
 \n\
@@ -59,7 +58,6 @@ void main() \n\
 \n\
     positionWC.xy += (origin * abs(halfSize)) + halfSize;\n\
     positionWC.xy += (pixelOffset * czm_highResolutionSnapScale);\n\
-    positionWC.xy = mix(positionWC.xy, floor(positionWC.xy), u_clampToPixel);\n\
 \n\
     gl_Position = czm_viewportOrthographic * vec4(positionWC.xy, -positionWC.z, 1.0);\n\
     v_textureCoordinates = textureCoordinates;\n\

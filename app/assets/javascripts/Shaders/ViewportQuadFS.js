@@ -1,8 +1,8 @@
-// This file is automatically rebuilt by the Cesium build process.
+//This file is automatically rebuilt by the Cesium build process.
 /*global define*/
 define(function() {
-    "use strict";
-    return "\n\
+"use strict";
+return "\n\
 varying vec2 v_textureCoordinates;\n\
 \n\
 void main()\n\
