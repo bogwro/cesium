@@ -29,11 +29,11 @@
  *
  * Modifications made by Analytical Graphics, Inc.
  */
-// This file is automatically rebuilt by the Cesium build process.
+//This file is automatically rebuilt by the Cesium build process.
 /*global define*/
 define(function() {
-    "use strict";
-    return "/**\n\
+"use strict";
+return "/**\n\
  * @license\n\
  * Copyright (c) 2000-2005, Sean O'Neil (s_p_oneil@hotmail.com)\n\
  * All rights reserved.\n\

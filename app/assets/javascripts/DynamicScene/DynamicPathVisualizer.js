@@ -144,7 +144,14 @@ define([
         }
 
         polyline.setShow(true);
-        polyline.setPositions(positionProperty._getValueRangeInReferenceFrame(sampleStart, sampleStop, time, this._referenceFrame, 60.0, polyline.getPositions()));
+
+        var resolution = 60.0;
+        property = dynamicPath.resolution;
+        if (typeof property !== 'undefined') {
+            resolution = property.getValue(time);
+        }
+
+        polyline.setPositions(positionProperty._getValueRangeInReferenceFrame(sampleStart, sampleStop, time, this._referenceFrame, resolution, polyline.getPositions()));
 
         property = dynamicPath.color;
         if (typeof property !== 'undefined') {
@@ -220,7 +227,10 @@ define([
             throw new DeveloperError('scene is required.');
         }
         this._scene = scene;
-        this._updaters = {};
+        this._updaters = {
+            FIXED : new PolylineUpdater(scene, ReferenceFrame.FIXED),
+            INERTIAL : new PolylineUpdater(scene, ReferenceFrame.INERTIAL)
+        };
         this._dynamicObjectCollection = undefined;
         this.setDynamicObjectCollection(dynamicObjectCollection);
     };
@@ -316,6 +326,7 @@ define([
 
                 if (typeof currentUpdater === 'undefined') {
                     currentUpdater = new PolylineUpdater(this._scene, frameToVisualize);
+                    currentUpdater.update(time);
                     this._updaters[frameToVisualize] = currentUpdater;
                 }
 

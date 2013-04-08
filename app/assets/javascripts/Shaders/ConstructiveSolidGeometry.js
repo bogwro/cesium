@@ -1,8 +1,8 @@
-// This file is automatically rebuilt by the Cesium build process.
+//This file is automatically rebuilt by the Cesium build process.
 /*global define*/
 define(function() {
-    "use strict";
-    return "float _czm_addWithCancellationCheck(float left, float right, float tolerance)\n\
+"use strict";
+return "float _czm_addWithCancellationCheck(float left, float right, float tolerance)\n\
 {\n\
     float difference = left + right;\n\
     if ((sign(left) != sign(right)) && abs(difference / max(abs(left), abs(right))) < tolerance)\n\

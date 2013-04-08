@@ -16,11 +16,11 @@
  * This code is released under the conditions of the MIT license.
  * See LICENSE file for details.
  */
-// This file is automatically rebuilt by the Cesium build process.
+//This file is automatically rebuilt by the Cesium build process.
 /*global define*/
 define(function() {
-    "use strict";
-    return "#ifndef czm_NOISE\n\
+"use strict";
+return "#ifndef czm_NOISE\n\
 #define czm_NOISE 1\n\
 \n\
 /**\n\

@@ -1,8 +1,8 @@
-// This file is automatically rebuilt by the Cesium build process.
+//This file is automatically rebuilt by the Cesium build process.
 /*global define*/
 define(function() {
-    "use strict";
-    return "//#define SHOW_TILE_BOUNDARIES\n\
+"use strict";
+return "//#define SHOW_TILE_BOUNDARIES\n\
 //#define SHOW_TEXTURE_BOUNDARIES\n\
 \n\
 uniform float u_morphTime;\n\

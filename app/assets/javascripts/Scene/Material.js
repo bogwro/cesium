@@ -25,6 +25,7 @@ define([
         '../Shaders/Materials/FacetMaterial',
         '../Shaders/Materials/FresnelMaterial',
         '../Shaders/Materials/GrassMaterial',
+        '../Shaders/Materials/GridMaterial',
         '../Shaders/Materials/NormalMapMaterial',
         '../Shaders/Materials/ReflectionMaterial',
         '../Shaders/Materials/RefractionMaterial',
@@ -60,6 +61,7 @@ define([
         FacetMaterial,
         FresnelMaterial,
         GrassMaterial,
+        GridMaterial,
         NormalMapMaterial,
         ReflectionMaterial,
         RefractionMaterial,
@@ -201,6 +203,13 @@ define([
      *      <li><code>grassColor</code>:  rgba color object for the grass' color. </li>
      *      <li><code>dirtColor</code>:  rgba color object for the dirt's color. </li>
      *      <li><code>patchiness</code>:  Number that controls the size of the color patches in the grass.</li>
+     *  </ul>
+     *  <li>Grid</li>
+     *  <ul>
+     *      <li><code>color</code>:  rgba color object for the whole material.</li>
+     *      <li><code>cellAlpha</code>: Alpha value for the cells between grid lines.  This will be combined with color.alpha.</li>
+     *      <li><code>lineCount</code>:  Object with x and y values specifying the number of columns and rows respectively.</li>
+     *      <li><code>lineThickness</code>:  Object with x and y values specifying the thickness of grid lines (in pixels where available).</li>
      *  </ul>
      *  <li>Stripe</li>
      *  <ul>
@@ -344,8 +353,9 @@ define([
         this._context = undefined;
         this._strict = undefined;
         this._template = undefined;
+        this._count = undefined;
 
-        initializeMaterial(description, 0, this);
+        initializeMaterial(description, this);
         Object.defineProperty(this, 'type', {
             value : this.type,
             writable : false
@@ -428,16 +438,17 @@ define([
         }
         for ( var material in materials) {
             if (materials.hasOwnProperty(material)) {
-                material.destroy();
+                materials[material].destroy();
             }
         }
         return destroyObject(this);
     };
 
-    function initializeMaterial(description, count, result) {
+    function initializeMaterial(description, result) {
         description = defaultValue(description, {});
         result._context = description.context;
         result._strict = defaultValue(description.strict, false);
+        result._count = defaultValue(description.count, 0);
         result._template = defaultValue(description.fabric, {});
         result._template.uniforms = defaultValue(result._template.uniforms, {});
         result._template.materials = defaultValue(result._template.materials, {});
@@ -465,9 +476,8 @@ define([
         }
 
         createMethodDefinition(result);
-        count = createUniforms(result, count);
-        count = createSubMaterials(result, count);
-        return count;
+        createUniforms(result);
+        createSubMaterials(result);
     }
 
     function checkForValidProperties(object, properties, result, throwNotFound) {
@@ -545,19 +555,18 @@ define([
         }
     }
 
-    function createUniforms(material, count) {
+    function createUniforms(material) {
         var uniforms = material._template.uniforms;
         for ( var uniformId in uniforms) {
             if (uniforms.hasOwnProperty(uniformId)) {
-                count = createUniform(material, uniformId, count);
+                createUniform(material, uniformId);
             }
         }
-        return count;
     }
 
     // Writes uniform declarations to the shader file and connects uniform values with
     // corresponding material properties through the returnUniforms function.
-    function createUniform(material, uniformId, count) {
+    function createUniform(material, uniformId) {
         var strict = material._strict;
         var materialUniforms = material._template.uniforms;
         var uniformValue = materialUniforms[uniformId];
@@ -594,7 +603,7 @@ define([
                 material.shaderSource = uniformPhrase + material.shaderSource;
             }
 
-            var newUniformId = uniformId + '_' + count++;
+            var newUniformId = uniformId + '_' + material._count++;
             if (replaceToken(material, uniformId, newUniformId) === 1 && strict) {
                 throw new DeveloperError('strict: shader source does not use uniform \'' + uniformId + '\'.');
             }
@@ -602,8 +611,6 @@ define([
             material.uniforms[uniformId] = uniformValue;
             material._uniforms[newUniformId] = returnUniform(material, uniformId, uniformType);
         }
-
-        return count;
     }
 
     // Checks for updates to material values to refresh the uniforms.
@@ -686,26 +693,27 @@ define([
     }
 
     // Create all sub-materials by combining source and uniforms together.
-    function createSubMaterials(material, count) {
+    function createSubMaterials(material) {
         var context = material._context;
         var strict = material._strict;
         var subMaterialTemplates = material._template.materials;
         for ( var subMaterialId in subMaterialTemplates) {
             if (subMaterialTemplates.hasOwnProperty(subMaterialId)) {
                 // Construct the sub-material.
-                var subMaterial = {};
-                count = initializeMaterial({
+                var subMaterial = new Material({
                     context : context,
                     strict : strict,
-                    fabric : subMaterialTemplates[subMaterialId]
-                }, count, subMaterial);
+                    fabric : subMaterialTemplates[subMaterialId],
+                    count : material._count
+                });
 
+                material._count = subMaterial._count;
                 material._uniforms = combine([material._uniforms, subMaterial._uniforms]);
                 material.materials[subMaterialId] = subMaterial;
 
                 // Make the material's czm_getMaterial unique by appending the sub-material type.
                 var originalMethodName = 'czm_getMaterial';
-                var newMethodName = originalMethodName + '_' + count++;
+                var newMethodName = originalMethodName + '_' + material._count++;
                 replaceToken(subMaterial, originalMethodName, newMethodName);
                 material.shaderSource = subMaterial.shaderSource + material.shaderSource;
 
@@ -716,7 +724,6 @@ define([
                 }
             }
         }
-        return count;
     }
 
     // Used for searching or replacing a token in a material's shader source with something else.
@@ -1055,6 +1062,18 @@ define([
             patchiness : 1.5
         },
         source : GrassMaterial
+    });
+
+    Material.GridType = 'Grid';
+    Material._materialCache.addMaterial(Material.GridType, {
+        type : Material.GridType,
+        uniforms : {
+            color : new Color(0.0, 1.0, 0.0, 1.0),
+            cellAlpha : 0.1,
+            lineCount : new Cartesian2(8.0, 8.0),
+            lineThickness : new Cartesian2(1.0, 1.0)
+        },
+        source : GridMaterial
     });
 
     Material.StripeType = 'Stripe';
