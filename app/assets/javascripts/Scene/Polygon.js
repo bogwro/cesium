@@ -28,13 +28,11 @@ define([
         '../Renderer/CullFace',
         '../Renderer/DrawCommand',
         '../Renderer/VertexLayout',
+        '../Renderer/createPickFragmentShaderSource',
         './Material',
         './SceneMode',
-        '../Shaders/Noise',
         '../Shaders/PolygonVS',
-        '../Shaders/PolygonFS',
-        '../Shaders/PolygonVSPick',
-        '../Shaders/PolygonFSPick'
+        '../Shaders/PolygonFS'
     ], function(
         DeveloperError,
         defaultValue,
@@ -64,13 +62,11 @@ define([
         CullFace,
         DrawCommand,
         VertexLayout,
+        createPickFragmentShaderSource,
         Material,
         SceneMode,
-        Noise,
         PolygonVS,
-        PolygonFS,
-        PolygonVSPick,
-        PolygonFSPick) {
+        PolygonFS) {
     "use strict";
 
     var attributeIndices = {
@@ -152,13 +148,14 @@ define([
      *   ellipsoid.cartographicToCartesian(new Cartographic(...)),
      *   ellipsoid.cartographicToCartesian(new Cartographic(...))
      * ]);
+     *
+     * @demo <a href="http://cesium.agi.com/Cesium/Apps/Sandcastle/index.html?src=Polygons.html">Cesium Sandcastle Polygons Demo</a>
      */
     var Polygon = function() {
         this._sp = undefined;
         this._rs = undefined;
 
         this._spPick = undefined;
-        this._rsPick = undefined;
 
         this._vertices = new PositionVertices();
         this._pickId = undefined;
@@ -260,23 +257,19 @@ define([
         this._mode = SceneMode.SCENE3D;
         this._projection = undefined;
 
-        /**
-         * The current morph transition time between 2D/Columbus View and 3D,
-         * with 0.0 being 2D or Columbus View and 1.0 being 3D.
-         *
-         * @type Number
-         */
-        this.morphTime = this._mode.morphTime;
-
         var that = this;
         this._uniforms = {
-            u_morphTime : function() {
-                return that.morphTime;
-            },
             u_height : function() {
                 return (that._mode !== SceneMode.SCENE2D) ? that.height : 0.0;
             }
         };
+
+        this._pickColorUniform = {
+            czm_pickColor : function() {
+                return that._pickId.color;
+            }
+        };
+
         this._pickUniforms = undefined;
         this._drawUniforms = undefined;
     };
@@ -706,10 +699,6 @@ define([
             // transition only occurs when switching from/to SCENE3D
             this._createVertexArray = this._mode === SceneMode.SCENE3D || mode === SceneMode.SCENE3D;
             this._mode = mode;
-
-            if (typeof mode.morphTime !== 'undefined') {
-                this.morphTime = mode.morphTime;
-            }
         }
 
         if (this._createVertexArray) {
@@ -736,6 +725,8 @@ define([
         var commands;
         var command;
 
+        var materialChanged = this._material !== this.material;
+
         this._commandLists.removeAll();
         if (pass.color) {
             if (typeof this._rs === 'undefined') {
@@ -749,25 +740,19 @@ define([
                 });
             }
 
-            var materialChanged = typeof this._material === 'undefined' ||
-                this._material !== this.material;
-
             // Recompile shader when material changes
             if (materialChanged) {
                 this._material = this.material;
 
                 var fsSource =
                     '#line 0\n' +
-                    Noise +
-                    '#line 0\n' +
-                    this._material.shaderSource +
+                    this.material.shaderSource +
                     '#line 0\n' +
                     PolygonFS;
 
-                this._sp = this._sp && this._sp.release();
-                this._sp = context.getShaderCache().getShaderProgram(PolygonVS, fsSource, attributeIndices);
+                this._sp = context.getShaderCache().replaceShaderProgram(this._sp, PolygonVS, fsSource, attributeIndices);
 
-                this._drawUniforms = combine([this._uniforms, this._material._uniforms], false, false);
+                this._drawUniforms = combine([this._uniforms, this.material._uniforms], false, false);
             }
 
             commands = this._commandLists.colorList;
@@ -790,30 +775,19 @@ define([
 
         if (pass.pick) {
             if (typeof this._pickId === 'undefined') {
-                this._spPick = context.getShaderCache().getShaderProgram(PolygonVSPick, PolygonFSPick, attributeIndices);
-
-                this._rsPick = context.createRenderState({
-                    // TODO: Should not need this in 2D/columbus view, but is hiding a triangulation issue.
-                    cull : {
-                        enabled : true,
-                        face : CullFace.BACK
-                    }
-                });
-
                 this._pickId = context.createPickId(this);
+            }
 
-                var that = this;
-                this._pickUniforms = {
-                    u_pickColor : function() {
-                        return that._pickId.normalizedRgba;
-                    },
-                    u_morphTime : function() {
-                        return that.morphTime;
-                    },
-                    u_height : function() {
-                        return that.height;
-                    }
-                };
+            // Recompile shader when material changes
+            if (materialChanged || typeof this._spPick === 'undefined') {
+                var pickFS = createPickFragmentShaderSource(
+                    '#line 0\n' +
+                    this.material.shaderSource +
+                    '#line 0\n' +
+                    PolygonFS, 'uniform');
+
+                this._spPick = context.getShaderCache().replaceShaderProgram(this._spPick, PolygonVS, pickFS, attributeIndices);
+                this._pickUniforms = combine([this._uniforms, this._pickColorUniform, this.material._uniforms], false, false);
             }
 
             commands = this._commandLists.pickList;
@@ -830,7 +804,7 @@ define([
                 command.shaderProgram = this._spPick,
                 command.uniformMap = this._pickUniforms;
                 command.vertexArray = vas[j];
-                command.renderState = this._rsPick;
+                command.renderState = this._rs;
             }
         }
 

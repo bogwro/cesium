@@ -43,7 +43,8 @@ define([
          * The center point of the sphere.
          * @type {Cartesian3}
          */
-        this.center = (typeof center !== 'undefined') ? Cartesian3.clone(center) : Cartesian3.ZERO.clone();
+        this.center = Cartesian3.clone(defaultValue(center, Cartesian3.ZERO));
+
         /**
          * The radius of the sphere.
          * @type {Number}
@@ -62,6 +63,7 @@ define([
     var fromPointsRitterCenter = new Cartesian3();
     var fromPointsMinBoxPt = new Cartesian3();
     var fromPointsMaxBoxPt = new Cartesian3();
+    var fromPointsNaiveCenterScratch = new Cartesian3();
 
     /**
      * Computes a tight-fitting bounding sphere enclosing a list of 3D Cartesian points.
@@ -171,7 +173,7 @@ define([
         maxBoxPt.y = yMax.y;
         maxBoxPt.z = zMax.z;
 
-        var naiveCenter = Cartesian3.multiplyByScalar(Cartesian3.add(minBoxPt, maxBoxPt, fromPointsScratch), 0.5);
+        var naiveCenter = Cartesian3.multiplyByScalar(Cartesian3.add(minBoxPt, maxBoxPt, fromPointsScratch), 0.5, fromPointsNaiveCenterScratch);
 
         // Begin 2nd pass to find naive radius and modify the ritter sphere.
         var naiveRadius = 0;
@@ -254,7 +256,7 @@ define([
             return result;
         }
 
-        projection = (typeof projection !== 'undefined') ? projection : defaultProjection;
+        projection = defaultValue(projection, defaultProjection);
 
         extent.getSouthwest(fromExtent2DSouthwest);
         fromExtent2DSouthwest.height = minimumHeight;
@@ -290,7 +292,12 @@ define([
      */
     BoundingSphere.fromExtent3D = function(extent, ellipsoid, result) {
         ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-        var positions = typeof extent !== 'undefined' ? extent.subsample(ellipsoid, fromExtent3DScratch) : undefined;
+
+        var positions;
+        if (typeof extent !== 'undefined') {
+            positions = extent.subsample(ellipsoid, fromExtent3DScratch);
+        }
+
         return BoundingSphere.fromPoints(positions, result);
     };
 
@@ -441,7 +448,7 @@ define([
         maxBoxPt.y = yMax.y;
         maxBoxPt.z = zMax.z;
 
-        var naiveCenter = Cartesian3.multiplyByScalar(Cartesian3.add(minBoxPt, maxBoxPt, fromPointsScratch), 0.5);
+        var naiveCenter = Cartesian3.multiplyByScalar(Cartesian3.add(minBoxPt, maxBoxPt, fromPointsScratch), 0.5, fromPointsNaiveCenterScratch);
 
         // Begin 2nd pass to find naive radius and modify the ritter sphere.
         var naiveRadius = 0;

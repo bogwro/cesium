@@ -20,6 +20,7 @@ define([
         '../Core/JulianDate',
         '../Renderer/Context',
         '../Renderer/ClearCommand',
+        '../Renderer/PassState',
         './Camera',
         './ScreenSpaceCameraController',
         './CompositePrimitive',
@@ -51,6 +52,7 @@ define([
         JulianDate,
         Context,
         ClearCommand,
+        PassState,
         Camera,
         ScreenSpaceCameraController,
         CompositePrimitive,
@@ -73,6 +75,7 @@ define([
         var context = new Context(canvas);
 
         this._frameState = new FrameState();
+        this._passState = new PassState(context);
         this._canvas = canvas;
         this._context = context;
         this._primitives = new CompositePrimitive();
@@ -88,14 +91,12 @@ define([
         this._frustumCommandsList = [];
 
         this._clearColorCommand = new ClearCommand();
-        this._clearColorCommand.clearState = context.createClearState({
-            color : new Color()
-        });
-        this._clearDepthStencilCommand = new ClearCommand();
-        this._clearDepthStencilCommand.clearState = context.createClearState({
-            depth : 1.0,
-            stencil : 0.0
-        });
+        this._clearColorCommand.color = new Color();
+
+        var clearDepthStencilCommand = new ClearCommand();
+        clearDepthStencilCommand.depth = 1.0;
+        clearDepthStencilCommand.stencil = 1.0;
+        this._clearDepthStencilCommand = clearDepthStencilCommand;
 
         /**
          * The {@link SkyBox} used to draw the stars.
@@ -253,6 +254,8 @@ define([
         frameState.camera = camera;
         frameState.cullingVolume = camera.frustum.computeCullingVolume(camera.getPositionWC(), camera.getDirectionWC(), camera.getUpWC());
         frameState.occluder = undefined;
+        frameState.canvasDimensions.x = scene._canvas.clientWidth;
+        frameState.canvasDimensions.y = scene._canvas.clientHeight;
 
         // TODO: The occluder is the top-level central body. When we add
         //       support for multiple central bodies, this should be the closest one.
@@ -302,7 +305,7 @@ define([
             }
 
             // PERFORMANCE_IDEA: sort bins
-            frustumCommands.commands.push(command);
+            frustumCommands.commands[frustumCommands.index++] = command;
 
             if (command.executeInClosestFrustum) {
                 break;
@@ -323,7 +326,7 @@ define([
         var frustumCommandsList = scene._frustumCommandsList;
         var frustumsLength = frustumCommandsList.length;
         for (var n = 0; n < frustumsLength; ++n) {
-            frustumCommandsList[n].commands.length = 0;
+            frustumCommandsList[n].index = 0;
         }
 
         var near = Number.MAX_VALUE;
@@ -352,8 +355,9 @@ define([
                 if (typeof boundingVolume !== 'undefined') {
                     var modelMatrix = defaultValue(command.modelMatrix, Matrix4.IDENTITY);
                     var transformedBV = boundingVolume.transform(modelMatrix);               //TODO: Remove this allocation.
-                    if (cullingVolume.getVisibility(transformedBV) === Intersect.OUTSIDE ||
-                            (typeof occluder !== 'undefined' && !occluder.isBoundingSphereVisible(transformedBV))) {
+                    if (command.cull &&
+                            ((cullingVolume.getVisibility(transformedBV) === Intersect.OUTSIDE) ||
+                             (typeof occluder !== 'undefined' && !occluder.isBoundingSphereVisible(transformedBV)))) {
                         continue;
                     }
 
@@ -394,17 +398,17 @@ define([
         }
     }
 
-    function executeCommands(scene, framebuffer) {
+    function executeCommands(scene, passState) {
         var camera = scene._camera;
         var frustum = camera.frustum.clone();
         var context = scene._context;
         var us = context.getUniformState();
-        var skyBoxCommand = (typeof scene.skyBox !== 'undefined') ? scene.skyBox.update(context, scene._frameState) : undefined;
-        var skyAtmosphereCommand = (typeof scene.skyAtmosphere !== 'undefined') ? scene.skyAtmosphere.update(context, scene._frameState) : undefined;
+        var skyBoxCommand = typeof scene.skyBox !== 'undefined' ? scene.skyBox.update(context, scene._frameState) : undefined;
+        var skyAtmosphereCommand = typeof scene.skyAtmosphere !== 'undefined' ? scene.skyAtmosphere.update(context, scene._frameState) : undefined;
 
         var clear = scene._clearColorCommand;
-        Color.clone(defaultValue(scene.backgroundColor, Color.BLACK), clear.clearState.color);
-        clear.execute(context, framebuffer);
+        Color.clone(defaultValue(scene.backgroundColor, Color.BLACK), clear.color);
+        clear.execute(context, passState);
 
         // Ideally, we would render the sky box and atmosphere last for
         // early-z, but we would have to draw it in each frustum
@@ -413,11 +417,11 @@ define([
         us.updateFrustum(frustum);
 
         if (typeof skyBoxCommand !== 'undefined') {
-            skyBoxCommand.execute(context, framebuffer);
+            skyBoxCommand.execute(context, passState);
         }
 
         if (typeof skyAtmosphereCommand !== 'undefined') {
-            skyAtmosphereCommand.execute(context, framebuffer);
+            skyAtmosphereCommand.execute(context, passState);
         }
 
         var clearDepthStencil = scene._clearDepthStencilCommand;
@@ -425,7 +429,7 @@ define([
         var frustumCommandsList = scene._frustumCommandsList;
         var numFrustums = frustumCommandsList.length;
         for (var i = 0; i < numFrustums; ++i) {
-            clearDepthStencil.execute(context, framebuffer);
+            clearDepthStencil.execute(context, passState);
 
             var index = numFrustums - i - 1.0;
             var frustumCommands = frustumCommandsList[index];
@@ -435,14 +439,14 @@ define([
             us.updateFrustum(frustum);
 
             var commands = frustumCommands.commands;
-            var length = commands.length;
+            var length = frustumCommands.index;
             for (var j = 0; j < length; ++j) {
-                commands[j].execute(context, framebuffer);
+                commands[j].execute(context, passState);
             }
         }
     }
 
-    function executeOverlayCommands(scene) {
+    function executeOverlayCommands(scene, passState) {
         var context = scene._context;
         var commandLists = scene._commandList;
         var length = commandLists.length;
@@ -450,7 +454,7 @@ define([
             var commandList = commandLists[i].overlayList;
             var commandListLength = commandList.length;
             for (var j = 0; j < commandListLength; ++j) {
-                commandList[j].execute(context);
+                commandList[j].execute(context, passState);
             }
         }
     }
@@ -483,7 +487,7 @@ define([
         var us = this.getUniformState();
         var frameState = this._frameState;
 
-        var frameNumber = CesiumMath.incrementWrap(us.getFrameNumber(), 15000000.0, 1.0);
+        var frameNumber = CesiumMath.incrementWrap(frameState.frameNumber, 15000000.0, 1.0);
         updateFrameState(this, frameNumber, time);
         frameState.passes.color = true;
         frameState.passes.overlay = true;
@@ -493,9 +497,12 @@ define([
         this._commandList.length = 0;
         this._primitives.update(this._context, frameState, this._commandList);
 
+        var passState = this._passState;
+        passState.framebuffer = undefined;
+
         createPotentiallyVisibleSet(this, 'colorList');
-        executeCommands(this);
-        executeOverlayCommands(this);
+        executeCommands(this, passState);
+        executeOverlayCommands(this, passState);
     };
 
     var orthoPickingFrustum = new OrthographicFrustum();
@@ -586,10 +593,11 @@ define([
         var primitives = this._primitives;
         var frameState = this._frameState;
 
-        this._pickFramebuffer = this._pickFramebuffer || context.createPickFramebuffer();
-        var fb = this._pickFramebuffer.begin();
+        if (typeof this._pickFramebuffer === 'undefined') {
+            this._pickFramebuffer = context.createPickFramebuffer();
+        }
 
-        // Update with previous frame's number aqnd time, assuming that render is called before picking.
+        // Update with previous frame's number and time, assuming that render is called before picking.
         updateFrameState(this, frameState.frameNumber, frameState.time);
         frameState.cullingVolume = getPickCullingVolume(this, windowPosition, rectangleWidth, rectangleHeight);
         frameState.passes.pick = true;
@@ -597,12 +605,12 @@ define([
         var commandLists = this._commandList;
         commandLists.length = 0;
         primitives.update(context, frameState, commandLists);
-
         createPotentiallyVisibleSet(this, 'pickList');
-        executeCommands(this, fb);
 
         scratchRectangle.x = windowPosition.x - ((rectangleWidth - 1.0) * 0.5);
         scratchRectangle.y = (this._canvas.clientHeight - windowPosition.y) - ((rectangleHeight - 1.0) * 0.5);
+
+        executeCommands(this, this._pickFramebuffer.begin(scratchRectangle));
         return this._pickFramebuffer.end(scratchRectangle);
     };
 

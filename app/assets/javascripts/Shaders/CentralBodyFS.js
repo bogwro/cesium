@@ -3,9 +3,6 @@
 define(function() {
 "use strict";
 return "//#define SHOW_TILE_BOUNDARIES\n\
-//#define SHOW_TEXTURE_BOUNDARIES\n\
-\n\
-uniform float u_morphTime;\n\
 \n\
 #if TEXTURE_UNITS > 0\n\
 uniform sampler2D u_dayTextures[TEXTURE_UNITS];\n\
@@ -46,18 +43,13 @@ vec3 sampleAndBlend(\n\
     float textureSaturation,\n\
     float textureOneOverGamma)\n\
 {\n\
-    // This crazy step stuff sets the alpha to 0.0 if this following condition is true:\n\
-    //    tileTextureCoordinates.s < textureCoordinateExtent.s ||\n\
-    //    tileTextureCoordinates.s > textureCoordinateExtent.p ||\n\
-    //    tileTextureCoordinates.t < textureCoordinateExtent.t ||\n\
-    //    tileTextureCoordinates.t > textureCoordinateExtent.q\n\
-    // In other words, the alpha is zero if the fragment is outside the extent\n\
-    // covered by this texture.  Would an actual 'if' yield better performance?\n\
-    vec2 alphaMultiplier = step(textureCoordinateExtent.st, tileTextureCoordinates); \n\
-    textureAlpha = textureAlpha * alphaMultiplier.x * alphaMultiplier.y;\n\
-    \n\
-    alphaMultiplier = step(vec2(0.0), textureCoordinateExtent.pq - tileTextureCoordinates);\n\
-    textureAlpha = textureAlpha * alphaMultiplier.x * alphaMultiplier.y;\n\
+    if (tileTextureCoordinates.s < textureCoordinateExtent.s ||\n\
+        tileTextureCoordinates.s > textureCoordinateExtent.p ||\n\
+        tileTextureCoordinates.t < textureCoordinateExtent.t ||\n\
+        tileTextureCoordinates.t > textureCoordinateExtent.q)\n\
+    {\n\
+        return previousColor;\n\
+    }\n\
     \n\
     vec2 translation = textureCoordinateTranslationAndScale.xy;\n\
     vec2 scale = textureCoordinateTranslationAndScale.zw;\n\
@@ -86,16 +78,11 @@ vec3 sampleAndBlend(\n\
     color = pow(color, vec3(textureOneOverGamma));\n\
 #endif\n\
 \n\
-#ifdef SHOW_TEXTURE_BOUNDARIES\n\
-    if (textureCoordinates.x < (1.0/256.0) || textureCoordinates.x > (255.0/256.0) ||\n\
-        textureCoordinates.y < (1.0/256.0) || textureCoordinates.y > (255.0/256.0))\n\
-    {\n\
-        color = vec3(1.0);\n\
-        alpha = 1.0;\n\
-    }\n\
+#ifdef APPLY_ALPHA\n\
+    alpha *= textureAlpha;\n\
 #endif\n\
 \n\
-    return mix(previousColor, color, alpha * textureAlpha);\n\
+    return mix(previousColor, color, alpha);\n\
 }\n\
 \n\
 vec3 computeDayColor(vec3 initialColor, vec2 textureCoordinates);\n\
@@ -136,7 +123,7 @@ void main()\n\
         vec2 ellipsoidTextureCoordinates = czm_ellipsoidWgs84TextureCoordinates(normalMC);\n\
         vec2 ellipsoidFlippedTextureCoordinates = czm_ellipsoidWgs84TextureCoordinates(normalMC.zyx);\n\
 \n\
-        vec2 textureCoordinates = mix(ellipsoidTextureCoordinates, ellipsoidFlippedTextureCoordinates, u_morphTime * smoothstep(0.9, 0.95, normalMC.z));\n\
+        vec2 textureCoordinates = mix(ellipsoidTextureCoordinates, ellipsoidFlippedTextureCoordinates, czm_morphTime * smoothstep(0.9, 0.95, normalMC.z));\n\
 \n\
         color = computeWaterColor(v_positionEC, textureCoordinates, enuToEye, startDayColor, mask);\n\
     }\n\

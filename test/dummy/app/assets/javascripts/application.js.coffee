@@ -15,16 +15,16 @@ require [
       scene: @scene
       app: app
 
-    @scene.skyAtmosphere = new Cesium.SkyAtmosphere
+#    @scene.skyAtmosphere = new Cesium.SkyAtmosphere
 
-    skyBoxBaseUrl = '/assets/Assets/Textures/SkyBox/tycho2t3_80'
-    @scene.skyBox = new Cesium.SkyBox
-      positiveX: skyBoxBaseUrl + '_px.jpg'
-      negativeX: skyBoxBaseUrl + '_mx.jpg'
-      positiveY: skyBoxBaseUrl + '_py.jpg'
-      negativeY: skyBoxBaseUrl + '_my.jpg'
-      positiveZ: skyBoxBaseUrl + '_pz.jpg'
-      negativeZ: skyBoxBaseUrl + '_mz.jpg'
+#    skyBoxBaseUrl = '/assets/Assets/Textures/SkyBox/tycho2t3_80'
+#    @scene.skyBox = new Cesium.SkyBox
+#      positiveX: skyBoxBaseUrl + '_px.jpg'
+#      negativeX: skyBoxBaseUrl + '_mx.jpg'
+#      positiveY: skyBoxBaseUrl + '_py.jpg'
+#      negativeY: skyBoxBaseUrl + '_my.jpg'
+#      positiveZ: skyBoxBaseUrl + '_pz.jpg'
+#      negativeZ: skyBoxBaseUrl + '_mz.jpg'
 
 
     primitives = @scene.getPrimitives()
