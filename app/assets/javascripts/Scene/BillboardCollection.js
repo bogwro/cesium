@@ -1,6 +1,7 @@
 /*global define*/
 define([
         '../Core/DeveloperError',
+        '../Core/Color',
         '../Core/combine',
         '../Core/destroyObject',
         '../Core/Math',
@@ -25,6 +26,7 @@ define([
         '../Shaders/BillboardCollectionFS'
     ], function(
         DeveloperError,
+        Color,
         combine,
         destroyObject,
         CesiumMath,
@@ -123,6 +125,8 @@ define([
      *   position : { x : 4.0, y : 5.0, z : 6.0 },
      *   imageIndex : 1
      * });
+     *
+     * @demo <a href="http://cesium.agi.com/Cesium/Apps/Sandcastle/index.html?src=Billboards.html">Cesium Sandcastle Billboard Demo</a>
      */
     var BillboardCollection = function() {
         this._textureAtlas = undefined;
@@ -131,11 +135,11 @@ define([
         this._sp = undefined;
         this._rs = undefined;
         this._vaf = undefined;
-        this._rsPick = undefined;
         this._spPick = undefined;
 
         this._billboards = [];
         this._billboardsToUpdate = [];
+        this._billboardsToUpdateIndex = 0;
         this._billboardsRemoved = false;
         this._createVertexArray = false;
 
@@ -182,14 +186,6 @@ define([
         this._mode = SceneMode.SCENE3D;
         this._projection = undefined;
 
-        /**
-         * The current morph transition time between 2D/Columbus View and 3D,
-         * with 0.0 being 2D or Columbus View and 1.0 being 3D.
-         *
-         * @type Number
-         */
-        this.morphTime = this._mode.morphTime;
-
         // The buffer usage for each attribute is determined based on the usage of the attribute over time.
         this._buffersUsage = [
                               BufferUsage.STATIC_DRAW, // SHOW_INDEX
@@ -210,9 +206,6 @@ define([
             },
             u_atlasSize : function() {
                 return that._textureAtlas.getTexture().getDimensions();
-            },
-            u_morphTime : function() {
-                return that.morphTime;
             }
         };
     };
@@ -242,14 +235,14 @@ define([
      * // Example 1:  Add a billboard, specifying all the default values.
      * var b = billboards.add({
      *   show : true,
-     *   position : new Cartesian3(0.0, 0.0, 0.0),
-     *   pixelOffset : new Cartesian2(0.0, 0.0),
-     *   eyeOffset : new Cartesian3(0.0, 0.0, 0.0),
+     *   position : Cartesian3.ZERO,
+     *   pixelOffset : Cartesian2.ZERO,
+     *   eyeOffset : Cartesian3.ZERO,
      *   horizontalOrigin : HorizontalOrigin.CENTER,
      *   verticalOrigin : VerticalOrigin.CENTER,
      *   scale : 1.0,
      *   imageIndex : 0,
-     *   color : new Color(1.0, 1.0, 1.0, 1.0)
+     *   color : Color.WHITE
      * });
      *
      * // Example 2:  Specify only the billboard's cartographic position.
@@ -329,6 +322,7 @@ define([
         this._destroyBillboards();
         this._billboards = [];
         this._billboardsToUpdate = [];
+        this._billboardsToUpdateIndex = 0;
         this._billboardsRemoved = false;
 
         this._createVertexArray = true;
@@ -355,7 +349,7 @@ define([
 
     BillboardCollection.prototype._updateBillboard = function(billboard, propertyChanged) {
         if (!billboard._dirty) {
-            this._billboardsToUpdate.push(billboard);
+            this._billboardsToUpdate[this._billboardsToUpdateIndex++] = billboard;
         }
 
         ++this._propertiesChanged[propertyChanged];
@@ -602,7 +596,6 @@ define([
         var buffersUsage = this._buffersUsage;
         var usageChanged = false;
 
-        // PERFORMANCE_IDEA: Better heuristic to avoid ping-ponging.  What about DYNAMIC_STREAM?
         var properties = this._propertiesChanged;
         for ( var k = 0; k < NUMBER_OF_PROPERTIES; ++k) {
             var newUsage = (properties[k] === 0) ? BufferUsage.STATIC_DRAW : BufferUsage.STREAM_DRAW;
@@ -736,26 +729,38 @@ define([
 
     function writePickColor(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard) {
         var i = (billboard._index * 4);
-        var pickColor = billboard.getPickId(context).unnormalizedRgb;
 
         var pickWriters = vafWriters[pickPassPurpose];
         var writer = pickWriters[attributeIndices.pickColor];
-        writer(i + 0, pickColor.red, pickColor.green, pickColor.blue, 255);
-        writer(i + 1, pickColor.red, pickColor.green, pickColor.blue, 255);
-        writer(i + 2, pickColor.red, pickColor.green, pickColor.blue, 255);
-        writer(i + 3, pickColor.red, pickColor.green, pickColor.blue, 255);
+
+        var pickColor = billboard.getPickId(context).color;
+        var red = Color.floatToByte(pickColor.red);
+        var green = Color.floatToByte(pickColor.green);
+        var blue = Color.floatToByte(pickColor.blue);
+        var alpha = Color.floatToByte(pickColor.alpha);
+
+        writer(i + 0, red, green, blue, alpha);
+        writer(i + 1, red, green, blue, alpha);
+        writer(i + 2, red, green, blue, alpha);
+        writer(i + 3, red, green, blue, alpha);
     }
 
     function writeColor(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard) {
         var i = (billboard._index * 4);
-        var color = billboard.getColor();
 
         var colorWriters = vafWriters[colorPassPurpose];
         var writer = colorWriters[attributeIndices.color];
-        writer(i + 0, color.red * 255, color.green * 255, color.blue * 255, color.alpha * 255);
-        writer(i + 1, color.red * 255, color.green * 255, color.blue * 255, color.alpha * 255);
-        writer(i + 2, color.red * 255, color.green * 255, color.blue * 255, color.alpha * 255);
-        writer(i + 3, color.red * 255, color.green * 255, color.blue * 255, color.alpha * 255);
+
+        var color = billboard.getColor();
+        var red = Color.floatToByte(color.red);
+        var green = Color.floatToByte(color.green);
+        var blue = Color.floatToByte(color.blue);
+        var alpha = Color.floatToByte(color.alpha);
+
+        writer(i + 0, red, green, blue, alpha);
+        writer(i + 1, red, green, blue, alpha);
+        writer(i + 2, red, green, blue, alpha);
+        writer(i + 3, red, green, blue, alpha);
     }
 
     function writeOriginAndShow(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard) {
@@ -820,7 +825,7 @@ define([
         writeTextureCoordinatesAndImageSize(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard);
     }
 
-    function recomputeActualPositions(billboardCollection, billboards, frameState, morphTime, modelMatrix, recomputeBoundingVolume) {
+    function recomputeActualPositions(billboardCollection, billboards, length, frameState, modelMatrix, recomputeBoundingVolume) {
         var boundingVolume;
         if (frameState.mode === SceneMode.SCENE3D) {
             boundingVolume = billboardCollection._baseVolume;
@@ -828,12 +833,11 @@ define([
             boundingVolume = billboardCollection._baseVolume2D;
         }
 
-        var length = billboards.length;
         var positions = [];
         for ( var i = 0; i < length; ++i) {
             var billboard = billboards[i];
             var position = billboard.getPosition();
-            var actualPosition = Billboard._computeActualPosition(position, frameState, morphTime, modelMatrix);
+            var actualPosition = Billboard._computeActualPosition(position, frameState, modelMatrix);
             if (typeof actualPosition !== 'undefined') {
                 billboard._setActualPosition(actualPosition);
 
@@ -856,11 +860,10 @@ define([
 
         var billboards = billboardCollection._billboards;
         var billboardsToUpdate = billboardCollection._billboardsToUpdate;
-        var morphTime = billboardCollection.morphTime;
         var modelMatrix = billboardCollection._modelMatrix;
 
         if (billboardCollection._mode !== mode ||
-                billboardCollection._projection !== projection ||
+            billboardCollection._projection !== projection ||
             mode !== SceneMode.SCENE3D &&
             !modelMatrix.equals(billboardCollection.modelMatrix)) {
 
@@ -870,12 +873,12 @@ define([
             billboardCollection._createVertexArray = true;
 
             if (mode === SceneMode.SCENE3D || mode === SceneMode.SCENE2D || mode === SceneMode.COLUMBUS_VIEW) {
-                recomputeActualPositions(billboardCollection, billboards, frameState, morphTime, modelMatrix, true);
+                recomputeActualPositions(billboardCollection, billboards, billboards.length, frameState, modelMatrix, true);
             }
         } else if (mode === SceneMode.MORPHING) {
-            recomputeActualPositions(billboardCollection, billboards, frameState, morphTime, modelMatrix, true);
+            recomputeActualPositions(billboardCollection, billboards, billboards.length, frameState, modelMatrix, true);
         } else if (mode === SceneMode.SCENE2D || mode === SceneMode.COLUMBUS_VIEW) {
-            recomputeActualPositions(billboardCollection, billboardsToUpdate, frameState, morphTime, modelMatrix, false);
+            recomputeActualPositions(billboardCollection, billboardsToUpdate, billboardCollection._billboardsToUpdateIndex, frameState, modelMatrix, false);
         }
     }
 
@@ -934,7 +937,10 @@ define([
         updateMode(this, frameState);
 
         var billboards = this._billboards;
-        var length = billboards.length;
+        var billboardsLength = billboards.length;
+        var billboardsToUpdate = this._billboardsToUpdate;
+        var billboardsToUpdateLength = this._billboardsToUpdateIndex;
+
         var properties = this._propertiesChanged;
 
         var textureAtlasGUID = textureAtlas.getGUID();
@@ -942,20 +948,26 @@ define([
         this._textureAtlasGUID = textureAtlasGUID;
 
         var vafWriters;
+        var pass = frameState.passes;
+        var picking = pass.pick;
 
         // PERFORMANCE_IDEA: Round robin multiple buffers.
-        if (createVertexArray || this.computeNewBuffersUsage()) {
+        if (createVertexArray || (!picking && this.computeNewBuffersUsage())) {
             this._createVertexArray = false;
+
+            for (var k = 0; k < NUMBER_OF_PROPERTIES; ++k) {
+                properties[k] = 0;
+            }
 
             this._vaf = this._vaf && this._vaf.destroy();
 
-            if (length > 0) {
+            if (billboardsLength > 0) {
                 // PERFORMANCE_IDEA:  Instead of creating a new one, resize like std::vector.
-                this._vaf = createVAF(context, billboards.length, this._buffersUsage);
+                this._vaf = createVAF(context, billboardsLength, this._buffersUsage);
                 vafWriters = this._vaf.writers;
 
                 // Rewrite entire buffer if billboards were added or removed.
-                for (var i = 0; i < length; ++i) {
+                for (var i = 0; i < billboardsLength; ++i) {
                     var billboard = this._billboards[i];
                     billboard._dirty = false; // In case it needed an update.
                     writeBillboard(this, context, textureAtlasCoordinates, vafWriters, billboard);
@@ -965,14 +977,10 @@ define([
                 this._vaf.commit(getIndexBuffer(context));
             }
 
-            this._billboardsToUpdate = [];
+            this._billboardsToUpdateIndex = 0;
         } else {
             // Billboards were modified, but none were added or removed.
-
-            var billboardsToUpdate = this._billboardsToUpdate;
-            var updateLength = billboardsToUpdate.length;
-
-            if (updateLength) {
+            if (billboardsToUpdateLength > 0) {
                 var writers = [];
 
                 if (properties[POSITION_INDEX]) {
@@ -1001,12 +1009,12 @@ define([
 
                 vafWriters = this._vaf.writers;
 
-                if ((updateLength / length) > 0.1) {
+                if ((billboardsToUpdateLength / billboardsLength) > 0.1) {
                     // If more than 10% of billboard change, rewrite the entire buffer.
 
                     // PERFORMANCE_IDEA:  I totally made up 10% :).
 
-                    for (var m = 0; m < updateLength; ++m) {
+                    for (var m = 0; m < billboardsToUpdateLength; ++m) {
                         var b = billboardsToUpdate[m];
                         b._dirty = false;
 
@@ -1016,7 +1024,7 @@ define([
                     }
                     this._vaf.commit(getIndexBuffer(context));
                 } else {
-                    for (var h = 0; h < updateLength; ++h) {
+                    for (var h = 0; h < billboardsToUpdateLength; ++h) {
                         var bb = billboardsToUpdate[h];
                         bb._dirty = false;
 
@@ -1028,12 +1036,15 @@ define([
                     this._vaf.endSubCommits();
                 }
 
-                this._billboardsToUpdate = [];
+                this._billboardsToUpdateIndex = 0;
             }
         }
 
-        for (var k = 0; k < NUMBER_OF_PROPERTIES; ++k) {
-            properties[k] = 0;
+        // If the number of total billboards ever shrinks considerably
+        // Truncate billboardsToUpdate so that we free memory that we're
+        // not going to be using.
+        if (billboardsToUpdateLength > billboardsLength * 1.5) {
+            billboardsToUpdate.length = billboardsLength;
         }
 
         if (typeof this._vaf === 'undefined' || typeof this._vaf.vaByPurpose === 'undefined') {
@@ -1050,7 +1061,6 @@ define([
         }
         updateBoundingVolume(this, context, frameState, boundingVolume);
 
-        var pass = frameState.passes;
         var va;
         var vaLength;
         var command;
@@ -1093,17 +1103,11 @@ define([
                 command.renderState = this._rs;
             }
         }
-        if (pass.pick) {
+        if (picking) {
             var pickList = this._pickCommands;
             commandLists.pickList = pickList;
 
             if (typeof this._spPick === 'undefined') {
-                this._rsPick = context.createRenderState({
-                    depthTest : {
-                        enabled : true
-                    }
-                });
-
                 this._spPick = context.getShaderCache().getShaderProgram(
                         '#define RENDER_FOR_PICK 1\n' + BillboardCollectionVS,
                         '#define RENDER_FOR_PICK 1\n' + BillboardCollectionFS,
@@ -1127,7 +1131,7 @@ define([
                 command.shaderProgram = this._spPick;
                 command.uniformMap = this._uniforms;
                 command.vertexArray = va[j].va;
-                command.renderState = this._rsPick;
+                command.renderState = this._rs;
             }
         }
 

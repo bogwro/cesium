@@ -34,7 +34,11 @@ define([
         '../Shaders/Materials/Water',
         '../Shaders/Materials/WoodMaterial',
         '../Shaders/Materials/RimLightingMaterial',
-        '../Shaders/Materials/ErosionMaterial'
+        '../Shaders/Materials/ErosionMaterial',
+        '../Shaders/Materials/FadeMaterial',
+        '../Shaders/Materials/PolylineArrowMaterial',
+        '../Shaders/Materials/PolylineGlowMaterial',
+        '../Shaders/Materials/PolylineOutlineMaterial'
     ], function(
         when,
         loadImage,
@@ -70,7 +74,11 @@ define([
         WaterMaterial,
         WoodMaterial,
         RimLightingMaterial,
-        ErosionMaterial) {
+        ErosionMaterial,
+        FadeMaterial,
+        PolylineArrowMaterial,
+        PolylineGlowMaterial,
+        PolylineOutlineMaterial) {
     "use strict";
 
     /**
@@ -272,6 +280,30 @@ define([
      *      <li><code>color</code>:  diffuse color and alpha.</li>
      *      <li><code>time</code>:  Time of erosion.  1.0 is no erosion; 0.0 is fully eroded.</li>
      *  </ul>
+     *  <li>Fade</li>
+     *  <ul>
+     *      <li><code>fadeInColor</code>: diffuse color and alpha at <code>time</code></li>
+     *      <li><code>fadeOutColor</code>: diffuse color and alpha at <code>maximumDistance<code> from <code>time</code></li>
+     *      <li><code>maximumDistance</code>: Number between 0.0 and 1.0 where the <code>fadeInColor</code> becomes the <code>fadeOutColor</code>. A value of 0.0 gives the entire material a color of <code>fadeOutColor</code> and a value of 1.0 gives the the entire material a color of <code>fadeInColor</code></li>
+     *      <li><code>repeat</code>: true if the fade should wrap around the texture coodinates.</li>
+     *      <li><code>fadeDirection</code>: Object with x and y values specifying if the fade should be in the x and y directions.</li>
+     *      <li><code>time</code>: Object with x and y values between 0.0 and 1.0 of the <code>fadeInColor</code> position</li>
+     *  </ul>
+     *  <li>PolylineArrow</li>
+     *  <ul>
+     *      <li><code>color</code>: diffuse color and alpha.</li>
+     *  </ul>
+     *  <li>PolylineGlow</li>
+     *  <ul>
+     *      <li><code>color</code>: color and maximum alpha for the glow on the line.</li>
+     *      <li><code>glowPower</code>: strength of the glow, as a percentage of the total line width (less than 1.0).</li>
+     *  </ul>
+     *  <li>PolylineOutline</li>
+     *  <ul>
+     *      <li><code>color</code>: diffuse color and alpha for the interior of the line.</li>
+     *      <li><code>outlineColor</code>: diffuse color and alpha for the outline.</li>
+     *      <li><code>outlineWidth</code>: width of the outline in pixels.</li>
+     *  </ul>
      * </ul>
      * </div>
      *
@@ -323,6 +355,8 @@ define([
      * });
      *
      * @see <a href='https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric'>Fabric wiki page</a> for a more detailed description of Fabric.
+     *
+     * @demo <a href="http://cesium.agi.com/Cesium/Apps/Sandcastle/index.html?src=Materials.html">Cesium Sandcastle Materials Demo</a>
      */
     var Material = function(description) {
         /**
@@ -360,7 +394,15 @@ define([
             value : this.type,
             writable : false
         });
+
+        if (typeof Material._uniformList[this.type] === 'undefined') {
+            Material._uniformList[this.type] = Object.keys(this._uniforms);
+        }
     };
+
+    // Cached list of combined uniform names indexed by type.
+    // Used to get the list of uniforms in the same order.
+    Material._uniformList = {};
 
     /**
      * Creates a new material using an existing material type.
@@ -445,15 +487,15 @@ define([
     };
 
     function initializeMaterial(description, result) {
-        description = defaultValue(description, {});
+        description = defaultValue(description, defaultValue.EMPTY_OBJECT);
         result._context = description.context;
         result._strict = defaultValue(description.strict, false);
         result._count = defaultValue(description.count, 0);
-        result._template = defaultValue(description.fabric, {});
-        result._template.uniforms = defaultValue(result._template.uniforms, {});
-        result._template.materials = defaultValue(result._template.materials, {});
+        result._template = clone(defaultValue(description.fabric, defaultValue.EMPTY_OBJECT));
+        result._template.uniforms = clone(defaultValue(result._template.uniforms, defaultValue.EMPTY_OBJECT));
+        result._template.materials = clone(defaultValue(result._template.materials, defaultValue.EMPTY_OBJECT));
 
-        result.type = (typeof result._template.type !== 'undefined') ? result._template.type : createGuid();
+        result.type = typeof result._template.type !== 'undefined' ? result._template.type : createGuid();
 
         result.shaderSource = '';
         result.materials = {};
@@ -463,7 +505,7 @@ define([
         // If the cache contains this material type, build the material template off of the stored template.
         var cachedTemplate = Material._materialCache.getMaterial(result.type);
         if (typeof cachedTemplate !== 'undefined') {
-            var template = clone(cachedTemplate);
+            var template = clone(cachedTemplate, true);
             result._template = combine([result._template, template]);
         }
 
@@ -1190,6 +1232,53 @@ define([
             time : 1.0
         },
         source : ErosionMaterial
+    });
+
+    Material.FadeType = 'Fade';
+    Material._materialCache.addMaterial(Material.FadeType, {
+        type : Material.FadeType,
+        uniforms : {
+            fadeInColor : new Color(1.0, 0.0, 0.0, 1.0),
+            fadeOutColor : new Color(0.0, 0.0, 0.0, 0.0),
+            maximumDistance : 0.5,
+            repeat : true,
+            fadeDirection : {
+                x : true,
+                y : true
+            },
+            time : new Cartesian2(0.5, 0.5)
+        },
+        source : FadeMaterial
+    });
+
+    Material.PolylineArrowType = 'PolylineArrow';
+    Material._materialCache.addMaterial(Material.PolylineArrowType, {
+        type : Material.PolylineArrowType,
+        uniforms : {
+            color : new Color(1.0, 1.0, 1.0, 1.0)
+        },
+        source : PolylineArrowMaterial
+    });
+
+    Material.PolylineGlowType = 'PolylineGlow';
+    Material._materialCache.addMaterial(Material.PolylineGlowType, {
+        type : Material.PolylineGlowType,
+        uniforms : {
+            color : new Color(0.0, 0.5, 1.0, 1.0),
+            glowPower : 0.1
+        },
+        source : PolylineGlowMaterial
+    });
+
+    Material.PolylineOutlineType = 'PolylineOutline';
+    Material._materialCache.addMaterial(Material.PolylineOutlineType, {
+        type : Material.PolylineOutlineType,
+        uniforms : {
+            color : new Color(1.0, 1.0, 1.0, 1.0),
+            outlineColor : new Color(1.0, 0.0, 0.0, 1.0),
+            outlineWidth : 1.0
+        },
+        source : PolylineOutlineMaterial
     });
 
     return Material;

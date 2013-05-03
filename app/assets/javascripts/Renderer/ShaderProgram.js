@@ -1191,7 +1191,7 @@ define([
         /**
          * An automatic GLSL uniform containing the near distance (<code>x</code>) and the far distance (<code>y</code>)
          * of the frustum defined by the camera.  This is the largest possible frustum, not an individual
-         * frustum used for mult-frustum rendering.
+         * frustum used for multi-frustum rendering.
          * <br /><br />
          * Like all automatic uniforms, <code>czm_entireFrustum</code> does not need to be explicitly declared.
          * However, it can be explicitly declared when a shader is also used by other applications such
@@ -1201,6 +1201,7 @@ define([
          * @glslUniform
          *
          * @see UniformState#getEntireFrustum
+         * @see czm_currentFrustum
          *
          * @example
          * // GLSL declaration
@@ -1220,6 +1221,74 @@ define([
 
             getValue : function(uniformState) {
                 return uniformState.getEntireFrustum();
+            }
+        },
+
+        /**
+         * An automatic GLSL uniform containing the near distance (<code>x</code>) and the far distance (<code>y</code>)
+         * of the frustum defined by the camera.  This is the individual
+         * frustum used for multi-frustum rendering.
+         * <br /><br />
+         * Like all automatic uniforms, <code>czm_currentFrustum</code> does not need to be explicitly declared.
+         * However, it can be explicitly declared when a shader is also used by other applications such
+         * as a third-party authoring tool.
+         *
+         * @alias czm_currentFrustum
+         * @glslUniform
+         *
+         * @see UniformState#getCurrentFrustum
+         * @see czm_entireFrustum
+         *
+         * @example
+         * // GLSL declaration
+         * uniform vec2 czm_currentFrustum;
+         *
+         * // Example
+         * float frustumLength = czm_currentFrustum.y - czm_currentFrustum.x;
+         */
+        czm_currentFrustum : {
+            getSize : function() {
+                return 1;
+            },
+
+            getDatatype : function() {
+                return UniformDatatype.FLOAT_VECTOR2;
+            },
+
+            getValue : function(uniformState) {
+                return uniformState.getCurrentFrustum();
+            }
+        },
+
+        /**
+         * An automatic GLSL uniform representing the size of a pixel in meters at a distance of one meter
+         * from the camera. The pixel size is linearly proportional to the distance from the camera.
+         * <br /><br />
+         * Like all automatic uniforms, <code>czm_pixelSizeInMeters</code> does not need to be explicitly declared.
+         * However, it can be explicitly declared when a shader is also used by other applications such
+         * as a third-party authoring tool.
+         *
+         * @alias czm_pixelSizeInMeters
+         * @glslUniform
+         *
+         * @example
+         * // GLSL declaration
+         * uniform float czm_pixelSizeInMeters;
+         *
+         * // Example: the pixel size at a position in eye coordinates
+         * float pixelSize = czm_pixelSizeInMeters * positionEC.z;
+         */
+        czm_pixelSizeInMeters : {
+            getSize : function() {
+                return 1;
+            },
+
+            getDatatype : function() {
+                return UniformDatatype.FLOAT;
+            },
+
+            getValue : function(uniformState) {
+                return uniformState.getPixelSize();
             }
         },
 
@@ -1447,7 +1516,39 @@ define([
             },
 
             getValue : function(uniformState) {
-                return uniformState.getFrameNumber();
+                return uniformState.getFrameState().frameNumber;
+            }
+        },
+
+        /**
+         * An automatic GLSL uniform representing the current morph transition time between
+         * 2D/Columbus View and 3D, with 0.0 being 2D or Columbus View and 1.0 being 3D.
+         * <br /><br />
+         * Like all automatic uniforms, <code>czm_morphTime</code> does not need to be explicitly declared.
+         * However, it can be explicitly declared when a shader is also used by other applications such
+         * as a third-party authoring tool.
+         *
+         * @alias czm_morphTime
+         * @glslUniform
+         *
+         * @example
+         * // GLSL declaration
+         * uniform float czm_morphTime;
+         *
+         * // Example
+         * vec4 p = czm_columbusViewMorph(position2D, position3D, czm_morphTime);
+         */
+        czm_morphTime : {
+            getSize : function() {
+                return 1;
+            },
+
+            getDatatype : function() {
+                return UniformDatatype.FLOAT;
+            },
+
+            getValue : function(uniformState) {
+                return uniformState.getFrameState().morphTime;
             }
         },
 
@@ -1562,9 +1663,14 @@ define([
         }
     }
 
-    var scratchUniformMatrix2 = (typeof Float32Array !== 'undefined') ? new Float32Array(4) : undefined;
-    var scratchUniformMatrix3 = (typeof Float32Array !== 'undefined') ? new Float32Array(9) : undefined;
-    var scratchUniformMatrix4 = (typeof Float32Array !== 'undefined') ? new Float32Array(16) : undefined;
+    var scratchUniformMatrix2;
+    var scratchUniformMatrix3;
+    var scratchUniformMatrix4;
+    if (typeof Float32Array !== 'undefined') {
+        scratchUniformMatrix2 = new Float32Array(4);
+        scratchUniformMatrix3 = new Float32Array(9);
+        scratchUniformMatrix4 = new Float32Array(16);
+    }
 
     /**
      * A shader program's uniform, including the uniform's value.  This is most commonly used to change
@@ -2450,7 +2556,7 @@ define([
         return attributes;
     }
 
-    function findUniforms(gl ,program) {
+    function findUniforms(gl, program) {
         var allUniforms = {};
         var uniforms = [];
         var samplerUniforms = [];

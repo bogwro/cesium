@@ -5,8 +5,6 @@ define(function() {
 return "attribute vec4 position3DAndHeight;\n\
 attribute vec2 textureCoordinates;\n\
 \n\
-uniform float u_morphTime;\n\
-\n\
 uniform vec3 u_center3D;\n\
 uniform mat4 u_modifiedModelView;\n\
 uniform vec4 u_tileExtent;\n\
@@ -81,7 +79,7 @@ vec4 getPositionMorphingMode(vec3 position3DWC)\n\
     // This is unlikely to be noticable, though.\n\
     float yPositionFraction = get2DYPositionFraction();\n\
     vec3 position2DWC = vec3(0.0, mix(u_tileExtent.st, u_tileExtent.pq, vec2(textureCoordinates.x, yPositionFraction)));\n\
-    vec4 morphPosition = czm_columbusViewMorph(position2DWC, position3DWC, u_morphTime);\n\
+    vec4 morphPosition = czm_columbusViewMorph(position2DWC, position3DWC, czm_morphTime);\n\
     return czm_modelViewProjection * morphPosition;\n\
 }\n\
 \n\

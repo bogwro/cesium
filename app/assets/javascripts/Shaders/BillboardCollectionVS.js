@@ -18,8 +18,6 @@ attribute vec4 color;\n\
 \n\
 uniform vec2 u_atlasSize;\n\
 \n\
-uniform float u_morphTime;\n\
-\n\
 const vec2 czm_highResolutionSnapScale = vec2(1.0, 1.0);    // TODO\n\
 \n\
 varying vec2 v_textureCoordinates;\n\

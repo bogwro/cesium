@@ -7,6 +7,9 @@ define(['../Core/DeveloperError'], function(DeveloperError) {
      *
      * @alias DrawCommand
      * @constructor
+     *
+     * @see ClearCommand
+     * @see PassState
      */
     var DrawCommand = function() {
         /**
@@ -14,6 +17,15 @@ define(['../Core/DeveloperError'], function(DeveloperError) {
          * @type DOC_TBA
          */
         this.boundingVolume = undefined;
+
+        /**
+         * When <code>true</code>, the renderer frustum and horizon culls the command based on its {@link DrawCommand#boundingVolume}.
+         * If the command was already culled, set this to <code>false</code> for a performance improvement.
+         *
+         * @type Boolean
+         * @default true
+         */
+        this.cull = true;
 
         /**
          * The transformation from the geometry in model space to world space.
@@ -86,10 +98,10 @@ define(['../Core/DeveloperError'], function(DeveloperError) {
      * @memberof DrawCommand
      *
      * @param {Context} context The renderer context in which to draw.
-     * @param {Framebuffer} [framebuffer] The framebuffer to which to draw if one is not specified by the command.
+     * @param {PassState} [passState] TBA.
      */
-    DrawCommand.prototype.execute = function(context, framebuffer) {
-        context.draw(this, framebuffer);
+    DrawCommand.prototype.execute = function(context, passState) {
+        context.draw(this, passState);
     };
 
     return DrawCommand;
