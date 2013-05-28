@@ -19,3 +19,6 @@ test/dummy/.sass-cache
 **.swp
 
 .idea/
+
+package.json
+*.profile.js
