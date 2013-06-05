@@ -1,0 +1,2 @@
+*.js
+!/Shaders.profile.js
