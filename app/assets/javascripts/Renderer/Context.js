@@ -13,7 +13,6 @@ define([
         './BufferUsage',
         './CubeMap',
         './Framebuffer',
-        './MipmapHint',
         './PixelDatatype',
         './PixelFormat',
         './PickFramebuffer',
@@ -46,7 +45,6 @@ define([
         BufferUsage,
         CubeMap,
         Framebuffer,
-        MipmapHint,
         PixelDatatype,
         PixelFormat,
         PickFramebuffer,
@@ -223,9 +221,11 @@ define([
         // Query and initialize extensions
         this._standardDerivatives = gl.getExtension('OES_standard_derivatives');
         this._depthTexture = gl.getExtension('WEBKIT_WEBGL_depth_texture') || gl.getExtension('MOZ_WEBGL_depth_texture');
+        this._textureFloat = gl.getExtension('OES_texture_float');
         var textureFilterAnisotropic = gl.getExtension('EXT_texture_filter_anisotropic') || gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic') || gl.getExtension('MOZ_EXT_texture_filter_anisotropic');
         this._textureFilterAnisotropic = textureFilterAnisotropic;
         this._maximumTextureFilterAnisotropy = textureFilterAnisotropic ? gl.getParameter(textureFilterAnisotropic.MAX_TEXTURE_MAX_ANISOTROPY_EXT) : 1.0;
+        this._vertexArrayObject = gl.getExtension('OES_vertex_array_object');
 
         var cc = gl.getParameter(gl.COLOR_CLEAR_VALUE);
         this._clearColor = new Color(cc[0], cc[1], cc[2], cc[3]);
@@ -701,6 +701,20 @@ define([
     };
 
     /**
+     * Returns <code>true</code> if OES_texture_float is supported.  This extension provides
+     * access to floating point textures that, for example, can be attached to framebuffers for high dynamic range.
+     *
+     * @memberof Context
+     *
+     * @returns {Boolean} <code>true</code> if OES_texture_float is supported; otherwise, <code>false</code>.
+     *
+     * @see <a href='http://www.khronos.org/registry/gles/extensions/OES/OES_texture_float.txt'>OES_texture_float</a>
+     */
+    Context.prototype.getFloatingPointTexture = function() {
+        return !!this._textureFloat;
+    };
+
+    /**
      * DOC_TBA
      *
      * @memberof Context
@@ -722,6 +736,21 @@ define([
      */
     Context.prototype.getMaximumTextureFilterAnisotropy = function() {
         return this._maximumTextureFilterAnisotropy;
+    };
+
+    /**
+     * Returns <code>true</code> if the OES_vertex_array_object extension is supported.  This
+     * extension can improve performance by reducing the overhead of switching vertex arrays.
+     * When enabled, this extension is automatically used by {@link VertexArray}.
+     *
+     * @memberof Context
+     *
+     * @returns {Boolean} <code>true</code> if OES_vertex_array_object is supported; otherwise, <code>false</code>.
+     *
+     * @see <a href='http://www.khronos.org/registry/webgl/extensions/OES_vertex_array_object/'>OES_vertex_array_object</a>
+     */
+    Context.prototype.getVertexArrayObject = function() {
+        return !!this._vertexArrayObject;
     };
 
     /**
@@ -1163,7 +1192,7 @@ define([
      * var va = context.createVertexArray(attributes);
      */
     Context.prototype.createVertexArray = function(attributes, indexBuffer) {
-        return new VertexArray(this._gl, attributes, indexBuffer);
+        return new VertexArray(this._gl, this._vertexArrayObject, attributes, indexBuffer);
     };
 
     /**
@@ -1176,6 +1205,7 @@ define([
      * @return {Texture} DOC_TBA.
      *
      * @exception {RuntimeError} When description.pixelFormat is DEPTH_COMPONENT or DEPTH_STENCIL, this WebGL implementation must support WEBGL_depth_texture.
+     * @exception {RuntimeError} When description.pixelDatatype is FLOAT, this WebGL implementation must support the OES_texture_float extension.
      * @exception {DeveloperError} description is required.
      * @exception {DeveloperError} description requires a source field to create an initialized texture or width and height fields to create a blank texture.
      * @exception {DeveloperError} Width must be greater than zero.
@@ -1229,6 +1259,10 @@ define([
         var pixelDatatype = defaultValue(description.pixelDatatype, PixelDatatype.UNSIGNED_BYTE);
         if (!PixelDatatype.validate(pixelDatatype)) {
             throw new DeveloperError('Invalid description.pixelDatatype.');
+        }
+
+        if ((pixelDatatype === PixelDatatype.FLOAT) && !this.getFloatingPointTexture()) {
+            throw new RuntimeError('When description.pixelDatatype is FLOAT, this WebGL implementation must support the OES_texture_float extension.');
         }
 
         if ((pixelFormat === PixelFormat.DEPTH_COMPONENT) &&
@@ -1384,6 +1418,7 @@ define([
      *
      * @return {CubeMap} DOC_TBA.
      *
+     * @exception {RuntimeError} When description.pixelDatatype is FLOAT, this WebGL implementation must support the OES_texture_float extension.
      * @exception {DeveloperError} description is required.
      * @exception {DeveloperError} description.source requires positiveX, negativeX, positiveY, negativeY, positiveZ, and negativeZ faces.
      * @exception {DeveloperError} Each face in description.sources must have the same width and height.
@@ -1458,6 +1493,10 @@ define([
         var pixelDatatype = defaultValue(description.pixelDatatype, PixelDatatype.UNSIGNED_BYTE);
         if (!PixelDatatype.validate(pixelDatatype)) {
             throw new DeveloperError('Invalid description.pixelDatatype.');
+        }
+
+        if ((pixelDatatype === PixelDatatype.FLOAT) && !this.getFloatingPointTexture()) {
+            throw new RuntimeError('When description.pixelDatatype is FLOAT, this WebGL implementation must support the OES_texture_float extension.');
         }
 
         // Use premultiplied alpha for opaque textures should perform better on Chrome:
@@ -2026,8 +2065,9 @@ define([
 
         var offset = command.offset;
         var count = command.count;
+        var hasIndexBuffer = (typeof indexBuffer !== 'undefined');
 
-        if (indexBuffer) {
+        if (hasIndexBuffer) {
             offset = (offset || 0) * indexBuffer.getBytesPerIndex(); // in bytes
             count = count || indexBuffer.getNumberOfIndices();
         } else {
@@ -2045,7 +2085,7 @@ define([
 
             va._bind();
 
-            if (indexBuffer) {
+            if (hasIndexBuffer) {
                 this._gl.drawElements(primitiveType, count, indexBuffer.getIndexDatatype().value, offset);
             } else {
                 this._gl.drawArrays(primitiveType, offset, count);
@@ -2112,15 +2152,15 @@ define([
 
     //////////////////////////////////////////////////////////////////////////////////////////
 
-    Context.prototype._interleaveAttributes = function(attributes) {
-        function computeNumberOfVertices(attribute) {
-            return attribute.values.length / attribute.componentsPerAttribute;
-        }
+    function computeNumberOfVertices(attribute) {
+        return attribute.values.length / attribute.componentsPerAttribute;
+    }
 
-        function computeAttributeSizeInBytes(attribute) {
-            return attribute.componentDatatype.sizeInBytes * attribute.componentsPerAttribute;
-        }
+    function computeAttributeSizeInBytes(attribute) {
+        return attribute.componentDatatype.sizeInBytes * attribute.componentsPerAttribute;
+    }
 
+    function interleaveAttributes(attributes) {
         var j;
         var name;
         var attribute;
@@ -2227,73 +2267,6 @@ define([
 
         // No attributes to interleave.
         return undefined;
-    };
-
-    function createVertexArrayAttributes(context, creationArguments) {
-        var ca = creationArguments || {};
-        var mesh = ca.mesh || {};
-        var attributeIndices = ca.attributeIndices || {};
-        var bufferUsage = ca.bufferUsage || BufferUsage.DYNAMIC_DRAW;
-        var interleave = ca.vertexLayout && (ca.vertexLayout === VertexLayout.INTERLEAVED);
-
-        var name;
-        var attribute;
-        var vaAttributes = [];
-        var attributes = mesh.attributes;
-
-        if (interleave) {
-            // Use a single vertex buffer with interleaved vertices.
-            var interleavedAttributes = context._interleaveAttributes(attributes);
-            if (interleavedAttributes) {
-                var vertexBuffer = context.createVertexBuffer(interleavedAttributes.buffer, bufferUsage);
-                var offsetsInBytes = interleavedAttributes.offsetsInBytes;
-                var strideInBytes = interleavedAttributes.vertexSizeInBytes;
-
-                for (name in attributes) {
-                    if (attributes.hasOwnProperty(name)) {
-                        attribute = attributes[name];
-
-                        if (attribute.values) {
-                            // Common case: per-vertex attributes
-                            vaAttributes.push({
-                                index : attributeIndices[name],
-                                vertexBuffer : vertexBuffer,
-                                componentDatatype : attribute.componentDatatype,
-                                componentsPerAttribute : attribute.componentsPerAttribute,
-                                normalize : attribute.normalize,
-                                offsetInBytes : offsetsInBytes[name],
-                                strideInBytes : strideInBytes
-                            });
-                        } else {
-                            // Constant attribute for all vertices
-                            vaAttributes.push({
-                                index : attributeIndices[name],
-                                value : attribute.value,
-                                componentDatatype : attribute.componentDatatype,
-                                normalize : attribute.normalize
-                            });
-                        }
-                    }
-                }
-            }
-        } else {
-            // One vertex buffer per attribute.
-            for (name in attributes) {
-                if (attributes.hasOwnProperty(name)) {
-                    attribute = attributes[name];
-                    vaAttributes.push({
-                        index : attributeIndices[name],
-                        vertexBuffer : attribute.values ? context.createVertexBuffer(attribute.componentDatatype.toTypedArray(attribute.values), bufferUsage) : undefined,
-                        value : attribute.value ? attribute.value : undefined,
-                        componentDatatype : attribute.componentDatatype,
-                        componentsPerAttribute : attribute.componentsPerAttribute,
-                        normalize : attribute.normalize
-                    });
-                }
-            }
-        }
-
-        return context.createVertexArray(vaAttributes);
     }
 
     /**
@@ -2356,9 +2329,10 @@ define([
      * va = va.destroy();
      */
     Context.prototype.createVertexArrayFromMesh = function(creationArguments) {
-        var ca = creationArguments || {};
-        var mesh = ca.mesh || {};
-        var bufferUsage = ca.bufferUsage || BufferUsage.DYNAMIC_DRAW;
+        var ca = defaultValue(creationArguments, defaultValue.EMPTY_OBJECT);
+        var mesh = defaultValue(ca.mesh, defaultValue.EMPTY_OBJECT);
+
+        var bufferUsage = defaultValue(ca.bufferUsage, BufferUsage.DYNAMIC_DRAW);
         var indexLists;
 
         if (mesh.indexLists) {
@@ -2368,13 +2342,72 @@ define([
             }
         }
 
-        var va = createVertexArrayAttributes(this, creationArguments);
+        var attributeIndices = defaultValue(ca.attributeIndices, defaultValue.EMPTY_OBJECT);
+        var interleave = ca.vertexLayout && (ca.vertexLayout === VertexLayout.INTERLEAVED);
 
-        if (indexLists) {
-            va.setIndexBuffer(this.createIndexBuffer(new Uint16Array(indexLists[0].values), bufferUsage, IndexDatatype.UNSIGNED_SHORT));
+        var name;
+        var attribute;
+        var vaAttributes = [];
+        var attributes = mesh.attributes;
+
+        if (interleave) {
+            // Use a single vertex buffer with interleaved vertices.
+            var interleavedAttributes = interleaveAttributes(attributes);
+            if (interleavedAttributes) {
+                var vertexBuffer = this.createVertexBuffer(interleavedAttributes.buffer, bufferUsage);
+                var offsetsInBytes = interleavedAttributes.offsetsInBytes;
+                var strideInBytes = interleavedAttributes.vertexSizeInBytes;
+
+                for (name in attributes) {
+                    if (attributes.hasOwnProperty(name)) {
+                        attribute = attributes[name];
+
+                        if (attribute.values) {
+                            // Common case: per-vertex attributes
+                            vaAttributes.push({
+                                index : attributeIndices[name],
+                                vertexBuffer : vertexBuffer,
+                                componentDatatype : attribute.componentDatatype,
+                                componentsPerAttribute : attribute.componentsPerAttribute,
+                                normalize : attribute.normalize,
+                                offsetInBytes : offsetsInBytes[name],
+                                strideInBytes : strideInBytes
+                            });
+                        } else {
+                            // Constant attribute for all vertices
+                            vaAttributes.push({
+                                index : attributeIndices[name],
+                                value : attribute.value,
+                                componentDatatype : attribute.componentDatatype,
+                                normalize : attribute.normalize
+                            });
+                        }
+                    }
+                }
+            }
+        } else {
+            // One vertex buffer per attribute.
+            for (name in attributes) {
+                if (attributes.hasOwnProperty(name)) {
+                    attribute = attributes[name];
+                    vaAttributes.push({
+                        index : attributeIndices[name],
+                        vertexBuffer : attribute.values ? this.createVertexBuffer(attribute.componentDatatype.toTypedArray(attribute.values), bufferUsage) : undefined,
+                        value : attribute.value ? attribute.value : undefined,
+                        componentDatatype : attribute.componentDatatype,
+                        componentsPerAttribute : attribute.componentsPerAttribute,
+                        normalize : attribute.normalize
+                    });
+                }
+            }
         }
 
-        return va;
+        var indexBuffer;
+        if (typeof indexLists !== 'undefined') {
+            indexBuffer = this.createIndexBuffer(new Uint16Array(indexLists[0].values), bufferUsage, IndexDatatype.UNSIGNED_SHORT);
+        }
+
+        return this.createVertexArray(vaAttributes, indexBuffer);
     };
 
     /**
