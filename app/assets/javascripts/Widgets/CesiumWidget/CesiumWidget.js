@@ -51,6 +51,28 @@ define([
         return buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_' + suffix + '.jpg');
     }
 
+    function startRenderLoop(widget) {
+        widget._renderLoopRunning = true;
+
+        function render() {
+            try {
+                if (widget._useDefaultRenderLoop) {
+                    widget.resize();
+                    widget.render();
+                    requestAnimationFrame(render);
+                } else {
+                    widget._renderLoopRunning = false;
+                }
+            } catch (e) {
+                widget._useDefaultRenderLoop = false;
+                widget._renderLoopRunning = false;
+                widget.onRenderLoopError.raiseEvent(widget, e);
+            }
+        }
+
+        requestAnimationFrame(render);
+    }
+
     /**
      * A widget containing a Cesium scene.
      *
@@ -63,6 +85,7 @@ define([
      * @param {ImageryProvider} [options.imageryProvider=new BingMapsImageryProvider()] The imagery provider to serve as the base layer. If set to false, no imagery provider will be added.
      * @param {TerrainProvider} [options.terrainProvider=new EllipsoidTerrainProvider] The terrain provider.
      * @param {SceneMode} [options.sceneMode=SceneMode.SCENE3D] The initial scene mode.
+     * @param {Object} [options.useDefaultRenderLoop=true] True if this widget should control the render loop, false otherwise.
      * @param {Object} [options.contextOptions=undefined] Properties corresponding to <a href='http://www.khronos.org/registry/webgl/specs/latest/#5.2'>WebGLContextAttributes</a> used to create the WebGL context.  This object will be passed to the {@link Scene} constructor.
      *
      * @exception {DeveloperError} container is required.
@@ -156,12 +179,17 @@ define([
         this._element = widgetNode;
         this._container = container;
         this._canvas = canvas;
+        this._canvasWidth = canvas.width;
+        this._canvasHeight = canvas.height;
         this._cesiumLogo = cesiumLogo;
         this._scene = scene;
         this._centralBody = centralBody;
         this._clock = defaultValue(options.clock, new Clock());
         this._transitioner = new SceneTransitioner(scene, ellipsoid);
         this._screenSpaceEventHandler = new ScreenSpaceEventHandler(canvas);
+        this._useDefaultRenderLoop = undefined;
+        this._renderLoopRunning = false;
+        this._canRender = false;
 
         if (options.sceneMode) {
             if (options.sceneMode === SceneMode.SCENE2D) {
@@ -172,23 +200,7 @@ define([
             }
         }
 
-        var that = this;
-        //Subscribe for resize events and set the initial size.
-        this._needResize = true;
-        this._resizeCallback = function() {
-            that._needResize = true;
-        };
-        window.addEventListener('resize', this._resizeCallback, false);
-
-        //Create and start the render loop
-        this._isDestroyed = false;
-        function render() {
-            if (!that._isDestroyed) {
-                that.render();
-                requestAnimationFrame(render);
-            }
-        }
-        requestAnimationFrame(render);
+        this.useDefaultRenderLoop = defaultValue(options.useDefaultRenderLoop, true);
     };
 
     defineProperties(CesiumWidget.prototype, {
@@ -280,11 +292,50 @@ define([
          * Gets the screen space event handler.
          * @memberof CesiumWidget.prototype
          *
-         * @returns {ScreenSpaceEventHandler}
+         * @type {ScreenSpaceEventHandler}
          */
         screenSpaceEventHandler : {
             get : function() {
                 return this._screenSpaceEventHandler;
+            }
+        },
+
+        /**
+         * Gets the event that will be raised when an error is encountered during the default render loop.
+         * The widget instance and the generated exception are the only two parameters passed to the event handler.
+         * <code>useDefaultRenderLoop</code> will be set to false whenever an exception is generated and must
+         * be set back to true to continue rendering after an exception.
+         * @memberof Viewer.prototype
+         * @type {Event}
+         */
+        onRenderLoopError : {
+            get : function() {
+                return this._onRenderLoopError;
+            }
+        },
+
+        /**
+         * Gets or sets whether or not this widget should control the render loop.
+         * If set to true the widget will use {@link requestAnimationFrame} to
+         * perform rendering and resizing of the widget, as well as drive the
+         * simulation clock. If set to false, you must manually call the
+         * <code>resize</code>, <code>render</code> methods as part of a custom
+         * render loop.
+         * @memberof CesiumWidget.prototype
+         *
+         * @type {Boolean}
+         */
+        useDefaultRenderLoop : {
+            get : function() {
+                return this._useDefaultRenderLoop;
+            },
+            set : function(value) {
+                if (this._useDefaultRenderLoop !== value) {
+                    this._useDefaultRenderLoop = value;
+                    if (value && !this._renderLoopRunning) {
+                        startRenderLoop(this);
+                    }
+                }
             }
         }
     });
@@ -303,52 +354,52 @@ define([
      * @memberof CesiumWidget
      */
     CesiumWidget.prototype.destroy = function() {
-        window.removeEventListener('resize', this._resizeCallback, false);
         this._container.removeChild(this._element);
-        this._isDestroyed = true;
         destroyObject(this);
     };
 
     /**
-     * Call this function when the widget changes size, to update the canvas
-     * size, camera aspect ratio, and viewport size. This function is called
-     * automatically on window resize.
+     * Updates the canvas size, camera aspect ratio, and viewport size.
+     * This function is called automatically as needed unless
+     * <code>useDefaultRenderLoop</code> is set to false.
      * @memberof CesiumWidget
      */
     CesiumWidget.prototype.resize = function() {
-        var width = this._canvas.clientWidth;
-        var height = this._canvas.clientHeight;
-
-        if (this._canvas.width === width && this._canvas.height === height) {
+        var canvas = this._canvas;
+        var width = canvas.clientWidth;
+        var height = canvas.clientHeight;
+        if (this._canvasWidth === width && this._canvasHeight === height) {
             return;
         }
 
-        this._canvas.width = width;
-        this._canvas.height = height;
+        canvas.width = this._canvasWidth = width;
+        canvas.height = this._canvasHeight = height;
 
-        var frustum = this._scene.getCamera().frustum;
-        if (typeof frustum.aspectRatio !== 'undefined') {
-            frustum.aspectRatio = width / height;
-        } else {
-            frustum.top = frustum.right * (height / width);
-            frustum.bottom = -frustum.top;
+        var canRender = width !== 0 && height !== 0;
+        this._canRender = canRender;
+
+        if (canRender) {
+            var frustum = this._scene.getCamera().frustum;
+            if (typeof frustum.aspectRatio !== 'undefined') {
+                frustum.aspectRatio = width / height;
+            } else {
+                frustum.top = frustum.right * (height / width);
+                frustum.bottom = -frustum.top;
+            }
         }
     };
 
     /**
-     * Forces an update and render of the scene. This function is called
-     * automatically.
+     * Renders the scene.  This function is called automatically
+     * unless <code>useDefaultRenderLoop</code> is set to false;
      * @memberof CesiumWidget
      */
     CesiumWidget.prototype.render = function() {
-        if (this._needResize) {
-            this.resize();
-            this._needResize = false;
-        }
-
         var currentTime = this._clock.tick();
         this._scene.initializeFrame();
-        this._scene.render(currentTime);
+        if (this._canRender) {
+            this._scene.render(currentTime);
+        }
     };
 
     return CesiumWidget;

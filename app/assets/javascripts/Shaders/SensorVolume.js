@@ -3,19 +3,18 @@
 define(function() {
 "use strict";
 return "uniform vec4 u_intersectionColor;\n\
-bool inSensorShadow(vec3 coneVertexWC, czm_ellipsoid ellipsoidEC, vec3 pointEC)\n\
+bool inSensorShadow(vec3 coneVertexWC, czm_ellipsoid ellipsoidEC, vec3 pointWC)\n\
 {\n\
 vec3 D = ellipsoidEC.inverseRadii;\n\
 vec3 q = D * coneVertexWC;\n\
 float qMagnitudeSquared = dot(q, q);\n\
 float test = qMagnitudeSquared - 1.0;\n\
-vec3 t = (czm_inverseView * vec4(pointEC, 1.0)).xyz;\n\
-vec3 temp = D * t - q;\n\
+vec3 temp = D * pointWC - q;\n\
 float d = dot(temp, q);\n\
 return (d < -test) && (d / length(temp) < -sqrt(test));\n\
 }\n\
 #ifndef RENDER_FOR_PICK\n\
-vec4 getIntersectionColor(float sensorRadius, vec3 pointEC)\n\
+vec4 getIntersectionColor()\n\
 {\n\
 return u_intersectionColor;\n\
 }\n\

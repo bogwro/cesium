@@ -9,12 +9,12 @@ attribute vec4 textureCoordinatesAndImageSize;\n\
 attribute vec3 originAndShow;\n\
 attribute vec2 pixelOffset;\n\
 attribute vec4 eyeOffsetAndScale;\n\
+attribute vec4 rotationAndAlignedAxis;\n\
 #ifdef RENDER_FOR_PICK\n\
 attribute vec4 pickColor;\n\
 #else\n\
 attribute vec4 color;\n\
 #endif\n\
-uniform vec2 u_atlasSize;\n\
 const vec2 czm_highResolutionSnapScale = vec2(1.0, 1.0);\n\
 varying vec2 v_textureCoordinates;\n\
 #ifdef RENDER_FOR_PICK\n\
@@ -35,9 +35,30 @@ vec4 positionEC = czm_modelViewRelativeToEye * p;\n\
 positionEC = czm_eyeOffset(positionEC, eyeOffset);\n\
 positionEC.xyz *= show;\n\
 vec4 positionWC = czm_eyeToWindowCoordinates(positionEC);\n\
-vec2 halfSize = u_atlasSize * imageSize * 0.5 * scale * czm_highResolutionSnapScale;\n\
+vec2 halfSize = imageSize * scale * czm_highResolutionSnapScale;\n\
 halfSize *= ((direction * 2.0) - 1.0);\n\
-positionWC.xy += (origin * abs(halfSize)) + halfSize;\n\
+positionWC.xy += (origin * abs(halfSize));\n\
+#ifdef ROTATION\n\
+float rotation = rotationAndAlignedAxis.x;\n\
+vec3 alignedAxis = rotationAndAlignedAxis.yzw;\n\
+if (!all(equal(rotationAndAlignedAxis, vec4(0.0))))\n\
+{\n\
+float angle = rotation;\n\
+if (!all(equal(alignedAxis, vec3(0.0))))\n\
+{\n\
+vec3 pos = positionEC.xyz + czm_encodedCameraPositionMCHigh + czm_encodedCameraPositionMCLow;\n\
+vec3 normal = normalize(cross(alignedAxis, pos));\n\
+vec4 tangent = vec4(normalize(cross(pos, normal)), 0.0);\n\
+tangent = czm_modelViewProjection * tangent;\n\
+angle += sign(-tangent.x) * acos(tangent.y / length(tangent.xy));\n\
+}\n\
+float cosTheta = cos(angle);\n\
+float sinTheta = sin(angle);\n\
+mat2 rotationMatrix = mat2(cosTheta, sinTheta, -sinTheta, cosTheta);\n\
+halfSize = rotationMatrix * halfSize;\n\
+}\n\
+#endif\n\
+positionWC.xy += halfSize;\n\
 positionWC.xy += (pixelOffset * czm_highResolutionSnapScale);\n\
 gl_Position = czm_viewportOrthographic * vec4(positionWC.xy, -positionWC.z, 1.0);\n\
 v_textureCoordinates = textureCoordinates;\n\

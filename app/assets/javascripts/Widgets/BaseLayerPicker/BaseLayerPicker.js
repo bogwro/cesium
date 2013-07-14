@@ -56,7 +56,7 @@ define([
      *map of the world.\nhttp://www.openstreetmap.org',
      *      creationFunction : function() {
      *          return new OpenStreetMapImageryProvider({
-     *              url : 'http://tile.openstreetmap.org/',
+     *              url : 'http://tile.openstreetmap.org/'
      *          });
      *      }
      *  }));
@@ -70,18 +70,18 @@ define([
      *          return new TileMapServiceImageryProvider({
      *              url : 'http://cesium.agi.com/blackmarble',
      *              maximumLevel : 8,
-     *              credit : 'Black Marble imagery courtesy NASA Earth Observatory',
+     *              credit : 'Black Marble imagery courtesy NASA Earth Observatory'
      *          });
      *      }
      *  }));
      *
      *  providerViewModels.push(new ImageryProviderViewModel({
-     *      name : 'Disable Streaming Imagery',
-     *      iconUrl : require.toUrl('../Images/ImageryProviders/singleTile.png'),
-     *      tooltip : 'Uses a single image for the entire world.',
+     *      name : 'Natural Earth\u00a0II',
+     *      iconUrl : buildModuleUrl('Widgets/Images/ImageryProviders/naturalEarthII.png'),
+     *      tooltip : 'Natural Earth II, darkened for contrast.\nhttp://www.naturalearthdata.com/',
      *      creationFunction : function() {
-     *          return new SingleTileImageryProvider({
-     *              url : 'NE2_LR_LC_SR_W_DR_2048.jpg',
+     *          return new TileMapServiceImageryProvider({
+     *              url : buildModuleUrl('Assets/Textures/NaturalEarthII')
      *          });
      *      }
      *  }));
@@ -154,8 +154,8 @@ define([
             }
         };
 
-        document.addEventListener('mousedown', this._closeDropDown);
-        document.addEventListener('touchstart', this._closeDropDown);
+        document.addEventListener('mousedown', this._closeDropDown, true);
+        document.addEventListener('touchstart', this._closeDropDown, true);
     };
 
     defineProperties(BaseLayerPicker.prototype, {
@@ -198,8 +198,8 @@ define([
      * @memberof BaseLayerPicker
      */
     BaseLayerPicker.prototype.destroy = function() {
-        document.removeEventListener('mousedown', this._closeDropDown);
-        document.removeEventListener('touchstart', this._closeDropDown);
+        document.removeEventListener('mousedown', this._closeDropDown, true);
+        document.removeEventListener('touchstart', this._closeDropDown, true);
         var container = this._container;
         knockout.cleanNode(container);
         container.removeChild(this._element);
