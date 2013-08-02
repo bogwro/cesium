@@ -3,6 +3,7 @@
 define(function() {
 "use strict";
 return "uniform vec4 u_intersectionColor;\n\
+uniform float u_intersectionWidth;\n\
 bool inSensorShadow(vec3 coneVertexWC, czm_ellipsoid ellipsoidEC, vec3 pointWC)\n\
 {\n\
 vec3 D = ellipsoidEC.inverseRadii;\n\
@@ -17,6 +18,10 @@ return (d < -test) && (d / length(temp) < -sqrt(test));\n\
 vec4 getIntersectionColor()\n\
 {\n\
 return u_intersectionColor;\n\
+}\n\
+float getIntersectionWidth()\n\
+{\n\
+return u_intersectionWidth;\n\
 }\n\
 vec2 sensor2dTextureCoordinates(float sensorRadius, vec3 pointMC)\n\
 {\n\

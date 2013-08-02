@@ -63,15 +63,15 @@ float show = texCoordExpandWidthAndShow.w;\n\
 vec4 p, prev, next;\n\
 if (czm_morphTime == 1.0)\n\
 {\n\
-p = vec4(czm_translateRelativeToEye(position3DHigh.xyz, position3DLow.xyz), 1.0);\n\
-prev = vec4(czm_translateRelativeToEye(prevPosition3DHigh.xyz, prevPosition3DLow.xyz), 1.0);\n\
-next = vec4(czm_translateRelativeToEye(nextPosition3DHigh.xyz, nextPosition3DLow.xyz), 1.0);\n\
+p = czm_translateRelativeToEye(position3DHigh.xyz, position3DLow.xyz);\n\
+prev = czm_translateRelativeToEye(prevPosition3DHigh.xyz, prevPosition3DLow.xyz);\n\
+next = czm_translateRelativeToEye(nextPosition3DHigh.xyz, nextPosition3DLow.xyz);\n\
 }\n\
 else if (czm_morphTime == 0.0)\n\
 {\n\
-p = vec4(czm_translateRelativeToEye(position2DHigh.zxy, position2DLow.zxy), 1.0);\n\
-prev = vec4(czm_translateRelativeToEye(prevPosition2DHigh.zxy, prevPosition2DLow.zxy), 1.0);\n\
-next = vec4(czm_translateRelativeToEye(nextPosition2DHigh.zxy, nextPosition2DLow.zxy), 1.0);\n\
+p = czm_translateRelativeToEye(position2DHigh.zxy, position2DLow.zxy);\n\
+prev = czm_translateRelativeToEye(prevPosition2DHigh.zxy, prevPosition2DLow.zxy);\n\
+next = czm_translateRelativeToEye(nextPosition2DHigh.zxy, nextPosition2DLow.zxy);\n\
 }\n\
 else\n\
 {\n\

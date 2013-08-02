@@ -56,8 +56,8 @@ return getPositionPlanarEarth(position3DWC, position3DAndHeight.w);\n\
 vec4 getPositionMorphingMode(vec3 position3DWC)\n\
 {\n\
 float yPositionFraction = get2DYPositionFraction();\n\
-vec3 position2DWC = vec3(0.0, mix(u_tileExtent.st, u_tileExtent.pq, vec2(textureCoordinates.x, yPositionFraction)));\n\
-vec4 morphPosition = czm_columbusViewMorph(position2DWC, position3DWC, czm_morphTime);\n\
+vec4 position2DWC = vec4(0.0, mix(u_tileExtent.st, u_tileExtent.pq, vec2(textureCoordinates.x, yPositionFraction)), 1.0);\n\
+vec4 morphPosition = czm_columbusViewMorph(position2DWC, vec4(position3DWC, 1.0), czm_morphTime);\n\
 return czm_modelViewProjection * morphPosition;\n\
 }\n\
 void main()\n\
