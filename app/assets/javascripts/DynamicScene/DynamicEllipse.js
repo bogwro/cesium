@@ -1,12 +1,5 @@
 /*global define*/
-define(['../Core/TimeInterval',
-        '../Core/defaultValue',
-        '../Core/Cartesian3',
-        '../Core/Ellipsoid',
-        '../Core/Shapes',
-        './CzmlNumber',
-        './DynamicProperty'
-        ], function (
+define(['Core/TimeInterval', 'Core/defaultValue', 'Core/Cartesian3', 'Core/Ellipsoid', 'Core/Shapes', 'DynamicScene/CzmlNumber', 'DynamicScene/DynamicProperty'], function (
             TimeInterval,
             defaultValue,
             Cartesian3,

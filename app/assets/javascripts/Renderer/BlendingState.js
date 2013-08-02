@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        './BlendEquation',
-        './BlendFunction'
-    ], function(
+define(['Renderer/BlendEquation', 'Renderer/BlendFunction'], function(
         BlendEquation,
         BlendFunction) {
     "use strict";

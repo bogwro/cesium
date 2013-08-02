@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        '../../Core/defineProperties',
-        '../../Core/destroyObject',
-        '../../Core/DeveloperError',
-        '../getElement',
-        './BaseLayerPickerViewModel',
-        '../../ThirdParty/knockout'
-    ], function(
+define(['Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Widgets/getElement', 'Widgets/BaseLayerPicker/BaseLayerPickerViewModel', 'ThirdParty/knockout'], function(
         defineProperties,
         destroyObject,
         DeveloperError,

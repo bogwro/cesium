@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        '../Core/TimeInterval',
-        '../Core/defaultValue',
-        './CzmlBoolean',
-        './CzmlDirection',
-        './CzmlNumber',
-        './CzmlColor',
-        './DynamicProperty'],
+define(['Core/TimeInterval', 'Core/defaultValue', 'DynamicScene/CzmlBoolean', 'DynamicScene/CzmlDirection', 'DynamicScene/CzmlNumber', 'DynamicScene/CzmlColor', 'DynamicScene/DynamicProperty'],
 function(
         TimeInterval,
         defaultValue,

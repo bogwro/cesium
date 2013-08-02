@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Scene/HorizontalOrigin'
-    ], function(
+define(['Core/defaultValue', 'Scene/HorizontalOrigin'], function(
         defaultValue,
         HorizontalOrigin) {
     "use strict";

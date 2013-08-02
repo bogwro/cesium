@@ -1,15 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/Color',
-        './Billboard',
-        './LabelStyle',
-        './HorizontalOrigin',
-        './VerticalOrigin'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Color', 'Scene/Billboard', 'Scene/LabelStyle', 'Scene/HorizontalOrigin', 'Scene/VerticalOrigin'], function(
         defaultValue,
         DeveloperError,
         Cartesian2,

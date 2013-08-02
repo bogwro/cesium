@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/Color',
-        '../Core/Event',
-        './GeographicTilingScheme'
-    ], function(
+define(['Core/defaultValue', 'Core/Color', 'Core/Event', 'Scene/GeographicTilingScheme'], function(
         defaultValue,
         Color,
         Event,
@@ -263,14 +258,14 @@ define([
     };
 
     /**
-     * Gets the logo to display when this imagery provider is active.  Typically this is used to credit
+     * Gets the credit to display when this imagery provider is active.  Typically this is used to credit
      * the source of the imagery.  This function should not be called before {@link BingMapsImageryProvider#isReady} returns true.
      *
      * @memberof GridImageryProvider
      *
-     * @returns {Image|Canvas} A canvas or image containing the log to display, or undefined if there is no logo.
+     * @returns {Credit} The credit, or undefined if no credit exists
      */
-    GridImageryProvider.prototype.getLogo = function() {
+    GridImageryProvider.prototype.getCredit = function() {
         return undefined;
     };
 

@@ -1,21 +1,5 @@
 /*global define*/
-define([
-        '../Core/Color',
-        '../Core/combine',
-        '../Core/destroyObject',
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/BoundingRectangle',
-        '../Core/ComponentDatatype',
-        '../Core/PrimitiveType',
-        './Material',
-        '../Renderer/BufferUsage',
-        '../Renderer/BlendingState',
-        '../Renderer/CommandLists',
-        '../Renderer/DrawCommand',
-        '../Shaders/ViewportQuadVS',
-        '../Shaders/ViewportQuadFS'
-    ], function(
+define(['Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingRectangle', 'Core/ComponentDatatype', 'Core/PrimitiveType', 'Core/Geometry', 'Core/GeometryAttribute', 'Scene/Material', 'Renderer/BufferUsage', 'Renderer/BlendingState', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Shaders/ViewportQuadVS', 'Shaders/ViewportQuadFS'], function(
         Color,
         combine,
         destroyObject,
@@ -24,6 +8,8 @@ define([
         BoundingRectangle,
         ComponentDatatype,
         PrimitiveType,
+        Geometry,
+        GeometryAttribute,
         Material,
         BufferUsage,
         BlendingState,
@@ -51,18 +37,16 @@ define([
         this._va = undefined;
         this._overlayCommand = new DrawCommand();
         this._overlayCommand.primitiveType = PrimitiveType.TRIANGLE_FAN;
+        this._overlayCommand.owner = this;
         this._commandLists = new CommandLists();
         this._commandLists.overlayList.push(this._overlayCommand);
 
         /**
          * Determines if the viewport quad primitive will be shown.
-         * <p>
-         * The default is <code>true</code>.
-         * </p>
          *
          * @type {Boolean}
          * @default true
-        */
+         */
         this.show = true;
 
         if (typeof rectangle === 'undefined') {
@@ -119,9 +103,9 @@ define([
             return vertexArray;
         }
 
-        var mesh = {
+        var geometry = new Geometry({
             attributes : {
-                position : {
+                position : new GeometryAttribute({
                     componentDatatype : ComponentDatatype.FLOAT,
                     componentsPerAttribute : 2,
                     values : [
@@ -130,9 +114,9 @@ define([
                         1.0,  1.0,
                        -1.0,  1.0
                     ]
-                },
+                }),
 
-                textureCoordinates : {
+                textureCoordinates : new GeometryAttribute({
                     componentDatatype : ComponentDatatype.FLOAT,
                     componentsPerAttribute : 2,
                     values : [
@@ -141,12 +125,13 @@ define([
                         1.0, 1.0,
                         0.0, 1.0
                     ]
-                }
-            }
-        };
+                })
+            },
+            primitiveType : PrimitiveType.TRIANGLES
+        });
 
-        vertexArray = context.createVertexArrayFromMesh({
-            mesh : mesh,
+        vertexArray = context.createVertexArrayFromGeometry({
+            geometry : geometry,
             attributeIndices : attributeIndices,
             bufferUsage : BufferUsage.STATIC_DRAW
         });

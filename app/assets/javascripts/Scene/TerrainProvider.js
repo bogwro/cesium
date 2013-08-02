@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/ComponentDatatype',
-        '../Renderer/BufferUsage',
-        '../Core/IndexDatatype'
-    ], function(
+define(['Core/DeveloperError', 'Core/ComponentDatatype', 'Renderer/BufferUsage', 'Core/IndexDatatype'], function(
         DeveloperError,
         ComponentDatatype,
         BufferUsage,
@@ -216,16 +211,14 @@ define([
     };
 
     /**
-     * Gets the logo to display when this terrain provider is active.  Typically this is used to credit
+     * Gets the credit to display when this terrain provider is active.  Typically this is used to credit
      * the source of the terrain.  This function should not be called before {@link TerrainProvider#isReady} returns true.
      *
      * @memberof TerrainProvider
      *
-     * @returns {Image|Canvas} A canvas or image containing the log to display, or undefined if there is no logo.
-     *
-     * @exception {DeveloperError} <code>getLogo</code> must not be called before the terrain provider is ready.
+     * @returns {Credit} The credit, or undefined if no credit exists
      */
-    TerrainProvider.prototype.getLogo = function() {
+    TerrainProvider.prototype.getCredit = function() {
         throw new DeveloperError('This type should not be instantiated directly.');
     };
 

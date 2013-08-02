@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/destroyObject',
-        '../Core/Event'
-    ], function(
+define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Event'], function(
         DeveloperError,
         destroyObject,
         Event) {

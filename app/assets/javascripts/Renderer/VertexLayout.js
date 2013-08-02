@@ -1,5 +1,5 @@
 /*global define*/
-define(['../Core/Enumeration'], function(Enumeration) {
+define(['Core/Enumeration'], function(Enumeration) {
     "use strict";
 
     /**
@@ -7,7 +7,7 @@ define(['../Core/Enumeration'], function(Enumeration) {
      *
      * @exports VertexLayout
      *
-     * @see Context#createVertexArrayFromMesh
+     * @see Context#createVertexArrayFromGeometry
      */
     var VertexLayout = {
         /**

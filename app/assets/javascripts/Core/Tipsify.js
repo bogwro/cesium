@@ -1,8 +1,5 @@
 /*global define*/
-define([
-    './DeveloperError',
-    './defaultValue'
-    ], function(
+define(['Core/DeveloperError', 'Core/defaultValue'], function(
         DeveloperError,
         defaultValue) {
     "use strict";
@@ -25,7 +22,7 @@ define([
      * Calculates the average cache miss ratio (ACMR) for a given set of indices.
      *
      * @param {Array} description.indices Lists triads of numbers corresponding to the indices of the vertices
-     *                        in the vertex buffer that define the mesh's triangles.
+     *                        in the vertex buffer that define the geometry's triangles.
      * @param {Number} [description.maximumIndex] The maximum value of the elements in <code>args.indices</code>.
      *                                     If not supplied, this value will be computed.
      * @param {Number} [description.cacheSize=24] The number of vertices that can be stored in the cache at any one time.
@@ -100,7 +97,7 @@ define([
      * Optimizes triangles for the post-vertex shader cache.
      *
      * @param {Array} description.indices Lists triads of numbers corresponding to the indices of the vertices
-     *                        in the vertex buffer that define the mesh's triangles.
+     *                        in the vertex buffer that define the geometry's triangles.
      * @param {Number} [description.maximumIndex] The maximum value of the elements in <code>args.indices</code>.
      *                                     If not supplied, this value will be computed.
      * @param {Number} [description.cacheSize=24] The number of vertices that can be stored in the cache at any one time.

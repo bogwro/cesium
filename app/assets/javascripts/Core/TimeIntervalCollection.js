@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        './DeveloperError',
-        './binarySearch',
-        './TimeInterval',
-        './JulianDate'
-       ], function(
+define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeInterval', 'Core/JulianDate'], function(
          DeveloperError,
          binarySearch,
          TimeInterval,

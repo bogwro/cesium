@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../Core/BoundingRectangle',
-        '../Core/Cartesian2',
-        '../Core/createGuid',
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        './PixelFormat'
-    ], function(
+define(['Core/BoundingRectangle', 'Core/Cartesian2', 'Core/createGuid', 'Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Renderer/PixelFormat'], function(
         BoundingRectangle,
         Cartesian2,
         createGuid,

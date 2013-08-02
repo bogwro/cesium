@@ -1,15 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/HeightmapTessellator',
-        '../Core/Math',
-        '../Core/TaskProcessor',
-        './GeographicTilingScheme',
-        './TerrainMesh',
-        './TerrainProvider',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/HeightmapTessellator', 'Core/Math', 'Core/TaskProcessor', 'Scene/GeographicTilingScheme', 'Scene/TerrainMesh', 'Scene/TerrainProvider', 'ThirdParty/when'], function(
         defaultValue,
         DeveloperError,
         HeightmapTessellator,

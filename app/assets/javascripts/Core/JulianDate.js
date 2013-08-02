@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        './DeveloperError',
-        './binarySearch',
-        './TimeConstants',
-        './LeapSecond',
-        './TimeStandard',
-        './isLeapYear',
-        '../ThirdParty/sprintf'
-    ], function(
+define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/LeapSecond', 'Core/TimeStandard', 'Core/isLeapYear', 'ThirdParty/sprintf'], function(
         DeveloperError,
         binarySearch,
         TimeConstants,

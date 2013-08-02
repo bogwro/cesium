@@ -1,7 +1,5 @@
 /*global define*/
-define([
-        './Fullscreen'
-    ], function(
+define(['Core/Fullscreen'], function(
         Fullscreen) {
     "use strict";
 

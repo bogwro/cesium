@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        './DynamicProperty',
-        './CzmlColor',
-        '../Scene/Material'
-    ], function(
+define(['DynamicScene/DynamicProperty', 'DynamicScene/CzmlColor', 'Scene/Material'], function(
          DynamicProperty,
          CzmlColor,
          Material) {

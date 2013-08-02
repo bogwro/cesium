@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        '../Core/createGuid',
-        '../Core/DeveloperError',
-        './CzmlDefaults'
-    ], function(
+define(['Core/createGuid', 'Core/DeveloperError', 'DynamicScene/CzmlDefaults'], function(
         createGuid,
         DeveloperError,
         CzmlDefaults) {

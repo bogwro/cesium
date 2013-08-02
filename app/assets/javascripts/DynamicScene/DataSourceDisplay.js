@@ -1,21 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        '../Core/EventHelper',
-        './DataSourceCollection',
-        './DynamicBillboardVisualizer',
-        './DynamicEllipsoidVisualizer',
-        './DynamicConeVisualizerUsingCustomSensor',
-        './DynamicLabelVisualizer',
-        './DynamicPathVisualizer',
-        './DynamicPointVisualizer',
-        './DynamicPolygonVisualizer',
-        './DynamicPolylineVisualizer',
-        './DynamicPyramidVisualizer',
-        './VisualizerCollection'
-    ], function(
+define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/EventHelper', 'DynamicScene/DataSourceCollection', 'DynamicScene/DynamicBillboardVisualizer', 'DynamicScene/DynamicEllipsoidVisualizer', 'DynamicScene/DynamicConeVisualizerUsingCustomSensor', 'DynamicScene/DynamicLabelVisualizer', 'DynamicScene/DynamicPathVisualizer', 'DynamicScene/DynamicPointVisualizer', 'DynamicScene/DynamicPolygonVisualizer', 'DynamicScene/DynamicPolylineVisualizer', 'DynamicScene/DynamicPyramidVisualizer', 'DynamicScene/VisualizerCollection'], function(
         defaultValue,
         destroyObject,
         DeveloperError,

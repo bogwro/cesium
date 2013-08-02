@@ -1,17 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/Ellipsoid',
-        '../Core/Iso8601',
-        '../Core/JulianDate',
-        '../Core/Matrix3',
-        '../Core/ReferenceFrame',
-        '../Core/TimeInterval',
-        '../Core/TimeIntervalCollection',
-        '../Core/Transforms',
-        './CzmlPosition',
-        './DynamicProperty'
-    ], function(
+define(['Core/DeveloperError', 'Core/Ellipsoid', 'Core/Iso8601', 'Core/JulianDate', 'Core/Matrix3', 'Core/ReferenceFrame', 'Core/TimeInterval', 'Core/TimeIntervalCollection', 'Core/Transforms', 'DynamicScene/CzmlPosition', 'DynamicScene/DynamicProperty'], function(
         DeveloperError,
         Ellipsoid,
         Iso8601,

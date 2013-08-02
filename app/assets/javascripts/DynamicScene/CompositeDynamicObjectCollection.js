@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/Event',
-        '../Core/Iso8601',
-        '../Core/TimeInterval',
-        '../Core/DeveloperError',
-        './DynamicObject',
-        './CzmlDefaults'
-    ], function(
+define(['Core/defaultValue', 'Core/Event', 'Core/Iso8601', 'Core/TimeInterval', 'Core/DeveloperError', 'DynamicScene/DynamicObject', 'DynamicScene/CzmlDefaults'], function(
         defaultValue,
         Event,
         Iso8601,

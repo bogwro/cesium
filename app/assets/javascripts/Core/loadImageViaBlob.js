@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        './loadBlob',
-        './loadImage'
-    ], function(
+define(['Core/loadBlob', 'Core/loadImage'], function(
         loadBlob,
         loadImage) {
     "use strict";

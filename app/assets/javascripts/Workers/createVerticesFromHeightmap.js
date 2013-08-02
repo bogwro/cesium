@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        '../Core/BoundingSphere',
-        '../Core/Ellipsoid',
-        '../Core/EllipsoidalOccluder',
-        '../Core/Extent',
-        '../Core/HeightmapTessellator',
-        './createTaskProcessorWorker'
-    ], function(
+define(['Core/BoundingSphere', 'Core/Ellipsoid', 'Core/EllipsoidalOccluder', 'Core/Extent', 'Core/HeightmapTessellator', 'Workers/createTaskProcessorWorker'], function(
         BoundingSphere,
         Ellipsoid,
         EllipsoidalOccluder,

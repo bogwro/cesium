@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        './buildModuleUrl',
-        './defaultValue',
-        './Iau2006XysSample',
-        './JulianDate',
-        './loadJson',
-        './TimeStandard',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/buildModuleUrl', 'Core/defaultValue', 'Core/Iau2006XysSample', 'Core/JulianDate', 'Core/loadJson', 'Core/TimeStandard', 'ThirdParty/when'], function(
         buildModuleUrl,
         defaultValue,
         Iau2006XysSample,

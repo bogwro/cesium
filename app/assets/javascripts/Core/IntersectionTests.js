@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        './DeveloperError',
-        './Math',
-        './Cartesian3',
-        './Cartographic',
-        './Matrix3',
-        './QuadraticRealPolynomial',
-        './QuarticRealPolynomial'
-    ],
+define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Cartographic', 'Core/Matrix3', 'Core/QuadraticRealPolynomial', 'Core/QuarticRealPolynomial'],
     function(
         DeveloperError,
         CesiumMath,

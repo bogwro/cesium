@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        './CzmlDefaults'
-    ], function(
+define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'DynamicScene/CzmlDefaults'], function(
         defaultValue,
         destroyObject,
         DeveloperError,

@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        '../../Core/defineProperties',
-        '../../Core/destroyObject',
-        '../../Core/DeveloperError',
-        '../getElement',
-        './HomeButtonViewModel',
-        '../../ThirdParty/knockout'
-    ], function(
+define(['Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Widgets/getElement', 'Widgets/HomeButton/HomeButtonViewModel', 'ThirdParty/knockout'], function(
         defineProperties,
         destroyObject,
         DeveloperError,

@@ -1,26 +1,12 @@
 /*global define*/
-define([
-        '../Core/BoxTessellator',
-        '../Core/Cartesian3',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        '../Core/Matrix4',
-        '../Core/MeshFilters',
-        '../Core/PrimitiveType',
-        '../Renderer/loadCubeMap',
-        '../Renderer/BufferUsage',
-        '../Renderer/DrawCommand',
-        '../Renderer/BlendingState',
-        '../Scene/SceneMode',
-        '../Shaders/SkyBoxVS',
-        '../Shaders/SkyBoxFS'
-    ], function(
-        BoxTessellator,
+define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Matrix4', 'Core/GeometryPipeline', 'Core/VertexFormat', 'Core/PrimitiveType', 'Renderer/loadCubeMap', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Renderer/BlendingState', 'Scene/SceneMode', 'Shaders/SkyBoxVS', 'Shaders/SkyBoxFS'], function(
+        BoxGeometry,
         Cartesian3,
         destroyObject,
         DeveloperError,
         Matrix4,
-        MeshFilters,
+        GeometryPipeline,
+        VertexFormat,
         PrimitiveType,
         loadCubeMap,
         BufferUsage,
@@ -78,14 +64,12 @@ define([
         }
 
         this._command = new DrawCommand();
+        this._command.owner = this;
         this._cubeMap = undefined;
         this._sources = sources;
 
         /**
          * Determines if the sky box will be shown.
-         * <p>
-         * The default is <code>true</code>.
-         * </p>
          *
          * @type {Boolean}
          * @default true
@@ -149,15 +133,16 @@ define([
                 }
             };
 
-            var mesh = BoxTessellator.compute({
-                dimensions : new Cartesian3(2.0, 2.0, 2.0)
+            var geometry = BoxGeometry.fromDimensions({
+                dimensions : new Cartesian3(2.0, 2.0, 2.0),
+                vertexFormat : VertexFormat.POSITION_ONLY
             });
-            var attributeIndices = MeshFilters.createAttributeIndices(mesh);
+            var attributeIndices = GeometryPipeline.createAttributeIndices(geometry);
 
             command.primitiveType = PrimitiveType.TRIANGLES;
             command.modelMatrix = Matrix4.IDENTITY.clone();
-            command.vertexArray = context.createVertexArrayFromMesh({
-                mesh: mesh,
+            command.vertexArray = context.createVertexArrayFromGeometry({
+                geometry: geometry,
                 attributeIndices: attributeIndices,
                 bufferUsage: BufferUsage.STATIC_DRAW
             });

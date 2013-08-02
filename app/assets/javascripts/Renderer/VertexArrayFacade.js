@@ -1,15 +1,10 @@
 /*global define*/
-define([
-        '../Core/ComponentDatatype',
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        './BufferUsage'
-    ], function(
+define(['Core/ComponentDatatype', 'Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Math', 'Renderer/BufferUsage'], function(
         ComponentDatatype,
         defaultValue,
         destroyObject,
         DeveloperError,
+        CesiumMath,
         BufferUsage) {
     "use strict";
 
@@ -371,9 +366,6 @@ define([
         }
     };
 
-    // Using unsigned short indices, 64K vertices can be indexed by one index buffer
-    var sixtyFourK = 64 * 1024;
-
     /**
      * DOC_TBA
      *
@@ -403,7 +395,7 @@ define([
                     var buffersByUsage = buffersByPurposeAndUsage[purpose];
 
                     var va = [];
-                    var numberOfVertexArrays = Math.ceil(this._size / sixtyFourK);
+                    var numberOfVertexArrays = Math.ceil(this._size / CesiumMath.SIXTY_FOUR_KILOBYTES);
                     for ( var k = 0; k < numberOfVertexArrays; ++k) {
                         var attributes = [];
 
@@ -413,7 +405,7 @@ define([
                             for (var allPurposeUsage in allPurposeBuffersByUsage) {
                                 if (allPurposeBuffersByUsage.hasOwnProperty(allPurposeUsage)) {
                                     var allPurposeBuffer = allPurposeBuffersByUsage[allPurposeUsage];
-                                    VertexArrayFacade._appendAttributes(attributes, allPurposeBuffer, k * (allPurposeBuffer.vertexSizeInBytes * sixtyFourK));
+                                    VertexArrayFacade._appendAttributes(attributes, allPurposeBuffer, k * (allPurposeBuffer.vertexSizeInBytes * CesiumMath.SIXTY_FOUR_KILOBYTES));
                                 }
                             }
                         }
@@ -422,7 +414,7 @@ define([
                         for (var usage in buffersByUsage) {
                             if (buffersByUsage.hasOwnProperty(usage)) {
                                 buffer = buffersByUsage[usage];
-                                VertexArrayFacade._appendAttributes(attributes, buffer, k * (buffer.vertexSizeInBytes * sixtyFourK));
+                                VertexArrayFacade._appendAttributes(attributes, buffer, k * (buffer.vertexSizeInBytes * CesiumMath.SIXTY_FOUR_KILOBYTES));
                             }
                         }
 
@@ -430,7 +422,7 @@ define([
 
                         va.push({
                             va : this._context.createVertexArray(attributes, indexBuffer),
-                            indicesCount : 1.5 * ((k !== (numberOfVertexArrays - 1)) ? sixtyFourK : (this._size % sixtyFourK))
+                            indicesCount : 1.5 * ((k !== (numberOfVertexArrays - 1)) ? CesiumMath.SIXTY_FOUR_KILOBYTES : (this._size % CesiumMath.SIXTY_FOUR_KILOBYTES))
                         // TODO: not hardcode 1.5
                         });
                     }

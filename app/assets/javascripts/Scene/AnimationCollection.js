@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/clone',
-        '../ThirdParty/Tween',
-        '../Core/defaultValue'
-    ], function(
+define(['Core/DeveloperError', 'Core/clone', 'ThirdParty/Tween', 'Core/defaultValue'], function(
         DeveloperError,
         clone,
         Tween,

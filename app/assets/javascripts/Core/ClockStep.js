@@ -1,7 +1,5 @@
 /*global define*/
-define([
-        './Enumeration'
-       ], function(
+define(['Core/Enumeration'], function(
          Enumeration) {
     "use strict";
 

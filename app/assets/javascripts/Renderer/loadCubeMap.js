@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/loadImage',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/DeveloperError', 'Core/loadImage', 'ThirdParty/when'], function(
         DeveloperError,
         loadImage,
         when) {

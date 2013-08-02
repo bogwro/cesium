@@ -1,16 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        './Transforms',
-        './AxisAlignedBoundingBox',
-        './IntersectionTests',
-        './Cartesian2',
-        './Cartesian3',
-        './Ellipsoid',
-        './Ray',
-        './Plane'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Transforms', 'Core/AxisAlignedBoundingBox', 'Core/IntersectionTests', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Ellipsoid', 'Core/Ray', 'Core/Plane'], function(
         defaultValue,
         DeveloperError,
         Transforms,

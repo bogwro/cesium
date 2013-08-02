@@ -1,20 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/Math',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/Cartographic',
-        '../Core/Quaternion',
-        '../Core/Matrix3',
-        '../Core/Matrix4',
-        '../Core/Ellipsoid',
-        '../Core/Transforms',
-        '../Scene/CameraColumbusViewMode',
-        '../Scene/SceneMode'
-       ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/Quaternion', 'Core/Matrix3', 'Core/Matrix4', 'Core/Ellipsoid', 'Core/Transforms', 'Scene/CameraColumbusViewMode', 'Scene/SceneMode'], function(
          defaultValue,
          DeveloperError,
          CesiumMath,
@@ -52,11 +37,6 @@ define([
             cartographic.height = viewDistance;
             if (objectChanged || modeChanged) {
                 camera.controller.setPositionCartographic(cartographic);
-
-                //Set rotation to match offset.
-                Cartesian3.normalize(offset, camera.up);
-                Cartesian3.negate(camera.up, camera.up);
-                Cartesian3.cross(camera.direction, camera.up, camera.right);
 
                 //z is always zero in 2D for up and right
                 camera.up.z = 0;

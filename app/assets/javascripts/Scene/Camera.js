@@ -1,14 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/Math',
-        '../Core/Ellipsoid',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/Matrix4',
-        './CameraController',
-        './PerspectiveFrustum'
-    ], function(
+define(['Core/DeveloperError', 'Core/Math', 'Core/Ellipsoid', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Matrix4', 'Scene/CameraController', 'Scene/PerspectiveFrustum'], function(
         DeveloperError,
         CesiumMath,
         Ellipsoid,

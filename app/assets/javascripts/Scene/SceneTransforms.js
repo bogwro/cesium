@@ -1,16 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/Cartographic',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/Matrix4',
-        '../Core/BoundingRectangle',
-        '../Core/Math',
-        './SceneMode'
-    ],
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Matrix4', 'Core/BoundingRectangle', 'Core/Math', 'Scene/SceneMode'],
     function(
         defaultValue,
         DeveloperError,

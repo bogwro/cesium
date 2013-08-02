@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'ThirdParty/when'], function(
         defaultValue,
         DeveloperError,
         when) {

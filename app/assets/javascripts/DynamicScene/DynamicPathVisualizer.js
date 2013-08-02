@@ -1,17 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/destroyObject',
-        '../Core/Cartesian3',
-        '../Core/Matrix3',
-        '../Core/Matrix4',
-        '../Core/Color',
-        '../Core/Transforms',
-        '../Core/ReferenceFrame',
-        '../Scene/Material',
-        '../Scene/SceneMode',
-        '../Scene/PolylineCollection'
-       ], function(
+define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Matrix3', 'Core/Matrix4', 'Core/Color', 'Core/Transforms', 'Core/ReferenceFrame', 'Scene/Material', 'Scene/SceneMode', 'Scene/PolylineCollection'], function(
          DeveloperError,
          destroyObject,
          Cartesian3,

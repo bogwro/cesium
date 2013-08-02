@@ -1,16 +1,5 @@
 /*global define*/
-define([
-        '../Core/createGuid',
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/JulianDate',
-        '../Core/TimeInterval',
-        './DynamicProperty',
-        './DynamicPositionProperty',
-        './DynamicVertexPositionsProperty',
-        './CzmlUnitQuaternion',
-        './CzmlCartesian3'
-    ], function(
+define(['Core/createGuid', 'Core/defaultValue', 'Core/DeveloperError', 'Core/JulianDate', 'Core/TimeInterval', 'DynamicScene/DynamicProperty', 'DynamicScene/DynamicPositionProperty', 'DynamicScene/DynamicVertexPositionsProperty', 'DynamicScene/CzmlUnitQuaternion', 'DynamicScene/CzmlCartesian3'], function(
         createGuid,
         defaultValue,
         DeveloperError,

@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        '../Core/createGuid',
-        '../Core/destroyObject',
-        '../Core/DeveloperError'
-    ], function(
+define(['Core/createGuid', 'Core/destroyObject', 'Core/DeveloperError'], function(
         createGuid,
         destroyObject,
         DeveloperError) {
@@ -400,8 +396,7 @@ define([
         var primitives = this._primitives;
         var length = primitives.length;
         for (var i = 0; i < length; ++i) {
-            var primitive = primitives[i];
-            primitive.update(context, frameState, commandList);
+            primitives[i].update(context, frameState, commandList);
         }
     };
 

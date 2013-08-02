@@ -1,11 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        './Matrix4',
-        './Cartesian3',
-        './HermiteSpline'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Cartesian3', 'Core/HermiteSpline'], function(
         defaultValue,
         DeveloperError,
         Matrix4,

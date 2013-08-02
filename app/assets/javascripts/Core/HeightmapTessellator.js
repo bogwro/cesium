@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './freezeObject',
-        './DeveloperError',
-        './Cartesian3',
-        './Ellipsoid',
-        './Math'
-    ], function(
+define(['Core/defaultValue', 'Core/freezeObject', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Ellipsoid', 'Core/Math'], function(
         defaultValue,
         freezeObject,
         DeveloperError,
@@ -19,11 +12,6 @@ define([
      * Contains functions to create a mesh from a heightmap image.
      *
      * @exports HeightmapTessellator
-     *
-     * @see ExtentTessellator
-     * @see CubeMapEllipsoidTessellator
-     * @see BoxTessellator
-     * @see PlaneTessellator
      */
     var HeightmapTessellator = {};
 

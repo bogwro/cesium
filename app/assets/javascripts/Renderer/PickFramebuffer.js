@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/Color',
-        '../Core/BoundingRectangle',
-        './ClearCommand',
-        './PassState',
-        './RenderbufferFormat'
-    ], function(
+define(['Core/defaultValue', 'Core/destroyObject', 'Core/Color', 'Core/BoundingRectangle', 'Renderer/ClearCommand', 'Renderer/PassState', 'Renderer/RenderbufferFormat'], function(
         defaultValue,
         destroyObject,
         Color,

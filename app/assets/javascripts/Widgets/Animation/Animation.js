@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../../Core/defaultValue',
-        '../../Core/defineProperties',
-        '../../Core/destroyObject',
-        '../../Core/DeveloperError',
-        '../../Core/Color',
-        '../getElement',
-        '../../ThirdParty/knockout'
-    ], function(
+define(['Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Color', 'Widgets/getElement', 'ThirdParty/knockout'], function(
         defaultValue,
         defineProperties,
         destroyObject,

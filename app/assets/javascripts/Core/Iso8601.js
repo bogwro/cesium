@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        './freezeObject',
-        './JulianDate',
-        './TimeInterval'
-    ], function(
+define(['Core/freezeObject', 'Core/JulianDate', 'Core/TimeInterval'], function(
         freezeObject,
         JulianDate,
         TimeInterval) {

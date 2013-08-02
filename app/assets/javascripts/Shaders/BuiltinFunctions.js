@@ -88,6 +88,15 @@ q /= fragmentCoordinate.w;\n\
 q = czm_inverseProjection * q;\n\
 return q;\n\
 }\n\
+mat3 czm_tangentToEyeSpaceMatrix(vec3 normalEC, vec3 tangentEC, vec3 binormalEC)\n\
+{\n\
+vec3 normal = normalize(normalEC);\n\
+vec3 tangent = normalize(tangentEC);\n\
+vec3 binormal = normalize(binormalEC);\n\
+return mat3(tangent.x,  tangent.y,  tangent.z,\n\
+binormal.x, binormal.y, binormal.z,\n\
+normal.x,   normal.y,   normal.z);\n\
+}\n\
 vec4 czm_eyeOffset(vec4 positionEC, vec3 eyeOffset)\n\
 {\n\
 vec4 p = positionEC;\n\
@@ -246,11 +255,12 @@ const int czm_scene2D = 0;\n\
 const int czm_columbusView = 1;\n\
 const int czm_scene3D = 2;\n\
 const int czm_morphing = 3;\n\
-vec4 czm_columbusViewMorph(vec3 position2D, vec3 position3D, float time)\n\
+vec4 czm_columbusViewMorph(vec4 position2D, vec4 position3D, float time)\n\
 {\n\
-vec3 p = mix(position2D, position3D, time);\n\
+vec3 p = mix(position2D.xyz, position3D.xyz, time);\n\
 return vec4(p, 1.0);\n\
 }\n\
+vec4 czm_computePosition();\n\
 struct czm_ray\n\
 {\n\
 vec3 origin;\n\
@@ -383,11 +393,11 @@ float highDifference = t1 + t2;\n\
 float lowDifference = t2 - (highDifference - t1);\n\
 return highDifference * oneOverMercatorHeight + lowDifference * oneOverMercatorHeight;\n\
 }\n\
-vec3 czm_translateRelativeToEye(vec3 high, vec3 low)\n\
+vec4 czm_translateRelativeToEye(vec3 high, vec3 low)\n\
 {\n\
 vec3 highDifference = high - czm_encodedCameraPositionMCHigh;\n\
 vec3 lowDifference = low - czm_encodedCameraPositionMCLow;\n\
-return highDifference + lowDifference;\n\
+return vec4(highDifference + lowDifference, 1.0);\n\
 }\n\
 vec4 czm_getWaterNoise(sampler2D normalMap, vec2 uv, float time, float angleInRadians)\n\
 {\n\

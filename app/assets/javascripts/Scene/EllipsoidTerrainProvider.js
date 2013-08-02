@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/Ellipsoid',
-        '../Core/Event',
-        './HeightmapTerrainData',
-        './TerrainProvider',
-        './GeographicTilingScheme'
-    ], function(
+define(['Core/defaultValue', 'Core/Ellipsoid', 'Core/Event', 'Scene/HeightmapTerrainData', 'Scene/TerrainProvider', 'Scene/GeographicTilingScheme'], function(
         defaultValue,
         Ellipsoid,
         Event,
@@ -103,16 +96,14 @@ define([
     };
 
     /**
-     * Gets the logo to display when this terrain provider is active.  Typically this is used to credit
+     * Gets the credit to display when this terrain provider is active.  Typically this is used to credit
      * the source of the terrain.  This function should not be called before {@link EllipsoidTerrainProvider#isReady} returns true.
      *
      * @memberof EllipsoidTerrainProvider
      *
-     * @returns {Image|Canvas} A canvas or image containing the log to display, or undefined if there is no logo.
-     *
-     * @exception {DeveloperError} <code>getLogo</code> must not be called before the terrain provider is ready.
+     * @returns {Credit} The credit, or undefined if no credit exists
      */
-    EllipsoidTerrainProvider.prototype.getLogo = function() {
+    EllipsoidTerrainProvider.prototype.getCredit = function() {
         return undefined;
     };
 

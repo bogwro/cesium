@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/DeveloperError', 'ThirdParty/when'], function(
         DeveloperError,
         when) {
     "use strict";

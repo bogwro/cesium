@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        './ImageryState',
-        './TerrainState'
-    ], function(
+define(['Scene/ImageryState', 'Scene/TerrainState'], function(
         ImageryState,
         TerrainState) {
     "use strict";

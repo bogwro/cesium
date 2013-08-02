@@ -1,15 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/Iso8601',
-        '../Core/JulianDate',
-        '../Core/TimeInterval',
-        '../Core/TimeIntervalCollection',
-        '../Core/binarySearch',
-        '../Core/HermitePolynomialApproximation',
-        '../Core/LinearApproximation',
-        '../Core/LagrangePolynomialApproximation'
-    ], function(
+define(['Core/DeveloperError', 'Core/Iso8601', 'Core/JulianDate', 'Core/TimeInterval', 'Core/TimeIntervalCollection', 'Core/binarySearch', 'Core/HermitePolynomialApproximation', 'Core/LinearApproximation', 'Core/LagrangePolynomialApproximation'], function(
         DeveloperError,
         Iso8601,
         JulianDate,
@@ -58,6 +48,27 @@ define([
             return JulianDate.fromIso8601(date);
         }
         return epoch.addSeconds(date);
+    }
+
+    //We can't use splice for inserting new elements because function apply can't handle
+    //a huge number of arguments.  See https://code.google.com/p/chromium/issues/detail?id=56588
+    function arrayInsert(array, startIndex, items) {
+        var i;
+        var arrayLength = array.length;
+        var itemsLength = items.length;
+        var newLength = arrayLength + itemsLength;
+
+        array.length = newLength;
+        if (arrayLength !== startIndex) {
+            var q = arrayLength - 1;
+            for (i = newLength - 1; i >= startIndex; i--) {
+                array[i] = array[q--];
+            }
+        }
+
+        for (i = 0; i < itemsLength; i++) {
+            array[startIndex++] = items[i];
+        }
     }
 
     /**
@@ -248,7 +259,16 @@ define([
     };
 
     DynamicProperty._mergeNewSamples = function(epoch, times, values, newData, doublesPerValue) {
-        var newDataIndex = 0, i, prevItem, timesInsertionPoint, valuesInsertionPoint, timesSpliceArgs, valuesSpliceArgs, currentTime, nextTime;
+        var newDataIndex = 0;
+        var i;
+        var prevItem;
+        var timesInsertionPoint;
+        var valuesInsertionPoint;
+        var timesSpliceArgs;
+        var valuesSpliceArgs;
+        var currentTime;
+        var nextTime;
+
         while (newDataIndex < newData.length) {
             currentTime = czmlDateToJulianDate(newData[newDataIndex], epoch);
             timesInsertionPoint = binarySearch(times, currentTime, JulianDate.compare);
@@ -256,10 +276,10 @@ define([
             if (timesInsertionPoint < 0) {
                 //Doesn't exist, insert as many additional values as we can.
                 timesInsertionPoint = ~timesInsertionPoint;
-                timesSpliceArgs = [timesInsertionPoint, 0];
+                timesSpliceArgs = [];
 
                 valuesInsertionPoint = timesInsertionPoint * doublesPerValue;
-                valuesSpliceArgs = [valuesInsertionPoint, 0];
+                valuesSpliceArgs = [];
                 prevItem = undefined;
                 nextTime = times[timesInsertionPoint];
                 while (newDataIndex < newData.length) {
@@ -277,8 +297,8 @@ define([
                     prevItem = currentTime;
                 }
 
-                Array.prototype.splice.apply(values, valuesSpliceArgs);
-                Array.prototype.splice.apply(times, timesSpliceArgs);
+                arrayInsert(values, valuesInsertionPoint, valuesSpliceArgs);
+                arrayInsert(times, timesInsertionPoint, timesSpliceArgs);
             } else {
                 //Found an exact match
                 for (i = 0; i < doublesPerValue; i++) {

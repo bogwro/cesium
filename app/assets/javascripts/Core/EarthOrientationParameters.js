@@ -1,17 +1,5 @@
 /*global define*/
-define([
-        './binarySearch',
-        './defaultValue',
-        './freezeObject',
-        './loadJson',
-        './EarthOrientationParametersSample',
-        './JulianDate',
-        './LeapSecond',
-        './RuntimeError',
-        './TimeConstants',
-        './TimeStandard',
-        '../ThirdParty/when'
-    ],
+define(['Core/binarySearch', 'Core/defaultValue', 'Core/freezeObject', 'Core/loadJson', 'Core/EarthOrientationParametersSample', 'Core/JulianDate', 'Core/LeapSecond', 'Core/RuntimeError', 'Core/TimeConstants', 'Core/TimeStandard', 'ThirdParty/when'],
     function(
         binarySearch,
         defaultValue,

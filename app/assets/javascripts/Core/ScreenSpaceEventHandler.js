@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        './DeveloperError',
-        './destroyObject',
-        './Cartesian2',
-        './ScreenSpaceEventType',
-        './KeyboardEventModifier',
-        './defaultValue'
-    ], function(
+define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/ScreenSpaceEventType', 'Core/KeyboardEventModifier', 'Core/defaultValue'], function(
         DeveloperError,
         destroyObject,
         Cartesian2,

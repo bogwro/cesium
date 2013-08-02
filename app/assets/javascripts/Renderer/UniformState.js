@@ -1,18 +1,5 @@
 /*global define*/
-define([
-        '../Core/Matrix3',
-        '../Core/Matrix4',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/Cartographic',
-        '../Core/Math',
-        '../Core/EncodedCartesian3',
-        '../Core/BoundingRectangle',
-        '../Core/Transforms',
-        '../Core/Simon1994PlanetaryPositions',
-        '../Scene/SceneMode'
-    ], function(
+define(['Core/Matrix3', 'Core/Matrix4', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/Math', 'Core/EncodedCartesian3', 'Core/BoundingRectangle', 'Core/Transforms', 'Core/Simon1994PlanetaryPositions', 'Scene/SceneMode'], function(
         Matrix3,
         Matrix4,
         Cartesian2,

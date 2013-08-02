@@ -1,29 +1,5 @@
 /*global define*/
-define([
-        './DynamicObject',
-        './DynamicBillboard',
-        './DynamicClock',
-        './DynamicEllipse',
-        './DynamicEllipsoid',
-        './DynamicCone',
-        './DynamicLabel',
-        './DynamicPath',
-        './DynamicPoint',
-        './DynamicPolygon',
-        './DynamicPolyline',
-        './DynamicPyramid',
-        './DynamicVector',
-        './DynamicBillboardVisualizer',
-        './DynamicEllipsoidVisualizer',
-        './DynamicConeVisualizerUsingCustomSensor', //CZML_TODO Replace with './DynamicConeVisualizer', once ComplexConicSensor works.
-        './DynamicLabelVisualizer',
-        './DynamicPathVisualizer',
-        './DynamicPointVisualizer',
-        './DynamicPolygonVisualizer',
-        './DynamicPolylineVisualizer',
-        './DynamicPyramidVisualizer',
-        './DynamicVectorVisualizer'
-    ], function(
+define(['DynamicScene/DynamicObject', 'DynamicScene/DynamicBillboard', 'DynamicScene/DynamicClock', 'DynamicScene/DynamicEllipse', 'DynamicScene/DynamicEllipsoid', 'DynamicScene/DynamicCone', 'DynamicScene/DynamicLabel', 'DynamicScene/DynamicPath', 'DynamicScene/DynamicPoint', 'DynamicScene/DynamicPolygon', 'DynamicScene/DynamicPolyline', 'DynamicScene/DynamicPyramid', 'DynamicScene/DynamicVector', 'DynamicScene/DynamicBillboardVisualizer', 'DynamicScene/DynamicEllipsoidVisualizer', 'DynamicScene/DynamicConeVisualizerUsingCustomSensor', 'DynamicScene/DynamicLabelVisualizer', 'DynamicScene/DynamicPathVisualizer', 'DynamicScene/DynamicPointVisualizer', 'DynamicScene/DynamicPolygonVisualizer', 'DynamicScene/DynamicPolylineVisualizer', 'DynamicScene/DynamicPyramidVisualizer', 'DynamicScene/DynamicVectorVisualizer'], function(
         DynamicObject,
         DynamicBillboard,
         DynamicClock,

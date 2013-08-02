@@ -1,15 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/destroyObject',
-        '../Core/Color',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Scene/BillboardCollection',
-        '../Scene/HorizontalOrigin',
-        '../Scene/VerticalOrigin',
-        '../Renderer/TextureAtlasBuilder'
-    ], function(
+define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Cartesian2', 'Core/Cartesian3', 'Scene/BillboardCollection', 'Scene/HorizontalOrigin', 'Scene/VerticalOrigin', 'Renderer/TextureAtlasBuilder'], function(
         DeveloperError,
         destroyObject,
         Color,
@@ -305,6 +295,22 @@ define([
             var scale = property.getValue(time);
             if (typeof scale !== 'undefined') {
                 billboard.setScale(scale);
+            }
+        }
+
+        property = dynamicBillboard.rotation;
+        if (typeof property !== 'undefined') {
+            var rotation = property.getValue(time);
+            if (typeof rotation !== 'undefined') {
+                billboard.setRotation(rotation);
+            }
+        }
+
+        property = dynamicBillboard.alignedAxis;
+        if (typeof property !== 'undefined') {
+            var alignedAxis = property.getValue(time);
+            if (typeof alignedAxis !== 'undefined') {
+                billboard.setAlignedAxis(alignedAxis);
             }
         }
 

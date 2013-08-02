@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/Ellipsoid',
-        '../Core/Extent',
-        '../Core/Cartesian2',
-        '../Core/WebMercatorProjection',
-        './TilingScheme'
-    ], function(
+define(['Core/defaultValue', 'Core/Ellipsoid', 'Core/Extent', 'Core/Cartesian2', 'Core/WebMercatorProjection', 'Scene/TilingScheme'], function(
         defaultValue,
         Ellipsoid,
         Extent,

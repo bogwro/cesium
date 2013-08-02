@@ -1,10 +1,5 @@
 /*global define*/
-define(['./defaultValue',
-        './DeveloperError',
-        './Matrix4',
-        './Cartesian4',
-        './TridiagonalSystemSolver'
-        ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Cartesian4', 'Core/TridiagonalSystemSolver'], function(
                 defaultValue,
                 DeveloperError,
                 Matrix4,

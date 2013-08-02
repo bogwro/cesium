@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        './DeveloperError',
-        './defaultValue',
-        './Cartesian3'
-       ], function(
+define(['Core/DeveloperError', 'Core/defaultValue', 'Core/Cartesian3'], function(
          DeveloperError,
          defaultValue,
          Cartesian3) {

@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        './Math',
-        './Cartesian3',
-        './Quaternion',
-        './Matrix3'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Quaternion', 'Core/Matrix3'], function(
         defaultValue,
         DeveloperError,
         CesiumMath,
@@ -110,7 +103,7 @@ define([
                 throw new DeveloperError('radius must be greater than zero.');
             }
 
-            granularity = defaultValue(granularity, CesiumMath.toRadians(1.0));
+            granularity = defaultValue(granularity, CesiumMath.RADIANS_PER_DEGREE);
             if (granularity <= 0.0) {
                 throw new DeveloperError('granularity must be greater than zero.');
             }
@@ -162,7 +155,7 @@ define([
             }
 
             bearing = bearing || 0.0;
-            granularity = defaultValue(granularity, CesiumMath.toRadians(1.0));
+            granularity = defaultValue(granularity, CesiumMath.RADIANS_PER_DEGREE);
 
             if (granularity <= 0.0) {
                 throw new DeveloperError('granularity must be greater than zero.');

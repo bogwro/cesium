@@ -1,11 +1,5 @@
 /*global define*/
-define([
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        './CustomSensorVolume',
-        './RectangularPyramidSensorVolume',
-        './SceneMode'
-    ], function(
+define(['Core/destroyObject', 'Core/DeveloperError', 'Scene/CustomSensorVolume', 'Scene/RectangularPyramidSensorVolume', 'Scene/SceneMode'], function(
         destroyObject,
         DeveloperError,
         CustomSensorVolume,

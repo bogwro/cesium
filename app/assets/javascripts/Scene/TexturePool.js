@@ -1,11 +1,5 @@
 /*global define*/
-define([
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        '../Renderer/PixelDatatype',
-        '../Renderer/PixelFormat',
-        '../Renderer/Texture'
-    ], function(
+define(['Core/destroyObject', 'Core/DeveloperError', 'Renderer/PixelDatatype', 'Renderer/PixelFormat', 'Renderer/Texture'], function(
         destroyObject,
         DeveloperError,
         PixelDatatype,

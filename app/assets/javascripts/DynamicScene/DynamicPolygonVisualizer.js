@@ -1,10 +1,5 @@
 /*global define*/
-define(['../Core/Cartesian3',
-        '../Core/DeveloperError',
-        '../Core/destroyObject',
-        '../Scene/Polygon',
-        '../Scene/Material'
-       ], function(
+define(['Core/Cartesian3', 'Core/DeveloperError', 'Core/destroyObject', 'Scene/Polygon', 'Scene/Material'], function(
          Cartesian3,
          DeveloperError,
          destroyObject,

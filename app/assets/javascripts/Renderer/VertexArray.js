@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        '../Core/ComponentDatatype'
-    ], function(
+define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/ComponentDatatype'], function(
         defaultValue,
         destroyObject,
         DeveloperError,
@@ -122,7 +117,7 @@ define([
      * @internalConstructor
      *
      * @see {@link Context#createVertexArray}
-     * @see {@link Context#createVertexArrayFromMesh}
+     * @see {@link Context#createVertexArrayFromGeometry}
      */
     var VertexArray = function(gl, vertexArrayObject, attributes, indexBuffer) {
         var vaAttributes = [];

@@ -1,15 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/destroyObject',
-        '../Core/Math',
-        './MipmapHint',
-        './PixelDatatype',
-        './TextureMagnificationFilter',
-        './TextureMinificationFilter',
-        './TextureWrap',
-        './CubeMapFace'
-    ], function(
+define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Renderer/MipmapHint', 'Renderer/PixelDatatype', 'Renderer/TextureMagnificationFilter', 'Renderer/TextureMinificationFilter', 'Renderer/TextureWrap', 'Renderer/CubeMapFace'], function(
         DeveloperError,
         destroyObject,
         CesiumMath,

@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        './DeveloperError',
-        './JulianDate',
-        './ClockStep',
-        './ClockRange',
-        './Event',
-        './defaultValue'
-       ], function(
+define(['Core/DeveloperError', 'Core/JulianDate', 'Core/ClockStep', 'Core/ClockRange', 'Core/Event', 'Core/defaultValue'], function(
          DeveloperError,
          JulianDate,
          ClockStep,

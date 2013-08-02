@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/Intersect'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Intersect'], function(
         defaultValue,
         DeveloperError,
         Intersect) {

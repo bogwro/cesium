@@ -1,40 +1,23 @@
 /*global define*/
-define(['../Core/createGuid',
-        '../Core/Cartographic',
-        '../Core/Color',
-        '../Core/defineProperties',
-        '../Core/DeveloperError',
-        '../Core/RuntimeError',
-        '../Core/Ellipsoid',
-        '../Core/Event',
-        '../Core/loadJson',
-        './ConstantProperty',
-        './DynamicObject',
-        './DynamicPoint',
-        './DynamicPolyline',
-        './DynamicPolygon',
-        './DynamicMaterialProperty',
-        './DynamicObjectCollection',
-        '../ThirdParty/when',
-        '../ThirdParty/topojson'], function(
-                createGuid,
-                Cartographic,
-                Color,
-                defineProperties,
-                DeveloperError,
-                RuntimeError,
-                Ellipsoid,
-                Event,
-                loadJson,
-                ConstantProperty,
-                DynamicObject,
-                DynamicPoint,
-                DynamicPolyline,
-                DynamicPolygon,
-                DynamicMaterialProperty,
-                DynamicObjectCollection,
-                when,
-                topojson) {
+define(['Core/createGuid', 'Core/Cartographic', 'Core/Color', 'Core/defineProperties', 'Core/DeveloperError', 'Core/RuntimeError', 'Core/Ellipsoid', 'Core/Event', 'Core/loadJson', 'DynamicScene/ConstantProperty', 'DynamicScene/DynamicObject', 'DynamicScene/DynamicPoint', 'DynamicScene/DynamicPolyline', 'DynamicScene/DynamicPolygon', 'DynamicScene/DynamicMaterialProperty', 'DynamicScene/DynamicObjectCollection', 'ThirdParty/when', 'ThirdParty/topojson'], function(
+        createGuid,
+        Cartographic,
+        Color,
+        defineProperties,
+        DeveloperError,
+        RuntimeError,
+        Ellipsoid,
+        Event,
+        loadJson,
+        ConstantProperty,
+        DynamicObject,
+        DynamicPoint,
+        DynamicPolyline,
+        DynamicPolygon,
+        DynamicMaterialProperty,
+        DynamicObjectCollection,
+        when,
+        topojson) {
     "use strict";
 
     //DynamicPositionProperty is pretty hard to use with non-CZML based data
@@ -349,10 +332,11 @@ define(['../Core/createGuid',
         }
 
         var dataSource = this;
-        return loadJson(url).then(function(geoJson) {
+        return when(loadJson(url), function(geoJson) {
             return dataSource.load(geoJson, url);
         }, function(error) {
             dataSource._error.raiseEvent(dataSource, error);
+            return when.reject(error);
         });
     };
 
@@ -422,10 +406,13 @@ define(['../Core/createGuid',
 
         this._dynamicObjectCollection.clear();
 
-        var that = this;
+        var dataSource = this;
         return when(crsFunction, function(crsFunction) {
-            typeHandler(that, geoJson, geoJson, crsFunction, source);
-            that._changed.raiseEvent(that);
+            typeHandler(dataSource, geoJson, geoJson, crsFunction, source);
+            dataSource._changed.raiseEvent(dataSource);
+        }, function(error) {
+            dataSource._error.raiseEvent(dataSource, error);
+            return when.reject(error);
         });
     };
 

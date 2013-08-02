@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        '../Core/Event',
-        '../Core/DeveloperError',
-        '../Core/loadImage'
-       ], function(
+define(['Core/Event', 'Core/DeveloperError', 'Core/loadImage'], function(
          Event,
          DeveloperError,
          loadImage) {

@@ -1,28 +1,5 @@
 /*global define*/
-define([
-        '../../Core/Cartesian2',
-        '../../Core/defaultValue',
-        '../../Core/DeveloperError',
-        '../../Core/defineProperties',
-        '../../Core/destroyObject',
-        '../../Core/Event',
-        '../../Core/EventHelper',
-        '../../Core/requestAnimationFrame',
-        '../../Core/ScreenSpaceEventType',
-        '../../DynamicScene/DataSourceDisplay',
-        '../Animation/Animation',
-        '../Animation/AnimationViewModel',
-        '../BaseLayerPicker/BaseLayerPicker',
-        '../BaseLayerPicker/createDefaultBaseLayers',
-        '../CesiumWidget/CesiumWidget',
-        '../ClockViewModel',
-        '../FullscreenButton/FullscreenButton',
-        '../getElement',
-        '../HomeButton/HomeButton',
-        '../SceneModePicker/SceneModePicker',
-        '../Timeline/Timeline',
-        '../../ThirdParty/knockout'
-    ], function(
+define(['Core/Cartesian2', 'Core/defaultValue', 'Core/DeveloperError', 'Core/defineProperties', 'Core/destroyObject', 'Core/Event', 'Core/EventHelper', 'Core/requestAnimationFrame', 'Core/ScreenSpaceEventType', 'DynamicScene/DataSourceDisplay', 'Widgets/Animation/Animation', 'Widgets/Animation/AnimationViewModel', 'Widgets/BaseLayerPicker/BaseLayerPicker', 'Widgets/BaseLayerPicker/createDefaultBaseLayers', 'Widgets/CesiumWidget/CesiumWidget', 'Widgets/ClockViewModel', 'Widgets/FullscreenButton/FullscreenButton', 'Widgets/getElement', 'Widgets/HomeButton/HomeButton', 'Widgets/SceneModePicker/SceneModePicker', 'Widgets/Timeline/Timeline', 'ThirdParty/knockout'], function(
         Cartesian2,
         defaultValue,
         DeveloperError,
@@ -614,22 +591,17 @@ Either specify options.imageryProvider instead or set options.baseLayerPicker to
 
         if (resizeWidgets) {
             var logoBottom = 0;
-            var logoLeft = animationWidth;
+            var logoLeft = animationWidth + 5;
 
             if (timelineExists) {
-                logoBottom = this._timeline.container.clientHeight + 1;
+                logoBottom = this._timeline.container.clientHeight + 3;
                 this._timeline.container.style.left = animationWidth + 'px';
             }
 
             if (timelineExists || animationExists) {
-                var logo = cesiumWidget.cesiumLogo;
-                var logoStyle = logo.style;
-                logoStyle.bottom = logoBottom + 'px';
-                logoStyle.left = logoLeft + 'px';
-
-                var logoOffset = cesiumWidget.centralBody.logoOffset;
-                logoOffset.x = logoLeft + logo.clientWidth + 5;
-                logoOffset.y = logoBottom;
+                var creditContainer = cesiumWidget.creditContainer;
+                creditContainer.style.bottom = logoBottom + 'px';
+                creditContainer.style.left = logoLeft + 'px';
             }
         }
 

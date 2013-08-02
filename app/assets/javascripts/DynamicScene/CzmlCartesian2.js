@@ -1,7 +1,5 @@
 /*global define*/
-define([
-        '../Core/Cartesian2'
-       ], function(
+define(['Core/Cartesian2'], function(
          Cartesian2) {
     "use strict";
 

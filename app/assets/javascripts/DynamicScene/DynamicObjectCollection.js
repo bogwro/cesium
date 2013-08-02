@@ -1,11 +1,5 @@
 /*global define*/
-define([
-        '../Core/Event',
-        '../Core/TimeInterval',
-        '../Core/Iso8601',
-        '../Core/DeveloperError',
-        './DynamicObject'
-    ], function(
+define(['Core/Event', 'Core/TimeInterval', 'Core/Iso8601', 'Core/DeveloperError', 'DynamicScene/DynamicObject'], function(
         Event,
         TimeInterval,
         Iso8601,

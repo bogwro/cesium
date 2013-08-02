@@ -1,18 +1,5 @@
 /*global define*/
-define([
-        '../Core/TimeInterval',
-        '../Core/defaultValue',
-        './CzmlBoolean',
-        './CzmlCartesian2',
-        './CzmlCartesian3',
-        './CzmlNumber',
-        './CzmlString',
-        './CzmlHorizontalOrigin',
-        './CzmlVerticalOrigin',
-        './CzmlLabelStyle',
-        './CzmlColor',
-        './DynamicProperty'
-       ], function(
+define(['Core/TimeInterval', 'Core/defaultValue', 'DynamicScene/CzmlBoolean', 'DynamicScene/CzmlCartesian2', 'DynamicScene/CzmlCartesian3', 'DynamicScene/CzmlNumber', 'DynamicScene/CzmlString', 'DynamicScene/CzmlHorizontalOrigin', 'DynamicScene/CzmlVerticalOrigin', 'DynamicScene/CzmlLabelStyle', 'DynamicScene/CzmlColor', 'DynamicScene/DynamicProperty'], function(
         TimeInterval,
         defaultValue,
         CzmlBoolean,

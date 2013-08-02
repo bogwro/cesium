@@ -1,7 +1,5 @@
 /*global define*/
-define([
-        './freezeObject'
-    ], function(
+define(['Core/freezeObject'], function(
         freezeObject) {
     "use strict";
 
@@ -15,7 +13,7 @@ define([
      * param = defaultValue(param, 'default');
      */
     var defaultValue = function(a, b) {
-        if (typeof a !== 'undefined') {
+        if (a !== undefined) {
             return a;
         }
         return b;

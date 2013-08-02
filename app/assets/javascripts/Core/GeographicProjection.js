@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './Cartesian3',
-        './Cartographic',
-        './Ellipsoid'
-    ], function(
+define(['Core/defaultValue', 'Core/Cartesian3', 'Core/Cartographic', 'Core/Ellipsoid'], function(
         defaultValue,
         Cartesian3,
         Cartographic,

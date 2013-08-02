@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        'require',
-        './buildModuleUrl',
-        './defaultValue',
-        './isCrossOriginUrl',
-        '../ThirdParty/when',
-        '../ThirdParty/Uri'
-    ], function(
+define(['require', 'Core/buildModuleUrl', 'Core/defaultValue', 'Core/isCrossOriginUrl', 'ThirdParty/when', 'ThirdParty/Uri'], function(
         require,
         buildModuleUrl,
         defaultValue,

@@ -1,14 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/Math',
-        '../Core/Cartesian2',
-        '../Core/Ellipsoid',
-        '../Core/Extent',
-        '../Core/GeographicProjection',
-        './TilingScheme'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian2', 'Core/Ellipsoid', 'Core/Extent', 'Core/GeographicProjection', 'Scene/TilingScheme'], function(
         defaultValue,
         DeveloperError,
         CesiumMath,

@@ -1,15 +1,5 @@
 /*global define*/
-define([
-        '../../Core/defaultValue',
-        '../../Core/DeveloperError',
-        '../../Core/defineProperties',
-        '../../Core/Event',
-        '../../Core/wrapFunction',
-        '../../DynamicScene/CzmlDataSource',
-        '../../DynamicScene/GeoJsonDataSource',
-        '../../ThirdParty/when',
-        '../getElement'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defineProperties', 'Core/Event', 'Core/wrapFunction', 'DynamicScene/CzmlDataSource', 'DynamicScene/GeoJsonDataSource', 'ThirdParty/when', 'Widgets/getElement'], function(
         defaultValue,
         DeveloperError,
         defineProperties,

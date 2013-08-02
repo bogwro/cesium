@@ -1,19 +1,5 @@
 /*global define*/
-define([
-        '../Core/BoundingSphere',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/DeveloperError',
-        './ImageryState',
-        './TerrainState',
-        './TileState',
-        './TileTerrain',
-        '../Renderer/PixelDatatype',
-        '../Renderer/PixelFormat',
-        '../Renderer/TextureMagnificationFilter',
-        '../Renderer/TextureMinificationFilter',
-        '../Renderer/TextureWrap'
-    ], function(
+define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/DeveloperError', 'Scene/ImageryState', 'Scene/TerrainState', 'Scene/TileState', 'Scene/TileTerrain', 'Renderer/PixelDatatype', 'Renderer/PixelFormat', 'Renderer/TextureMagnificationFilter', 'Renderer/TextureMinificationFilter', 'Renderer/TextureWrap'], function(
         BoundingSphere,
         Cartesian3,
         Cartesian4,
