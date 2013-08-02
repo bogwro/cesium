@@ -1,20 +1,5 @@
 /*global define*/
-define([
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/clone',
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/HermiteSpline',
-        '../Core/Math',
-        '../Core/Matrix3',
-        '../Core/OrientationInterpolator',
-        '../Core/Quaternion',
-        '../Scene/PerspectiveFrustum',
-        '../Scene/PerspectiveOffCenterFrustum',
-        '../Scene/SceneMode',
-        '../ThirdParty/Tween'
-    ], function(
+define(['Core/Cartesian2', 'Core/Cartesian3', 'Core/clone', 'Core/defaultValue', 'Core/DeveloperError', 'Core/HermiteSpline', 'Core/Math', 'Core/Matrix3', 'Core/OrientationInterpolator', 'Core/Quaternion', 'Scene/PerspectiveFrustum', 'Scene/PerspectiveOffCenterFrustum', 'Scene/SceneMode', 'ThirdParty/Tween'], function(
         Cartesian2,
         Cartesian3,
         clone,

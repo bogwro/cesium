@@ -1,17 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/Cartographic',
-        '../Core/DeveloperError',
-        '../Core/Event',
-        '../Core/loadXML',
-        '../Core/writeTextToCanvas',
-        '../Core/Extent',
-        './Credit',
-        './ImageryProvider',
-        './WebMercatorTilingScheme',
-        './GeographicTilingScheme'
-    ], function(
+define(['Core/defaultValue', 'Core/Cartographic', 'Core/DeveloperError', 'Core/Event', 'Core/loadXML', 'Core/writeTextToCanvas', 'Core/Extent', 'Scene/Credit', 'Scene/ImageryProvider', 'Scene/WebMercatorTilingScheme', 'Scene/GeographicTilingScheme'], function(
         defaultValue,
         Cartographic,
         DeveloperError,

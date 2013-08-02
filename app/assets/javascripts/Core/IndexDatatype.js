@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        './Enumeration',
-        './DeveloperError',
-        './Math'
-    ], function(
+define(['Core/Enumeration', 'Core/DeveloperError', 'Core/Math'], function(
         Enumeration,
         DeveloperError,
         CesiumMath) {

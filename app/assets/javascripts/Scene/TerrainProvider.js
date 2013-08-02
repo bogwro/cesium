@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/ComponentDatatype',
-        '../Renderer/BufferUsage',
-        '../Core/IndexDatatype'
-    ], function(
+define(['Core/DeveloperError', 'Core/ComponentDatatype', 'Renderer/BufferUsage', 'Core/IndexDatatype'], function(
         DeveloperError,
         ComponentDatatype,
         BufferUsage,

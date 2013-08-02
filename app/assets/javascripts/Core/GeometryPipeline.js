@@ -1,28 +1,5 @@
 /*global define*/
-define([
-        './barycentricCoordinates',
-        './defaultValue',
-        './DeveloperError',
-        './Cartesian2',
-        './Cartesian3',
-        './Cartesian4',
-        './Cartographic',
-        './EncodedCartesian3',
-        './Intersect',
-        './IntersectionTests',
-        './Math',
-        './Matrix3',
-        './Matrix4',
-        './Plane',
-        './GeographicProjection',
-        './ComponentDatatype',
-        './IndexDatatype',
-        './PrimitiveType',
-        './Tipsify',
-        './BoundingSphere',
-        './Geometry',
-        './GeometryAttribute'
-    ], function(
+define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/EncodedCartesian3', 'Core/Intersect', 'Core/IntersectionTests', 'Core/Math', 'Core/Matrix3', 'Core/Matrix4', 'Core/Plane', 'Core/GeographicProjection', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/Tipsify', 'Core/BoundingSphere', 'Core/Geometry', 'Core/GeometryAttribute'], function(
         barycentricCoordinates,
         defaultValue,
         DeveloperError,

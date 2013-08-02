@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../Core/Clock',
-        '../Core/defaultValue',
-        '../Core/defineProperties',
-        '../Core/destroyObject',
-        '../Core/EventHelper',
-        '../Core/JulianDate',
-        '../ThirdParty/knockout'
-    ], function(
+define(['Core/Clock', 'Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Core/EventHelper', 'Core/JulianDate', 'ThirdParty/knockout'], function(
         Clock,
         defaultValue,
         defineProperties,

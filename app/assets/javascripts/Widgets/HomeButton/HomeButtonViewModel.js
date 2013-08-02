@@ -1,21 +1,5 @@
 /*global define*/
-define([
-        '../../Core/Cartesian3',
-        '../../Core/defaultValue',
-        '../../Core/defineProperties',
-        '../../Core/DeveloperError',
-        '../../Core/Ellipsoid',
-        '../../Core/Extent',
-        '../../Core/Math',
-        '../../Core/Matrix4',
-        '../../Scene/Camera',
-        '../../Scene/CameraColumbusViewMode',
-        '../../Scene/CameraFlightPath',
-        '../../Scene/PerspectiveFrustum',
-        '../../Scene/SceneMode',
-        '../createCommand',
-        '../../ThirdParty/knockout'
-    ], function(
+define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defineProperties', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/Extent', 'Core/Math', 'Core/Matrix4', 'Scene/Camera', 'Scene/CameraColumbusViewMode', 'Scene/CameraFlightPath', 'Scene/PerspectiveFrustum', 'Scene/SceneMode', 'Widgets/createCommand', 'ThirdParty/knockout'], function(
         Cartesian3,
         defaultValue,
         defineProperties,

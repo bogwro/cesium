@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/BoundingSphere',
-        '../Core/Color',
-        '../Core/PolylinePipeline',
-        '../Core/Matrix4',
-        './Material'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core/Color', 'Core/PolylinePipeline', 'Core/Matrix4', 'Scene/Material'], function(
         defaultValue,
         DeveloperError,
         BoundingSphere,

@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        './Cartesian3',
-        './DeveloperError'
-    ], function(
+define(['Core/Cartesian3', 'Core/DeveloperError'], function(
         Cartesian3,
         DeveloperError) {
     "use strict";

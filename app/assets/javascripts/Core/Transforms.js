@@ -1,21 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        './Iau2006XysData',
-        './Iau2006XysSample',
-        './Math',
-        './Matrix3',
-        './Matrix4',
-        './Cartesian2',
-        './Cartesian3',
-        './Cartesian4',
-        './TimeConstants',
-        './Ellipsoid',
-        './EarthOrientationParameters',
-        './EarthOrientationParametersSample',
-        '../ThirdParty/when'
-    ],
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core/Iau2006XysSample', 'Core/Math', 'Core/Matrix3', 'Core/Matrix4', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/TimeConstants', 'Core/Ellipsoid', 'Core/EarthOrientationParameters', 'Core/EarthOrientationParametersSample', 'ThirdParty/when'],
     function(
         defaultValue,
         DeveloperError,

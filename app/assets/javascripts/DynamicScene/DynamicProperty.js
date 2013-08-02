@@ -1,15 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/Iso8601',
-        '../Core/JulianDate',
-        '../Core/TimeInterval',
-        '../Core/TimeIntervalCollection',
-        '../Core/binarySearch',
-        '../Core/HermitePolynomialApproximation',
-        '../Core/LinearApproximation',
-        '../Core/LagrangePolynomialApproximation'
-    ], function(
+define(['Core/DeveloperError', 'Core/Iso8601', 'Core/JulianDate', 'Core/TimeInterval', 'Core/TimeIntervalCollection', 'Core/binarySearch', 'Core/HermitePolynomialApproximation', 'Core/LinearApproximation', 'Core/LagrangePolynomialApproximation'], function(
         DeveloperError,
         Iso8601,
         JulianDate,

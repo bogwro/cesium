@@ -1,11 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        './Matrix4',
-        './Geometry',
-        './GeometryInstanceAttribute'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Geometry', 'Core/GeometryInstanceAttribute'], function(
         defaultValue,
         DeveloperError,
         Matrix4,

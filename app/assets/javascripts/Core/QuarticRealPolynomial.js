@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        './DeveloperError',
-        './Math',
-        './CubicRealPolynomial',
-        './QuadraticRealPolynomial'
-    ],
+define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/QuadraticRealPolynomial'],
     function(
         DeveloperError,
         CesiumMath,

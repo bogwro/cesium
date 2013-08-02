@@ -1,20 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/Math',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/Cartographic',
-        '../Core/Quaternion',
-        '../Core/Matrix3',
-        '../Core/Matrix4',
-        '../Core/Ellipsoid',
-        '../Core/Transforms',
-        '../Scene/CameraColumbusViewMode',
-        '../Scene/SceneMode'
-       ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/Quaternion', 'Core/Matrix3', 'Core/Matrix4', 'Core/Ellipsoid', 'Core/Transforms', 'Scene/CameraColumbusViewMode', 'Scene/SceneMode'], function(
          defaultValue,
          DeveloperError,
          CesiumMath,

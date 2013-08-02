@@ -1,28 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/BoundingSphere',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/EllipsoidGeometry',
-        '../Core/DeveloperError',
-        '../Core/Ellipsoid',
-        '../Core/EllipsoidalOccluder',
-        '../Core/Intersect',
-        '../Core/Matrix4',
-        '../Core/PrimitiveType',
-        '../Core/Queue',
-        '../Core/WebMercatorProjection',
-        '../Renderer/DrawCommand',
-        './ImageryLayer',
-        './ImageryState',
-        './SceneMode',
-        './TerrainProvider',
-        './TileReplacementQueue',
-        './TileState'
-    ], function(
+define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/EllipsoidGeometry', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/EllipsoidalOccluder', 'Core/Intersect', 'Core/Matrix4', 'Core/PrimitiveType', 'Core/Queue', 'Core/WebMercatorProjection', 'Renderer/DrawCommand', 'Scene/ImageryLayer', 'Scene/ImageryState', 'Scene/SceneMode', 'Scene/TerrainProvider', 'Scene/TileReplacementQueue', 'Scene/TileState'], function(
         defaultValue,
         destroyObject,
         BoundingSphere,

@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        './isCrossOriginUrl',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/isCrossOriginUrl', 'ThirdParty/when'], function(
         defaultValue,
         DeveloperError,
         isCrossOriginUrl,

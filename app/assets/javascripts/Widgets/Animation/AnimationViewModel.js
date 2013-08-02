@@ -1,15 +1,5 @@
 /*global define*/
-define([
-        '../../Core/binarySearch',
-        '../../Core/ClockStep',
-        '../../Core/ClockRange',
-        '../../Core/defineProperties',
-        '../../Core/DeveloperError',
-        '../createCommand',
-        '../ToggleButtonViewModel',
-        '../../ThirdParty/sprintf',
-        '../../ThirdParty/knockout'
-    ], function(
+define(['Core/binarySearch', 'Core/ClockStep', 'Core/ClockRange', 'Core/defineProperties', 'Core/DeveloperError', 'Widgets/createCommand', 'Widgets/ToggleButtonViewModel', 'ThirdParty/sprintf', 'ThirdParty/knockout'], function(
         binarySearch,
         ClockStep,
         ClockRange,

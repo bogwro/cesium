@@ -1,21 +1,5 @@
 /*global define*/
-define([
-        '../Core/BoxGeometry',
-        '../Core/Cartesian3',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        '../Core/Matrix4',
-        '../Core/GeometryPipeline',
-        '../Core/VertexFormat',
-        '../Core/PrimitiveType',
-        '../Renderer/loadCubeMap',
-        '../Renderer/BufferUsage',
-        '../Renderer/DrawCommand',
-        '../Renderer/BlendingState',
-        '../Scene/SceneMode',
-        '../Shaders/SkyBoxVS',
-        '../Shaders/SkyBoxFS'
-    ], function(
+define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Matrix4', 'Core/GeometryPipeline', 'Core/VertexFormat', 'Core/PrimitiveType', 'Renderer/loadCubeMap', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Renderer/BlendingState', 'Scene/SceneMode', 'Shaders/SkyBoxVS', 'Shaders/SkyBoxFS'], function(
         BoxGeometry,
         Cartesian3,
         destroyObject,

@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        '../Core/Color',
-        '../Core/freezeObject'
-    ], function(
+define(['Core/Color', 'Core/freezeObject'], function(
         Color,
         freezeObject) {
     "use strict";

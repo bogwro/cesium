@@ -1,16 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        './Cartesian3',
-        './Cartesian4',
-        './Cartographic',
-        './Ellipsoid',
-        './GeographicProjection',
-        './Intersect',
-        './Interval',
-        './Matrix4'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/Ellipsoid', 'Core/GeographicProjection', 'Core/Intersect', 'Core/Interval', 'Core/Matrix4'], function(
         defaultValue,
         DeveloperError,
         Cartesian3,

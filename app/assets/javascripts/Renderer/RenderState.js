@@ -1,18 +1,5 @@
 /*global define*/
-define([
-        '../Core/Color',
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/BoundingRectangle',
-        '../Core/RuntimeError',
-        '../Core/WindingOrder',
-        './CullFace',
-        './DepthFunction',
-        './BlendEquation',
-        './BlendFunction',
-        './StencilFunction',
-        './StencilOperation'
-    ], function(
+define(['Core/Color', 'Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingRectangle', 'Core/RuntimeError', 'Core/WindingOrder', 'Renderer/CullFace', 'Renderer/DepthFunction', 'Renderer/BlendEquation', 'Renderer/BlendFunction', 'Renderer/StencilFunction', 'Renderer/StencilOperation'], function(
         Color,
         defaultValue,
         DeveloperError,

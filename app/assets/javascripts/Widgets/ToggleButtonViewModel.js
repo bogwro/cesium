@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/defineProperties',
-        '../Core/DeveloperError',
-        '../ThirdParty/knockout'
-    ], function(
+define(['Core/defaultValue', 'Core/defineProperties', 'Core/DeveloperError', 'ThirdParty/knockout'], function(
         defaultValue,
         defineProperties,
         DeveloperError,

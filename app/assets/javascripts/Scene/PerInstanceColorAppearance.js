@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/VertexFormat',
-        './Appearance',
-        '../Shaders/Appearances/PerInstanceColorAppearanceVS',
-        '../Shaders/Appearances/PerInstanceColorAppearanceFS',
-        '../Shaders/Appearances/PerInstanceFlatColorAppearanceVS',
-        '../Shaders/Appearances/PerInstanceFlatColorAppearanceFS'
-    ], function(
+define(['Core/defaultValue', 'Core/VertexFormat', 'Scene/Appearance', 'Shaders/Appearances/PerInstanceColorAppearanceVS', 'Shaders/Appearances/PerInstanceColorAppearanceFS', 'Shaders/Appearances/PerInstanceFlatColorAppearanceVS', 'Shaders/Appearances/PerInstanceFlatColorAppearanceFS'], function(
         defaultValue,
         VertexFormat,
         Appearance,

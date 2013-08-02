@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        './Credit'
-    ], function (
+define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Scene/Credit'], function (
         defaultValue,
         destroyObject,
         DeveloperError,

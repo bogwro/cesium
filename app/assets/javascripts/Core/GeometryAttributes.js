@@ -1,5 +1,5 @@
 /*global define*/
-define(['./defaultValue'], function(defaultValue) {
+define(['Core/defaultValue'], function(defaultValue) {
     "use strict";
 
     /**

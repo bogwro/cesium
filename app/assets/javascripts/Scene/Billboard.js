@@ -1,16 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/Color',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        './HorizontalOrigin',
-        './VerticalOrigin',
-        './SceneMode',
-        './SceneTransforms'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Color', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Scene/HorizontalOrigin', 'Scene/VerticalOrigin', 'Scene/SceneMode', 'Scene/SceneTransforms'], function(
         defaultValue,
         DeveloperError,
         Color,

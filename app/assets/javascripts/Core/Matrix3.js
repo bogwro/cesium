@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        './Cartesian3',
-        './defaultValue',
-        './DeveloperError',
-        './freezeObject'
-    ], function(
+define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], function(
         Cartesian3,
         defaultValue,
         DeveloperError,

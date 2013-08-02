@@ -1,15 +1,5 @@
 /*global define*/
-define(['require',
-        '../BaseLayerPicker/ImageryProviderViewModel',
-        '../../Core/buildModuleUrl',
-        '../../Core/FeatureDetection',
-        '../../Core/DefaultProxy',
-        '../../Scene/BingMapsImageryProvider',
-        '../../Scene/BingMapsStyle',
-        '../../Scene/ArcGisMapServerImageryProvider',
-        '../../Scene/OpenStreetMapImageryProvider',
-        '../../Scene/TileMapServiceImageryProvider'
-        ], function (
+define(['require', 'Widgets/BaseLayerPicker/ImageryProviderViewModel', 'Core/buildModuleUrl', 'Core/FeatureDetection', 'Core/DefaultProxy', 'Scene/BingMapsImageryProvider', 'Scene/BingMapsStyle', 'Scene/ArcGisMapServerImageryProvider', 'Scene/OpenStreetMapImageryProvider', 'Scene/TileMapServiceImageryProvider'], function (
                 require,
                 ImageryProviderViewModel,
                 buildModuleUrl,

@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './freezeObject'
-    ], function(
+define(['Core/defaultValue', 'Core/freezeObject'], function(
         defaultValue,
         freezeObject) {
     "use strict";

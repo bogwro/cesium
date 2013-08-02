@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        '../Core/FeatureDetection',
-        './getElement',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/FeatureDetection', 'Widgets/getElement', 'ThirdParty/when'], function(
         FeatureDetection,
         getElement,
         when) {

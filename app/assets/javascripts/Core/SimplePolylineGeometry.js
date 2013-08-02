@@ -1,14 +1,5 @@
 /*global define*/
-define([
-        './DeveloperError',
-        './ComponentDatatype',
-        './IndexDatatype',
-        './PrimitiveType',
-        './defaultValue',
-        './BoundingSphere',
-        './GeometryAttribute',
-        './GeometryAttributes'
-    ], function(
+define(['Core/DeveloperError', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/defaultValue', 'Core/BoundingSphere', 'Core/GeometryAttribute', 'Core/GeometryAttributes'], function(
         DeveloperError,
         ComponentDatatype,
         IndexDatatype,

@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        './Math',
-        './Cartesian3',
-        './Quaternion',
-        './Matrix3'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Quaternion', 'Core/Matrix3'], function(
         defaultValue,
         DeveloperError,
         CesiumMath,

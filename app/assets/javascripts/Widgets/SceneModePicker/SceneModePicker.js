@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        '../../Core/defineProperties',
-        '../../Core/destroyObject',
-        '../../Core/DeveloperError',
-        '../getElement',
-        './SceneModePickerViewModel',
-        '../../ThirdParty/knockout'
-    ], function(
+define(['Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Widgets/getElement', 'Widgets/SceneModePicker/SceneModePickerViewModel', 'ThirdParty/knockout'], function(
         defineProperties,
         destroyObject,
         DeveloperError,

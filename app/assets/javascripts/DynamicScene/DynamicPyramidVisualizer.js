@@ -1,14 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/destroyObject',
-        '../Core/Color',
-        '../Core/Matrix3',
-        '../Core/Matrix4',
-        '../Scene/CustomSensorVolume',
-        '../Scene/Material'
-       ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Matrix3', 'Core/Matrix4', 'Scene/CustomSensorVolume', 'Scene/Material'], function(
          defaultValue,
          DeveloperError,
          destroyObject,

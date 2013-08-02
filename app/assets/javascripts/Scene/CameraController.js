@@ -1,22 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/Cartographic',
-        '../Core/DeveloperError',
-        '../Core/Ellipsoid',
-        '../Core/GeographicProjection',
-        '../Core/IntersectionTests',
-        '../Core/Math',
-        '../Core/Matrix3',
-        '../Core/Matrix4',
-        '../Core/Quaternion',
-        '../Core/Ray',
-        './SceneMode',
-        '../ThirdParty/Tween'
-    ], function(
+define(['Core/defaultValue', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/GeographicProjection', 'Core/IntersectionTests', 'Core/Math', 'Core/Matrix3', 'Core/Matrix4', 'Core/Quaternion', 'Core/Ray', 'Scene/SceneMode', 'ThirdParty/Tween'], function(
         defaultValue,
         Cartesian2,
         Cartesian3,

@@ -1,22 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        '../Core/Math',
-        '../Core/Event',
-        '../Core/ScreenSpaceEventHandler',
-        '../Core/ScreenSpaceEventType',
-        '../Core/Ellipsoid',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/Cartographic',
-        '../Core/Matrix4',
-        '../ThirdParty/Tween',
-        './OrthographicFrustum',
-        './PerspectiveFrustum',
-        './SceneMode'
-    ], function(
+define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Math', 'Core/Event', 'Core/ScreenSpaceEventHandler', 'Core/ScreenSpaceEventType', 'Core/Ellipsoid', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/Matrix4', 'ThirdParty/Tween', 'Scene/OrthographicFrustum', 'Scene/PerspectiveFrustum', 'Scene/SceneMode'], function(
         defaultValue,
         destroyObject,
         DeveloperError,

@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        '../Core/Color',
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        '../Scene/BillboardCollection',
-        '../Renderer/TextureAtlasBuilder'
-    ], function(
+define(['Core/Color', 'Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Scene/BillboardCollection', 'Renderer/TextureAtlasBuilder'], function(
         Color,
         defaultValue,
         destroyObject,

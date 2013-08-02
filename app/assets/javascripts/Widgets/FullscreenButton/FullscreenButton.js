@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        '../../Core/defineProperties',
-        '../../Core/DeveloperError',
-        '../../Core/destroyObject',
-        '../getElement',
-        './FullscreenButtonViewModel',
-        '../../ThirdParty/knockout'
-    ], function(
+define(['Core/defineProperties', 'Core/DeveloperError', 'Core/destroyObject', 'Widgets/getElement', 'Widgets/FullscreenButton/FullscreenButtonViewModel', 'ThirdParty/knockout'], function(
         defineProperties,
         DeveloperError,
         destroyObject,

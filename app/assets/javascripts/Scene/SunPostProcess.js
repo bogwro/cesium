@@ -1,31 +1,5 @@
 /*global define*/
-define([
-        '../Core/BoundingRectangle',
-        '../Core/Cartesian2',
-        '../Core/Cartesian4',
-        '../Core/Color',
-        '../Core/ComponentDatatype',
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/Geometry',
-        '../Core/GeometryAttribute',
-        '../Core/Math',
-        '../Core/Matrix4',
-        '../Core/PrimitiveType',
-        '../Core/Transforms',
-        '../Renderer/BufferUsage',
-        '../Renderer/ClearCommand',
-        '../Renderer/DrawCommand',
-        '../Renderer/PassState',
-        '../Renderer/PixelDatatype',
-        '../Renderer/PixelFormat',
-        '../Renderer/RenderbufferFormat',
-        '../Shaders/PostProcessFilters/AdditiveBlend',
-        '../Shaders/PostProcessFilters/BrightPass',
-        '../Shaders/PostProcessFilters/GaussianBlur1D',
-        '../Shaders/PostProcessFilters/PassThrough',
-        '../Shaders/ViewportQuadVS'
-    ], function(
+define(['Core/BoundingRectangle', 'Core/Cartesian2', 'Core/Cartesian4', 'Core/Color', 'Core/ComponentDatatype', 'Core/defaultValue', 'Core/destroyObject', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/Math', 'Core/Matrix4', 'Core/PrimitiveType', 'Core/Transforms', 'Renderer/BufferUsage', 'Renderer/ClearCommand', 'Renderer/DrawCommand', 'Renderer/PassState', 'Renderer/PixelDatatype', 'Renderer/PixelFormat', 'Renderer/RenderbufferFormat', 'Shaders/PostProcessFilters/AdditiveBlend', 'Shaders/PostProcessFilters/BrightPass', 'Shaders/PostProcessFilters/GaussianBlur1D', 'Shaders/PostProcessFilters/PassThrough', 'Shaders/ViewportQuadVS'], function(
         BoundingRectangle,
         Cartesian2,
         Cartesian4,

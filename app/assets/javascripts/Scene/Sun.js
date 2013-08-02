@@ -1,18 +1,5 @@
 /*global define*/
-define([
-        '../Core/BoundingSphere',
-        '../Core/Cartesian3',
-        '../Core/ComponentDatatype',
-        '../Core/destroyObject',
-        '../Core/Math',
-        '../Core/PrimitiveType',
-        '../Renderer/BlendingState',
-        '../Renderer/BufferUsage',
-        '../Renderer/DrawCommand',
-        './SceneMode',
-        '../Shaders/SunVS',
-        '../Shaders/SunFS'
-    ], function(
+define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/ComponentDatatype', 'Core/destroyObject', 'Core/Math', 'Core/PrimitiveType', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Scene/SceneMode', 'Shaders/SunVS', 'Shaders/SunFS'], function(
         BoundingSphere,
         Cartesian3,
         ComponentDatatype,

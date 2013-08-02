@@ -1,19 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/defaultValue',
-        '../Core/Color',
-        '../Core/destroyObject',
-        '../Core/Math',
-        '../Core/Ellipsoid',
-        '../Core/GeometryInstance',
-        '../Core/PolygonGeometry',
-        '../Core/PolygonPipeline',
-        '../Core/Queue',
-        './EllipsoidSurfaceAppearance',
-        './Primitive',
-        './Material'
-    ], function(
+define(['Core/DeveloperError', 'Core/defaultValue', 'Core/Color', 'Core/destroyObject', 'Core/Math', 'Core/Ellipsoid', 'Core/GeometryInstance', 'Core/PolygonGeometry', 'Core/PolygonPipeline', 'Core/Queue', 'Scene/EllipsoidSurfaceAppearance', 'Scene/Primitive', 'Scene/Material'], function(
         DeveloperError,
         defaultValue,
         Color,

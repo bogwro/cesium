@@ -1,30 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/Color',
-        '../Core/combine',
-        '../Core/destroyObject',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/EncodedCartesian3',
-        '../Core/Matrix4',
-        '../Core/Math',
-        '../Core/ComponentDatatype',
-        '../Core/IndexDatatype',
-        '../Core/PrimitiveType',
-        '../Core/BoundingSphere',
-        '../Core/Intersect',
-        '../Renderer/BlendingState',
-        '../Renderer/BufferUsage',
-        '../Renderer/CommandLists',
-        '../Renderer/DrawCommand',
-        '../Renderer/createPickFragmentShaderSource',
-        './Material',
-        './SceneMode',
-        './Polyline',
-        '../Shaders/PolylineVS',
-        '../Shaders/PolylineFS'
-    ], function(
+define(['Core/DeveloperError', 'Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/EncodedCartesian3', 'Core/Matrix4', 'Core/Math', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Core/Intersect', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createPickFragmentShaderSource', 'Scene/Material', 'Scene/SceneMode', 'Scene/Polyline', 'Shaders/PolylineVS', 'Shaders/PolylineFS'], function(
         DeveloperError,
         Color,
         combine,

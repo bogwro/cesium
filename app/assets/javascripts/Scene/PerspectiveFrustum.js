@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Scene/PerspectiveOffCenterFrustum'
-    ], function(
+define(['Core/DeveloperError', 'Scene/PerspectiveOffCenterFrustum'], function(
         DeveloperError,
         PerspectiveOffCenterFrustum) {
     "use strict";

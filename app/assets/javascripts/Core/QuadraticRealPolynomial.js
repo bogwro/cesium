@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        './DeveloperError',
-        './Math'
-    ],
+define(['Core/DeveloperError', 'Core/Math'],
     function(
         DeveloperError,
         CesiumMath) {

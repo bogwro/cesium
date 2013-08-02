@@ -1,18 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/jsonp',
-        '../Core/Cartesian2',
-        '../Core/DeveloperError',
-        '../Core/Event',
-        './BingMapsStyle',
-        './DiscardMissingTileImagePolicy',
-        './ImageryProvider',
-        './TileProviderError',
-        './WebMercatorTilingScheme',
-        './Credit',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/defaultValue', 'Core/jsonp', 'Core/Cartesian2', 'Core/DeveloperError', 'Core/Event', 'Scene/BingMapsStyle', 'Scene/DiscardMissingTileImagePolicy', 'Scene/ImageryProvider', 'Scene/TileProviderError', 'Scene/WebMercatorTilingScheme', 'Scene/Credit', 'ThirdParty/when'], function(
         defaultValue,
         jsonp,
         Cartesian2,

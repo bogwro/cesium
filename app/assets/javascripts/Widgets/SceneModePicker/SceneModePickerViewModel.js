@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../../Core/defineProperties',
-        '../../Core/destroyObject',
-        '../../Core/DeveloperError',
-        '../../Core/EventHelper',
-        '../../Scene/SceneMode',
-        '../createCommand',
-        '../../ThirdParty/knockout'
-    ], function(
+define(['Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Core/EventHelper', 'Scene/SceneMode', 'Widgets/createCommand', 'ThirdParty/knockout'], function(
         defineProperties,
         destroyObject,
         DeveloperError,

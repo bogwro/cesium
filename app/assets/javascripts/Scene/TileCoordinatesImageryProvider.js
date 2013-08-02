@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/Color',
-        '../Core/Event',
-        './GeographicTilingScheme'
-    ], function(
+define(['Core/defaultValue', 'Core/Color', 'Core/Event', 'Scene/GeographicTilingScheme'], function(
         defaultValue,
         Color,
         Event,

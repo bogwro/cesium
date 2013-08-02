@@ -1,7 +1,5 @@
 /*global define*/
-define([
-        './loadWithXhr'
-    ], function(
+define(['Core/loadWithXhr'], function(
         loadWithXhr) {
     "use strict";
 

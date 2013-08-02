@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        './clone',
-        './defaultValue',
-        './DeveloperError',
-        './EllipseGeometry'
-    ], function(
+define(['Core/clone', 'Core/defaultValue', 'Core/DeveloperError', 'Core/EllipseGeometry'], function(
         clone,
         defaultValue,
         DeveloperError,

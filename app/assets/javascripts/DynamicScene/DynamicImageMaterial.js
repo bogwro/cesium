@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        './DynamicProperty',
-        './CzmlImage',
-        './CzmlNumber',
-        '../Scene/Material'
-    ], function(
+define(['DynamicScene/DynamicProperty', 'DynamicScene/CzmlImage', 'DynamicScene/CzmlNumber', 'Scene/Material'], function(
          DynamicProperty,
          CzmlImage,
          CzmlNumber,

@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/defaultValue', 'ThirdParty/when'], function(
         defaultValue,
         when) {
     "use strict";

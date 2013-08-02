@@ -1,15 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/RuntimeError',
-        '../Core/destroyObject',
-        '../Core/Math',
-        '../Core/Matrix2',
-        '../Core/Matrix3',
-        '../Core/Matrix4',
-        './UniformDatatype',
-        '../Shaders/BuiltinFunctions'
-    ], function(
+define(['Core/DeveloperError', 'Core/RuntimeError', 'Core/destroyObject', 'Core/Math', 'Core/Matrix2', 'Core/Matrix3', 'Core/Matrix4', 'Renderer/UniformDatatype', 'Shaders/BuiltinFunctions'], function(
         DeveloperError,
         RuntimeError,
         destroyObject,

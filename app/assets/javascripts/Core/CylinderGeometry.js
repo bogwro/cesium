@@ -1,18 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        './Cartesian2',
-        './Cartesian3',
-        './Math',
-        './ComponentDatatype',
-        './IndexDatatype',
-        './PrimitiveType',
-        './BoundingSphere',
-        './GeometryAttribute',
-        './GeometryAttributes',
-        './VertexFormat'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Math', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/VertexFormat'], function(
         defaultValue,
         DeveloperError,
         Cartesian2,

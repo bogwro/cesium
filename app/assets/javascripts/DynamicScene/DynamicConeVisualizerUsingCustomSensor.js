@@ -1,18 +1,5 @@
 /*global define*/
-define([
-        '../Core/Cartesian3',
-        '../Core/Color',
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        '../Core/Quaternion',
-        '../Core/Math',
-        '../Core/Matrix3',
-        '../Core/Matrix4',
-        '../Core/Spherical',
-        '../Scene/CustomSensorVolume',
-        '../Scene/Material'
-    ], function(
+define(['Core/Cartesian3', 'Core/Color', 'Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Quaternion', 'Core/Math', 'Core/Matrix3', 'Core/Matrix4', 'Core/Spherical', 'Scene/CustomSensorVolume', 'Scene/Material'], function(
         Cartesian3,
         Color,
         defaultValue,

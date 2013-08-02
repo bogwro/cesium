@@ -1,31 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './BoundingRectangle',
-        './BoundingSphere',
-        './Cartesian2',
-        './Cartesian3',
-        './Cartesian4',
-        './ComponentDatatype',
-        './DeveloperError',
-        './Ellipsoid',
-        './EllipsoidTangentPlane',
-        './Geometry',
-        './GeometryAttribute',
-        './GeometryAttributes',
-        './GeometryInstance',
-        './GeometryPipeline',
-        './IndexDatatype',
-        './Intersect',
-        './Math',
-        './Matrix3',
-        './PolygonPipeline',
-        './PrimitiveType',
-        './Quaternion',
-        './Queue',
-        './VertexFormat',
-        './WindingOrder'
-    ], function(
+define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/ComponentDatatype', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/EllipsoidTangentPlane', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/GeometryInstance', 'Core/GeometryPipeline', 'Core/IndexDatatype', 'Core/Intersect', 'Core/Math', 'Core/Matrix3', 'Core/PolygonPipeline', 'Core/PrimitiveType', 'Core/Quaternion', 'Core/Queue', 'Core/VertexFormat', 'Core/WindingOrder'], function(
         defaultValue,
         BoundingRectangle,
         BoundingSphere,

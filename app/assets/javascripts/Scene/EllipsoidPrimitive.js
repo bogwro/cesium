@@ -1,25 +1,5 @@
 /*global define*/
-define([
-        '../Core/BoxGeometry',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/combine',
-        '../Core/DeveloperError',
-        '../Core/destroyObject',
-        '../Core/Matrix4',
-        '../Core/BoundingSphere',
-        '../Core/PrimitiveType',
-        '../Renderer/CullFace',
-        '../Renderer/BlendingState',
-        '../Renderer/BufferUsage',
-        '../Renderer/CommandLists',
-        '../Renderer/DrawCommand',
-        '../Renderer/createPickFragmentShaderSource',
-        './Material',
-        './SceneMode',
-        '../Shaders/EllipsoidVS',
-        '../Shaders/EllipsoidFS'
-    ], function(
+define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/combine', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Matrix4', 'Core/BoundingSphere', 'Core/PrimitiveType', 'Renderer/CullFace', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createPickFragmentShaderSource', 'Scene/Material', 'Scene/SceneMode', 'Shaders/EllipsoidVS', 'Shaders/EllipsoidFS'], function(
         BoxGeometry,
         Cartesian3,
         Cartesian4,

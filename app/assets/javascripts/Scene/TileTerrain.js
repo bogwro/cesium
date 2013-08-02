@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../Core/BoundingSphere',
-        '../Core/Cartesian3',
-        '../Core/DeveloperError',
-        './TerrainProvider',
-        './TerrainState',
-        './TileProviderError',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/DeveloperError', 'Scene/TerrainProvider', 'Scene/TerrainState', 'Scene/TileProviderError', 'ThirdParty/when'], function(
         BoundingSphere,
         Cartesian3,
         DeveloperError,

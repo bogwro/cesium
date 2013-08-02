@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        '../Core/ComponentDatatype',
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        '../Core/Math',
-        './BufferUsage'
-    ], function(
+define(['Core/ComponentDatatype', 'Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Math', 'Renderer/BufferUsage'], function(
         ComponentDatatype,
         defaultValue,
         destroyObject,

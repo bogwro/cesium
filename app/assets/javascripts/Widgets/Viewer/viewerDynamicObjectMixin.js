@@ -1,14 +1,5 @@
 /*global define*/
-define([
-        '../../Core/defaultValue',
-        '../../Core/DeveloperError',
-        '../../Core/defineProperties',
-        '../../Core/EventHelper',
-        '../../Core/ScreenSpaceEventType',
-        '../../Core/wrapFunction',
-        '../../Scene/SceneMode',
-        '../../DynamicScene/DynamicObjectView'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defineProperties', 'Core/EventHelper', 'Core/ScreenSpaceEventType', 'Core/wrapFunction', 'Scene/SceneMode', 'DynamicScene/DynamicObjectView'], function(
         defaultValue,
         DeveloperError,
         defineProperties,

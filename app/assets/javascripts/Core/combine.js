@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        './DeveloperError',
-        './defaultValue'
-    ], function(
+define(['Core/DeveloperError', 'Core/defaultValue'], function(
         DeveloperError,
         defaultValue) {
     "use strict";

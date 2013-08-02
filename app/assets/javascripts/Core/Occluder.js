@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        './Math',
-        './Cartesian3',
-        './Visibility',
-        './Ellipsoid',
-        './BoundingSphere'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Visibility', 'Core/Ellipsoid', 'Core/BoundingSphere'], function(
         defaultValue,
         DeveloperError,
         CesiumMath,

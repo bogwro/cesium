@@ -1,16 +1,5 @@
 /*global define*/
-define([
-        '../Core/clone',
-        '../Core/Color',
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        '../Core/Math',
-        '../Core/Matrix4',
-        '../Renderer/BufferUsage',
-        './Material',
-        './CustomSensorVolume'
-    ], function(
+define(['Core/clone', 'Core/Color', 'Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Math', 'Core/Matrix4', 'Renderer/BufferUsage', 'Scene/Material', 'Scene/CustomSensorVolume'], function(
         clone,
         Color,
         defaultValue,

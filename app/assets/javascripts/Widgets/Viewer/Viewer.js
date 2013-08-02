@@ -1,28 +1,5 @@
 /*global define*/
-define([
-        '../../Core/Cartesian2',
-        '../../Core/defaultValue',
-        '../../Core/DeveloperError',
-        '../../Core/defineProperties',
-        '../../Core/destroyObject',
-        '../../Core/Event',
-        '../../Core/EventHelper',
-        '../../Core/requestAnimationFrame',
-        '../../Core/ScreenSpaceEventType',
-        '../../DynamicScene/DataSourceDisplay',
-        '../Animation/Animation',
-        '../Animation/AnimationViewModel',
-        '../BaseLayerPicker/BaseLayerPicker',
-        '../BaseLayerPicker/createDefaultBaseLayers',
-        '../CesiumWidget/CesiumWidget',
-        '../ClockViewModel',
-        '../FullscreenButton/FullscreenButton',
-        '../getElement',
-        '../HomeButton/HomeButton',
-        '../SceneModePicker/SceneModePicker',
-        '../Timeline/Timeline',
-        '../../ThirdParty/knockout'
-    ], function(
+define(['Core/Cartesian2', 'Core/defaultValue', 'Core/DeveloperError', 'Core/defineProperties', 'Core/destroyObject', 'Core/Event', 'Core/EventHelper', 'Core/requestAnimationFrame', 'Core/ScreenSpaceEventType', 'DynamicScene/DataSourceDisplay', 'Widgets/Animation/Animation', 'Widgets/Animation/AnimationViewModel', 'Widgets/BaseLayerPicker/BaseLayerPicker', 'Widgets/BaseLayerPicker/createDefaultBaseLayers', 'Widgets/CesiumWidget/CesiumWidget', 'Widgets/ClockViewModel', 'Widgets/FullscreenButton/FullscreenButton', 'Widgets/getElement', 'Widgets/HomeButton/HomeButton', 'Widgets/SceneModePicker/SceneModePicker', 'Widgets/Timeline/Timeline', 'ThirdParty/knockout'], function(
         Cartesian2,
         defaultValue,
         DeveloperError,

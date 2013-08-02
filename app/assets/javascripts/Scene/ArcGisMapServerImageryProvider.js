@@ -1,19 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/jsonp',
-        '../Core/writeTextToCanvas',
-        '../Core/Cartesian2',
-        '../Core/DeveloperError',
-        '../Core/Event',
-        './DiscardMissingTileImagePolicy',
-        './GeographicTilingScheme',
-        './ImageryProvider',
-        './TileProviderError',
-        './WebMercatorTilingScheme',
-        './Credit',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/defaultValue', 'Core/jsonp', 'Core/writeTextToCanvas', 'Core/Cartesian2', 'Core/DeveloperError', 'Core/Event', 'Scene/DiscardMissingTileImagePolicy', 'Scene/GeographicTilingScheme', 'Scene/ImageryProvider', 'Scene/TileProviderError', 'Scene/WebMercatorTilingScheme', 'Scene/Credit', 'ThirdParty/when'], function(
         defaultValue,
         jsonp,
         writeTextToCanvas,

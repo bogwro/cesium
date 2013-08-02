@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/destroyObject',
-        '../Core/Math',
-        '../Core/ScreenSpaceEventHandler',
-        '../Core/ScreenSpaceEventType',
-        '../Core/Cartesian2',
-        './CameraEventType'
-    ], function(
+define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Core/ScreenSpaceEventHandler', 'Core/ScreenSpaceEventType', 'Core/Cartesian2', 'Scene/CameraEventType'], function(
         DeveloperError,
         destroyObject,
         CesiumMath,

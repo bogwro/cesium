@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        './barycentricCoordinates',
-        './Cartesian3',
-        './DeveloperError'
-    ], function(
+define(['Core/barycentricCoordinates', 'Core/Cartesian3', 'Core/DeveloperError'], function(
         barycentricCoordinates,
         Cartesian3,
         DeveloperError) {

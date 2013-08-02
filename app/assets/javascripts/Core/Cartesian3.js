@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        './freezeObject'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], function(
         defaultValue,
         DeveloperError,
         freezeObject) {

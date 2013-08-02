@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './Color',
-        './ComponentDatatype',
-        './DeveloperError'
-    ], function(
+define(['Core/defaultValue', 'Core/Color', 'Core/ComponentDatatype', 'Core/DeveloperError'], function(
         defaultValue,
         Color,
         ComponentDatatype,

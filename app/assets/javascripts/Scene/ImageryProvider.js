@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        '../Core/loadImage',
-        '../Core/loadImageViaBlob',
-        '../Core/DeveloperError',
-        '../Core/throttleRequestByServer'
-    ], function(
+define(['Core/loadImage', 'Core/loadImageViaBlob', 'Core/DeveloperError', 'Core/throttleRequestByServer'], function(
         loadImage,
         loadImageViaBlob,
         DeveloperError,

@@ -1,23 +1,5 @@
 /*global define*/
-define([
-        '../Core/Color',
-        '../Core/combine',
-        '../Core/destroyObject',
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/BoundingRectangle',
-        '../Core/ComponentDatatype',
-        '../Core/PrimitiveType',
-        '../Core/Geometry',
-        '../Core/GeometryAttribute',
-        './Material',
-        '../Renderer/BufferUsage',
-        '../Renderer/BlendingState',
-        '../Renderer/CommandLists',
-        '../Renderer/DrawCommand',
-        '../Shaders/ViewportQuadVS',
-        '../Shaders/ViewportQuadFS'
-    ], function(
+define(['Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingRectangle', 'Core/ComponentDatatype', 'Core/PrimitiveType', 'Core/Geometry', 'Core/GeometryAttribute', 'Scene/Material', 'Renderer/BufferUsage', 'Renderer/BlendingState', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Shaders/ViewportQuadVS', 'Shaders/ViewportQuadFS'], function(
         Color,
         combine,
         destroyObject,

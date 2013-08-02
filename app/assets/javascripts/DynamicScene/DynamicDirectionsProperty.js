@@ -1,11 +1,5 @@
 /*global define*/
-define([
-        '../Core/TimeInterval',
-        '../Core/TimeIntervalCollection',
-        '../Core/Cartesian3',
-        '../Core/Spherical',
-        '../Core/Iso8601'
-    ], function(
+define(['Core/TimeInterval', 'Core/TimeIntervalCollection', 'Core/Cartesian3', 'Core/Spherical', 'Core/Iso8601'], function(
         TimeInterval,
         TimeIntervalCollection,
         Cartesian3,

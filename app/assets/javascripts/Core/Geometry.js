@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        './BoundingSphere'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere'], function(
         defaultValue,
         DeveloperError,
         BoundingSphere) {

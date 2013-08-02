@@ -1,10 +1,5 @@
 /*global define*/
-define([
-        './DeveloperError',
-        './freezeObject',
-        './JulianDate',
-        './TimeStandard'
-    ], function(
+define(['Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/TimeStandard'], function(
         DeveloperError,
         freezeObject,
         JulianDate,

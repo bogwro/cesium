@@ -1,16 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/loadImage',
-        '../Core/writeTextToCanvas',
-        '../Core/DeveloperError',
-        '../Core/Event',
-        '../Core/Extent',
-        './Credit',
-        './GeographicTilingScheme',
-        './TileProviderError',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/defaultValue', 'Core/loadImage', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Event', 'Core/Extent', 'Scene/Credit', 'Scene/GeographicTilingScheme', 'Scene/TileProviderError', 'ThirdParty/when'], function(
         defaultValue,
         loadImage,
         writeTextToCanvas,

@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/Event',
-        '../Core/Math',
-        './ImageryLayer'
-    ], function(
+define(['Core/DeveloperError', 'Core/defaultValue', 'Core/destroyObject', 'Core/Event', 'Core/Math', 'Scene/ImageryLayer'], function(
         DeveloperError,
         defaultValue,
         destroyObject,

@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/Ellipsoid',
-        '../Core/Event',
-        './HeightmapTerrainData',
-        './TerrainProvider',
-        './GeographicTilingScheme'
-    ], function(
+define(['Core/defaultValue', 'Core/Ellipsoid', 'Core/Event', 'Scene/HeightmapTerrainData', 'Scene/TerrainProvider', 'Scene/GeographicTilingScheme'], function(
         defaultValue,
         Ellipsoid,
         Event,

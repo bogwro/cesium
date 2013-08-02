@@ -1,17 +1,5 @@
 /*global define*/
-define([
-        '../Core/Cartesian2',
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/DeveloperError',
-        '../Core/Math',
-        './MipmapHint',
-        './PixelDatatype',
-        './PixelFormat',
-        './TextureMagnificationFilter',
-        './TextureMinificationFilter',
-        './TextureWrap'
-    ], function(
+define(['Core/Cartesian2', 'Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Math', 'Renderer/MipmapHint', 'Renderer/PixelDatatype', 'Renderer/PixelFormat', 'Renderer/TextureMagnificationFilter', 'Renderer/TextureMinificationFilter', 'Renderer/TextureWrap'], function(
         Cartesian2,
         defaultValue,
         destroyObject,

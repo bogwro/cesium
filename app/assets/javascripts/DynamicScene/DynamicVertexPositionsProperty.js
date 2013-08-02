@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../Core/TimeInterval',
-        '../Core/TimeIntervalCollection',
-        '../Core/Cartesian3',
-        '../Core/Cartographic',
-        '../Core/Iso8601',
-        '../Core/Ellipsoid',
-        './ReferenceProperty'
-    ], function(
+define(['Core/TimeInterval', 'Core/TimeIntervalCollection', 'Core/Cartesian3', 'Core/Cartographic', 'Core/Iso8601', 'Core/Ellipsoid', 'DynamicScene/ReferenceProperty'], function(
         TimeInterval,
         TimeIntervalCollection,
         Cartesian3,

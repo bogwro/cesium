@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Renderer/BlendingState',
-        '../Renderer/CullFace'
-    ], function(
+define(['Core/defaultValue', 'Renderer/BlendingState', 'Renderer/CullFace'], function(
         defaultValue,
         BlendingState,
         CullFace) {

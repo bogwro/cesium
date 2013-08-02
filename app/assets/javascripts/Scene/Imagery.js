@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        '../Core/destroyObject',
-        './ImageryState'
-    ], function(
+define(['Core/destroyObject', 'Scene/ImageryState'], function(
         destroyObject,
         ImageryState) {
     "use strict";

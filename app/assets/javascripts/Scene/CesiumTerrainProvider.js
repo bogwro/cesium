@@ -1,17 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/loadArrayBuffer',
-        '../Core/throttleRequestByServer',
-        '../Core/writeTextToCanvas',
-        '../Core/DeveloperError',
-        '../Core/Event',
-        './Credit',
-        './GeographicTilingScheme',
-        './HeightmapTerrainData',
-        './TerrainProvider',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/defaultValue', 'Core/loadArrayBuffer', 'Core/throttleRequestByServer', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Event', 'Scene/Credit', 'Scene/GeographicTilingScheme', 'Scene/HeightmapTerrainData', 'Scene/TerrainProvider', 'ThirdParty/when'], function(
         defaultValue,
         loadArrayBuffer,
         throttleRequestByServer,

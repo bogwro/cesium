@@ -1,28 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/Color',
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/EncodedCartesian3',
-        '../Core/Matrix4',
-        '../Core/ComponentDatatype',
-        '../Core/IndexDatatype',
-        '../Core/PrimitiveType',
-        '../Core/BoundingSphere',
-        '../Renderer/BlendingState',
-        '../Renderer/BufferUsage',
-        '../Renderer/CommandLists',
-        '../Renderer/DrawCommand',
-        '../Renderer/VertexArrayFacade',
-        './SceneMode',
-        './Billboard',
-        './HorizontalOrigin',
-        '../Shaders/BillboardCollectionVS',
-        '../Shaders/BillboardCollectionFS'
-    ], function(
+define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/EncodedCartesian3', 'Core/Matrix4', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/VertexArrayFacade', 'Scene/SceneMode', 'Scene/Billboard', 'Scene/HorizontalOrigin', 'Shaders/BillboardCollectionVS', 'Shaders/BillboardCollectionFS'], function(
         DeveloperError,
         Color,
         defaultValue,

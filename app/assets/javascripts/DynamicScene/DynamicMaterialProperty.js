@@ -1,12 +1,5 @@
 /*global define*/
-define([
-        '../Core/TimeInterval',
-        '../Core/TimeIntervalCollection',
-        '../Core/Iso8601',
-        './DynamicColorMaterial',
-        './DynamicImageMaterial',
-        './DynamicGridMaterial'
-    ], function(
+define(['Core/TimeInterval', 'Core/TimeIntervalCollection', 'Core/Iso8601', 'DynamicScene/DynamicColorMaterial', 'DynamicScene/DynamicImageMaterial', 'DynamicScene/DynamicGridMaterial'], function(
         TimeInterval,
         TimeIntervalCollection,
         Iso8601,

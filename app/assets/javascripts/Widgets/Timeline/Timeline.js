@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../../Core/DeveloperError',
-        '../../Core/ClockRange',
-        '../../Core/destroyObject',
-        '../../Core/JulianDate',
-        '../getElement',
-        './TimelineTrack',
-        './TimelineHighlightRange'
-    ], function(
+define(['Core/DeveloperError', 'Core/ClockRange', 'Core/destroyObject', 'Core/JulianDate', 'Widgets/getElement', 'Widgets/Timeline/TimelineTrack', 'Widgets/Timeline/TimelineHighlightRange'], function(
         DeveloperError,
         ClockRange,
         destroyObject,

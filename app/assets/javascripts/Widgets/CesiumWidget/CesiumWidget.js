@@ -1,29 +1,5 @@
 /*global define*/
-define([
-        '../../Core/buildModuleUrl',
-        '../../Core/Cartesian2',
-        '../../Core/Cartesian3',
-        '../../Core/Clock',
-        '../../Core/DefaultProxy',
-        '../../Core/defaultValue',
-        '../../Core/defineProperties',
-        '../../Core/destroyObject',
-        '../../Core/DeveloperError',
-        '../../Core/Ellipsoid',
-        '../../Core/FeatureDetection',
-        '../../Core/requestAnimationFrame',
-        '../../Core/ScreenSpaceEventHandler',
-        '../../Scene/BingMapsImageryProvider',
-        '../../Scene/CentralBody',
-        '../../Scene/Credit',
-        '../../Scene/Scene',
-        '../../Scene/SceneMode',
-        '../../Scene/SceneTransitioner',
-        '../../Scene/SkyAtmosphere',
-        '../../Scene/SkyBox',
-        '../../Scene/Sun',
-        '../getElement'
-    ], function(
+define(['Core/buildModuleUrl', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Clock', 'Core/DefaultProxy', 'Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/FeatureDetection', 'Core/requestAnimationFrame', 'Core/ScreenSpaceEventHandler', 'Scene/BingMapsImageryProvider', 'Scene/CentralBody', 'Scene/Credit', 'Scene/Scene', 'Scene/SceneMode', 'Scene/SceneTransitioner', 'Scene/SkyAtmosphere', 'Scene/SkyBox', 'Scene/Sun', 'Widgets/getElement'], function(
         buildModuleUrl,
         Cartesian2,
         Cartesian3,

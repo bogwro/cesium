@@ -1,20 +1,5 @@
 /*global define*/
-define([
-        './DeveloperError',
-        './Math',
-        './Cartesian2',
-        './Cartesian3',
-        './Geometry',
-        './GeometryAttribute',
-        './Ellipsoid',
-        './EllipsoidTangentPlane',
-        './defaultValue',
-        './pointInsideTriangle',
-        './ComponentDatatype',
-        './PrimitiveType',
-        './Queue',
-        './WindingOrder'
-    ], function(
+define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/Ellipsoid', 'Core/EllipsoidTangentPlane', 'Core/defaultValue', 'Core/pointInsideTriangle', 'Core/ComponentDatatype', 'Core/PrimitiveType', 'Core/Queue', 'Core/WindingOrder'], function(
         DeveloperError,
         CesiumMath,
         Cartesian2,

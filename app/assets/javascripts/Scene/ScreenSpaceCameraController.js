@@ -1,25 +1,5 @@
 /*global define*/
-define([
-        '../Core/destroyObject',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Core/Cartesian4',
-        '../Core/Cartographic',
-        '../Core/DeveloperError',
-        '../Core/Ellipsoid',
-        '../Core/KeyboardEventModifier',
-        '../Core/FAR',
-        '../Core/IntersectionTests',
-        '../Core/Math',
-        '../Core/Matrix4',
-        '../Core/Ray',
-        '../Core/Transforms',
-        './AnimationCollection',
-        './CameraEventAggregator',
-        './CameraEventType',
-        './CameraColumbusViewMode',
-        './SceneMode'
-    ], function(
+define(['Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/KeyboardEventModifier', 'Core/FAR', 'Core/IntersectionTests', 'Core/Math', 'Core/Matrix4', 'Core/Ray', 'Core/Transforms', 'Scene/AnimationCollection', 'Scene/CameraEventAggregator', 'Scene/CameraEventType', 'Scene/CameraColumbusViewMode', 'Scene/SceneMode'], function(
         destroyObject,
         Cartesian2,
         Cartesian3,

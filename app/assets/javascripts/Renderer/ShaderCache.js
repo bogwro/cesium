@@ -1,7 +1,5 @@
 /*global define*/
-define([
-        '../Core/destroyObject'
-    ], function(
+define(['Core/destroyObject'], function(
         destroyObject) {
     "use strict";
 

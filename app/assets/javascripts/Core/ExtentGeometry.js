@@ -1,29 +1,5 @@
 /*global define*/
-define([
-        './clone',
-        './defaultValue',
-        './BoundingSphere',
-        './Cartesian2',
-        './Cartesian3',
-        './Cartographic',
-        './ComponentDatatype',
-        './IndexDatatype',
-        './DeveloperError',
-        './Ellipsoid',
-        './Extent',
-        './Geometry',
-        './GeometryInstance',
-        './GeometryPipeline',
-        './GeographicProjection',
-        './GeometryAttribute',
-        './GeometryAttributes',
-        './Math',
-        './Matrix2',
-        './Matrix3',
-        './PrimitiveType',
-        './Quaternion',
-        './VertexFormat'
-    ], function(
+define(['Core/clone', 'Core/defaultValue', 'Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartographic', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/Extent', 'Core/Geometry', 'Core/GeometryInstance', 'Core/GeometryPipeline', 'Core/GeographicProjection', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/Math', 'Core/Matrix2', 'Core/Matrix3', 'Core/PrimitiveType', 'Core/Quaternion', 'Core/VertexFormat'], function(
         clone,
         defaultValue,
         BoundingSphere,

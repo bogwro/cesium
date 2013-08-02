@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Scene/LabelStyle'
-    ], function(
+define(['Core/defaultValue', 'Scene/LabelStyle'], function(
         defaultValue,
         LabelStyle) {
     "use strict";

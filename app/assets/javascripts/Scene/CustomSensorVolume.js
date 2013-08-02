@@ -1,28 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/Color',
-        '../Core/combine',
-        '../Core/destroyObject',
-        '../Core/FAR',
-        '../Core/Cartesian3',
-        '../Core/Matrix4',
-        '../Core/ComponentDatatype',
-        '../Core/PrimitiveType',
-        '../Core/BoundingSphere',
-        '../Renderer/BufferUsage',
-        '../Renderer/BlendingState',
-        '../Renderer/CommandLists',
-        '../Renderer/DrawCommand',
-        '../Renderer/createPickFragmentShaderSource',
-        '../Renderer/CullFace',
-        './Material',
-        '../Shaders/SensorVolume',
-        '../Shaders/CustomSensorVolumeVS',
-        '../Shaders/CustomSensorVolumeFS',
-        './SceneMode'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/FAR', 'Core/Cartesian3', 'Core/Matrix4', 'Core/ComponentDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Renderer/BufferUsage', 'Renderer/BlendingState', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createPickFragmentShaderSource', 'Renderer/CullFace', 'Scene/Material', 'Shaders/SensorVolume', 'Shaders/CustomSensorVolumeVS', 'Shaders/CustomSensorVolumeFS', 'Scene/SceneMode'], function(
         defaultValue,
         DeveloperError,
         Color,

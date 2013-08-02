@@ -1,14 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/ColorGeometryInstanceAttribute',
-        '../Core/GeometryInstance',
-        '../Core/GeometryPipeline',
-        '../Core/Matrix4',
-        './Primitive',
-        './PerInstanceColorAppearance'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/ColorGeometryInstanceAttribute', 'Core/GeometryInstance', 'Core/GeometryPipeline', 'Core/Matrix4', 'Scene/Primitive', 'Scene/PerInstanceColorAppearance'], function(
         defaultValue,
         DeveloperError,
         ColorGeometryInstanceAttribute,

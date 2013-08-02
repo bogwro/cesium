@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './ComponentDatatype',
-        './DeveloperError'
-    ], function(
+define(['Core/defaultValue', 'Core/ComponentDatatype', 'Core/DeveloperError'], function(
         defaultValue,
         ComponentDatatype,
         DeveloperError) {

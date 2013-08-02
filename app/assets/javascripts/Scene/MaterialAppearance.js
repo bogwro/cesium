@@ -1,17 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/freezeObject',
-        '../Core/VertexFormat',
-        './Material',
-        './Appearance',
-        '../Shaders/Appearances/BasicMaterialAppearanceVS',
-        '../Shaders/Appearances/BasicMaterialAppearanceFS',
-        '../Shaders/Appearances/TexturedMaterialAppearanceVS',
-        '../Shaders/Appearances/TexturedMaterialAppearanceFS',
-        '../Shaders/Appearances/AllMaterialAppearanceVS',
-        '../Shaders/Appearances/AllMaterialAppearanceFS'
-    ], function(
+define(['Core/defaultValue', 'Core/freezeObject', 'Core/VertexFormat', 'Scene/Material', 'Scene/Appearance', 'Shaders/Appearances/BasicMaterialAppearanceVS', 'Shaders/Appearances/BasicMaterialAppearanceFS', 'Shaders/Appearances/TexturedMaterialAppearanceVS', 'Shaders/Appearances/TexturedMaterialAppearanceFS', 'Shaders/Appearances/AllMaterialAppearanceVS', 'Shaders/Appearances/AllMaterialAppearanceFS'], function(
         defaultValue,
         freezeObject,
         VertexFormat,

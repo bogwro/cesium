@@ -1,19 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/EllipsoidGeometry',
-        '../Core/destroyObject',
-        '../Core/GeometryPipeline',
-        '../Core/PrimitiveType',
-        '../Core/Ellipsoid',
-        '../Renderer/BufferUsage',
-        '../Renderer/DrawCommand',
-        '../Renderer/CullFace',
-        '../Renderer/BlendingState',
-        '../Scene/SceneMode',
-        '../Shaders/SkyAtmosphereVS',
-        '../Shaders/SkyAtmosphereFS'
-    ], function(
+define(['Core/defaultValue', 'Core/EllipsoidGeometry', 'Core/destroyObject', 'Core/GeometryPipeline', 'Core/PrimitiveType', 'Core/Ellipsoid', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Renderer/CullFace', 'Renderer/BlendingState', 'Scene/SceneMode', 'Shaders/SkyAtmosphereVS', 'Shaders/SkyAtmosphereFS'], function(
         defaultValue,
         EllipsoidGeometry,
         destroyObject,

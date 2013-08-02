@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/Event',
-        '../Core/writeTextToCanvas',
-        './ImageryProvider',
-        './WebMercatorTilingScheme',
-        './Credit'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Event', 'Core/writeTextToCanvas', 'Scene/ImageryProvider', 'Scene/WebMercatorTilingScheme', 'Scene/Credit'], function(
         defaultValue,
         DeveloperError,
         Event,

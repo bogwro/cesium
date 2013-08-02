@@ -1,8 +1,5 @@
 /*global define*/
-define([
-        './DeveloperError',
-        './QuadraticRealPolynomial'
-    ], function(
+define(['Core/DeveloperError', 'Core/QuadraticRealPolynomial'], function(
         DeveloperError,
         QuadraticRealPolynomial) {
     "use strict";

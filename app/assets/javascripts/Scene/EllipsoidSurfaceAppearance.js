@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/VertexFormat',
-        './Material',
-        './Appearance',
-        './MaterialAppearance',
-        '../Shaders/Appearances/EllipsoidSurfaceAppearanceVS',
-        '../Shaders/Appearances/EllipsoidSurfaceAppearanceFS'
-    ], function(
+define(['Core/defaultValue', 'Core/VertexFormat', 'Scene/Material', 'Scene/Appearance', 'Scene/MaterialAppearance', 'Shaders/Appearances/EllipsoidSurfaceAppearanceVS', 'Shaders/Appearances/EllipsoidSurfaceAppearanceFS'], function(
         defaultValue,
         VertexFormat,
         Material,

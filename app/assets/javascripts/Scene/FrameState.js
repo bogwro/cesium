@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/Cartesian2',
-        './SceneMode'
-    ], function(
+define(['Core/DeveloperError', 'Core/Cartesian2', 'Scene/SceneMode'], function(
         DeveloperError,
         Cartesian2,
         SceneMode) {

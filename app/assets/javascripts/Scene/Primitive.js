@@ -1,28 +1,5 @@
 /*global define*/
-define([
-        '../Core/clone',
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        '../Core/destroyObject',
-        '../Core/Matrix4',
-        '../Core/Color',
-        '../Core/GeometryPipeline',
-        '../Core/PrimitiveType',
-        '../Core/BoundingSphere',
-        '../Core/Geometry',
-        '../Core/GeometryAttribute',
-        '../Core/GeometryAttributes',
-        '../Core/GeometryInstance',
-        '../Core/GeometryInstanceAttribute',
-        '../Core/ComponentDatatype',
-        '../Core/Cartesian3',
-        '../Renderer/BufferUsage',
-        '../Renderer/VertexLayout',
-        '../Renderer/CommandLists',
-        '../Renderer/DrawCommand',
-        '../Renderer/createPickFragmentShaderSource',
-        './SceneMode'
-    ], function(
+define(['Core/clone', 'Core/defaultValue', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Matrix4', 'Core/Color', 'Core/GeometryPipeline', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/GeometryInstance', 'Core/GeometryInstanceAttribute', 'Core/ComponentDatatype', 'Core/Cartesian3', 'Renderer/BufferUsage', 'Renderer/VertexLayout', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createPickFragmentShaderSource', 'Scene/SceneMode'], function(
         clone,
         defaultValue,
         DeveloperError,

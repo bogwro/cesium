@@ -1,7 +1,5 @@
 /*global define*/
-define([
-        '../Core/Spherical'
-       ], function(
+define(['Core/Spherical'], function(
          Spherical) {
     "use strict";
 

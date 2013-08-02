@@ -1,24 +1,5 @@
 /*global define*/
-define([
-        '../Core/createGuid',
-        '../Core/Cartographic',
-        '../Core/Color',
-        '../Core/defineProperties',
-        '../Core/DeveloperError',
-        '../Core/RuntimeError',
-        '../Core/Ellipsoid',
-        '../Core/Event',
-        '../Core/loadJson',
-        './ConstantProperty',
-        './DynamicObject',
-        './DynamicPoint',
-        './DynamicPolyline',
-        './DynamicPolygon',
-        './DynamicMaterialProperty',
-        './DynamicObjectCollection',
-        '../ThirdParty/when',
-        '../ThirdParty/topojson'
-    ], function(
+define(['Core/createGuid', 'Core/Cartographic', 'Core/Color', 'Core/defineProperties', 'Core/DeveloperError', 'Core/RuntimeError', 'Core/Ellipsoid', 'Core/Event', 'Core/loadJson', 'DynamicScene/ConstantProperty', 'DynamicScene/DynamicObject', 'DynamicScene/DynamicPoint', 'DynamicScene/DynamicPolyline', 'DynamicScene/DynamicPolygon', 'DynamicScene/DynamicMaterialProperty', 'DynamicScene/DynamicObjectCollection', 'ThirdParty/when', 'ThirdParty/topojson'], function(
         createGuid,
         Cartographic,
         Color,

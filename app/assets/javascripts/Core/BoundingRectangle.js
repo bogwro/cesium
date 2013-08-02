@@ -1,11 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './DeveloperError',
-        './Cartographic',
-        './GeographicProjection',
-        './Intersect'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/GeographicProjection', 'Core/Intersect'], function(
         defaultValue,
         DeveloperError,
         Cartographic,

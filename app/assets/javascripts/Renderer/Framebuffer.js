@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/destroyObject',
-        './PixelFormat'
-    ], function(
+define(['Core/DeveloperError', 'Core/destroyObject', 'Renderer/PixelFormat'], function(
         DeveloperError,
         destroyObject,
         PixelFormat) {

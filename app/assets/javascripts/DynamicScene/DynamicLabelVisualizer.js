@@ -1,15 +1,5 @@
 /*global define*/
-define([
-        '../Core/DeveloperError',
-        '../Core/destroyObject',
-        '../Core/Color',
-        '../Core/Cartesian2',
-        '../Core/Cartesian3',
-        '../Scene/LabelCollection',
-        '../Scene/LabelStyle',
-        '../Scene/HorizontalOrigin',
-        '../Scene/VerticalOrigin'
-    ], function(
+define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Cartesian2', 'Core/Cartesian3', 'Scene/LabelCollection', 'Scene/LabelStyle', 'Scene/HorizontalOrigin', 'Scene/VerticalOrigin'], function(
         DeveloperError,
         destroyObject,
         Color,

@@ -1,11 +1,5 @@
 /*global define*/
-define([
-        '../Core/TimeInterval',
-        '../Core/Iso8601',
-        '../Core/ClockRange',
-        '../Core/ClockStep',
-        '../Core/JulianDate'
-    ], function(
+define(['Core/TimeInterval', 'Core/Iso8601', 'Core/ClockRange', 'Core/ClockStep', 'Core/JulianDate'], function(
         TimeInterval,
         Iso8601,
         ClockRange,

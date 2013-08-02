@@ -1,16 +1,5 @@
 /*global define*/
-define([
-        '../Core/ClockRange',
-        '../Core/ClockStep',
-        '../Core/DeveloperError',
-        '../Core/Event',
-        '../Core/Iso8601',
-        '../Core/loadJson',
-        './DynamicClock',
-        './processCzml',
-        './DynamicObjectCollection',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/ClockRange', 'Core/ClockStep', 'Core/DeveloperError', 'Core/Event', 'Core/Iso8601', 'Core/loadJson', 'DynamicScene/DynamicClock', 'DynamicScene/processCzml', 'DynamicScene/DynamicObjectCollection', 'ThirdParty/when'], function(
         ClockRange,
         ClockStep,
         DeveloperError,

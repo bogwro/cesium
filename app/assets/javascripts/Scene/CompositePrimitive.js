@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        '../Core/createGuid',
-        '../Core/destroyObject',
-        '../Core/DeveloperError'
-    ], function(
+define(['Core/createGuid', 'Core/destroyObject', 'Core/DeveloperError'], function(
         createGuid,
         destroyObject,
         DeveloperError) {

@@ -1,13 +1,5 @@
 /*global define*/
-define([
-        '../Core/BoundingRectangle',
-        '../Core/Color',
-        '../Core/defaultValue',
-        '../Core/destroyObject',
-        '../Renderer/PixelFormat',
-        './Material',
-        './ViewportQuad'
-    ], function(
+define(['Core/BoundingRectangle', 'Core/Color', 'Core/defaultValue', 'Core/destroyObject', 'Renderer/PixelFormat', 'Scene/Material', 'Scene/ViewportQuad'], function(
         BoundingRectangle,
         Color,
         defaultValue,

@@ -1,12 +1,5 @@
 /*global define*/
-define(['./Cartesian3',
-        './DeveloperError',
-        './JulianDate',
-        './Math',
-        './Matrix3',
-        './TimeConstants',
-        './TimeStandard'
-    ], function(
+define(['Core/Cartesian3', 'Core/DeveloperError', 'Core/JulianDate', 'Core/Math', 'Core/Matrix3', 'Core/TimeConstants', 'Core/TimeStandard'], function(
         Cartesian3,
         DeveloperError,
         JulianDate,

@@ -1,20 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/loadImage',
-        '../Core/getImagePixels',
-        '../Core/throttleRequestByServer',
-        '../Core/writeTextToCanvas',
-        '../Core/DeveloperError',
-        '../Core/Math',
-        '../Core/Ellipsoid',
-        '../Core/Event',
-        './Credit',
-        './TerrainProvider',
-        './GeographicTilingScheme',
-        './HeightmapTerrainData',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/defaultValue', 'Core/loadImage', 'Core/getImagePixels', 'Core/throttleRequestByServer', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Math', 'Core/Ellipsoid', 'Core/Event', 'Scene/Credit', 'Scene/TerrainProvider', 'Scene/GeographicTilingScheme', 'Scene/HeightmapTerrainData', 'ThirdParty/when'], function(
         defaultValue,
         loadImage,
         getImagePixels,

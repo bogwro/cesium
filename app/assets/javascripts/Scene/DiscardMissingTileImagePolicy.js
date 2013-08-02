@@ -1,11 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/loadImageViaBlob',
-        '../Core/getImagePixels',
-        '../Core/DeveloperError',
-        '../ThirdParty/when'
-    ], function(
+define(['Core/defaultValue', 'Core/loadImageViaBlob', 'Core/getImagePixels', 'Core/DeveloperError', 'ThirdParty/when'], function(
         defaultValue,
         loadImageViaBlob,
         getImagePixels,

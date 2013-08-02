@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        './defaultValue',
-        './Cartesian3',
-        './EllipsoidGeometry'
-    ], function(
+define(['Core/defaultValue', 'Core/Cartesian3', 'Core/EllipsoidGeometry'], function(
         defaultValue,
         Cartesian3,
         EllipsoidGeometry) {

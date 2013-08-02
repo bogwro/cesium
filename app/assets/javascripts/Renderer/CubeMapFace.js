@@ -1,9 +1,5 @@
 /*global define*/
-define([
-        '../Core/defaultValue',
-        '../Core/DeveloperError',
-        './PixelDatatype'
-    ], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Renderer/PixelDatatype'], function(
         defaultValue,
         DeveloperError,
         PixelDatatype) {
