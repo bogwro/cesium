@@ -1,7 +1,8 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/defaultValue'], function(
-        DeveloperError,
-        defaultValue) {
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
+        defaultValue,
+        defined,
+        DeveloperError) {
     "use strict";
 
     /**
@@ -31,7 +32,7 @@ define(['Core/DeveloperError', 'Core/defaultValue'], function(
      * @exception {DeveloperError} indices length must be a multiple of three.
      * @exception {DeveloperError} cacheSize must be greater than two.
      *
-     * @return {Number} The average cache miss ratio (ACMR).
+     * @returns {Number} The average cache miss ratio (ACMR).
      *
      * @example
      * var indices = [0, 1, 2, 3, 4, 5];
@@ -45,7 +46,7 @@ define(['Core/DeveloperError', 'Core/defaultValue'], function(
         var maximumIndex = description.maximumIndex;
         var cacheSize = defaultValue(description.cacheSize, 24);
 
-        if (typeof indices === 'undefined') {
+        if (!defined(indices)) {
             throw new DeveloperError('indices is required.');
         }
 
@@ -62,7 +63,7 @@ define(['Core/DeveloperError', 'Core/defaultValue'], function(
         }
 
         // Compute the maximumIndex if not given
-        if (typeof maximumIndex === 'undefined') {
+        if (!defined(maximumIndex)) {
             maximumIndex = 0;
             var currentIndex = 0;
             var intoIndices = indices[currentIndex];
@@ -106,7 +107,7 @@ define(['Core/DeveloperError', 'Core/defaultValue'], function(
      * @exception {DeveloperError} indices length must be a multiple of three.
      * @exception {DeveloperError} cacheSize must be greater than two.
      *
-     * @return {Array} A list of the input indices in an optimized order.
+     * @returns {Array} A list of the input indices in an optimized order.
      *
      * @example
      * var indices = [0, 1, 2, 3, 4, 5];
@@ -168,7 +169,7 @@ define(['Core/DeveloperError', 'Core/defaultValue'], function(
             return n;
         }
 
-        if (typeof indices === 'undefined') {
+        if (!defined(indices)) {
             throw new DeveloperError('indices is required.');
         }
         var numIndices = indices.length;
@@ -188,7 +189,7 @@ define(['Core/DeveloperError', 'Core/defaultValue'], function(
         var currentIndex = 0;
         var intoIndices = indices[currentIndex];
         var endIndex = numIndices;
-        if (typeof maximumIndex !== 'undefined') {
+        if (defined(maximumIndex)) {
             maximumIndexPlusOne = maximumIndex + 1;
         } else {
             while (currentIndex < endIndex) {

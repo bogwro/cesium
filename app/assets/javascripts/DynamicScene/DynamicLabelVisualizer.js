@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Cartesian2', 'Core/Cartesian3', 'Scene/LabelCollection', 'Scene/LabelStyle', 'Scene/HorizontalOrigin', 'Scene/VerticalOrigin'], function(
+define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color', 'Core/Cartesian2', 'Core/Cartesian3', 'Scene/LabelCollection', 'Scene/LabelStyle', 'Scene/HorizontalOrigin', 'Scene/VerticalOrigin'], function(
         DeveloperError,
+        defined,
         destroyObject,
         Color,
         Cartesian2,
@@ -38,7 +39,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Cartesi
      *
      */
     var DynamicLabelVisualizer = function(scene, dynamicObjectCollection) {
-        if (typeof scene === 'undefined') {
+        if (!defined(scene)) {
             throw new DeveloperError('scene is required.');
         }
         this._scene = scene;
@@ -76,12 +77,12 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Cartesi
     DynamicLabelVisualizer.prototype.setDynamicObjectCollection = function(dynamicObjectCollection) {
         var oldCollection = this._dynamicObjectCollection;
         if (oldCollection !== dynamicObjectCollection) {
-            if (typeof oldCollection !== 'undefined') {
+            if (defined(oldCollection)) {
                 oldCollection.objectsRemoved.removeEventListener(DynamicLabelVisualizer.prototype._onObjectsRemoved, this);
                 this.removeAllPrimitives();
             }
             this._dynamicObjectCollection = dynamicObjectCollection;
-            if (typeof dynamicObjectCollection !== 'undefined') {
+            if (defined(dynamicObjectCollection)) {
                 dynamicObjectCollection.objectsRemoved.addEventListener(DynamicLabelVisualizer.prototype._onObjectsRemoved, this);
             }
         }
@@ -96,10 +97,10 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Cartesi
      * @exception {DeveloperError} time is required.
      */
     DynamicLabelVisualizer.prototype.update = function(time) {
-        if (typeof time === 'undefined') {
+        if (!defined(time)) {
             throw new DeveloperError('time is requied.');
         }
-        if (typeof this._dynamicObjectCollection !== 'undefined') {
+        if (defined(this._dynamicObjectCollection)) {
             var dynamicObjects = this._dynamicObjectCollection.getObjects();
             for ( var i = 0, len = dynamicObjects.length; i < len; i++) {
                 updateObject(this, time, dynamicObjects[i]);
@@ -113,7 +114,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Cartesi
     DynamicLabelVisualizer.prototype.removeAllPrimitives = function() {
         this._unusedIndexes = [];
         this._labelCollection.removeAll();
-        if (typeof this._dynamicObjectCollection !== 'undefined') {
+        if (defined(this._dynamicObjectCollection)) {
             var dynamicObjects = this._dynamicObjectCollection.getObjects();
             for ( var i = dynamicObjects.length - 1; i > -1; i--) {
                 dynamicObjects[i]._labelVisualizerIndex = undefined;
@@ -129,7 +130,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Cartesi
      *
      * @memberof DynamicLabelVisualizer
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
      * @see DynamicLabelVisualizer#destroy
      */
@@ -147,7 +148,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Cartesi
      *
      * @memberof DynamicLabelVisualizer
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *
@@ -169,28 +170,28 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Cartesi
     var pixelOffset;
     function updateObject(dynamicLabelVisualizer, time, dynamicObject) {
         var dynamicLabel = dynamicObject.label;
-        if (typeof dynamicLabel === 'undefined') {
+        if (!defined(dynamicLabel)) {
             return;
         }
 
         var textProperty = dynamicLabel.text;
-        if (typeof textProperty === 'undefined') {
+        if (!defined(textProperty)) {
             return;
         }
 
         var positionProperty = dynamicObject.position;
-        if (typeof positionProperty === 'undefined') {
+        if (!defined(positionProperty)) {
             return;
         }
 
         var label;
         var showProperty = dynamicLabel.show;
         var labelVisualizerIndex = dynamicObject._labelVisualizerIndex;
-        var show = dynamicObject.isAvailable(time) && (typeof showProperty === 'undefined' || showProperty.getValue(time));
+        var show = dynamicObject.isAvailable(time) && (!defined(showProperty) || showProperty.getValue(time));
 
         if (!show) {
             //don't bother creating or updating anything else
-            if (typeof labelVisualizerIndex !== 'undefined') {
+            if (defined(labelVisualizerIndex)) {
                 label = dynamicLabelVisualizer._labelCollection.get(labelVisualizerIndex);
                 label.setShow(false);
                 dynamicLabelVisualizer._unusedIndexes.push(labelVisualizerIndex);
@@ -199,7 +200,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Cartesi
             return;
         }
 
-        if (typeof labelVisualizerIndex === 'undefined') {
+        if (!defined(labelVisualizerIndex)) {
             var unusedIndexes = dynamicLabelVisualizer._unusedIndexes;
             var length = unusedIndexes.length;
             if (length > 0) {
@@ -231,91 +232,91 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Cartesi
         label.setShow(show);
 
         var text = textProperty.getValue(time);
-        if (typeof text !== 'undefined') {
+        if (defined(text)) {
             label.setText(text);
         }
 
-        position = positionProperty.getValueCartesian(time, position);
-        if (typeof position !== 'undefined') {
+        position = positionProperty.getValue(time, position);
+        if (defined(position)) {
             label.setPosition(position);
         }
 
         var property = dynamicLabel.scale;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             var scale = property.getValue(time);
-            if (typeof scale !== 'undefined') {
+            if (defined(scale)) {
                 label.setScale(scale);
             }
         }
 
         property = dynamicLabel.font;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             var font = property.getValue(time);
-            if (typeof font !== 'undefined') {
+            if (defined(font)) {
                 label.setFont(font);
             }
         }
 
         property = dynamicLabel.fillColor;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             fillColor = property.getValue(time, fillColor);
-            if (typeof fillColor !== 'undefined') {
+            if (defined(fillColor)) {
                 label.setFillColor(fillColor);
             }
         }
 
         property = dynamicLabel.outlineColor;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             outlineColor = property.getValue(time, outlineColor);
-            if (typeof outlineColor !== 'undefined') {
+            if (defined(outlineColor)) {
                 label.setOutlineColor(outlineColor);
             }
         }
 
         property = dynamicLabel.outlineWidth;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             var outlineWidth = property.getValue(time);
-            if (typeof outlineWidth !== 'undefined') {
+            if (defined(outlineWidth)) {
                 label.setOutlineWidth(outlineWidth);
             }
         }
 
         property = dynamicLabel.style;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             var style = property.getValue(time);
-            if (typeof style !== 'undefined') {
+            if (defined(style)) {
                 label.setStyle(style);
             }
         }
 
         property = dynamicLabel.pixelOffset;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             pixelOffset = property.getValue(time, pixelOffset);
-            if (typeof pixelOffset !== 'undefined') {
+            if (defined(pixelOffset)) {
                 label.setPixelOffset(pixelOffset);
             }
         }
 
         property = dynamicLabel.eyeOffset;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             eyeOffset = property.getValue(time, eyeOffset);
-            if (typeof eyeOffset !== 'undefined') {
+            if (defined(eyeOffset)) {
                 label.setEyeOffset(eyeOffset);
             }
         }
 
         property = dynamicLabel.horizontalOrigin;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             var horizontalOrigin = property.getValue(time);
-            if (typeof horizontalOrigin !== 'undefined') {
+            if (defined(horizontalOrigin)) {
                 label.setHorizontalOrigin(horizontalOrigin);
             }
         }
 
         property = dynamicLabel.verticalOrigin;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             var verticalOrigin = property.getValue(time);
-            if (typeof verticalOrigin !== 'undefined') {
+            if (defined(verticalOrigin)) {
                 label.setVerticalOrigin(verticalOrigin);
             }
         }
@@ -327,7 +328,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Color', 'Core/Cartesi
         for ( var i = dynamicObjects.length - 1; i > -1; i--) {
             var dynamicObject = dynamicObjects[i];
             var labelVisualizerIndex = dynamicObject._labelVisualizerIndex;
-            if (typeof labelVisualizerIndex !== 'undefined') {
+            if (defined(labelVisualizerIndex)) {
                 var label = thisLabelCollection.get(labelVisualizerIndex);
                 label.setShow(false);
                 thisUnusedIndexes.push(labelVisualizerIndex);

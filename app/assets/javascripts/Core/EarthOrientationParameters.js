@@ -1,8 +1,9 @@
 /*global define*/
-define(['Core/binarySearch', 'Core/defaultValue', 'Core/freezeObject', 'Core/loadJson', 'Core/EarthOrientationParametersSample', 'Core/JulianDate', 'Core/LeapSecond', 'Core/RuntimeError', 'Core/TimeConstants', 'Core/TimeStandard', 'ThirdParty/when'],
+define(['Core/binarySearch', 'Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/loadJson', 'Core/EarthOrientationParametersSample', 'Core/JulianDate', 'Core/LeapSecond', 'Core/RuntimeError', 'Core/TimeConstants', 'Core/TimeStandard', 'ThirdParty/when'],
     function(
         binarySearch,
         defaultValue,
+        defined,
         freezeObject,
         loadJson,
         EarthOrientationParametersSample,
@@ -74,10 +75,10 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/freezeObject', 'Core/loa
 
         this._addNewLeapSeconds = defaultValue(description.addNewLeapSeconds, true);
 
-        if (typeof description.data !== 'undefined') {
+        if (defined(description.data)) {
             // Use supplied EOP data.
             onDataReady(this, description.data);
-        } else if (typeof description.url !== 'undefined') {
+        } else if (defined(description.url)) {
             // Download EOP data.
             var that = this;
             this._downloadPromise = when(loadJson(description.url), function(eopData) {
@@ -102,7 +103,7 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/freezeObject', 'Core/loa
                 return when();
             },
             compute : function(date, result) {
-                if (typeof result === 'undefined') {
+                if (!defined(result)) {
                     result = new EarthOrientationParametersSample(0.0, 0.0, 0.0, 0.0, 0.0);
                 } else {
                     result.xPoleWander = 0.0;
@@ -148,15 +149,15 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/freezeObject', 'Core/loa
      */
     EarthOrientationParameters.prototype.compute = function(date, result) {
         // We cannot compute until the samples are available.
-        if (typeof this._samples === 'undefined') {
-            if (typeof this._dataError !== 'undefined') {
+        if (!defined(this._samples)) {
+            if (defined(this._dataError)) {
                 throw new RuntimeError(this._dataError);
             }
 
             return undefined;
         }
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             result = new EarthOrientationParametersSample(0.0, 0.0, 0.0, 0.0, 0.0);
         }
 
@@ -174,11 +175,11 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/freezeObject', 'Core/loa
 
         var before = 0;
         var after = 0;
-        if (typeof lastIndex !== 'undefined') {
+        if (defined(lastIndex)) {
             var previousIndexDate = dates[lastIndex];
             var nextIndexDate = dates[lastIndex + 1];
             var isAfterPrevious = previousIndexDate.lessThanOrEquals(date);
-            var isAfterLastSample = typeof nextIndexDate === 'undefined';
+            var isAfterLastSample = !defined(nextIndexDate);
             var isBeforeNext = isAfterLastSample || nextIndexDate.greaterThanOrEquals(date);
 
             if (isAfterPrevious && isBeforeNext) {
@@ -225,12 +226,12 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/freezeObject', 'Core/loa
     }
 
     function onDataReady(eop, eopData) {
-        if (typeof eopData.columnNames === 'undefined') {
+        if (!defined(eopData.columnNames)) {
             eop._dataError = 'Error in loaded EOP data: The columnNames property is required.';
             return;
         }
 
-        if (typeof eopData.samples === 'undefined') {
+        if (!defined(eopData.samples)) {
             eop._dataError = 'Error in loaded EOP data: The samples property is required.';
             return;
         }
@@ -275,7 +276,7 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/freezeObject', 'Core/loa
             dates.push(date);
 
             if (addNewLeapSeconds) {
-                if (taiMinusUtc !== lastTaiMinusUtc && typeof lastTaiMinusUtc !== 'undefined') {
+                if (taiMinusUtc !== lastTaiMinusUtc && defined(lastTaiMinusUtc)) {
                     // We crossed a leap second boundary, so add the leap second
                     // if it does not already exist.
                     var leapSeconds = LeapSecond.getLeapSeconds();

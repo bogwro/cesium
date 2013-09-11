@@ -1,10 +1,10 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/EventHelper', 'DynamicScene/DataSourceCollection', 'DynamicScene/DynamicBillboardVisualizer', 'DynamicScene/DynamicEllipsoidVisualizer', 'DynamicScene/DynamicConeVisualizerUsingCustomSensor', 'DynamicScene/DynamicLabelVisualizer', 'DynamicScene/DynamicPathVisualizer', 'DynamicScene/DynamicPointVisualizer', 'DynamicScene/DynamicPolygonVisualizer', 'DynamicScene/DynamicPolylineVisualizer', 'DynamicScene/DynamicPyramidVisualizer', 'DynamicScene/VisualizerCollection'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Core/EventHelper', 'DynamicScene/DynamicBillboardVisualizer', 'DynamicScene/DynamicEllipsoidVisualizer', 'DynamicScene/DynamicConeVisualizerUsingCustomSensor', 'DynamicScene/DynamicLabelVisualizer', 'DynamicScene/DynamicPathVisualizer', 'DynamicScene/DynamicPointVisualizer', 'DynamicScene/DynamicPolygonVisualizer', 'DynamicScene/DynamicPolylineVisualizer', 'DynamicScene/DynamicPyramidVisualizer', 'DynamicScene/VisualizerCollection'], function(
         defaultValue,
+        defined,
         destroyObject,
         DeveloperError,
         EventHelper,
-        DataSourceCollection,
         DynamicBillboardVisualizer,
         DynamicEllipsoidVisualizer,
         DynamicConeVisualizerUsingCustomSensor,
@@ -33,16 +33,19 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * @constructor
      *
      * @param {Scene} scene The scene in which to display the data.
+     * @param {DataSourceCollection} dataSourceCollection The data sources to display.
      * @param {Array} [visualizerTypes] The array of visualizer constructor functions that will be created for each data source.  If undefined, All standard visualizers will be used.
      *
      * @exception {DeveloperError} scene is required.
+     * @exception {DeveloperError} dataSourceCollection is required.
      */
-    var DataSourceDisplay = function(scene, visualizerTypes) {
-        if (typeof scene === 'undefined') {
+    var DataSourceDisplay = function(scene, dataSourceCollection, visualizerTypes) {
+        if (!defined(scene)) {
             throw new DeveloperError('scene is required.');
         }
-
-        var dataSourceCollection = new DataSourceCollection();
+        if (!defined(dataSourceCollection)) {
+            throw new DeveloperError('dataSourceCollection is required.');
+        }
 
         this._eventHelper = new EventHelper();
         this._eventHelper.add(dataSourceCollection.dataSourceAdded, this._onDataSourceAdded, this);
@@ -53,6 +56,10 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
         this._timeVaryingSources = [];
         this._staticSourcesToUpdate = [];
         this._visualizersTypes = defaultValue(visualizerTypes, defaultVisualizerTypes).slice(0);
+
+        for ( var i = 0, len = dataSourceCollection.getLength(); i < len; i++) {
+            this._onDataSourceAdded(dataSourceCollection, dataSourceCollection.get(i));
+        }
     };
 
     /**
@@ -85,7 +92,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * If this object was destroyed, it should not be used; calling any function other than
      * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
      * @see DataSourceDisplay#destroy
      */
@@ -101,7 +108,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.  Therefore,
      * assign the return value (<code>undefined</code>) to the object as done in the example.
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *
@@ -115,13 +122,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
 
         var dataSourceCollection = this._dataSourceCollection;
         for ( var i = 0, length = dataSourceCollection.getLength(); i < length; ++i) {
-            var dataSource = dataSourceCollection.get(i);
-
-            this._onDataSourceRemoved(this._dataSourceCollection, dataSource);
-
-            if (typeof dataSource.destroy === 'function') {
-                dataSource.destroy();
-            }
+            this._onDataSourceRemoved(this._dataSourceCollection, dataSourceCollection.get(i));
         }
 
         return destroyObject(this);
@@ -137,7 +138,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * @exception {DeveloperError} time is required.
      */
     DataSourceDisplay.prototype.update = function(time) {
-        if (typeof time === 'undefined') {
+        if (!defined(time)) {
             throw new DeveloperError('time is required.');
         }
 

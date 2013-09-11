@@ -59,7 +59,7 @@ define(['Core/DeveloperError', 'Core/destroyObject'], function(
      * DOC_TBA
      * @memberof Buffer
      *
-     * @return {Number} DOC_TBA
+     * @returns {Number} DOC_TBA
      * @exception {DeveloperError} This buffer was destroyed, i.e., destroy() was called.
      */
     Buffer.prototype.getSizeInBytes = function() {
@@ -70,7 +70,7 @@ define(['Core/DeveloperError', 'Core/destroyObject'], function(
      * DOC_TBA
      * @memberof Buffer
      *
-     * @return {GLenum} DOC_TBA
+     * @returns {GLenum} DOC_TBA
      * @exception {DeveloperError} This buffer was destroyed, i.e., destroy() was called.
      */
     Buffer.prototype.getUsage = function() {
@@ -101,7 +101,7 @@ define(['Core/DeveloperError', 'Core/destroyObject'], function(
      *
      * @memberof Buffer
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
      * @see Buffer#destroy
      */
@@ -119,7 +119,7 @@ define(['Core/DeveloperError', 'Core/destroyObject'], function(
      *
      * @memberof Buffer
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This buffer was destroyed, i.e., destroy() was called.
      *

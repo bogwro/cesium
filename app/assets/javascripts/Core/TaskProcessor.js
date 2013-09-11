@@ -1,8 +1,10 @@
 /*global define*/
-define(['require', 'Core/buildModuleUrl', 'Core/defaultValue', 'Core/isCrossOriginUrl', 'ThirdParty/when', 'ThirdParty/Uri'], function(
+define(['require', 'Core/buildModuleUrl', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/isCrossOriginUrl', 'ThirdParty/when', 'ThirdParty/Uri'], function(
         require,
         buildModuleUrl,
         defaultValue,
+        defined,
+        destroyObject,
         isCrossOriginUrl,
         when,
         Uri) {
@@ -13,19 +15,22 @@ define(['require', 'Core/buildModuleUrl', 'Core/defaultValue', 'Core/isCrossOrig
 
         var data = event.data;
         var id = data.id;
-        var result = data.result;
 
         var deferreds = processor._deferreds;
         var deferred = deferreds[id];
 
-        deferred.resolve(result);
+        if (defined(data.error)) {
+            deferred.reject(data.error);
+        } else {
+            deferred.resolve(data.result);
+        }
 
         delete deferreds[id];
     }
 
     var _bootstrapperUrl;
     function getBootstrapperUrl() {
-        if (typeof _bootstrapperUrl !== 'undefined') {
+        if (defined(_bootstrapperUrl)) {
             return _bootstrapperUrl;
         }
 
@@ -62,10 +67,10 @@ define(['require', 'Core/buildModuleUrl', 'Core/defaultValue', 'Core/isCrossOrig
         //bootstrap
         var bootstrapMessage = {
             loaderConfig : {},
-            workerModule : 'Workers/' + processor._workerName
+            workerModule : TaskProcessor._workerModulePrefix + processor._workerName
         };
 
-        if (typeof require.toUrl !== 'undefined') {
+        if (defined(require.toUrl)) {
             var baseUrl = new Uri('..').resolve(new Uri(buildModuleUrl('Workers/cesiumWorkerBootstrapper.js'))).toString();
             bootstrapMessage.loaderConfig.baseUrl = baseUrl;
         } else {
@@ -124,7 +129,7 @@ define(['require', 'Core/buildModuleUrl', 'Core/defaultValue', 'Core/isCrossOrig
      *     someParameter : true,
      *     another : 'hello'
      * });
-     * if (typeof promise === 'undefined') {
+     * if (!defined(promise)) {
      *     // too many active tasks - try again later
      * } else {
      *     when(promise, function(result) {
@@ -133,7 +138,7 @@ define(['require', 'Core/buildModuleUrl', 'Core/defaultValue', 'Core/isCrossOrig
      * }
      */
     TaskProcessor.prototype.scheduleTask = function(parameters, transferableObjects) {
-        if (typeof this._worker === 'undefined') {
+        if (!defined(this._worker)) {
             createWorker(this);
         }
 
@@ -154,6 +159,43 @@ define(['require', 'Core/buildModuleUrl', 'Core/defaultValue', 'Core/isCrossOrig
 
         return deferred.promise;
     };
+
+    /**
+     * Returns true if this object was destroyed; otherwise, false.
+     * <br /><br />
+     * If this object was destroyed, it should not be used; calling any function other than
+     * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.
+     *
+     * @memberof TaskProcessor
+     *
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
+     *
+     * @see TaskProcessor#destroy
+     */
+    TaskProcessor.prototype.isDestroyed = function() {
+        return false;
+    };
+
+    /**
+     * Destroys this object.  This will immediately terminate the Worker.
+     * <br /><br />
+     * Once an object is destroyed, it should not be used; calling any function other than
+     * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.
+     *
+     * @memberof TaskProcessor
+     *
+     * @returns {undefined}
+     */
+    TaskProcessor.prototype.destroy = function() {
+        if (defined(this._worker)) {
+            this._worker.terminate();
+        }
+        return destroyObject(this);
+    };
+
+    // exposed for testing purposes
+    TaskProcessor._defaultWorkerModulePrefix = 'Workers/';
+    TaskProcessor._workerModulePrefix = TaskProcessor._defaultWorkerModulePrefix;
 
     return TaskProcessor;
 });

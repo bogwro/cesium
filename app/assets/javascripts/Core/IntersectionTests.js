@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Cartographic', 'Core/Matrix3', 'Core/QuadraticRealPolynomial', 'Core/QuarticRealPolynomial'],
+define(['Core/defined', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Cartographic', 'Core/Matrix3', 'Core/QuadraticRealPolynomial', 'Core/QuarticRealPolynomial'],
     function(
+        defined,
         DeveloperError,
         CesiumMath,
         Cartesian3,
@@ -29,11 +30,11 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Cartographi
      * @exception {DeveloperError} plane is required.
      */
     IntersectionTests.rayPlane = function(ray, plane, result) {
-        if (typeof ray === 'undefined') {
+        if (!defined(ray)) {
             throw new DeveloperError('ray is required.');
         }
 
-        if (typeof plane === 'undefined') {
+        if (!defined(plane)) {
             throw new DeveloperError('plane is required.');
         }
 
@@ -69,11 +70,11 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Cartographi
      * @exception {DeveloperError} ellipsoid is required.
      */
     IntersectionTests.rayEllipsoid = function(ray, ellipsoid) {
-        if (typeof ray === 'undefined') {
+        if (!defined(ray)) {
             throw new DeveloperError('ray is required.');
         }
 
-        if (typeof ellipsoid === 'undefined') {
+        if (!defined(ellipsoid)) {
             throw new DeveloperError('ellipsoid is required.');
         }
 
@@ -267,11 +268,11 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Cartographi
      * @exception {DeveloperError} ellipsoid is required.
      */
     IntersectionTests.grazingAltitudeLocation = function(ray, ellipsoid) {
-        if (typeof ray === 'undefined') {
+        if (!defined(ray)) {
             throw new DeveloperError('ray is required.');
         }
 
-        if (typeof ellipsoid === 'undefined') {
+        if (!defined(ellipsoid)) {
             throw new DeveloperError('ellipsoid is required.');
         }
 
@@ -284,7 +285,7 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Cartographi
             return position;
         }
 
-        var intersects = typeof this.rayEllipsoid(ray, ellipsoid) !== 'undefined';
+        var intersects = defined(this.rayEllipsoid(ray, ellipsoid));
 
         // Compute the scaled direction vector.
         var f = ellipsoid.transformPositionToScaledSpace(direction);
@@ -370,15 +371,15 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Cartographi
      * var intersection = IntersectionTests.lineSegmentPlane(p0, p1, plane);
      */
     IntersectionTests.lineSegmentPlane = function(endPoint0, endPoint1, plane, result) {
-        if (typeof endPoint0 === 'undefined') {
+        if (!defined(endPoint0)) {
             throw new DeveloperError('endPoint0 is required.');
         }
 
-        if (typeof endPoint1 === 'undefined') {
+        if (!defined(endPoint1)) {
             throw new DeveloperError('endPoint1 is required.');
         }
 
-        if (typeof plane === 'undefined') {
+        if (!defined(plane)) {
             throw new DeveloperError('plane is required.');
         }
 
@@ -400,7 +401,7 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Cartographi
         }
 
         // intersection is endPoint0 + t * (endPoint1 - endPoint0)
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             result = new Cartesian3();
         }
         Cartesian3.multiplyByScalar(difference, t, result);
@@ -435,10 +436,10 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Cartographi
      *
      */
     IntersectionTests.trianglePlaneIntersection = function(p0, p1, p2, plane) {
-        if ((typeof p0 === 'undefined') ||
-            (typeof p1 === 'undefined') ||
-            (typeof p2 === 'undefined') ||
-            (typeof plane === 'undefined')) {
+        if ((!defined(p0)) ||
+            (!defined(p1)) ||
+            (!defined(p2)) ||
+            (!defined(plane))) {
             throw new DeveloperError('p0, p1, p2, and plane are required.');
         }
 

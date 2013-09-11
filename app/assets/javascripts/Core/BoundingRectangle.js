@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/GeographicProjection', 'Core/Intersect'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/GeographicProjection', 'Core/Intersect'], function(
         defaultValue,
+        defined,
         DeveloperError,
         Cartographic,
         GeographicProjection,
@@ -56,14 +57,14 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/G
      *
      * @param {Array} positions List of points that the bounding rectangle will enclose.  Each point must have <code>x</code> and <code>y</code> properties.
      * @param {BoundingRectangle} [result] The object onto which to store the result.
-     * @return {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
+     * @returns {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
      */
     BoundingRectangle.fromPoints = function(positions, result) {
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             result = new BoundingRectangle();
         }
 
-        if (typeof positions === 'undefined' || positions.length === 0) {
+        if (!defined(positions) || positions.length === 0) {
             result.x = 0;
             result.y = 0;
             result.width = 0;
@@ -107,14 +108,14 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/G
      * @param {Extent} extent The valid extent used to create a bounding rectangle.
      * @param {Object} [projection=GeographicProjection] The projection used to project the extent into 2D.
      * @param {BoundingRectangle} [result] The object onto which to store the result.
-     * @return {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
+     * @returns {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
      */
     BoundingRectangle.fromExtent = function(extent, projection, result) {
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             result = new BoundingRectangle();
         }
 
-        if (typeof extent === 'undefined') {
+        if (!defined(extent)) {
             result.x = 0;
             result.y = 0;
             result.width = 0;
@@ -142,14 +143,14 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/G
      *
      * @param {BoundingRectangle} rectangle The bounding rectangle to duplicate.
      * @param {BoundingRectangle} [result] The object onto which to store the result.
-     * @return {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided. (Returns undefined if rectangle is undefined)
+     * @returns {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided. (Returns undefined if rectangle is undefined)
      */
     BoundingRectangle.clone = function(rectangle, result) {
-        if (typeof rectangle === 'undefined') {
+        if (!defined(rectangle)) {
             return undefined;
         }
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new BoundingRectangle(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
         }
 
@@ -167,21 +168,21 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/G
      * @param {BoundingRectangle} left A rectangle to enclose in bounding rectangle.
      * @param {BoundingRectangle} right A rectangle to enclose in a bounding rectangle.
      * @param {BoundingRectangle} [result] The object onto which to store the result.
-     * @return {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
+     * @returns {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
      *
      * @exception {DeveloperError} left is required.
      * @exception {DeveloperError} right is required.
      */
     BoundingRectangle.union = function(left, right, result) {
-        if (typeof left === 'undefined') {
+        if (!defined(left)) {
             throw new DeveloperError('left is required.');
         }
 
-        if (typeof right === 'undefined') {
+        if (!defined(right)) {
             throw new DeveloperError('right is required.');
         }
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             result = new BoundingRectangle();
         }
 
@@ -204,17 +205,17 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/G
      * @param {BoundingRectangle} rectangle A rectangle to expand.
      * @param {Cartesian2} point A point to enclose in a bounding rectangle.
      * @param {BoundingRectangle} [result] The object onto which to store the result.
-     * @return {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
+     * @returns {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
      *
      * @exception {DeveloperError} rectangle is required.
      * @exception {DeveloperError} point is required.
      */
     BoundingRectangle.expand = function(rectangle, point, result) {
-        if (typeof rectangle === 'undefined') {
+        if (!defined(rectangle)) {
             throw new DeveloperError('rectangle is required.');
         }
 
-        if (typeof point === 'undefined') {
+        if (!defined(point)) {
             throw new DeveloperError('point is required.');
         }
 
@@ -246,17 +247,17 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/G
      *
      * @param {BoundingRectangle} left A rectangle to check for intersection.
      * @param {BoundingRectangle} right The other rectangle to check for intersection.
-     * @return {Intersect} <code>Intersect.INTESECTING</code> if the rectangles intersect, <code>Intersect.OUTSIDE</code> otherwise.
+     * @returns {Intersect} <code>Intersect.INTESECTING</code> if the rectangles intersect, <code>Intersect.OUTSIDE</code> otherwise.
      *
      * @exception {DeveloperError} left is required.
      * @exception {DeveloperError} right is required.
      */
     BoundingRectangle.intersect = function(left, right) {
-        if (typeof left === 'undefined') {
+        if (!defined(left)) {
             throw new DeveloperError('left is required.');
         }
 
-        if (typeof right === 'undefined') {
+        if (!defined(right)) {
             throw new DeveloperError('right is required.');
         }
 
@@ -281,12 +282,12 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/G
      *
      * @param {BoundingRectangle} [left] The first BoundingRectangle.
      * @param {BoundingRectangle} [right] The second BoundingRectangle.
-     * @return {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
      */
     BoundingRectangle.equals = function(left, right) {
         return (left === right) ||
-               ((typeof left !== 'undefined') &&
-                (typeof right !== 'undefined') &&
+               ((defined(left)) &&
+                (defined(right)) &&
                 (left.x === right.x) &&
                 (left.y === right.y) &&
                 (left.width === right.width) &&
@@ -298,7 +299,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/G
      * @memberof BoundingRectangle
      *
      * @param {BoundingRectangle} [result] The object onto which to store the result.
-     * @return {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
+     * @returns {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
      */
     BoundingRectangle.prototype.clone = function(result) {
         return BoundingRectangle.clone(this, result);
@@ -310,7 +311,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/G
      *
      * @param {BoundingRectangle} right The rectangle to enclose in this bounding rectangle.
      * @param {BoundingRectangle} [result] The object onto which to store the result.
-     * @return {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
+     * @returns {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
      *
      * @exception {DeveloperError} right is required.
      */
@@ -323,7 +324,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/G
      * @memberof BoundingRectangle
      *
      * @param {BoundingRectangle} point A point to enclose in a bounding rectangle.
-     * @return {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
+     * @returns {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
      *
      * @exception {DeveloperError} point is required.
      */
@@ -336,7 +337,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/G
      * @memberof BoundingRectangle
      *
      * @param {BoundingRectangle} right A rectangle to check for intersection.
-     * @return {Intersect} <code>Intersect.INTESECTING</code> if the rectangles intersect, <code>Intersect.OUTSIDE</code> otherwise.
+     * @returns {Intersect} <code>Intersect.INTESECTING</code> if the rectangles intersect, <code>Intersect.OUTSIDE</code> otherwise.
      *
      * @exception {DeveloperError} right is required.
      */
@@ -350,7 +351,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartographic', 'Core/G
      * @memberof BoundingRectangle
      *
      * @param {BoundingRectangle} [right] The right hand side BoundingRectangle.
-     * @return {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
      */
     BoundingRectangle.prototype.equals = function(right) {
         return BoundingRectangle.equals(this, right);

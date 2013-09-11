@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/Fullscreen'], function(
+define(['Core/defined', 'Core/Fullscreen'], function(
+        defined,
         Fullscreen) {
     "use strict";
 
@@ -13,7 +14,7 @@ define(['Core/Fullscreen'], function(
     var isChromeResult;
     var chromeVersionResult;
     function isChrome() {
-        if (typeof isChromeResult === 'undefined') {
+        if (!defined(isChromeResult)) {
             var fields = (/ Chrome\/([\.0-9]+)/).exec(navigator.userAgent);
             if (fields === null) {
                 isChromeResult = false;
@@ -33,7 +34,7 @@ define(['Core/Fullscreen'], function(
     var isSafariResult;
     var safariVersionResult;
     function isSafari() {
-        if (typeof isSafariResult === 'undefined') {
+        if (!defined(isSafariResult)) {
             // Chrome contains Safari in the user agent too
             if (isChrome() || !(/ Safari\/[\.0-9]+/).test(navigator.userAgent)) {
                 isSafariResult = false;
@@ -58,7 +59,7 @@ define(['Core/Fullscreen'], function(
     var isWebkitResult;
     var webkitVersionResult;
     function isWebkit() {
-        if (typeof isWebkitResult === 'undefined') {
+        if (!defined(isWebkitResult)) {
             var fields = (/ AppleWebKit\/([\.0-9]+)(\+?)/).exec(navigator.userAgent);
             if (fields === null) {
                 isWebkitResult = false;
@@ -79,7 +80,7 @@ define(['Core/Fullscreen'], function(
     var isInternetExplorerResult;
     var internetExplorerVersionResult;
     function isInternetExplorer() {
-        if (typeof isInternetExplorerResult === 'undefined') {
+        if (!defined(isInternetExplorerResult)) {
             var fields = (/ MSIE ([\.0-9]+)/).exec(navigator.userAgent);
             if (fields === null) {
                 isInternetExplorerResult = false;
@@ -123,7 +124,7 @@ define(['Core/Fullscreen'], function(
      * @see <a href='http://www.w3.org/TR/cors/'>Cross-Origin Resource Sharing</a>
      */
     FeatureDetection.supportsCrossOriginImagery = function() {
-        if (typeof supportsCrossOriginImagery === 'undefined') {
+        if (!defined(supportsCrossOriginImagery)) {
             if (isSafari() && webkitVersion()[0] < 536) {
                 // versions of Safari below this incorrectly throw a DOM error when calling
                 // readPixels on a canvas containing a cross-origin image.
@@ -140,13 +141,24 @@ define(['Core/Fullscreen'], function(
     /**
      * Detects whether the current browser supports the full screen standard.
      *
-     * @returns true if the supports the full screen standard, false if not.
+     * @returns true if the browser supports the full screen standard, false if not.
      *
      * @see Fullscreen
      * @see <a href='http://dvcs.w3.org/hg/fullscreen/raw-file/tip/Overview.html'>W3C Fullscreen Living Specification</a>
      */
     FeatureDetection.supportsFullscreen = function() {
         return Fullscreen.supportsFullscreen();
+    };
+
+    /**
+     * Detects whether the current browser supports typed arrays.
+     *
+     * @returns true if the browser supports typed arrays, false if not.
+     *
+     * @see <a href='http://www.khronos.org/registry/typedarray/specs/latest/'>Typed Array Specification</a>
+     */
+    FeatureDetection.supportsTypedArrays = function() {
+        return typeof ArrayBuffer !== 'undefined';
     };
 
     return FeatureDetection;

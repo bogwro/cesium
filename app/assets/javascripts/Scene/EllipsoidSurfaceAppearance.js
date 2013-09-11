@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/VertexFormat', 'Scene/Material', 'Scene/Appearance', 'Scene/MaterialAppearance', 'Shaders/Appearances/EllipsoidSurfaceAppearanceVS', 'Shaders/Appearances/EllipsoidSurfaceAppearanceFS'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/VertexFormat', 'Scene/Material', 'Scene/Appearance', 'Scene/MaterialAppearance', 'Shaders/Appearances/EllipsoidSurfaceAppearanceVS', 'Shaders/Appearances/EllipsoidSurfaceAppearanceFS'], function(
         defaultValue,
+        defined,
         VertexFormat,
         Material,
         Appearance,
@@ -59,7 +60,7 @@ define(['Core/defaultValue', 'Core/VertexFormat', 'Scene/Material', 'Scene/Appea
          *
          * @see <a href='https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric'>Fabric</a>
          */
-        this.material = (typeof options.material !== 'undefined') ? options.material : Material.fromType(undefined, Material.ColorType);
+        this.material = (defined(options.material)) ? options.material : Material.fromType(undefined, Material.ColorType);
 
         /**
          * The GLSL source code for the vertex shader.
@@ -144,6 +145,17 @@ define(['Core/defaultValue', 'Core/VertexFormat', 'Scene/Material', 'Scene/Appea
         this.translucent = translucent;
 
         /**
+         * When <code>true</code>, the geometry is expected to be closed so
+         * {@link EllipsoidSurfaceAppearance#renderState} has backface culling enabled.
+         * If the viewer enters the geometry, it will not be visible.
+         *
+         * @readonly
+         *
+         * @default true
+         */
+        this.closed = !aboveGround;
+
+        /**
          * When <code>true</code>, the geometry is expected to be on the ellipsoid's
          * surface - not at a constant height above it - so {@link EllipsoidSurfaceAppearance#renderState}
          * has backface culling enabled.
@@ -173,7 +185,7 @@ define(['Core/defaultValue', 'Core/VertexFormat', 'Scene/Material', 'Scene/Appea
      *
      * @memberof EllipsoidSurfaceAppearance
      *
-     * @return String The full GLSL fragment shader source.
+     * @returns String The full GLSL fragment shader source.
      */
     EllipsoidSurfaceAppearance.prototype.getFragmentShaderSource = Appearance.prototype.getFragmentShaderSource;
 

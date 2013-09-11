@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/loadArrayBuffer', 'Core/throttleRequestByServer', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Event', 'Scene/Credit', 'Scene/GeographicTilingScheme', 'Scene/HeightmapTerrainData', 'Scene/TerrainProvider', 'ThirdParty/when'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/loadArrayBuffer', 'Core/throttleRequestByServer', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Event', 'Scene/Credit', 'Scene/GeographicTilingScheme', 'Scene/HeightmapTerrainData', 'Scene/TerrainProvider', 'ThirdParty/when'], function(
         defaultValue,
+        defined,
         loadArrayBuffer,
         throttleRequestByServer,
         writeTextToCanvas,
@@ -28,7 +29,7 @@ define(['Core/defaultValue', 'Core/loadArrayBuffer', 'Core/throttleRequestByServ
      * @see TerrainProvider
      */
     var CesiumTerrainProvider = function CesiumTerrainProvider(description) {
-        if (typeof description === 'undefined' || typeof description.url === 'undefined') {
+        if (!defined(description) || !defined(description.url)) {
             throw new DeveloperError('description.url is required.');
         }
 
@@ -83,7 +84,7 @@ define(['Core/defaultValue', 'Core/loadArrayBuffer', 'Core/throttleRequestByServ
         var url = this._url + '/' + level + '/' + x + '/' + (yTiles - y - 1) + '.terrain';
 
         var proxy = this._proxy;
-        if (typeof proxy !== 'undefined') {
+        if (defined(proxy)) {
             url = proxy.getURL(url);
         }
 
@@ -92,7 +93,7 @@ define(['Core/defaultValue', 'Core/loadArrayBuffer', 'Core/throttleRequestByServ
         throttleRequests = defaultValue(throttleRequests, true);
         if (throttleRequests) {
             promise = throttleRequestByServer(url, loadArrayBuffer);
-            if (typeof promise === 'undefined') {
+            if (!defined(promise)) {
                 return undefined;
             }
         } else {

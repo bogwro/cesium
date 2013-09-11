@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Core/ScreenSpaceEventHandler', 'Core/ScreenSpaceEventType', 'Core/Cartesian2', 'Scene/CameraEventType'], function(
+define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Core/ScreenSpaceEventHandler', 'Core/ScreenSpaceEventType', 'Core/Cartesian2', 'Scene/CameraEventType'], function(
+        defined,
         DeveloperError,
         destroyObject,
         CesiumMath,
@@ -26,11 +27,11 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Core/ScreenSp
      * @see ScreenSpaceEventHandler
      */
     var CameraEventAggregator = function(canvas, moveType, moveModifier) {
-        if (typeof canvas === 'undefined') {
+        if (!defined(canvas)) {
             throw new DeveloperError('description.canvas is required.');
         }
 
-        if (typeof moveType === 'undefined') {
+        if (!defined(moveType)) {
             throw new DeveloperError('moveType is required.');
         }
 
@@ -153,7 +154,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Core/ScreenSp
      *
      * @memberof CameraEventAggregator
      *
-     * @return {Boolean} DOC_TBA
+     * @returns {Boolean} DOC_TBA
      */
     CameraEventAggregator.prototype.isMoving = function() {
         return !this._update;
@@ -164,7 +165,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Core/ScreenSp
      *
      * @memberof CameraEventAggregator
      *
-     * @return {Object} DOC_TBA
+     * @returns {Object} DOC_TBA
      */
     CameraEventAggregator.prototype.getMovement = function() {
         var movement = this._movement;
@@ -177,7 +178,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Core/ScreenSp
      *
      * @memberof CameraEventAggregator
      *
-     * @return {Object} DOC_TBA
+     * @returns {Object} DOC_TBA
      */
     CameraEventAggregator.prototype.getLastMovement = function() {
         return this._lastMovement;
@@ -188,7 +189,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Core/ScreenSp
      *
      * @memberof CameraEventAggregator
      *
-     * @return {Boolean} DOC_TBA
+     * @returns {Boolean} DOC_TBA
      *
      */
     CameraEventAggregator.prototype.isButtonDown = function() {
@@ -200,7 +201,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Core/ScreenSp
      *
      * @memberof CameraEventAggregator
      *
-     * @return {Date} DOC_TBA
+     * @returns {Date} DOC_TBA
      *
      */
     CameraEventAggregator.prototype.getButtonPressTime = function() {
@@ -212,7 +213,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Core/ScreenSp
      *
      * @memberof CameraEventAggregator
      *
-     * @return {Date} DOC_TBA
+     * @returns {Date} DOC_TBA
      *
      */
     CameraEventAggregator.prototype.getButtonReleaseTime = function() {
@@ -227,7 +228,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Core/ScreenSp
      *
      * @memberof CameraEventAggregator
      *
-     * @return {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
      *
      * @see CameraEventAggregator#destroy
      */
@@ -244,7 +245,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Core/ScreenSp
      *
      * @memberof CameraEventAggregator
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *

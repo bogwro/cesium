@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/createGuid', 'Core/destroyObject', 'Core/DeveloperError'], function(
+define(['Core/createGuid', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError'], function(
         createGuid,
+        defined,
         destroyObject,
         DeveloperError) {
     "use strict";
@@ -122,7 +123,7 @@ define(['Core/createGuid', 'Core/destroyObject', 'Core/DeveloperError'], functio
      * primitives.add(labels);
      */
     CompositePrimitive.prototype.add = function(primitive) {
-        if (typeof primitive === 'undefined') {
+        if (!defined(primitive)) {
             throw new DeveloperError('primitive is required.');
         }
 
@@ -142,7 +143,7 @@ define(['Core/createGuid', 'Core/destroyObject', 'Core/DeveloperError'], functio
      *
      * @param {Object} primitive DOC_TBA
      *
-     * @return {Boolean} <code>true</code> if the primitive was removed; <code>false</code> if the primitive was not found in the composite.
+     * @returns {Boolean} <code>true</code> if the primitive was removed; <code>false</code> if the primitive was not found in the composite.
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *
@@ -240,7 +241,7 @@ define(['Core/createGuid', 'Core/destroyObject', 'Core/DeveloperError'], functio
      * @see CompositePrimitive#addGround
      */
     CompositePrimitive.prototype.raise = function(primitive) {
-        if (typeof primitive !== 'undefined') {
+        if (defined(primitive)) {
             var index = getPrimitiveIndex(this, primitive);
             var primitives = this._primitives;
 
@@ -266,7 +267,7 @@ define(['Core/createGuid', 'Core/destroyObject', 'Core/DeveloperError'], functio
      * @see CompositePrimitive#addGround
      */
     CompositePrimitive.prototype.raiseToTop = function(primitive) {
-        if (typeof primitive !== 'undefined') {
+        if (defined(primitive)) {
             var index = getPrimitiveIndex(this, primitive);
             var primitives = this._primitives;
 
@@ -292,7 +293,7 @@ define(['Core/createGuid', 'Core/destroyObject', 'Core/DeveloperError'], functio
      * @see CompositePrimitive#addGround
      */
     CompositePrimitive.prototype.lower = function(primitive) {
-        if (typeof primitive !== 'undefined') {
+        if (defined(primitive)) {
             var index = getPrimitiveIndex(this, primitive);
             var primitives = this._primitives;
 
@@ -318,7 +319,7 @@ define(['Core/createGuid', 'Core/destroyObject', 'Core/DeveloperError'], functio
      * @see CompositePrimitive#addGround
      */
     CompositePrimitive.prototype.lowerToBottom = function(primitive) {
-        if (typeof primitive !== 'undefined') {
+        if (defined(primitive)) {
             var index = getPrimitiveIndex(this, primitive);
             var primitives = this._primitives;
 
@@ -352,7 +353,7 @@ define(['Core/createGuid', 'Core/destroyObject', 'Core/DeveloperError'], functio
      * }
      */
     CompositePrimitive.prototype.get = function(index) {
-        if (typeof index === 'undefined') {
+        if (!defined(index)) {
             throw new DeveloperError('index is required.');
         }
 
@@ -408,7 +409,7 @@ define(['Core/createGuid', 'Core/destroyObject', 'Core/DeveloperError'], functio
      *
      * @memberof CompositePrimitive
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
      * @see CompositePrimitive#destroy
      */
@@ -430,7 +431,7 @@ define(['Core/createGuid', 'Core/destroyObject', 'Core/DeveloperError'], functio
      *
      * @memberof CompositePrimitive
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *

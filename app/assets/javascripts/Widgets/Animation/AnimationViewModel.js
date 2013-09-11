@@ -1,8 +1,9 @@
 /*global define*/
-define(['Core/binarySearch', 'Core/ClockStep', 'Core/ClockRange', 'Core/defineProperties', 'Core/DeveloperError', 'Widgets/createCommand', 'Widgets/ToggleButtonViewModel', 'ThirdParty/sprintf', 'ThirdParty/knockout'], function(
+define(['Core/binarySearch', 'Core/ClockStep', 'Core/ClockRange', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Widgets/createCommand', 'Widgets/ToggleButtonViewModel', 'ThirdParty/sprintf', 'ThirdParty/knockout'], function(
         binarySearch,
         ClockStep,
         ClockRange,
+        defined,
         defineProperties,
         DeveloperError,
         createCommand,
@@ -96,7 +97,7 @@ define(['Core/binarySearch', 'Core/ClockStep', 'Core/ClockRange', 'Core/definePr
      * @see Animation
      */
     var AnimationViewModel = function(clockViewModel) {
-        if (typeof clockViewModel === 'undefined') {
+        if (!defined(clockViewModel)) {
             throw new DeveloperError('clockViewModel is required.');
         }
 
@@ -419,7 +420,7 @@ define(['Core/binarySearch', 'Core/ClockStep', 'Core/ClockRange', 'Core/definePr
      * @exception {DeveloperError} positiveTicks is required.
      */
     AnimationViewModel.prototype.setShuttleRingTicks = function(positiveTicks) {
-        if (typeof positiveTicks === 'undefined') {
+        if (!defined(positiveTicks)) {
             throw new DeveloperError('positiveTicks is required.');
         }
 

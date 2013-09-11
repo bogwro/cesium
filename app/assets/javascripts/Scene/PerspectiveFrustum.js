@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError', 'Scene/PerspectiveOffCenterFrustum'], function(
+define(['Core/defined', 'Core/DeveloperError', 'Scene/PerspectiveOffCenterFrustum'], function(
+        defined,
         DeveloperError,
         PerspectiveOffCenterFrustum) {
     "use strict";
@@ -44,7 +45,7 @@ define(['Core/DeveloperError', 'Scene/PerspectiveOffCenterFrustum'], function(
         /**
          * The distance of the near plane.
          * @type {Number}
-         * @default 1.0 
+         * @default 1.0
          */
         this.near = 1.0;
         this._near = this.near;
@@ -63,7 +64,7 @@ define(['Core/DeveloperError', 'Scene/PerspectiveOffCenterFrustum'], function(
      *
      * @memberof PerspectiveFrustum
      *
-     * @return {Matrix4} The perspective projection matrix.
+     * @returns {Matrix4} The perspective projection matrix.
      *
      * @see PerspectiveFrustum#getInfiniteProjectionMatrix
      */
@@ -77,7 +78,7 @@ define(['Core/DeveloperError', 'Scene/PerspectiveOffCenterFrustum'], function(
      *
      * @memberof PerspectiveFrustum
      *
-     * @return {Matrix4} The infinite perspective projection matrix.
+     * @returns {Matrix4} The infinite perspective projection matrix.
      *
      * @see PerspectiveFrustum#getProjectionMatrix
      */
@@ -87,8 +88,7 @@ define(['Core/DeveloperError', 'Scene/PerspectiveOffCenterFrustum'], function(
     };
 
     function update(frustum) {
-        if (typeof frustum.fovy === 'undefined' || typeof frustum.aspectRatio === 'undefined' ||
-                typeof frustum.near === 'undefined' || typeof frustum.far === 'undefined') {
+        if (!defined(frustum.fovy) || !defined(frustum.aspectRatio) || !defined(frustum.near) || !defined(frustum.far)) {
             throw new DeveloperError('fovy, aspectRatio, near, or far parameters are not set.');
         }
 
@@ -135,7 +135,7 @@ define(['Core/DeveloperError', 'Scene/PerspectiveOffCenterFrustum'], function(
      * @exception {DeveloperError} direction is required.
      * @exception {DeveloperError} up is required.
      *
-     * @return {CullingVolume} A culling volume at the given position and orientation.
+     * @returns {CullingVolume} A culling volume at the given position and orientation.
      *
      * @example
      * // Check if a bounding volume intersects the frustum.
@@ -192,7 +192,7 @@ define(['Core/DeveloperError', 'Scene/PerspectiveOffCenterFrustum'], function(
      *
      * @memberof PerspectiveFrustum
      *
-     * @return {PerspectiveFrustum} A new copy of the PerspectiveFrustum instance.
+     * @returns {PerspectiveFrustum} A new copy of the PerspectiveFrustum instance.
      */
     PerspectiveFrustum.prototype.clone = function() {
         var frustum = new PerspectiveFrustum();
@@ -211,10 +211,10 @@ define(['Core/DeveloperError', 'Scene/PerspectiveOffCenterFrustum'], function(
      * @memberof PerspectiveFrustum
      *
      * @param {PerspectiveFrustum} [other] The right hand side PerspectiveFrustum.
-     * @return {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
      */
     PerspectiveFrustum.prototype.equals = function(other) {
-        if (typeof other === 'undefined') {
+        if (!defined(other)) {
             return false;
         }
 

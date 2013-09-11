@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError'], function(
+define(['Core/defined', 'Core/DeveloperError'], function(
+        defined,
         DeveloperError) {
     "use strict";
 
@@ -20,7 +21,7 @@ define(['Core/DeveloperError'], function(
      * @see HermiteSpline
      */
     var OrientationInterpolator = function(controlPoints) {
-        if (typeof controlPoints === 'undefined' || !(controlPoints instanceof Array) || controlPoints.length < 2) {
+        if (!defined(controlPoints) || !(controlPoints instanceof Array) || controlPoints.length < 2) {
             throw new DeveloperError('controlPoints is required. It must be an array with at least a length of 3.');
         }
 
@@ -32,7 +33,7 @@ define(['Core/DeveloperError'], function(
      * Returns the array of control points.
      *
      * @memberof OrientationInterpolator
-     * @return {Array} The array of control points.
+     * @returns {Array} The array of control points.
      */
     OrientationInterpolator.prototype.getControlPoints = function() {
         return this._points;
@@ -83,10 +84,10 @@ define(['Core/DeveloperError'], function(
      * where <code>a<sub>0</sub></code> and <code>a<sub>n</sub></code> are the time properties of first and
      * last elements in the array given during construction, respectively.
      *
-     * @return {Quaternion} The orientation at the given <code>time</code>.
+     * @returns {Quaternion} The orientation at the given <code>time</code>.
      */
     OrientationInterpolator.prototype.evaluate = function(time) {
-        if (typeof time === 'undefined') {
+        if (!defined(time)) {
             throw new DeveloperError('time is required.');
         }
 

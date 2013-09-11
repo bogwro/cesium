@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Core/ComponentDatatype', 'Core/Cartesian2', 'Core/Cartesian4', 'Core/Color', 'Core/Extent', 'Core/Math', 'Core/PrimitiveType', 'Core/Geometry', 'Core/GeometryAttribute', 'Renderer/BufferUsage', 'Renderer/MipmapHint', 'Renderer/TextureMagnificationFilter', 'Renderer/TextureMinificationFilter', 'Renderer/TextureWrap', 'Renderer/ClearCommand', 'Scene/GeographicTilingScheme', 'Scene/Imagery', 'Scene/TileProviderError', 'Scene/ImageryState', 'Scene/TileImagery', 'Scene/TerrainProvider', 'Scene/TexturePool', 'ThirdParty/when', 'Shaders/ReprojectWebMercatorFS', 'Shaders/ReprojectWebMercatorVS'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/BoundingRectangle', 'Core/ComponentDatatype', 'Core/Cartesian2', 'Core/Cartesian4', 'Core/Color', 'Core/Extent', 'Core/FeatureDetection', 'Core/Math', 'Core/PrimitiveType', 'Core/Geometry', 'Core/GeometryAttribute', 'Renderer/BufferUsage', 'Renderer/MipmapHint', 'Renderer/TextureMagnificationFilter', 'Renderer/TextureMinificationFilter', 'Renderer/TextureWrap', 'Renderer/ClearCommand', 'Scene/GeographicTilingScheme', 'Scene/Imagery', 'Scene/TileProviderError', 'Scene/ImageryState', 'Scene/TileImagery', 'Scene/TerrainProvider', 'Scene/TexturePool', 'ThirdParty/when', 'Shaders/ReprojectWebMercatorFS', 'Shaders/ReprojectWebMercatorVS'], function(
         defaultValue,
+        defined,
         destroyObject,
         BoundingRectangle,
         ComponentDatatype,
@@ -8,6 +9,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
         Cartesian4,
         Color,
         Extent,
+        FeatureDetection,
         CesiumMath,
         PrimitiveType,
         Geometry,
@@ -89,6 +91,10 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
      *        for texture filtering.  If this parameter is not specified, the maximum anisotropy supported
      *        by the WebGL stack will be used.  Larger values make the imagery look better in horizon
      *        views.
+     * @param {Number} [description.minimumTerrainLevel] The minimum terrain level-of-detail at which to show this imagery layer,
+     *                 or undefined to show it at all levels.  Level zero is the least-detailed level.
+     * @param {Number} [description.maximumTerrainLevel] The maximum terrain level-of-detail at which to show this imagery layer,
+     *                 or undefined to show it at all levels.  Level zero is the least-detailed level.
      */
     var ImageryLayer = function ImageryLayer(imageryProvider, description) {
         this._imageryProvider = imageryProvider;
@@ -187,6 +193,9 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
          * @default true
          */
         this.show = defaultValue(description.show, true);
+
+        this._minimumTerrainLevel = description.minimumTerrainLevel;
+        this._maximumTerrainLevel = description.maximumTerrainLevel;
 
         this._extent = defaultValue(description.extent, Extent.MAX_VALUE);
         this._maximumAnisotropy = description.maximumAnisotropy;
@@ -290,7 +299,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
      *
      * @memberof ImageryLayer
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
      * @see ImageryLayer#destroy
      */
@@ -308,7 +317,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
      *
      * @memberof ImageryLayer
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *
@@ -336,9 +345,16 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
      * @returns {Boolean} true if this layer overlaps any portion of the terrain tile; otherwise, false.
      */
     ImageryLayer.prototype._createTileImagerySkeletons = function(tile, terrainProvider, insertionPoint) {
+        if (defined(this._minimumTerrainLevel) && tile.level < this._minimumTerrainLevel) {
+            return false;
+        }
+        if (defined(this._maximumTerrainLevel) && tile.level > this._maximumTerrainLevel) {
+            return false;
+        }
+
         var imageryProvider = this._imageryProvider;
 
-        if (typeof insertionPoint === 'undefined') {
+        if (!defined(insertionPoint)) {
             insertionPoint = tile.imagery.length;
         }
 
@@ -402,7 +418,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
             imageryLevel = maximumLevel;
         }
 
-        if (typeof imageryProvider.getMinimumLevel !== 'undefined') {
+        if (defined(imageryProvider.getMinimumLevel)) {
             var minimumLevel = imageryProvider.getMinimumLevel();
             if (imageryLevel < minimumLevel) {
                 imageryLevel = minimumLevel;
@@ -546,7 +562,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
         var that = this;
 
         function success(image) {
-            if (typeof image === 'undefined') {
+            if (!defined(image)) {
                 return failure();
             }
 
@@ -575,7 +591,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
             imagery.state = ImageryState.TRANSITIONING;
             var imagePromise = imageryProvider.requestImage(imagery.x, imagery.y, imagery.level);
 
-            if (typeof imagePromise === 'undefined') {
+            if (!defined(imagePromise)) {
                 // Too many parallel requests, so postpone loading tile.
                 imagery.state = ImageryState.UNLOADED;
                 return;
@@ -601,9 +617,9 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
 
         // If this imagery provider has a discard policy, use it to check if this
         // image should be discarded.
-        if (typeof imageryProvider.getTileDiscardPolicy !== 'undefined') {
+        if (defined(imageryProvider.getTileDiscardPolicy)) {
             var discardPolicy = imageryProvider.getTileDiscardPolicy();
-            if (typeof discardPolicy !== 'undefined') {
+            if (defined(discardPolicy)) {
                 // If the discard policy is not ready yet, transition back to the
                 // RECEIVED state and we'll try again next time.
                 if (!discardPolicy.isReady()) {
@@ -657,7 +673,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
         // Use mipmaps if this texture has power-of-two dimensions.
         if (CesiumMath.isPowerOfTwo(texture.getWidth()) && CesiumMath.isPowerOfTwo(texture.getHeight())) {
             var mipmapSampler = context.cache.imageryLayer_mipmapSampler;
-            if (typeof mipmapSampler === 'undefined') {
+            if (!defined(mipmapSampler)) {
                 var maximumSupportedAnisotropy = context.getMaximumTextureFilterAnisotropy();
                 mipmapSampler = context.cache.imageryLayer_mipmapSampler = context.createSampler({
                     wrapS : TextureWrap.CLAMP,
@@ -671,7 +687,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
             texture.setSampler(mipmapSampler);
         } else {
             var nonMipmapSampler = context.cache.imageryLayer_nonMipmapSampler;
-            if (typeof nonMipmapSampler === 'undefined') {
+            if (!defined(nonMipmapSampler)) {
                 nonMipmapSampler = context.cache.imageryLayer_nonMipmapSampler = context.createSampler({
                     wrapS : TextureWrap.CLAMP,
                     wrapT : TextureWrap.CLAMP,
@@ -689,7 +705,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
         var cacheKey = getImageryCacheKey(x, y, level);
         var imagery = this._imageryCache[cacheKey];
 
-        if (typeof imagery === 'undefined') {
+        if (!defined(imagery)) {
             imagery = new Imagery(this, x, y, level, imageryExtent);
             this._imageryCache[cacheKey] = imagery;
         }
@@ -739,12 +755,12 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
         oneOverMercatorHeight : 0
     };
 
-    var float32ArrayScratch = typeof Float32Array !== 'undefined' ? new Float32Array(1) : undefined;
+    var float32ArrayScratch = FeatureDetection.supportsTypedArrays() ? new Float32Array(1) : undefined;
 
     function reprojectToGeographic(imageryLayer, context, texture, extent) {
         var reproject = context.cache.imageryLayer_reproject;
 
-        if (typeof reproject === 'undefined') {
+        if (!defined(reproject)) {
             reproject = context.cache.imageryLayer_reproject = {
                 framebuffer : undefined,
                 vertexArray : undefined,
@@ -752,13 +768,13 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
                 renderState : undefined,
                 sampler : undefined,
                 destroy : function() {
-                    if (typeof this.framebuffer !== 'undefined') {
+                    if (defined(this.framebuffer)) {
                         this.framebuffer.destroy();
                     }
-                    if (typeof this.vertexArray !== 'undefined') {
+                    if (defined(this.vertexArray)) {
                         this.vertexArray.destroy();
                     }
-                    if (typeof this.shaderProgram !== 'undefined') {
+                    if (defined(this.shaderProgram)) {
                         this.shaderProgram.release();
                     }
                 }
@@ -867,7 +883,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingRectangle', 'Co
         command.framebuffer = reproject.framebuffer;
         command.execute(context);
 
-        if ((typeof reproject.renderState === 'undefined') ||
+        if ((!defined(reproject.renderState)) ||
                 (reproject.renderState.viewport.width !== width) ||
                 (reproject.renderState.viewport.height !== height)) {
 

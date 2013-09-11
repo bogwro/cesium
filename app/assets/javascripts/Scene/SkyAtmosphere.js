@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/EllipsoidGeometry', 'Core/destroyObject', 'Core/GeometryPipeline', 'Core/PrimitiveType', 'Core/Ellipsoid', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Renderer/CullFace', 'Renderer/BlendingState', 'Scene/SceneMode', 'Shaders/SkyAtmosphereVS', 'Shaders/SkyAtmosphereFS'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/EllipsoidGeometry', 'Core/destroyObject', 'Core/GeometryPipeline', 'Core/PrimitiveType', 'Core/Ellipsoid', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Renderer/CullFace', 'Renderer/BlendingState', 'Renderer/createShaderSource', 'Scene/SceneMode', 'Shaders/SkyAtmosphereVS', 'Shaders/SkyAtmosphereFS'], function(
         defaultValue,
+        defined,
         EllipsoidGeometry,
         destroyObject,
         GeometryPipeline,
@@ -10,6 +11,7 @@ define(['Core/defaultValue', 'Core/EllipsoidGeometry', 'Core/destroyObject', 'Co
         DrawCommand,
         CullFace,
         BlendingState,
+        createShaderSource,
         SceneMode,
         SkyAtmosphereVS,
         SkyAtmosphereFS) {
@@ -91,7 +93,7 @@ define(['Core/defaultValue', 'Core/EllipsoidGeometry', 'Core/destroyObject', 'Co
      *
      * @memberof SkyAtmosphere
      *
-     * @return {Ellipsoid}
+     * @returns {Ellipsoid}
      */
     SkyAtmosphere.prototype.getEllipsoid = function() {
         return this._ellipsoid;
@@ -117,11 +119,12 @@ define(['Core/defaultValue', 'Core/EllipsoidGeometry', 'Core/destroyObject', 'Co
 
         var command = this._command;
 
-        if (typeof command.vertexArray === 'undefined') {
-            var geometry = new EllipsoidGeometry({
+        if (!defined(command.vertexArray)) {
+            var geometry = EllipsoidGeometry.createGeometry(new EllipsoidGeometry({
                 radii : this._ellipsoid.getRadii().multiplyByScalar(1.025),
-                numberOfPartitions : 60
-            });
+                slicePartitions : 256,
+                stackPartitions : 256
+            }));
             command.vertexArray = context.createVertexArrayFromGeometry({
                 geometry : geometry,
                 attributeIndices : GeometryPipeline.createAttributeIndices(geometry),
@@ -136,21 +139,18 @@ define(['Core/defaultValue', 'Core/EllipsoidGeometry', 'Core/destroyObject', 'Co
                 blending : BlendingState.ALPHA_BLEND
             });
 
-            var vs;
-            var fs;
             var shaderCache = context.getShaderCache();
+            var vs = createShaderSource({
+                defines : ['SKY_FROM_SPACE'],
+                sources : [SkyAtmosphereVS]
+            });
+            this._spSkyFromSpace = shaderCache.getShaderProgram(vs, SkyAtmosphereFS);
 
-            vs = '#define SKY_FROM_SPACE\n' +
-                 '#line 0\n' +
-                 SkyAtmosphereVS;
-            fs = '#line 0\n' +
-                 SkyAtmosphereFS;
-            this._spSkyFromSpace = shaderCache.getShaderProgram(vs, fs);
-
-            vs = '#define SKY_FROM_ATMOSPHERE\n' +
-                 '#line 0\n' +
-                 SkyAtmosphereVS;
-            this._spSkyFromAtmosphere = shaderCache.getShaderProgram(vs, fs);
+            vs = createShaderSource({
+                defines : ['SKY_FROM_ATMOSPHERE'],
+                sources : [SkyAtmosphereVS]
+            });
+            this._spSkyFromAtmosphere = shaderCache.getShaderProgram(vs, SkyAtmosphereFS);
         }
 
         var cameraPosition = frameState.camera.getPositionWC();
@@ -177,7 +177,7 @@ define(['Core/defaultValue', 'Core/EllipsoidGeometry', 'Core/destroyObject', 'Co
      *
      * @memberof SkyAtmosphere
      *
-     * @return {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
      *
      * @see SkyAtmosphere#destroy
      */
@@ -195,7 +195,7 @@ define(['Core/defaultValue', 'Core/EllipsoidGeometry', 'Core/destroyObject', 'Co
      *
      * @memberof SkyAtmosphere
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *

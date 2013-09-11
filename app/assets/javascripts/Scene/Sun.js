@@ -1,8 +1,9 @@
 /*global define*/
-define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/ComponentDatatype', 'Core/destroyObject', 'Core/Math', 'Core/PrimitiveType', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Scene/SceneMode', 'Shaders/SunVS', 'Shaders/SunFS'], function(
+define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/ComponentDatatype', 'Core/defined', 'Core/destroyObject', 'Core/Math', 'Core/PrimitiveType', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Scene/SceneMode', 'Shaders/SunVS', 'Shaders/SunFS'], function(
         BoundingSphere,
         Cartesian3,
         ComponentDatatype,
+        defined,
         destroyObject,
         CesiumMath,
         PrimitiveType,
@@ -63,7 +64,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/ComponentDatatype', 'Cor
 
         var command = this._command;
 
-        if (typeof command.vertexArray === 'undefined') {
+        if (!defined(command.vertexArray)) {
             var attributeIndices = {
                 direction : 0
             };
@@ -127,7 +128,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/ComponentDatatype', 'Cor
      *
      * @memberof Sun
      *
-     * @return {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
      *
      * @see Sun#destroy
      */
@@ -145,7 +146,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/ComponentDatatype', 'Cor
      *
      * @memberof Sun
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *

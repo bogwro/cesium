@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/isCrossOriginUrl', 'ThirdParty/when'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/isCrossOriginUrl', 'ThirdParty/when'], function(
         defaultValue,
+        defined,
         DeveloperError,
         isCrossOriginUrl,
         when) {
@@ -38,7 +39,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/isCrossOriginUrl', 'Th
      * });
      */
     var loadImage = function(url, allowCrossOrigin) {
-        if (typeof url === 'undefined') {
+        if (!defined(url)) {
             throw new DeveloperError('url is required.');
         }
 

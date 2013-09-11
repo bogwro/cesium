@@ -1,6 +1,5 @@
 /*global define*/
-define([], function(
-        ) {
+define(['Core/defined'], function(defined) {
     "use strict";
 
     /**
@@ -28,6 +27,20 @@ define([], function(
          * @type {Object}
          */
         this.response = response;
+    };
+
+    /**
+     * Creates a string representing this RequestErrorEvent.
+     * @memberof RequestErrorEvent
+     *
+     * @returns {String} A string representing the provided RequestErrorEvent.
+     */
+    RequestErrorEvent.prototype.toString = function() {
+        var str = 'Request has failed.';
+        if (defined(this.statusCode)) {
+            str += ' Status Code: ' + this.statusCode;
+        }
+        return str;
     };
 
     return RequestErrorEvent;

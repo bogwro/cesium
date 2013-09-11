@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian2', 'Core/Ellipsoid', 'Core/Extent', 'Core/GeographicProjection', 'Scene/TilingScheme'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian2', 'Core/Ellipsoid', 'Core/Extent', 'Core/GeographicProjection', 'Scene/TilingScheme'], function(
         defaultValue,
+        defined,
         DeveloperError,
         CesiumMath,
         Cartesian2,
@@ -98,7 +99,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian
      *
      * @memberof GeographicTilingScheme
      *
-     * @return {Array} An array containing the tiles at level of detail zero, starting with the
+     * @returns {Array} An array containing the tiles at level of detail zero, starting with the
      * tile in the northwest corner of the globe and followed by the tile (if any) to its east.
      */
     GeographicTilingScheme.prototype.createLevelZeroTiles = function() {
@@ -120,7 +121,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian
      * @exception {DeveloperError} <code>extent</code> is required.
      */
     GeographicTilingScheme.prototype.extentToNativeExtent = function(extent, result) {
-        if (typeof extent === 'undefined') {
+        if (!defined(extent)) {
             throw new DeveloperError('extent is required.');
         }
 
@@ -129,7 +130,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian
         var east = CesiumMath.toDegrees(extent.east);
         var north = CesiumMath.toDegrees(extent.north);
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Extent(west, south, east, north);
         }
 
@@ -192,7 +193,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian
         var north = extent.north - y * yTileHeight;
         var south = extent.north - (y + 1) * yTileHeight;
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             result = new Extent(west, south, east, north);
         }
 
@@ -243,7 +244,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian
             yTileCoordinate = yTiles - 1;
         }
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian2(xTileCoordinate, yTileCoordinate);
         }
 

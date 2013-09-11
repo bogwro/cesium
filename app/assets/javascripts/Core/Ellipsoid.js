@@ -1,7 +1,8 @@
 /*global define*/
-define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Cartographic'], function(
+define(['Core/freezeObject', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', 'Core/Cartographic'], function(
          freezeObject,
          defaultValue,
+         defined,
          DeveloperError,
          CesiumMath,
          Cartesian3,
@@ -74,12 +75,12 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      * @returns {Ellipsoid} The cloned Ellipsoid. (Returns undefined if ellipsoid is undefined)
      */
     Ellipsoid.clone = function(ellipsoid, result) {
-        if (typeof ellipsoid === 'undefined') {
+        if (!defined(ellipsoid)) {
             return undefined;
         }
         var radii = ellipsoid._radii;
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Ellipsoid(radii.x, radii.y, radii.z);
         }
 
@@ -99,7 +100,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      * Computes an Ellipsoid from a Cartesian specifying the radii in x, y, and z directions.
      *
      * @param {Cartesian3} [radii=Cartesian3.ZERO] The ellipsoid's radius in the x, y, and z directions.
-     * @return {Ellipsoid} A new Ellipsoid instance.
+     * @returns {Ellipsoid} A new Ellipsoid instance.
      *
      * @exception {DeveloperError} All radii components must be greater than or equal to zero.
      *
@@ -107,7 +108,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      * @see Ellipsoid.UNIT_SPHERE
      */
     Ellipsoid.fromCartesian3 = function(cartesian) {
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             return new Ellipsoid();
         }
         return new Ellipsoid(cartesian.x, cartesian.y, cartesian.z);
@@ -129,7 +130,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
 
     /**
      * @memberof Ellipsoid
-     * @return {Cartesian3} The radii of the ellipsoid.
+     * @returns {Cartesian3} The radii of the ellipsoid.
      */
     Ellipsoid.prototype.getRadii = function() {
         return this._radii;
@@ -137,7 +138,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
 
     /**
      * @memberof Ellipsoid
-     * @return {Cartesian3} The squared radii of the ellipsoid.
+     * @returns {Cartesian3} The squared radii of the ellipsoid.
      */
     Ellipsoid.prototype.getRadiiSquared = function() {
         return this._radiiSquared;
@@ -145,7 +146,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
 
     /**
      * @memberof Ellipsoid
-     * @return {Cartesian3} The radii of the ellipsoid raised to the fourth power.
+     * @returns {Cartesian3} The radii of the ellipsoid raised to the fourth power.
      */
     Ellipsoid.prototype.getRadiiToTheFourth = function() {
         return this._radiiToTheFourth;
@@ -153,7 +154,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
 
     /**
      * @memberof Ellipsoid
-     * @return {Cartesian3} One over the radii of the ellipsoid.
+     * @returns {Cartesian3} One over the radii of the ellipsoid.
      */
     Ellipsoid.prototype.getOneOverRadii = function() {
         return this._oneOverRadii;
@@ -161,7 +162,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
 
     /**
      * @memberof Ellipsoid
-     * @return {Cartesian3} One over the squared radii of the ellipsoid.
+     * @returns {Cartesian3} One over the squared radii of the ellipsoid.
      */
     Ellipsoid.prototype.getOneOverRadiiSquared = function() {
         return this._oneOverRadiiSquared;
@@ -169,7 +170,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
 
     /**
      * @memberof Ellipsoid
-     * @return {Cartesian3} The minimum radius of the ellipsoid.
+     * @returns {Cartesian3} The minimum radius of the ellipsoid.
      */
     Ellipsoid.prototype.getMinimumRadius = function() {
         return this._minimumRadius;
@@ -177,7 +178,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
 
     /**
      * @memberof Ellipsoid
-     * @return {Cartesian3} The maximum radius of the ellipsoid.
+     * @returns {Cartesian3} The maximum radius of the ellipsoid.
      */
     Ellipsoid.prototype.getMaximumRadius = function() {
         return this._maximumRadius;
@@ -202,7 +203,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      *
      * @param {Cartesian3} cartesian The Cartesian for which to to determine the geocentric normal.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if none was provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if none was provided.
      *
      * @exception {DeveloperError} cartesian is required.
      */
@@ -214,12 +215,12 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      *
      * @param {Cartographic} cartographic The cartographic position for which to to determine the geodetic normal.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if none was provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if none was provided.
      *
      * @exception {DeveloperError} cartographic is required.
      */
     Ellipsoid.prototype.geodeticSurfaceNormalCartographic = function(cartographic, result) {
-        if (typeof cartographic === 'undefined') {
+        if (!defined(cartographic)) {
             throw new DeveloperError('cartographic is required.');
         }
 
@@ -231,7 +232,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
         var y = cosLatitude * Math.sin(longitude);
         var z = Math.sin(latitude);
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             result = new Cartesian3();
         }
         result.x = x;
@@ -246,7 +247,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      *
      * @param {Cartesian3} cartesian The Cartesian position for which to to determine the surface normal.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if none was provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if none was provided.
      *
      * @exception {DeveloperError} cartesian is required.
      */
@@ -264,7 +265,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      *
      * @param {Cartographic} cartographic The cartographic position.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if none was provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if none was provided.
      *
      * @exception {DeveloperError} cartographic is required.
      *
@@ -291,7 +292,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      *
      * @param {Array} cartographics An array of cartographic positions.
      * @param {Array} [result] The object onto which to store the result.
-     * @return {Array} The modified result parameter or a new Array instance if none was provided.
+     * @returns {Array} The modified result parameter or a new Array instance if none was provided.
      *
      * @exception {DeveloperError} cartographics is required.
      *
@@ -303,12 +304,12 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      * var cartesianPositions = Ellipsoid.WGS84.cartographicArrayToCartesianArray(positions);
      */
     Ellipsoid.prototype.cartographicArrayToCartesianArray = function(cartographics, result) {
-        if (typeof cartographics === 'undefined') {
+        if (!defined(cartographics)) {
             throw new DeveloperError('cartographics is required.');
         }
 
         var length = cartographics.length;
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             result = new Array(length);
         } else {
             result.length = length;
@@ -330,7 +331,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      *
      * @param {Cartesian3} cartesian The Cartesian position to convert to cartographic representation.
      * @param {Cartographic} [result] The object onto which to store the result.
-     * @return {Cartographic} The modified result parameter, new Cartographic instance if none was provided, or undefined if the cartesian is at the center of the ellipsoid.
+     * @returns {Cartographic} The modified result parameter, new Cartographic instance if none was provided, or undefined if the cartesian is at the center of the ellipsoid.
      *
      * @exception {DeveloperError} cartesian is required.
      *
@@ -343,7 +344,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
         //`cartesian is required.` is thrown from scaleToGeodeticSurface
         var p = this.scaleToGeodeticSurface(cartesian, cartesianToCartographicP);
 
-        if (typeof p === 'undefined') {
+        if (!defined(p)) {
             return undefined;
         }
 
@@ -354,7 +355,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
         var latitude = Math.asin(n.z);
         var height = CesiumMath.sign(Cartesian3.dot(h, cartesian)) * Cartesian3.magnitude(h);
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartographic(longitude, latitude, height);
         }
         result.longitude = longitude;
@@ -369,7 +370,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      *
      * @param {Array} cartesians An array of Cartesian positions.
      * @param {Array} [result] The object onto which to store the result.
-     * @return {Array} The modified result parameter or a new Array instance if none was provided.
+     * @returns {Array} The modified result parameter or a new Array instance if none was provided.
      *
      * @exception {DeveloperError} cartesians is required.
      *
@@ -381,12 +382,12 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      * var cartographicPositions = Ellipsoid.WGS84.cartesianArrayToCartographicArray(positions);
      */
     Ellipsoid.prototype.cartesianArrayToCartographicArray = function(cartesians, result) {
-        if (typeof cartesians === 'undefined') {
+        if (!defined(cartesians)) {
             throw new DeveloperError('cartesians is required.');
         }
 
         var length = cartesians.length;
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             result = new Array(length);
         } else {
             result.length = length;
@@ -408,12 +409,12 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      *
      * @param {Cartesian3} cartesian The Cartesian position to scale.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter, a new Cartesian3 instance if none was provided, or undefined if the position is at the center.
+     * @returns {Cartesian3} The modified result parameter, a new Cartesian3 instance if none was provided, or undefined if the position is at the center.
      *
      * @exception {DeveloperError} cartesian is required.
      */
     Ellipsoid.prototype.scaleToGeodeticSurface = function(cartesian, result) {
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required.');
         }
 
@@ -496,7 +497,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
             correction = func / derivative;
         } while (Math.abs(func) > CesiumMath.EPSILON12);
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(positionX * xMultiplier, positionY * yMultiplier, positionZ * zMultiplier);
         }
         result.x = positionX * xMultiplier;
@@ -512,12 +513,12 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      *
      * @param {Cartesian3} cartesian The Cartesian position to scale.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if none was provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if none was provided.
      *
      * @exception {DeveloperError} cartesian is required.
      */
     Ellipsoid.prototype.scaleToGeocentricSurface = function(cartesian, result) {
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required.');
         }
 
@@ -555,11 +556,11 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      * @memberof Ellipsoid
      *
      * @param {Ellipsoid} [right] The other Ellipsoid.
-     * @return {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
      */
     Ellipsoid.prototype.equals = function(right) {
         return (this === right) ||
-               (typeof right !== 'undefined' &&
+               (defined(right) &&
                 Cartesian3.equals(this._radii, right._radii));
     };
 
@@ -567,7 +568,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/M
      * Creates a string representing this Ellipsoid in the format '(radii.x, radii.y, radii.z)'.
      * @memberof Ellipsoid
      *
-     * @return {String} A string representing this ellipsoid in the format '(radii.x, radii.y, radii.z)'.
+     * @returns {String} A string representing this ellipsoid in the format '(radii.x, radii.y, radii.z)'.
      */
     Ellipsoid.prototype.toString = function() {
         return this._radii.toString();

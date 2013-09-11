@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError'], function(
+define(['Core/defined', 'Core/DeveloperError'], function(
+        defined,
         DeveloperError) {
     "use strict";
 
@@ -41,7 +42,7 @@ define(['Core/DeveloperError'], function(
      * @exception {DeveloperError} listener is required and must be a function.
      */
     EventHelper.prototype.add = function(event, listener, scope) {
-        if (typeof event === 'undefined') {
+        if (!defined(event)) {
             throw new DeveloperError('event is required');
         }
 

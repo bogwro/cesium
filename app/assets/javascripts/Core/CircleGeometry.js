@@ -1,13 +1,13 @@
 /*global define*/
-define(['Core/clone', 'Core/defaultValue', 'Core/DeveloperError', 'Core/EllipseGeometry'], function(
-        clone,
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/EllipseGeometry'], function(
         defaultValue,
+        defined,
         DeveloperError,
         EllipseGeometry) {
     "use strict";
 
     /**
-     * A {@link Geometry} that represents vertices and indices for a circle on the ellipsoid.
+     * A description of a circle on the ellipsoid.
      *
      * @alias CircleGeometry
      * @constructor
@@ -26,6 +26,8 @@ define(['Core/clone', 'Core/defaultValue', 'Core/DeveloperError', 'Core/EllipseG
      * @exception {DeveloperError} radius must be greater than zero.
      * @exception {DeveloperError} granularity must be greater than zero.
      *
+     * @see CircleGeometry#createGeometry
+     *
      * @example
      * // Create a circle.
      * var ellipsoid = Ellipsoid.WGS84;
@@ -34,12 +36,13 @@ define(['Core/clone', 'Core/defaultValue', 'Core/DeveloperError', 'Core/EllipseG
      *   center : ellipsoid.cartographicToCartesian(Cartographic.fromDegrees(-75.59777, 40.03883)),
      *   radius : 100000.0
      * });
+     * var geometry = CircleGeometry.createGeometry(circle);
      */
     var CircleGeometry = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
         var radius = options.radius;
 
-        if (typeof radius === 'undefined') {
+        if (!defined(radius)) {
             throw new DeveloperError('radius is required.');
         }
 
@@ -58,38 +61,19 @@ define(['Core/clone', 'Core/defaultValue', 'Core/DeveloperError', 'Core/EllipseG
             vertexFormat : options.vertexFormat,
             stRotation : options.stRotation
         };
-        var ellipseGeometry = new EllipseGeometry(ellipseGeometryOptions);
+        this._ellipseGeometry = new EllipseGeometry(ellipseGeometryOptions);
+        this._workerName = 'createCircleGeometry';
+    };
 
-        /**
-         * An object containing {@link GeometryAttribute} properties named after each of the
-         * <code>true</code> values of the {@link VertexFormat} option.
-         *
-         * @type GeometryAttributes
-         *
-         * @see Geometry#attributes
-         */
-        this.attributes = ellipseGeometry.attributes;
-
-        /**
-         * Index data that, along with {@link Geometry#primitiveType}, determines the primitives in the geometry.
-         *
-         * @type Array
-         */
-        this.indices = ellipseGeometry.indices;
-
-        /**
-         * The type of primitives in the geometry.  For this geometry, it is {@link PrimitiveType.TRIANGLES}.
-         *
-         * @type PrimitiveType
-         */
-        this.primitiveType = ellipseGeometry.primitiveType;
-
-        /**
-         * A tight-fitting bounding sphere that encloses the vertices of the geometry.
-         *
-         * @type BoundingSphere
-         */
-        this.boundingSphere = ellipseGeometry.boundingSphere;
+    /**
+     * Computes the geometric representation of a circle on an ellipsoid, including its vertices, indices, and a bounding sphere.
+     * @memberof CircleGeometry
+     *
+     * @param {CircleGeometry} circleGeometry A description of the circle.
+     * @returns {Geometry} The computed vertices and indices.
+     */
+    CircleGeometry.createGeometry = function(circleGeometry) {
+        return EllipseGeometry.createGeometry(circleGeometry._ellipseGeometry);
     };
 
     return CircleGeometry;

@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/JulianDate', 'Core/ClockStep', 'Core/ClockRange', 'Core/Event', 'Core/defaultValue'], function(
+define(['Core/defined', 'Core/DeveloperError', 'Core/JulianDate', 'Core/ClockStep', 'Core/ClockRange', 'Core/Event', 'Core/defaultValue'], function(
+         defined,
          DeveloperError,
          JulianDate,
          ClockStep,
@@ -42,13 +43,13 @@ define(['Core/DeveloperError', 'Core/JulianDate', 'Core/ClockStep', 'Core/ClockR
         description = defaultValue(description, defaultValue.EMPTY_OBJECT);
 
         var startTime = description.startTime;
-        var startTimeUndefined = typeof startTime === 'undefined';
+        var startTimeUndefined = !defined(startTime);
 
         var stopTime = description.stopTime;
-        var stopTimeUndefined = typeof stopTime === 'undefined';
+        var stopTimeUndefined = !defined(stopTime);
 
         var currentTime = description.currentTime;
-        var currentTimeUndefined = typeof currentTime === 'undefined';
+        var currentTimeUndefined = !defined(currentTime);
 
         if (startTimeUndefined && stopTimeUndefined && currentTimeUndefined) {
             currentTime = new JulianDate();

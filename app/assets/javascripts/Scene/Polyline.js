@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core/Color', 'Core/PolylinePipeline', 'Core/Matrix4', 'Scene/Material'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core/Color', 'Core/PolylinePipeline', 'Core/Matrix4', 'Scene/Material'], function(
         defaultValue,
+        defined,
         DeveloperError,
         BoundingSphere,
         Color,
@@ -26,20 +27,20 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core
         this._width = defaultValue(description.width, 1.0);
 
         this._material = description.material;
-        if (typeof this._material === 'undefined') {
+        if (!defined(this._material)) {
             this._material = Material.fromType(undefined, Material.ColorType);
             this._material.uniforms.color = new Color(1.0, 1.0, 1.0, 1.0);
         }
 
         var positions = description.positions;
-        if (typeof positions === 'undefined') {
+        if (!defined(positions)) {
             positions = [];
         }
 
         this._positions = positions;
 
         var modelMatrix;
-        if (typeof this._polylineCollection !== 'undefined') {
+        if (defined(this._polylineCollection)) {
             modelMatrix = Matrix4.clone(this._polylineCollection.modelMatrix);
         }
 
@@ -67,7 +68,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core
     function makeDirty(polyline, propertyChanged) {
         ++polyline._propertiesChanged[propertyChanged];
         var polylineCollection = polyline._polylineCollection;
-        if (typeof polylineCollection !== 'undefined') {
+        if (defined(polylineCollection)) {
             polylineCollection._updatePolyline(polyline, propertyChanged);
             polyline._dirty = true;
         }
@@ -79,7 +80,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core
      *
      * @memberof Polyline
      *
-     * @return {Boolean} <code>true</code> if this polyline will be shown; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this polyline will be shown; otherwise, <code>false</code>.
      *
      * @see Polyline#setShow
      */
@@ -100,7 +101,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core
      * @see Polyline#getShow
      */
     Polyline.prototype.setShow = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -115,7 +116,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core
      *
      * @memberof Polyline
      *
-     * @return {Array} The polyline's positions.
+     * @returns {Array} The polyline's positions.
      *
      * @see Polyline#setPositions
      */
@@ -144,7 +145,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core
      * );
      */
     Polyline.prototype.setPositions = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -164,7 +165,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core
      */
     Polyline.prototype.update = function() {
         var modelMatrix = Matrix4.IDENTITY;
-        if (typeof this._polylineCollection !== 'undefined') {
+        if (defined(this._polylineCollection)) {
             modelMatrix = this._polylineCollection.modelMatrix;
         }
 
@@ -218,7 +219,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core
      * @see Polyline#getMaterial
      */
     Polyline.prototype.setMaterial = function(material) {
-        if (typeof material === 'undefined') {
+        if (!defined(material)) {
             throw new DeveloperError('material is required.');
         }
 
@@ -231,7 +232,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core
      *
      * @memberof Polyline
      *
-     * @return {Number} The width of the polyline.
+     * @returns {Number} The width of the polyline.
      *
      * @see Polyline#setWidth
      *
@@ -259,7 +260,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core
      * var width = polyline.getWidth(); // 5.0
      */
     Polyline.prototype.setWidth = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -271,7 +272,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere', 'Core
     };
 
     Polyline.prototype.getPickId = function(context) {
-        if (typeof this._pickId === 'undefined') {
+        if (!defined(this._pickId)) {
             this._pickId = context.createPickId(defaultValue(this._pickIdThis, this));
         }
         return this._pickId;

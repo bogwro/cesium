@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/loadImage', 'Core/getImagePixels', 'Core/throttleRequestByServer', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Math', 'Core/Ellipsoid', 'Core/Event', 'Scene/Credit', 'Scene/TerrainProvider', 'Scene/GeographicTilingScheme', 'Scene/HeightmapTerrainData', 'ThirdParty/when'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/loadImage', 'Core/getImagePixels', 'Core/throttleRequestByServer', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Math', 'Core/Ellipsoid', 'Core/Event', 'Scene/Credit', 'Scene/TerrainProvider', 'Scene/GeographicTilingScheme', 'Scene/HeightmapTerrainData', 'ThirdParty/when'], function(
         defaultValue,
+        defined,
         loadImage,
         getImagePixels,
         throttleRequestByServer,
@@ -45,7 +46,7 @@ define(['Core/defaultValue', 'Core/loadImage', 'Core/getImagePixels', 'Core/thro
      * centralBody.terrainProvider = terrainProvider;
      */
     var ArcGisImageServerTerrainProvider = function ArcGisImageServerTerrainProvider(description) {
-        if (typeof description === 'undefined' || typeof description.url === 'undefined') {
+        if (!defined(description) || !defined(description.url)) {
             throw new DeveloperError('description.url is required.');
         }
 
@@ -53,7 +54,7 @@ define(['Core/defaultValue', 'Core/loadImage', 'Core/getImagePixels', 'Core/thro
         this._token = description.token;
 
         this._tilingScheme = description.tilingScheme;
-        if (typeof this._tilingScheme === 'undefined') {
+        if (!defined(this._tilingScheme)) {
             this._tilingScheme = new GeographicTilingScheme({
                 ellipsoid : defaultValue(description.ellipsoid, Ellipsoid.WGS84)
             });
@@ -119,12 +120,12 @@ define(['Core/defaultValue', 'Core/loadImage', 'Core/getImagePixels', 'Core/thro
         }
 
         var proxy = this._proxy;
-        if (typeof proxy !== 'undefined') {
+        if (defined(proxy)) {
             url = proxy.getURL(url);
         }
 
         var promise = throttleRequestByServer(url, loadImage);
-        if (typeof promise === 'undefined') {
+        if (!defined(promise)) {
             return undefined;
         }
 

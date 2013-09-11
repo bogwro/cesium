@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/freezeObject', 'Core/VertexFormat', 'Scene/Material', 'Scene/Appearance', 'Shaders/Appearances/BasicMaterialAppearanceVS', 'Shaders/Appearances/BasicMaterialAppearanceFS', 'Shaders/Appearances/TexturedMaterialAppearanceVS', 'Shaders/Appearances/TexturedMaterialAppearanceFS', 'Shaders/Appearances/AllMaterialAppearanceVS', 'Shaders/Appearances/AllMaterialAppearanceFS'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/VertexFormat', 'Scene/Material', 'Scene/Appearance', 'Shaders/Appearances/BasicMaterialAppearanceVS', 'Shaders/Appearances/BasicMaterialAppearanceFS', 'Shaders/Appearances/TexturedMaterialAppearanceVS', 'Shaders/Appearances/TexturedMaterialAppearanceFS', 'Shaders/Appearances/AllMaterialAppearanceVS', 'Shaders/Appearances/AllMaterialAppearanceFS'], function(
         defaultValue,
+        defined,
         freezeObject,
         VertexFormat,
         Material,
@@ -63,7 +64,7 @@ define(['Core/defaultValue', 'Core/freezeObject', 'Core/VertexFormat', 'Scene/Ma
          *
          * @see <a href='https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric'>Fabric</a>
          */
-        this.material = (typeof options.material !== 'undefined') ? options.material : Material.fromType(undefined, Material.ColorType);
+        this.material = (defined(options.material)) ? options.material : Material.fromType(undefined, Material.ColorType);
 
         /**
          * The GLSL source code for the vertex shader.
@@ -176,7 +177,7 @@ define(['Core/defaultValue', 'Core/freezeObject', 'Core/VertexFormat', 'Scene/Ma
      *
      * @memberof MaterialAppearance
      *
-     * @return String The full GLSL fragment shader source.
+     * @returns String The full GLSL fragment shader source.
      */
     MaterialAppearance.prototype.getFragmentShaderSource = Appearance.prototype.getFragmentShaderSource;
 

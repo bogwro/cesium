@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/destroyObject', 'Core/defaultValue'], function(
+define(['Core/defined', 'Core/destroyObject', 'Core/defaultValue'], function(
+        defined,
         destroyObject,
         defaultValue) {
     "use strict";
@@ -44,7 +45,7 @@ define(['Core/destroyObject', 'Core/defaultValue'], function(
     CentralBodySurfaceShaderSet.prototype.getShaderProgram = function(context, textureCount, applyBrightness, applyContrast, applyHue, applySaturation, applyGamma, applyAlpha) {
         var key = getShaderKey(textureCount, applyBrightness, applyContrast, applyHue, applySaturation, applyGamma, applyAlpha);
         var shader = this._shaders[key];
-        if (typeof shader === 'undefined') {
+        if (!defined(shader)) {
             var vs = this.baseVertexShaderString;
             var fs =
                 (applyBrightness ? '#define APPLY_BRIGHTNESS\n' : '') +

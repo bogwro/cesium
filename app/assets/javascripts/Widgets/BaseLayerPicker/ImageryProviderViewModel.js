@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defineProperties', 'Core/DeveloperError', 'Widgets/createCommand', 'ThirdParty/knockout'], function(
+define(['Core/defineProperties', 'Core/defined', 'Core/DeveloperError', 'Widgets/createCommand', 'ThirdParty/knockout'], function(
         defineProperties,
+        defined,
         DeveloperError,
         createCommand,
         knockout) {
@@ -27,15 +28,15 @@ define(['Core/defineProperties', 'Core/DeveloperError', 'Widgets/createCommand',
      * @see ImageryProvider
      */
     var ImageryProviderViewModel = function(description) {
-        if (typeof description.name === 'undefined') {
+        if (!defined(description.name)) {
             throw new DeveloperError('description.name is required.');
         }
 
-        if (typeof description.tooltip === 'undefined') {
+        if (!defined(description.tooltip)) {
             throw new DeveloperError('description.tooltip is required.');
         }
 
-        if (typeof description.iconUrl === 'undefined') {
+        if (!defined(description.iconUrl)) {
             throw new DeveloperError('description.iconUrl is required.');
         }
 
@@ -44,7 +45,7 @@ define(['Core/defineProperties', 'Core/DeveloperError', 'Widgets/createCommand',
         }
 
         var creationCommand = description.creationFunction;
-        if (typeof creationCommand.canExecute === 'undefined') {
+        if (!defined(creationCommand.canExecute)) {
             creationCommand = createCommand(creationCommand);
         }
 

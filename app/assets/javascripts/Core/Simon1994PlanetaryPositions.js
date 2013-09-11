@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/Cartesian3', 'Core/DeveloperError', 'Core/JulianDate', 'Core/Math', 'Core/Matrix3', 'Core/TimeConstants', 'Core/TimeStandard'], function(
+define(['Core/Cartesian3', 'Core/defined', 'Core/DeveloperError', 'Core/JulianDate', 'Core/Math', 'Core/Matrix3', 'Core/TimeConstants', 'Core/TimeStandard'], function(
         Cartesian3,
+        defined,
         DeveloperError,
         JulianDate,
         CesiumMath,
@@ -91,7 +92,7 @@ define(['Core/Cartesian3', 'Core/DeveloperError', 'Core/JulianDate', 'Core/Math'
         }
 
         var radius = semilatus / denom;
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             result = new Cartesian3(radius * costheta, radius * sintheta, 0.0);
         } else {
             result.x = radius * costheta;
@@ -210,7 +211,7 @@ define(['Core/Cartesian3', 'Core/DeveloperError', 'Core/JulianDate', 'Core/Math'
 
         var cosraan = Math.cos(rightAscension);
         var sinraan = Math.sin(rightAscension);
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             result = new Matrix3(
                     cosraan * cosap - sinraan * sinap * cosi,
                     -cosraan * sinap - sinraan * cosap * cosi,
@@ -474,7 +475,7 @@ define(['Core/Cartesian3', 'Core/DeveloperError', 'Core/JulianDate', 'Core/Math'
      * @returns {Cartesian3} Calculated sun position
      */
     Simon1994PlanetaryPositions.ComputeSunPositionInEarthInertialFrame= function(date, result){
-        if (typeof date === 'undefined') {
+        if (!defined(date)) {
             date = new JulianDate();
         }
         //first forward transformation
@@ -498,7 +499,7 @@ define(['Core/Cartesian3', 'Core/DeveloperError', 'Core/JulianDate', 'Core/Math'
      * @returns {Cartesian3} Calculated moon position
      */
     Simon1994PlanetaryPositions.ComputeMoonPositionInEarthInertialFrame = function(date, result){
-        if (typeof date === 'undefined') {
+        if (!defined(date)) {
             date = new JulianDate();
         }
         result = computeSimonMoon(date, result);

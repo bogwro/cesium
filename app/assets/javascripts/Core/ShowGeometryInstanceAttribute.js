@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/ComponentDatatype', 'Core/DeveloperError'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/ComponentDatatype', 'Core/DeveloperError'], function(
         defaultValue,
+        defined,
         ComponentDatatype,
         DeveloperError) {
     "use strict";
@@ -93,7 +94,7 @@ define(['Core/defaultValue', 'Core/ComponentDatatype', 'Core/DeveloperError'], f
      * attributes.show = ShowGeometryInstanceAttribute.toValue(true);
      */
     ShowGeometryInstanceAttribute.toValue = function(show) {
-        if (typeof show === 'undefined') {
+        if (!defined(show)) {
             throw new DeveloperError('show is required.');
         }
 

@@ -1,7 +1,8 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/defaultValue', 'Core/Color', 'Core/destroyObject', 'Core/Math', 'Core/Ellipsoid', 'Core/GeometryInstance', 'Core/PolygonGeometry', 'Core/PolygonPipeline', 'Core/Queue', 'Scene/EllipsoidSurfaceAppearance', 'Scene/Primitive', 'Scene/Material'], function(
+define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color', 'Core/destroyObject', 'Core/Math', 'Core/Ellipsoid', 'Core/GeometryInstance', 'Core/PolygonGeometry', 'Core/PolygonPipeline', 'Core/Queue', 'Scene/EllipsoidSurfaceAppearance', 'Scene/Primitive', 'Scene/Material'], function(
         DeveloperError,
         defaultValue,
+        defined,
         Color,
         destroyObject,
         CesiumMath,
@@ -115,6 +116,18 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/Color', 'Core/destroyO
          */
         this.material = defaultValue(options.material, material);
 
+        /**
+         * Determines if the geometry instances will be created and batched on
+         * a web worker.
+         *
+         * @type Boolean
+         *
+         * @default true
+         *
+         * @private
+         */
+        this.asynchronous = defaultValue(options.asynchronous, true);
+
         this._positions = options.positions;
         this._polygonHierarchy = options.polygonHierarchy;
         this._createPrimitive = false;
@@ -157,7 +170,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/Color', 'Core/destroyO
      */
     Polygon.prototype.setPositions = function(positions) {
         // positions can be undefined
-        if (typeof positions !== 'undefined' && (positions.length < 3)) {
+        if (defined(positions) && (positions.length < 3)) {
             throw new DeveloperError('At least three positions are required.');
         }
         this._positions = positions;
@@ -223,11 +236,11 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/Color', 'Core/destroyO
      * @private
      */
     Polygon.prototype.update = function(context, frameState, commandList) {
-        if (typeof this.ellipsoid === 'undefined') {
+        if (!defined(this.ellipsoid)) {
             throw new DeveloperError('this.ellipsoid must be defined.');
         }
 
-        if (typeof this.material === 'undefined') {
+        if (!defined(this.material)) {
             throw new DeveloperError('this.material must be defined.');
         }
 
@@ -239,7 +252,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/Color', 'Core/destroyO
             return;
         }
 
-        if (!this._createPrimitive && (typeof this._primitive === 'undefined')) {
+        if (!this._createPrimitive && (!defined(this._primitive))) {
             // No positions/hierarchy to draw
             return;
         }
@@ -258,12 +271,12 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/Color', 'Core/destroyO
 
             this._primitive = this._primitive && this._primitive.destroy();
 
-            if ((typeof this._positions === 'undefined') && (typeof this._polygonHierarchy === 'undefined')) {
+            if (!defined(this._positions) && !defined(this._polygonHierarchy)) {
                 return;
             }
 
             var instance;
-            if (typeof this._positions !== 'undefined') {
+            if (defined(this._positions)) {
                 instance = new GeometryInstance({
                     geometry : PolygonGeometry.fromPositions({
                         positions : this._positions,
@@ -293,7 +306,8 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/Color', 'Core/destroyO
                 geometryInstances : instance,
                 appearance : new EllipsoidSurfaceAppearance({
                     aboveGround : (this.height > 0.0)
-                })
+                }),
+                asynchronous : this.asynchronous
             });
         }
 
@@ -309,7 +323,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/Color', 'Core/destroyO
      *
      * @memberof Polygon
      *
-     * @return {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
      *
      * @see Polygon#destroy
      */
@@ -327,7 +341,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/Color', 'Core/destroyO
      *
      * @memberof Polygon
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *

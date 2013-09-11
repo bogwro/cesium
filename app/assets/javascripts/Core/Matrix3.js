@@ -1,7 +1,8 @@
 /*global define*/
-define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], function(
+define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freezeObject'], function(
         Cartesian3,
         defaultValue,
+        defined,
         DeveloperError,
         freezeObject) {
     "use strict";
@@ -50,13 +51,13 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Matrix3} matrix The matrix to duplicate.
      * @param {Matrix3} [result] The object onto which to store the result.
-     * @return {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided. (Returns undefined if matrix is undefined)
+     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided. (Returns undefined if matrix is undefined)
      */
     Matrix3.clone = function(values, result) {
-        if (typeof values === 'undefined') {
+        if (!defined(values)) {
             return undefined;
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix3(values[0], values[3], values[6],
                                values[1], values[4], values[7],
                                values[2], values[5], values[8]);
@@ -85,7 +86,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @exception {DeveloperError} values is required.
      */
     Matrix3.fromColumnMajorArray = function(values, result) {
-        if (typeof values === 'undefined') {
+        if (!defined(values)) {
             throw new DeveloperError('values parameter is required');
         }
         return Matrix3.clone(values, result);
@@ -103,10 +104,10 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @exception {DeveloperError} values is required.
      */
     Matrix3.fromRowMajorArray = function(values, result) {
-        if (typeof values === 'undefined') {
+        if (!defined(values)) {
             throw new DeveloperError('values is required.');
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix3(values[0], values[1], values[2],
                                values[3], values[4], values[5],
                                values[6], values[7], values[8]);
@@ -129,10 +130,10 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Quaternion} quaternion the quaternion to use.
      *
-     * @return {Matrix3} The 3x3 rotation matrix from this quaternion.
+     * @returns {Matrix3} The 3x3 rotation matrix from this quaternion.
      */
     Matrix3.fromQuaternion = function(quaternion, result) {
-        if (typeof quaternion === 'undefined') {
+        if (!defined(quaternion)) {
             throw new DeveloperError('quaternion is required');
         }
         var x2 = quaternion.x * quaternion.x;
@@ -158,7 +159,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
         var m21 = 2.0 * (yz - xw);
         var m22 = -x2 - y2 + z2 + w2;
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix3(m00, m01, m02,
                                m10, m11, m12,
                                m20, m21, m22);
@@ -193,10 +194,10 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * var m = Matrix3.fromScale(new Cartesian3(7.0, 8.0, 9.0));
      */
     Matrix3.fromScale = function(scale, result) {
-        if (typeof scale === 'undefined') {
+        if (!defined(scale)) {
             throw new DeveloperError('scale is required.');
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix3(
                 scale.x, 0.0,     0.0,
                 0.0,     scale.y, 0.0,
@@ -236,7 +237,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
         if (typeof scale !== 'number') {
             throw new DeveloperError('scale is required.');
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix3(
                 scale, 0.0,   0.0,
                 0.0,   scale, 0.0,
@@ -272,14 +273,14 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * var rotated = m.multiplyByVector(p);
      */
     Matrix3.fromRotationX = function(angle, result) {
-        if (typeof angle === 'undefined') {
+        if (!defined(angle)) {
             throw new DeveloperError('angle is required.');
         }
 
         var cosAngle = Math.cos(angle);
         var sinAngle = Math.sin(angle);
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix3(
                 1.0, 0.0, 0.0,
                 0.0, cosAngle, -sinAngle,
@@ -316,14 +317,14 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * var rotated = m.multiplyByVector(p);
      */
     Matrix3.fromRotationY = function(angle, result) {
-        if (typeof angle === 'undefined') {
+        if (!defined(angle)) {
             throw new DeveloperError('angle is required.');
         }
 
         var cosAngle = Math.cos(angle);
         var sinAngle = Math.sin(angle);
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix3(
                 cosAngle, 0.0, sinAngle,
                 0.0, 1.0, 0.0,
@@ -360,14 +361,14 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * var rotated = m.multiplyByVector(p);
      */
     Matrix3.fromRotationZ = function(angle, result) {
-        if (typeof angle === 'undefined') {
+        if (!defined(angle)) {
             throw new DeveloperError('angle is required.');
         }
 
         var cosAngle = Math.cos(angle);
         var sinAngle = Math.sin(angle);
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix3(
                 cosAngle, -sinAngle, 0.0,
                 sinAngle, cosAngle, 0.0,
@@ -394,15 +395,15 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Matrix3} matrix The matrix to use..
      * @param {Array} [result] The Array onto which to store the result.
-     * @return {Array} The modified Array parameter or a new Array instance if one was not provided.
+     * @returns {Array} The modified Array parameter or a new Array instance if one was not provided.
      *
      * @exception {DeveloperError} matrix is required.
      */
     Matrix3.toArray = function(matrix, result) {
-        if (typeof matrix === 'undefined') {
+        if (!defined(matrix)) {
             throw new DeveloperError('matrix is required');
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return [matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5], matrix[6], matrix[7], matrix[8]];
         }
         result[0] = matrix[0];
@@ -423,7 +424,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Number} row The zero-based index of the row.
      * @param {Number} column The zero-based index of the column.
-     * @return {Number} The index of the element at the provided row and column.
+     * @returns {Number} The index of the element at the provided row and column.
      *
      * @exception {DeveloperError} row is required and must be 0, 1, or 2.
      * @exception {DeveloperError} column is required and must be 0, 1, or 2.
@@ -451,7 +452,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @param {Matrix3} matrix The matrix to use.
      * @param {Number} index The zero-based index of the column to retrieve.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} matrix is required.
      * @exception {DeveloperError} index is required and must be 0, 1, or 2.
@@ -459,7 +460,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @see Cartesian3
      */
     Matrix3.getColumn = function(matrix, index, result) {
-        if (typeof matrix === 'undefined') {
+        if (!defined(matrix)) {
             throw new DeveloperError('matrix is required.');
         }
 
@@ -472,7 +473,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
         var y = matrix[startIndex + 1];
         var z = matrix[startIndex + 2];
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(x, y, z);
         }
         result.x = x;
@@ -489,7 +490,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @param {Number} index The zero-based index of the column to set.
      * @param {Cartesian3} cartesian The Cartesian whose values will be assigned to the specified column.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
+     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
      *
      * @exception {DeveloperError} matrix is required.
      * @exception {DeveloperError} cartesian is required.
@@ -498,10 +499,10 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @see Cartesian3
      */
     Matrix3.setColumn = function(matrix, index, cartesian, result) {
-        if (typeof matrix === 'undefined') {
+        if (!defined(matrix)) {
             throw new DeveloperError('matrix is required');
         }
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
         if (typeof index !== 'number' || index < 0 || index > 2) {
@@ -522,7 +523,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @param {Matrix3} matrix The matrix to use.
      * @param {Number} index The zero-based index of the row to retrieve.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} matrix is required.
      * @exception {DeveloperError} index is required and must be 0, 1, or 2.
@@ -530,7 +531,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @see Cartesian3
      */
     Matrix3.getRow = function(matrix, index, result) {
-        if (typeof matrix === 'undefined') {
+        if (!defined(matrix)) {
             throw new DeveloperError('matrix is required.');
         }
 
@@ -542,7 +543,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
         var y = matrix[index + 3];
         var z = matrix[index + 6];
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(x, y, z);
         }
         result.x = x;
@@ -559,7 +560,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @param {Number} index The zero-based index of the row to set.
      * @param {Cartesian3} cartesian The Cartesian whose values will be assigned to the specified row.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
+     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
      *
      * @exception {DeveloperError} matrix is required.
      * @exception {DeveloperError} cartesian is required.
@@ -568,10 +569,10 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @see Cartesian3
      */
     Matrix3.setRow = function(matrix, index, cartesian, result) {
-        if (typeof matrix === 'undefined') {
+        if (!defined(matrix)) {
             throw new DeveloperError('matrix is required');
         }
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
         if (typeof index !== 'number' || index < 0 || index > 2) {
@@ -592,16 +593,16 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @param {Matrix3} left The first matrix.
      * @param {Matrix3} right The second matrix.
      * @param {Matrix3} [result] The object onto which to store the result.
-     * @return {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
+     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
      *
      * @exception {DeveloperError} left is required.
      * @exception {DeveloperError} right is required.
      */
     Matrix3.multiply = function(left, right, result) {
-        if (typeof left === 'undefined') {
+        if (!defined(left)) {
             throw new DeveloperError('left is required');
         }
-        if (typeof right === 'undefined') {
+        if (!defined(right)) {
             throw new DeveloperError('right is required');
         }
 
@@ -617,7 +618,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
         var column2Row1 = left[1] * right[6] + left[4] * right[7] + left[7] * right[8];
         var column2Row2 = left[2] * right[6] + left[5] * right[7] + left[8] * right[8];
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix3(column0Row0, column1Row0, column2Row0,
                                column0Row1, column1Row1, column2Row1,
                                column0Row2, column1Row2, column2Row2);
@@ -641,16 +642,16 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @param {Matrix3} matrix The matrix.
      * @param {Cartesian3} cartesian The column.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} matrix is required.
      * @exception {DeveloperError} cartesian is required.
      */
     Matrix3.multiplyByVector = function(matrix, cartesian, result) {
-        if (typeof matrix === 'undefined') {
+        if (!defined(matrix)) {
             throw new DeveloperError('matrix is required');
         }
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
 
@@ -662,7 +663,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
         var y = matrix[1] * vX + matrix[4] * vY + matrix[7] * vZ;
         var z = matrix[2] * vX + matrix[5] * vY + matrix[8] * vZ;
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(x, y, z);
         }
         result.x = x;
@@ -678,20 +679,20 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @param {Matrix3} matrix The matrix.
      * @param {Number} scalar The number to multiply by.
      * @param {Matrix3} [result] The object onto which to store the result.
-     * @return {Matrix3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Matrix3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} matrix is required.
      * @exception {DeveloperError} scalar is required and must be a number.
      */
     Matrix3.multiplyByScalar = function(matrix, scalar, result) {
-        if (typeof matrix === 'undefined') {
+        if (!defined(matrix)) {
             throw new DeveloperError('matrix is required');
         }
         if (typeof scalar !== 'number') {
             throw new DeveloperError('scalar is required and must be a number');
         }
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix3(matrix[0] * scalar, matrix[3] * scalar, matrix[6] * scalar,
                                matrix[1] * scalar, matrix[4] * scalar, matrix[7] * scalar,
                                matrix[2] * scalar, matrix[5] * scalar, matrix[8] * scalar);
@@ -714,16 +715,16 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Matrix3} matrix The matrix to negate.
      * @param {Matrix3} [result] The object onto which to store the result.
-     * @return {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
+     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
      *
      * @exception {DeveloperError} matrix is required.
      */
     Matrix3.negate = function(matrix, result) {
-        if (typeof matrix === 'undefined') {
+        if (!defined(matrix)) {
             throw new DeveloperError('matrix is required');
         }
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix3(-matrix[0], -matrix[3], -matrix[6],
                                -matrix[1], -matrix[4], -matrix[7],
                                -matrix[2], -matrix[5], -matrix[8]);
@@ -746,12 +747,12 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Matrix3} matrix The matrix to transpose.
      * @param {Matrix3} [result] The object onto which to store the result.
-     * @return {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
+     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
      *
      * @exception {DeveloperError} matrix is required.
      */
     Matrix3.transpose = function(matrix, result) {
-        if (typeof matrix === 'undefined') {
+        if (!defined(matrix)) {
             throw new DeveloperError('matrix is required');
         }
 
@@ -765,7 +766,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
         var column2Row1 = matrix[5];
         var column2Row2 = matrix[8];
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix3(column0Row0, column1Row0, column2Row0,
                                column0Row1, column1Row1, column2Row1,
                                column0Row2, column1Row2, column2Row2);
@@ -789,12 +790,12 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Matrix3} [left] The first matrix.
      * @param {Matrix3} [right] The second matrix.
-     * @return {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
      */
     Matrix3.equals = function(left, right) {
         return (left === right) ||
-               (typeof left !== 'undefined' &&
-                typeof right !== 'undefined' &&
+               (defined(left) &&
+                defined(right) &&
                 left[0] === right[0] &&
                 left[1] === right[1] &&
                 left[2] === right[2] &&
@@ -815,7 +816,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @param {Matrix3} [left] The first matrix.
      * @param {Matrix3} [right] The second matrix.
      * @param {Number} epsilon The epsilon to use for equality testing.
-     * @return {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
      *
      * @exception {DeveloperError} epsilon is required and must be a number.
      */
@@ -825,8 +826,8 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
         }
 
         return (left === right) ||
-                (typeof left !== 'undefined' &&
-                typeof right !== 'undefined' &&
+                (defined(left) &&
+                defined(right) &&
                 Math.abs(left[0] - right[0]) <= epsilon &&
                 Math.abs(left[1] - right[1]) <= epsilon &&
                 Math.abs(left[2] - right[2]) <= epsilon &&
@@ -905,7 +906,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @memberof Matrix3
      *
      * @param {Matrix3} [result] The object onto which to store the result.
-     * @return {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
+     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
      */
     Matrix3.prototype.clone = function(result) {
         return Matrix3.clone(this, result);
@@ -916,7 +917,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @memberof Matrix3
      *
      * @param {Array} [result] The Array onto which to store the result.
-     * @return {Array} The modified Array parameter or a new Array instance if one was not provided.
+     * @returns {Array} The modified Array parameter or a new Array instance if one was not provided.
      */
     Matrix3.prototype.toArray = function(result) {
         return Matrix3.toArray(this, result);
@@ -928,7 +929,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Number} index The zero-based index of the column to retrieve.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} index is required and must be 0, 1, or 2.
      *
@@ -960,7 +961,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Number} index The zero-based index of the row to retrieve.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} index is required and must be 0, 1, or 2.
      *
@@ -992,7 +993,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Matrix3} right The right hand side matrix.
      * @param {Matrix3} [result] The object onto which to store the result.
-     * @return {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
+     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
      *
      * @exception {DeveloperError} right is required.
      */
@@ -1006,7 +1007,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Cartesian3} cartesian The column.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} cartesian is required.
      */
@@ -1020,7 +1021,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Number} scalar The number to multiply by.
      * @param {Matrix3} [result] The object onto which to store the result.
-     * @return {Matrix3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Matrix3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} scalar is required and must be a number.
      */
@@ -1033,7 +1034,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Matrix3} matrix The matrix to negate.
      * @param {Matrix3} [result] The object onto which to store the result.
-     * @return {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
+     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
      *
      * @exception {DeveloperError} matrix is required.
      */
@@ -1046,7 +1047,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @memberof Matrix3
      *
      * @param {Matrix3} [result] The object onto which to store the result.
-     * @return {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
+     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if one was not provided.
      */
     Matrix3.prototype.transpose = function(result) {
         return Matrix3.transpose(this, result);
@@ -1058,7 +1059,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * @memberof Matrix3
      *
      * @param {Matrix3} [right] The right hand side matrix.
-     * @return {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
      */
     Matrix3.prototype.equals = function(right) {
         return Matrix3.equals(this, right);
@@ -1072,7 +1073,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      *
      * @param {Matrix3} [right] The right hand side matrix.
      * @param {Number} epsilon The epsilon to use for equality testing.
-     * @return {Boolean} <code>true</code> if they are within the provided epsilon, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if they are within the provided epsilon, <code>false</code> otherwise.
      *
      * @exception {DeveloperError} epsilon is required and must be a number.
      */
@@ -1085,7 +1086,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/DeveloperError', 'Core/fre
      * on a separate line and in the format '(column0, column1, column2)'.
      * @memberof Matrix3
      *
-     * @return {String} A string representing the provided Matrix with each row being on a separate line and in the format '(column0, column1, column2)'.
+     * @returns {String} A string representing the provided Matrix with each row being on a separate line and in the format '(column0, column1, column2)'.
      */
     Matrix3.prototype.toString = function() {
         return '(' + this[0] + ', ' + this[3] + ', ' + this[6] + ')\n' +

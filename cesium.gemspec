@@ -12,6 +12,7 @@ Gem::Specification.new do |s|
   s.homepage    = 'http://bogwro.github.com/cesium'
   s.summary     = "WebGL Virtual Globe and Map Engine as Rails' Engine"
   s.description = "WebGL Virtual Globe and Map Engine as Rails' Engine"
+  s.license     = 'ALv2'
 
   s.files = Dir['{app,config,db,lib}/**/*'] + ['LICENSE.md', 'Rakefile', 'README.rdoc']
   s.test_files = Dir['test/**/*']
@@ -20,6 +21,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'jquery-rails'
   s.add_dependency 'requirejs-rails'
 
+  s.add_development_dependency 'rails', '~> 3.2.14'
   s.add_development_dependency 'sqlite3'
-  s.add_development_dependency 'rails', '3.2.13'
 end

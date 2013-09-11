@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defineProperties', 'Core/Event', 'Core/wrapFunction', 'DynamicScene/CzmlDataSource', 'DynamicScene/GeoJsonDataSource', 'ThirdParty/when', 'Widgets/getElement'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/defineProperties', 'Core/Event', 'Core/wrapFunction', 'DynamicScene/CzmlDataSource', 'DynamicScene/GeoJsonDataSource', 'ThirdParty/when', 'Widgets/getElement'], function(
         defaultValue,
+        defined,
         DeveloperError,
         defineProperties,
         Event,
@@ -32,14 +33,14 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defineProperties', 'Co
      *
      * @example
      * // Add basic drag and drop support and pop up an alert window on error.
-     * var viewer = new Viewer('cesiumContainer');
-     * viewer.extend(viewerDragDropMixin);
+     * var viewer = new Cesium.Viewer('cesiumContainer');
+     * viewer.extend(Cesium.viewerDragDropMixin);
      * viewer.onDropError.addEventListener(function(viewerArg, source, error) {
      *     window.alert('Error processing ' + source + ':' + error);
      * });
      */
     var viewerDragDropMixin = function(viewer, options) {
-        if (typeof viewer === 'undefined') {
+        if (!defined(viewer)) {
             throw new DeveloperError('viewer is required.');
         }
         if (viewer.hasOwnProperty('dropTarget')) {
@@ -78,7 +79,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defineProperties', 'Co
                     return dropTarget;
                 },
                 set : function(value) {
-                    if (typeof value === 'undefined') {
+                    if (!defined(value)) {
                         throw new DeveloperError('value is required.');
                     }
                     unsubscribe(dropTarget, handleDrop);
@@ -146,7 +147,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defineProperties', 'Co
             for ( var i = 0; i < length; i++) {
                 var f = files[i];
                 var reader = new FileReader();
-                reader.onload = createOnLoadCallback(viewer, f.name, i === 0);
+                reader.onload = createOnLoadCallback(viewer, f.name);
                 reader.onerror = createOnDropErrorCallback(viewer, f.name);
                 reader.readAsText(f);
             }
@@ -171,7 +172,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defineProperties', 'Co
 
     function unsubscribe(dropTarget, handleDrop) {
         var currentTarget = dropTarget;
-        if (typeof currentTarget !== 'undefined') {
+        if (defined(currentTarget)) {
             currentTarget.removeEventListener('drop', handleDrop, false);
             currentTarget.removeEventListener('dragenter', stop, false);
             currentTarget.removeEventListener('dragover', stop, false);
@@ -192,7 +193,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defineProperties', 'Co
         return (suffixLength < strLength) && (str.indexOf(suffix, strLength - suffixLength) !== -1);
     }
 
-    function createOnLoadCallback(viewer, source, firstTime) {
+    function createOnLoadCallback(viewer, source) {
         var DataSource;
         var sourceUpperCase = source.toUpperCase();
         if (endsWith(sourceUpperCase, ".CZML")) {
@@ -203,6 +204,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defineProperties', 'Co
             DataSource = GeoJsonDataSource;
         } else {
             viewer.onDropError.raiseEvent(viewer, source, 'Unrecognized file extension: ' + source);
+            return undefined;
         }
 
         return function(evt) {
@@ -210,16 +212,6 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defineProperties', 'Co
             try {
                 when(dataSource.load(JSON.parse(evt.target.result), source), function() {
                     viewer.dataSources.add(dataSource);
-                    if (firstTime) {
-                        var dataClock = dataSource.getClock();
-                        if (typeof dataClock !== 'undefined') {
-                            dataClock.clone(viewer.clock);
-                            if (typeof viewer.timeline !== 'undefined') {
-                                viewer.timeline.updateFromClock();
-                                viewer.timeline.zoomTo(dataClock.startTime, dataClock.stopTime);
-                            }
-                        }
-                    }
                 }, function(error) {
                     viewer.onDropError.raiseEvent(viewer, source, error);
                 });

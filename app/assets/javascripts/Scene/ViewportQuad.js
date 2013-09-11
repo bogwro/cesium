@@ -1,9 +1,10 @@
 /*global define*/
-define(['Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingRectangle', 'Core/ComponentDatatype', 'Core/PrimitiveType', 'Core/Geometry', 'Core/GeometryAttribute', 'Scene/Material', 'Renderer/BufferUsage', 'Renderer/BlendingState', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Shaders/ViewportQuadVS', 'Shaders/ViewportQuadFS'], function(
+define(['Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/BoundingRectangle', 'Core/ComponentDatatype', 'Core/PrimitiveType', 'Core/Geometry', 'Core/GeometryAttribute', 'Scene/Material', 'Renderer/BufferUsage', 'Renderer/BlendingState', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Shaders/ViewportQuadVS', 'Shaders/ViewportQuadFS'], function(
         Color,
         combine,
         destroyObject,
         defaultValue,
+        defined,
         DeveloperError,
         BoundingRectangle,
         ComponentDatatype,
@@ -15,6 +16,7 @@ define(['Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/defaultValue',
         BlendingState,
         CommandLists,
         DrawCommand,
+        createShaderSource,
         ViewportQuadVS,
         ViewportQuadFS) {
     "use strict";
@@ -49,7 +51,7 @@ define(['Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/defaultValue',
          */
         this.show = true;
 
-        if (typeof rectangle === 'undefined') {
+        if (!defined(rectangle)) {
             rectangle = new BoundingRectangle();
         }
 
@@ -63,7 +65,7 @@ define(['Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/defaultValue',
          */
         this.rectangle = BoundingRectangle.clone(rectangle);
 
-        if (typeof material === 'undefined') {
+        if (!defined(material)) {
             material = Material.fromType(undefined, Material.ColorType);
             material.uniforms.color = new Color(1.0, 1.0, 1.0, 1.0);
         }
@@ -99,7 +101,7 @@ define(['Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/defaultValue',
         // Per-context cache for viewport quads
         var vertexArray = context.cache.viewportQuad_vertexArray;
 
-        if (typeof vertexArray !== 'undefined') {
+        if (defined(vertexArray)) {
             return vertexArray;
         }
 
@@ -154,21 +156,21 @@ define(['Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/defaultValue',
             return;
         }
 
-        if (typeof this.material === 'undefined') {
+        if (!defined(this.material)) {
             throw new DeveloperError('this.material must be defined.');
         }
 
-        if (typeof this.rectangle === 'undefined') {
+        if (!defined(this.rectangle)) {
             throw new DeveloperError('this.rectangle must be defined.');
         }
 
-        if (typeof this._va === 'undefined') {
+        if (!defined(this._va)) {
             this._va = getVertexArray(context);
             this._overlayCommand.vertexArray = this._va;
         }
 
         var rs = this._overlayCommand.renderState;
-        if ((typeof rs === 'undefined') || !BoundingRectangle.equals(rs.viewport, this.rectangle)) {
+        if ((!defined(rs)) || !BoundingRectangle.equals(rs.viewport, this.rectangle)) {
             this._overlayCommand.renderState = context.createRenderState({
                 blending : BlendingState.ALPHA_BLEND,
                 viewport : this.rectangle
@@ -181,12 +183,7 @@ define(['Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/defaultValue',
                 // Recompile shader when material changes
                 this._material = this.material;
 
-                var fsSource =
-                    '#line 0\n' +
-                    this._material.shaderSource +
-                    '#line 0\n' +
-                    ViewportQuadFS;
-
+                var fsSource = createShaderSource({ sources : [this._material.shaderSource, ViewportQuadFS] });
                 this._overlayCommand.shaderProgram = context.getShaderCache().replaceShaderProgram(
                     this._overlayCommand.shaderProgram, ViewportQuadVS, fsSource, attributeIndices);
             }
@@ -204,7 +201,7 @@ define(['Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/defaultValue',
      *
      * @memberof ViewportQuad
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
      * @see ViewportQuad#destroy
      */
@@ -222,7 +219,7 @@ define(['Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/defaultValue',
      *
      * @memberof ViewportQuad
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *

@@ -1,12 +1,13 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/EllipsoidGeometry', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/EllipsoidalOccluder', 'Core/Intersect', 'Core/Matrix4', 'Core/PrimitiveType', 'Core/Queue', 'Core/WebMercatorProjection', 'Renderer/DrawCommand', 'Scene/ImageryLayer', 'Scene/ImageryState', 'Scene/SceneMode', 'Scene/TerrainProvider', 'Scene/TileReplacementQueue', 'Scene/TileState'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/FeatureDetection', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/EllipsoidalOccluder', 'Core/Intersect', 'Core/Matrix4', 'Core/PrimitiveType', 'Core/Queue', 'Core/WebMercatorProjection', 'Renderer/DrawCommand', 'Scene/ImageryLayer', 'Scene/ImageryState', 'Scene/SceneMode', 'Scene/TerrainProvider', 'Scene/TileReplacementQueue', 'Scene/TileState', 'ThirdParty/when'], function(
         defaultValue,
+        defined,
         destroyObject,
         BoundingSphere,
         Cartesian2,
         Cartesian3,
         Cartesian4,
-        EllipsoidGeometry,
+        FeatureDetection,
         DeveloperError,
         Ellipsoid,
         EllipsoidalOccluder,
@@ -21,7 +22,8 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
         SceneMode,
         TerrainProvider,
         TileReplacementQueue,
-        TileState) {
+        TileState,
+        when) {
     "use strict";
 
     /**
@@ -34,10 +36,10 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
      * @private
      */
     var CentralBodySurface = function(description) {
-        if (typeof description.terrainProvider === 'undefined') {
+        if (!defined(description.terrainProvider)) {
             throw new DeveloperError('description.terrainProvider is required.');
         }
-        if (typeof description.imageryLayerCollection === 'undefined') {
+        if (!defined(description.imageryLayerCollection)) {
             throw new DeveloperError('description.imageryLayerCollection is required.');
         }
 
@@ -73,6 +75,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
 
         this._debug = {
             enableDebugOutput : false,
+            wireframe : false,
             boundingSphereTile : undefined,
 
             maxDepth : 0,
@@ -109,7 +112,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
             return;
         }
 
-        if (typeof terrainProvider === 'undefined') {
+        if (!defined(terrainProvider)) {
             throw new DeveloperError('terrainProvider is required.');
         }
 
@@ -123,7 +126,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
 
         // Free and recreate the level zero tiles.
         var levelZeroTiles = this._levelZeroTiles;
-        if (typeof levelZeroTiles !== 'undefined') {
+        if (defined(levelZeroTiles)) {
             for (var i = 0; i < levelZeroTiles.length; ++i) {
                 levelZeroTiles[i].freeResources();
             }
@@ -133,14 +136,14 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
     };
 
     CentralBodySurface.prototype._onLayerAdded = function(layer, index) {
-        if (typeof this._levelZeroTiles === 'undefined') {
+        if (!defined(this._levelZeroTiles)) {
             return;
         }
 
         // create TileImagerys for this layer for all previously loaded tiles
         if (layer.show) {
             var tile = this._tileReplacementQueue.head;
-            while (typeof tile !== 'undefined') {
+            while (defined(tile)) {
                 if (layer._createTileImagerySkeletons(tile, this._terrainProvider)) {
                     tile.state = TileState.LOADING;
                 }
@@ -152,13 +155,13 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
     };
 
     CentralBodySurface.prototype._onLayerRemoved = function(layer, index) {
-        if (typeof this._levelZeroTiles === 'undefined') {
+        if (!defined(this._levelZeroTiles)) {
             return;
         }
 
         // destroy TileImagerys for this layer for all previously loaded tiles
         var tile = this._tileReplacementQueue.head;
-        while (typeof tile !== 'undefined') {
+        while (defined(tile)) {
             var tileImageryCollection = tile.imagery;
 
             var startIndex = -1;
@@ -166,7 +169,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
             for ( var i = 0, len = tileImageryCollection.length; i < len; ++i) {
                 var tileImagery = tileImageryCollection[i];
                 var imagery = tileImagery.loadingImagery;
-                if (typeof imagery === 'undefined') {
+                if (!defined(imagery)) {
                     imagery = tileImagery.readyImagery;
                 }
                 if (imagery.imageryLayer === layer) {
@@ -195,7 +198,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
     };
 
     CentralBodySurface.prototype._onLayerMoved = function(layer, newIndex, oldIndex) {
-        if (typeof this._levelZeroTiles === 'undefined') {
+        if (!defined(this._levelZeroTiles)) {
             return;
         }
 
@@ -203,7 +206,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
     };
 
     CentralBodySurface.prototype._onLayerShownOrHidden = function(layer, index, show) {
-        if (typeof this._levelZeroTiles === 'undefined') {
+        if (!defined(this._levelZeroTiles)) {
             return;
         }
 
@@ -222,7 +225,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
      *
      * @memberof CentralBodySurface
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
      * @see CentralBodySurface#destroy
      */
@@ -240,7 +243,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
      *
      * @memberof CentralBodySurface
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *
@@ -248,7 +251,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
      */
     CentralBodySurface.prototype.destroy = function() {
         var levelZeroTiles = this._levelZeroTiles;
-        if (typeof levelZeroTiles !== 'undefined') {
+        if (defined(levelZeroTiles)) {
             for (var i = 0; i < levelZeroTiles.length; ++i) {
                 levelZeroTiles[i].freeResources();
             }
@@ -261,12 +264,12 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
 
     function sortTileImageryByLayerIndex(a, b) {
         var aImagery = a.loadingImagery;
-        if (typeof aImagery === 'undefined') {
+        if (!defined(aImagery)) {
             aImagery = a.readyImagery;
         }
 
         var bImagery = b.loadingImagery;
-        if (typeof bImagery === 'undefined') {
+        if (!defined(bImagery)) {
             bImagery = b.readyImagery;
         }
 
@@ -281,7 +284,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
 
             // Sort the TileImagery instances in each tile by the layer index.
             var tile = surface._tileReplacementQueue.head;
-            while (typeof tile !== 'undefined') {
+            while (defined(tile)) {
                 tile.imagery.sort(sortTileImageryByLayerIndex);
                 tile = tile.replacementNext;
             }
@@ -301,7 +304,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
         var tilesToRenderByTextureCount = surface._tilesToRenderByTextureCount;
         for (i = 0, len = tilesToRenderByTextureCount.length; i < len; ++i) {
             var tiles = tilesToRenderByTextureCount[i];
-            if (typeof tiles !== 'undefined') {
+            if (defined(tiles)) {
                 tiles.length = 0;
             }
         }
@@ -320,7 +323,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
         surface._tileReplacementQueue.markStartOfRenderFrame();
 
         // We can't render anything before the level zero tiles exist.
-        if (typeof surface._levelZeroTiles === 'undefined') {
+        if (!defined(surface._levelZeroTiles)) {
             if (surface._terrainProvider.isReady()) {
                 var terrainTilingScheme = surface._terrainProvider.getTilingScheme();
                 surface._levelZeroTiles = terrainTilingScheme.createLevelZeroTiles();
@@ -361,7 +364,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
         // This ordering allows us to load bigger, lower-detail tiles before smaller, higher-detail ones.
         // This maximizes the average detail across the scene and results in fewer sharp transitions
         // between very different LODs.
-        while (typeof (tile = traversalQueue.dequeue()) !== 'undefined') {
+        while (defined((tile = traversalQueue.dequeue()))) {
             ++debug.tilesVisited;
 
             surface._tileReplacementQueue.markTileRendered(tile);
@@ -471,13 +474,13 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
         var tileImageryCollection = tile.imagery;
         for ( var i = 0, len = tileImageryCollection.length; i < len; ++i) {
             var tileImagery = tileImageryCollection[i];
-            if (typeof tileImagery.readyImagery !== 'undefined' && tileImagery.readyImagery.imageryLayer.alpha !== 0.0) {
+            if (defined(tileImagery.readyImagery) && tileImagery.readyImagery.imageryLayer.alpha !== 0.0) {
                 ++readyTextureCount;
             }
         }
 
         var tileSet = surface._tilesToRenderByTextureCount[readyTextureCount];
-        if (typeof tileSet === 'undefined') {
+        if (!defined(tileSet)) {
             tileSet = [];
             surface._tilesToRenderByTextureCount[readyTextureCount] = tileSet;
         }
@@ -512,7 +515,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
 
         if (frameState.mode === SceneMode.SCENE3D) {
             var occludeePointInScaledSpace = tile.occludeePointInScaledSpace;
-            if (typeof occludeePointInScaledSpace === 'undefined') {
+            if (!defined(occludeePointInScaledSpace)) {
                 return true;
             }
 
@@ -648,9 +651,9 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
         var tilesToRenderByTextureCount = this._tilesToRenderByTextureCount;
         var result;
         var tile;
-        for (var i = 0; i < tilesToRenderByTextureCount.length && typeof result === 'undefined'; ++i) {
+        for (var i = 0; i < tilesToRenderByTextureCount.length && !defined(result); ++i) {
             var tileSet = tilesToRenderByTextureCount[i];
-            if (typeof tileSet === 'undefined') {
+            if (!defined(tileSet)) {
                 continue;
             }
             for (var j = 0; j < tileSet.length; ++j) {
@@ -662,7 +665,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
             }
         }
 
-        if (typeof result !== 'undefined') {
+        if (defined(result)) {
             console.log('x: ' + result.x + ' y: ' + result.y + ' level: ' + result.level + ' radius: ' + result.boundingSphere3D.radius + ' center magnitude: ' + result.boundingSphere3D.center.magnitude());
         }
 
@@ -762,7 +765,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
         }
     }
 
-    var float32ArrayScratch = typeof Float32Array !== 'undefined' ? new Float32Array(1) : undefined;
+    var float32ArrayScratch = FeatureDetection.supportsTypedArrays() ? new Float32Array(1) : undefined;
     var modifiedModelViewScratch = new Matrix4();
     var tileExtentScratch = new Cartesian4();
     var rtcScratch = new Cartesian3();
@@ -780,7 +783,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
         var tilesToRenderByTextureCount = surface._tilesToRenderByTextureCount;
         for (var tileSetIndex = 0, tileSetLength = tilesToRenderByTextureCount.length; tileSetIndex < tileSetLength; ++tileSetIndex) {
             var tileSet = tilesToRenderByTextureCount[tileSetIndex];
-            if (typeof tileSet === 'undefined' || tileSet.length === 0) {
+            if (!defined(tileSet) || tileSet.length === 0) {
                 continue;
             }
 
@@ -855,7 +858,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
 
                     ++tileCommandIndex;
                     var command = tileCommands[tileCommandIndex];
-                    if (typeof command === 'undefined') {
+                    if (!defined(command)) {
                         command = new DrawCommand();
                         command.owner = tile;
                         command.cull = false;
@@ -864,7 +867,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
                     }
                     command.owner = tile;
 
-                    command.debugShowBoundingVolume = tile === surface._debug.boundingSphereTile;
+                    command.debugShowBoundingVolume = (tile === surface._debug.boundingSphereTile);
 
                     var uniformMap = tileCommandUniformMaps[tileCommandIndex];
                     mergeUniformMap(uniformMap, centralBodyUniformMap);
@@ -891,13 +894,13 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
                         var imagery = tileImagery.readyImagery;
                         ++imageryIndex;
 
-                        if (typeof imagery === 'undefined' || imagery.state !== ImageryState.READY || imagery.imageryLayer.alpha === 0.0) {
+                        if (!defined(imagery) || imagery.state !== ImageryState.READY || imagery.imageryLayer.alpha === 0.0) {
                             continue;
                         }
 
                         var imageryLayer = imagery.imageryLayer;
 
-                        if (typeof tileImagery.textureTranslationAndScale === 'undefined') {
+                        if (!defined(tileImagery.textureTranslationAndScale)) {
                             tileImagery.textureTranslationAndScale = imageryLayer._calculateTextureTranslationAndScale(tile, tileImagery);
                         }
 
@@ -960,9 +963,17 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
 
                     command.shaderProgram = shaderSet.getShaderProgram(context, tileSetIndex, applyBrightness, applyContrast, applyHue, applySaturation, applyGamma, applyAlpha);
                     command.renderState = renderState;
-                    command.primitiveType = TerrainProvider.wireframe ? PrimitiveType.LINES : PrimitiveType.TRIANGLES;
+                    command.primitiveType = PrimitiveType.TRIANGLES;
                     command.vertexArray = tile.vertexArray;
                     command.uniformMap = uniformMap;
+
+                    if (surface._debug.wireframe) {
+                        createWireframeVertexArrayIfNecessary(context, surface, tile);
+                        if (defined(tile.wireframeVertexArray)) {
+                            command.vertexArray = tile.wireframeVertexArray;
+                            command.primitiveType = PrimitiveType.LINES;
+                        }
+                    }
 
                     var boundingVolume = tile.boundingSphere3D;
 
@@ -983,6 +994,31 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/
 
         // trim command list to the number actually needed
         tileCommands.length = Math.max(0, tileCommandIndex + 1);
+    }
+
+    function createWireframeVertexArrayIfNecessary(context, surface, tile) {
+        if (defined(tile.wireframeVertexArray)) {
+            return;
+        }
+
+        if (defined(tile.meshForWireframePromise)) {
+            return;
+        }
+
+        tile.meshForWireframePromise = tile.terrainData.createMesh(surface._terrainProvider.getTilingScheme(), tile.x, tile.y, tile.level);
+        if (!defined(tile.meshForWireframePromise)) {
+            // deferrred
+            return;
+        }
+
+        var vertexArray = tile.vertexArray;
+
+        when(tile.meshForWireframePromise, function(mesh) {
+            if (tile.vertexArray === vertexArray) {
+                tile.wireframeVertexArray = TerrainProvider.createWireframeVertexArray(context, tile.vertexArray, mesh);
+            }
+            tile.meshForWireframePromise = undefined;
+        });
     }
 
     return CentralBodySurface;

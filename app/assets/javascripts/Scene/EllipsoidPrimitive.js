@@ -1,9 +1,10 @@
 /*global define*/
-define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/combine', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Matrix4', 'Core/BoundingSphere', 'Core/PrimitiveType', 'Renderer/CullFace', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createPickFragmentShaderSource', 'Scene/Material', 'Scene/SceneMode', 'Shaders/EllipsoidVS', 'Shaders/EllipsoidFS'], function(
+define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/combine', 'Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Matrix4', 'Core/BoundingSphere', 'Core/PrimitiveType', 'Renderer/CullFace', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Scene/Material', 'Scene/SceneMode', 'Shaders/EllipsoidVS', 'Shaders/EllipsoidFS'], function(
         BoxGeometry,
         Cartesian3,
         Cartesian4,
         combine,
+        defined,
         DeveloperError,
         destroyObject,
         Matrix4,
@@ -14,7 +15,7 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/combine'
         BufferUsage,
         CommandLists,
         DrawCommand,
-        createPickFragmentShaderSource,
+        createShaderSource,
         Material,
         SceneMode,
         EllipsoidVS,
@@ -175,13 +176,13 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/combine'
     function getVertexArray(context) {
         var vertexArray = context.cache.ellipsoidPrimitive_vertexArray;
 
-        if (typeof vertexArray !== 'undefined') {
+        if (defined(vertexArray)) {
             return vertexArray;
         }
 
-        var geometry = BoxGeometry.fromDimensions({
+        var geometry = BoxGeometry.createGeometry(BoxGeometry.fromDimensions({
             dimensions : new Cartesian3(2.0, 2.0, 2.0)
-        });
+        }));
 
         vertexArray = context.createVertexArrayFromGeometry({
             geometry: geometry,
@@ -201,16 +202,16 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/combine'
     EllipsoidPrimitive.prototype.update = function(context, frameState, commandList) {
         if (!this.show ||
             (frameState.mode !== SceneMode.SCENE3D) ||
-            (typeof this.center === 'undefined') ||
-            (typeof this.radii === 'undefined')) {
+            (!defined(this.center)) ||
+            (!defined(this.radii))) {
             return;
         }
 
-        if (typeof this.material === 'undefined') {
+        if (!defined(this.material)) {
             throw new DeveloperError('this.material must be defined.');
         }
 
-        if (typeof this._rs === 'undefined') {
+        if (!defined(this._rs)) {
             this._rs = context.createRenderState({
                 // Cull front faces - not back faces - so the ellipsoid doesn't
                 // disappear if the viewer enters the bounding box.
@@ -231,7 +232,7 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/combine'
             });
         }
 
-        if (typeof this._va === 'undefined') {
+        if (!defined(this._va)) {
             this._va = getVertexArray(context);
         }
 
@@ -261,11 +262,7 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/combine'
 
             // Recompile shader when material changes
             if (materialChanged) {
-                var colorFS =
-                    '#line 0\n' +
-                    this.material.shaderSource +
-                    '#line 0\n' +
-                    EllipsoidFS;
+                var colorFS = createShaderSource({ sources : [this.material.shaderSource, EllipsoidFS] });
 
                 this._sp = context.getShaderCache().replaceShaderProgram(this._sp, EllipsoidVS, colorFS, attributeIndices);
 
@@ -286,17 +283,16 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/combine'
         if (frameState.passes.pick) {
             var pickCommand = this._pickCommand;
 
-            if (typeof this._pickId === 'undefined') {
+            if (!defined(this._pickId)) {
                 this._pickId = context.createPickId(this);
             }
 
             // Recompile shader when material changes
-            if (materialChanged || typeof this._pickSP === 'undefined') {
-                var pickFS = createPickFragmentShaderSource(
-                    '#line 0\n' +
-                    this.material.shaderSource +
-                    '#line 0\n' +
-                    EllipsoidFS, 'uniform');
+            if (materialChanged || !defined(this._pickSP)) {
+                var pickFS = createShaderSource({
+                    sources : [this.material.shaderSource, EllipsoidFS],
+                    pickColorQualifier : 'uniform'
+                });
 
                 this._pickSP = context.getShaderCache().replaceShaderProgram(this._pickSP, EllipsoidVS, pickFS, attributeIndices);
 
@@ -325,7 +321,7 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/combine'
      *
      * @memberof EllipsoidPrimitive
      *
-     * @return {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
      *
      * @see EllipsoidPrimitive#destroy
      */
@@ -343,7 +339,7 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/combine'
      *
      * @memberof EllipsoidPrimitive
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *

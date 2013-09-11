@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Color', 'ThirdParty/measureText'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color', 'ThirdParty/measureText'], function(
         defaultValue,
+        defined,
         DeveloperError,
         Color,
         measureText) {
@@ -24,7 +25,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Color', 'ThirdParty/me
      *                   blank, returns undefined.
      */
     var writeTextToCanvas = function(text, description) {
-        if (typeof text === 'undefined') {
+        if (!defined(text)) {
             throw new DeveloperError('text is required.');
         }
 

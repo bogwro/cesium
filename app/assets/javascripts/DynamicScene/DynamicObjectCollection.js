@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/Event', 'Core/TimeInterval', 'Core/Iso8601', 'Core/DeveloperError', 'DynamicScene/DynamicObject'], function(
+define(['Core/defined', 'Core/Event', 'Core/TimeInterval', 'Core/Iso8601', 'Core/DeveloperError', 'DynamicScene/DynamicObject'], function(
+        defined,
         Event,
         TimeInterval,
         Iso8601,
@@ -47,7 +48,7 @@ define(['Core/Event', 'Core/TimeInterval', 'Core/Iso8601', 'Core/DeveloperError'
         for ( var i = 0, len = dynamicObjects.length; i < len; i++) {
             var object = dynamicObjects[i];
             var availability = object.availability;
-            if (typeof availability !== 'undefined') {
+            if (defined(availability)) {
                 var start = availability.start;
                 var stop = availability.stop;
                 if (start.lessThan(startTime) && !start.equals(Iso8601.MINIMUM_VALUE)) {
@@ -77,7 +78,7 @@ define(['Core/Event', 'Core/TimeInterval', 'Core/Iso8601', 'Core/DeveloperError'
      * @returns The DynamicObject with the provided id, or undefined if no such object exists.
      */
     DynamicObjectCollection.prototype.getObject = function(id) {
-        if (typeof id === 'undefined') {
+        if (!defined(id)) {
             throw new DeveloperError('id is required.');
         }
         return this._hash[id];
@@ -92,11 +93,11 @@ define(['Core/Event', 'Core/TimeInterval', 'Core/Iso8601', 'Core/DeveloperError'
      * @returns True if the DynamicObject with the provided id was found and deleted.
      */
     DynamicObjectCollection.prototype.removeObject = function(id) {
-        if (typeof id === 'undefined') {
+        if (!defined(id)) {
             throw new DeveloperError('id is required.');
         }
         var dynamicObject = this._hash[id];
-        var result = typeof dynamicObject !== 'undefined';
+        var result = defined(dynamicObject);
         if (result) {
             this._hash[id] = undefined;
             this._array.splice(this._array.indexOf(dynamicObject), 1);
@@ -122,7 +123,7 @@ define(['Core/Event', 'Core/TimeInterval', 'Core/Iso8601', 'Core/DeveloperError'
      * @returns The DynamicObject with the provided id.
      */
     DynamicObjectCollection.prototype.getOrCreateObject = function(id) {
-        if (typeof id === 'undefined') {
+        if (!defined(id)) {
             throw new DeveloperError('id is required.');
         }
         var obj = this._hash[id];
