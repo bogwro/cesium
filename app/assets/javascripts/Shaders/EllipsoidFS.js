@@ -27,9 +27,27 @@ return czm_phong(normalize(positionToEyeEC), material);\n\
 }\n\
 void main()\n\
 {\n\
-czm_ellipsoid ellipsoid = czm_ellipsoidNew(czm_modelView[3].xyz, u_radii);\n\
+float maxRadius = max(u_radii.x, max(u_radii.y, u_radii.z)) * 1.5;\n\
 vec3 direction = normalize(v_positionEC);\n\
-czm_ray ray = czm_ray(vec3(0.0), direction);\n\
+vec3 ellipsoidCenter = czm_modelView[3].xyz;\n\
+float t1 = -1.0;\n\
+float t2 = -1.0;\n\
+float b = -2.0 * dot(direction, ellipsoidCenter);\n\
+float c = dot(ellipsoidCenter, ellipsoidCenter) - maxRadius * maxRadius;\n\
+float discriminant = b * b - 4.0 * c;\n\
+if (discriminant >= 0.0) {\n\
+t1 = (-b - sqrt(discriminant)) * 0.5;\n\
+t2 = (-b + sqrt(discriminant)) * 0.5;\n\
+}\n\
+if (t1 < 0.0 && t2 < 0.0) {\n\
+discard;\n\
+}\n\
+float t = min(t1, t2);\n\
+if (t < 0.0) {\n\
+t = 0.0;\n\
+}\n\
+czm_ellipsoid ellipsoid = czm_ellipsoidNew(ellipsoidCenter, u_radii);\n\
+czm_ray ray = czm_ray(t * direction, direction);\n\
 czm_raySegment intersection = czm_rayEllipsoidIntersectionInterval(ray, ellipsoid);\n\
 if (czm_isEmpty(intersection))\n\
 {\n\

@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/ScreenSpaceEventType', 'Core/KeyboardEventModifier', 'Core/defaultValue'], function(
+define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/ScreenSpaceEventType', 'Core/KeyboardEventModifier', 'Core/defaultValue'], function(
         DeveloperError,
+        defined,
         destroyObject,
         Cartesian2,
         ScreenSpaceEventType,
@@ -91,22 +92,22 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
      * @see ScreenSpaceEventHandler#removeInputAction
      */
     ScreenSpaceEventHandler.prototype.setInputAction = function(action, type, modifier) {
-        if (typeof action === 'undefined') {
+        if (!defined(action)) {
             throw new DeveloperError('action is required.');
         }
 
-        if (typeof type === 'undefined') {
+        if (!defined(type)) {
             throw new DeveloperError('type is required.');
         }
 
         var mouseEvents;
-        if (typeof modifier !== 'undefined' && typeof modifier.name !== 'undefined') {
+        if (defined(modifier) && defined(modifier.name)) {
             mouseEvents = this._modifiedMouseEvents[modifier.name];
         } else {
             mouseEvents = this._mouseEvents;
         }
 
-        if (typeof type !== 'undefined' && typeof type.name !== 'undefined' && typeof mouseEvents !== 'undefined') {
+        if (defined(type) && defined(type.name) && defined(mouseEvents)) {
             mouseEvents[type.name] = action;
         }
     };
@@ -126,18 +127,18 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
      * @see ScreenSpaceEventHandler#removeInputAction
      */
     ScreenSpaceEventHandler.prototype.getInputAction = function(type, modifier) {
-        if (typeof type === 'undefined') {
+        if (!defined(type)) {
             throw new DeveloperError('type is required.');
         }
 
         var mouseEvents;
-        if (typeof modifier !== 'undefined' && typeof modifier.name !== 'undefined') {
+        if (defined(modifier) && defined(modifier.name)) {
             mouseEvents = this._modifiedMouseEvents[modifier.name];
         } else {
             mouseEvents = this._mouseEvents;
         }
 
-        if (typeof type !== 'undefined' && typeof type.name !== 'undefined' && typeof mouseEvents !== 'undefined') {
+        if (defined(type) && defined(type.name) && defined(mouseEvents)) {
             return mouseEvents[type.name];
         }
 
@@ -159,18 +160,18 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
      * @see ScreenSpaceEventHandler#setInputAction
      */
     ScreenSpaceEventHandler.prototype.removeInputAction = function(type, modifier) {
-        if (typeof type === 'undefined') {
+        if (!defined(type)) {
             throw new DeveloperError('type is required.');
         }
 
         var mouseEvents;
-        if (typeof modifier !== 'undefined' && typeof modifier.name !== 'undefined') {
+        if (defined(modifier) && defined(modifier.name)) {
             mouseEvents = this._modifiedMouseEvents[modifier.name];
         } else {
             mouseEvents = this._mouseEvents;
         }
 
-        if (typeof type !== 'undefined' && typeof type.name !== 'undefined' && typeof mouseEvents !== 'undefined' && typeof mouseEvents[type.name] !== 'undefined') {
+        if (defined(type) && defined(type.name) && defined(mouseEvents) && defined(mouseEvents[type.name])) {
             delete mouseEvents[type.name];
         }
     };
@@ -214,7 +215,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
             action = screenSpaceEventHandler.getInputAction(ScreenSpaceEventType.RIGHT_DOWN, modifier);
         }
 
-        if (typeof action !== 'undefined') {
+        if (defined(action)) {
             action({
                 position : new Cartesian2(pos.x, pos.y)
             });
@@ -253,13 +254,13 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
         var yDiff = screenSpaceEventHandler._lastMouseY - pos.y;
         screenSpaceEventHandler._totalPixels += Math.sqrt(xDiff * xDiff + yDiff * yDiff);
 
-        if (typeof action !== 'undefined') {
+        if (defined(action)) {
             action({
                 position : new Cartesian2(pos.x, pos.y)
             });
         }
 
-        if (typeof clickAction !== 'undefined' && screenSpaceEventHandler._totalPixels < screenSpaceEventHandler._clickPixelTolerance) {
+        if (defined(clickAction) && screenSpaceEventHandler._totalPixels < screenSpaceEventHandler._clickPixelTolerance) {
             clickAction({
                 position : new Cartesian2(pos.x, pos.y)
             });
@@ -284,7 +285,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
 
         var modifier = getModifier(event);
         var action = screenSpaceEventHandler.getInputAction(ScreenSpaceEventType.MOUSE_MOVE, modifier);
-        if (typeof action !== 'undefined') {
+        if (defined(action)) {
             action(movement);
         }
 
@@ -312,7 +313,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
             screenSpaceEventHandler._leftMouseButtonDown = true;
             action = screenSpaceEventHandler.getInputAction(ScreenSpaceEventType.LEFT_DOWN, modifier);
 
-            if (typeof action !== 'undefined') {
+            if (defined(action)) {
                 action({
                     position : new Cartesian2(pos.x, pos.y)
                 });
@@ -322,7 +323,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
             // Release "mouse" without clicking, because we are adding more touches.
             screenSpaceEventHandler._leftMouseButtonDown = false;
             action = screenSpaceEventHandler.getInputAction(ScreenSpaceEventType.LEFT_UP, modifier);
-            if (typeof action !== 'undefined') {
+            if (defined(action)) {
                 action({
                     position : new Cartesian2(pos.x, pos.y)
                 });
@@ -339,7 +340,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
             screenSpaceEventHandler._lastTouch2X = pos2.x;
             screenSpaceEventHandler._lastTouch2Y = pos2.y;
             action = screenSpaceEventHandler.getInputAction(ScreenSpaceEventType.PINCH_START, modifier);
-            if (typeof action !== 'undefined') {
+            if (defined(action)) {
                 action({
                     position1 : new Cartesian2(pos.x, pos.y),
                     position2 : new Cartesian2(pos2.x, pos2.y)
@@ -348,7 +349,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
         } else if (screenSpaceEventHandler._isPinching) {
             screenSpaceEventHandler._isPinching = false;
             action = screenSpaceEventHandler.getInputAction(ScreenSpaceEventType.PINCH_END, modifier);
-            if (typeof action !== 'undefined') {
+            if (defined(action)) {
                 action();
             }
         }
@@ -372,13 +373,13 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
                 var yDiff = screenSpaceEventHandler._lastMouseY - pos.y;
                 screenSpaceEventHandler._totalPixels += Math.sqrt(xDiff * xDiff + yDiff * yDiff);
 
-                if (typeof action !== 'undefined') {
+                if (defined(action)) {
                     action({
                         position : new Cartesian2(pos.x, pos.y)
                     });
                 }
 
-                if (typeof clickAction !== 'undefined' && screenSpaceEventHandler._totalPixels < screenSpaceEventHandler._clickPixelTolerance) {
+                if (defined(clickAction) && screenSpaceEventHandler._totalPixels < screenSpaceEventHandler._clickPixelTolerance) {
                     clickAction({
                         position : new Cartesian2(pos.x, pos.y)
                     });
@@ -417,7 +418,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
             };
 
             action = screenSpaceEventHandler.getInputAction(ScreenSpaceEventType.MOUSE_MOVE, modifier);
-            if (typeof action !== 'undefined') {
+            if (defined(action)) {
                 action(movement);
             }
 
@@ -440,7 +441,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
             }
 
             action = screenSpaceEventHandler.getInputAction(ScreenSpaceEventType.PINCH_MOVE, modifier);
-            if (typeof action !== 'undefined') {
+            if (defined(action)) {
                 var dX = pos2.x - pos.x;
                 var dY = pos2.y - pos.y;
                 var dist = Math.sqrt(dX * dX + dY * dY) * 0.25;
@@ -483,7 +484,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
         var type = ScreenSpaceEventType.WHEEL;
         var action = screenSpaceEventHandler.getInputAction(type, modifier);
 
-        if (typeof action !== 'undefined') {
+        if (defined(action)) {
             event.preventDefault();
             action(delta);
         }
@@ -506,7 +507,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
             action = screenSpaceEventHandler.getInputAction(ScreenSpaceEventType.RIGHT_DOUBLE_CLICK, modifier);
         }
 
-        if (typeof action !== 'undefined') {
+        if (defined(action)) {
             action({
                 position : new Cartesian2(pos.x, pos.y)
             });
@@ -517,7 +518,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
         var that = screenSpaceEventHandler, useDoc = true;
 
         screenSpaceEventHandler._callbacks = [];
-        if (typeof screenSpaceEventHandler._element.disableRootEvents !== 'undefined') {
+        if (defined(screenSpaceEventHandler._element.disableRootEvents)) {
             useDoc = false;
         }
 
@@ -616,7 +617,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
      *
      * @memberof ScreenSpaceEventHandler
      *
-     * @return {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
      *
      * @see ScreenSpaceEventHandler#destroy
      */
@@ -633,7 +634,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Sc
      *
      * @memberof ScreenSpaceEventHandler
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *

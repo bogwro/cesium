@@ -1,7 +1,9 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/mersenne-twister'], function(
          defaultValue,
-         DeveloperError) {
+         defined,
+         DeveloperError,
+         MersenneTwister) {
     "use strict";
 
     /**
@@ -177,7 +179,7 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
      *
      * @param {Number} value The value to return the sign of.
      *
-     * @return {Number} The sign of value.
+     * @returns {Number} The sign of value.
      */
     CesiumMath.sign = function(value) {
         if (value > 0) {
@@ -210,7 +212,7 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
      *
      * @param value The number whose hyperbolic sine is to be returned.
      *
-     * @return The hyperbolic sine of {@code value}.
+     * @returns The hyperbolic sine of {@code value}.
      *
      */
     CesiumMath.sinh = function(value) {
@@ -238,7 +240,7 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
      *
      * @param value The number whose hyperbolic cosine is to be returned.
      *
-     * @return The hyperbolic cosine of {@code value}.
+     * @returns The hyperbolic cosine of {@code value}.
      */
     CesiumMath.cosh = function(value) {
         var part1 = Math.pow(Math.E, value);
@@ -368,7 +370,7 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
     /**
      * Converts degrees to radians.
      * @param {Number} degrees The angle to convert in degrees.
-     * @return {Number} The corresponding angle in radians.
+     * @returns {Number} The corresponding angle in radians.
      */
     CesiumMath.toRadians = function(degrees) {
         return degrees * CesiumMath.RADIANS_PER_DEGREE;
@@ -377,7 +379,7 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
     /**
      * Converts radians to degrees.
      * @param {Number} radians The angle to convert in radians.
-     * @return {Number} The corresponding angle in degrees.
+     * @returns {Number} The corresponding angle in degrees.
      */
     CesiumMath.toDegrees = function(radians) {
         return radians * CesiumMath.DEGREES_PER_RADIAN;
@@ -388,7 +390,7 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
      *
      * @param {Number} angle The longitude value, in radians, to convert to the range [<code>-Math.PI</code>, <code>Math.PI</code>).
      *
-     * @return {Number} The equivalent longitude value in the range [<code>-Math.PI</code>, <code>Math.PI</code>).
+     * @returns {Number} The equivalent longitude value in the range [<code>-Math.PI</code>, <code>Math.PI</code>).
      *
      * @example
      * // Convert 270 degrees to -90 degrees longitude
@@ -412,7 +414,7 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
     /**
      * Produces an angle in the range 0 <= angle <= 2Pi which is equivalent to the provided angle.
      * @param {Number} angle in radians
-     * @return {Number} The angle in the range ()<code>-CesiumMath.PI</code>, <code>CesiumMath.PI</code>).
+     * @returns {Number} The angle in the range ()<code>-CesiumMath.PI</code>, <code>CesiumMath.PI</code>).
      */
     CesiumMath.negativePiToPi = function(x) {
         var epsilon10 = CesiumMath.EPSILON10;
@@ -433,7 +435,7 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
     /**
      * Produces an angle in the range -Pi <= angle <= Pi which is equivalent to the provided angle.
      * @param {Number} angle in radians
-     * @return {Number} The angle in the range (0 , <code>CesiumMath.TWO_PI</code>).
+     * @returns {Number} The angle in the range (0 , <code>CesiumMath.TWO_PI</code>).
      */
     CesiumMath.zeroToTwoPi = function(x) {
         var value = x % CesiumMath.TWO_PI;
@@ -459,7 +461,7 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
      *
      * @param {Number} n The number whose factorial is to be computed.
      *
-     * @return {Number} The factorial of the provided number or undefined if the number is less than 0.
+     * @returns {Number} The factorial of the provided number or undefined if the number is less than 0.
      *
      * @see <a href='http://en.wikipedia.org/wiki/Factorial'>Factorial on Wikipedia</a>.
      *
@@ -493,7 +495,7 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
      * @param {Number} [maximumValue] The maximum incremented value before rolling over to the minimum value.
      * @param {Number} [minimumValue=0.0] The number reset to after the maximum value has been exceeded.
      *
-     * @return {Number} The incremented number.
+     * @returns {Number} The incremented number.
      *
      * @example
      * var n = CesiumMath.incrementWrap(5, 10, 0); // returns 6
@@ -522,7 +524,7 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
      *
      * @param {Number} n The positive integer to test.
      *
-     * @return {Boolean} <code>true</code> if the number if a power of two; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if the number if a power of two; otherwise, <code>false</code>.
      *
      * @example
      * var t = CesiumMath.isPowerOfTwo(16); // true
@@ -551,6 +553,40 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
      */
     CesiumMath.clamp = function(value, min, max) {
         return value < min ? min : value > max ? max : value;
+    };
+
+    var randomNumberGenerator = new MersenneTwister();
+
+    /**
+     * Sets the seed used by the random number generator
+     * in {@link CesiumMath#nextRandomNumber}.
+     *
+     * @memberof CesiumMath
+     *
+     * @param {Number} seed An integer used as the seed.
+     *
+     * @exception {DeveloperError} seed is required.
+     */
+    CesiumMath.setRandomNumberSeed = function(seed) {
+        if (!defined(seed)) {
+            throw new DeveloperError('seed is required.');
+        }
+        randomNumberGenerator = new MersenneTwister(seed);
+    };
+
+    /**
+     * Generates a random number in the range of [0.0, 1.0)
+     * using a Mersenne twister.
+     *
+     * @memberof CesiumMath
+     *
+     * @returns A random number in the range of [0.0, 1.0).
+     *
+     * @see CesiumMath#setRandomNumberSeed
+     * @see http://en.wikipedia.org/wiki/Mersenne_twister
+     */
+    CesiumMath.nextRandomNumber = function() {
+        return randomNumberGenerator.random();
     };
 
     return CesiumMath;

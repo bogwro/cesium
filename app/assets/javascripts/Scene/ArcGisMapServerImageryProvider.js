@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/jsonp', 'Core/writeTextToCanvas', 'Core/Cartesian2', 'Core/DeveloperError', 'Core/Event', 'Scene/DiscardMissingTileImagePolicy', 'Scene/GeographicTilingScheme', 'Scene/ImageryProvider', 'Scene/TileProviderError', 'Scene/WebMercatorTilingScheme', 'Scene/Credit', 'ThirdParty/when'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/jsonp', 'Core/writeTextToCanvas', 'Core/Cartesian2', 'Core/DeveloperError', 'Core/Event', 'Scene/DiscardMissingTileImagePolicy', 'Scene/GeographicTilingScheme', 'Scene/ImageryProvider', 'Scene/TileProviderError', 'Scene/WebMercatorTilingScheme', 'Scene/Credit', 'ThirdParty/when'], function(
         defaultValue,
+        defined,
         jsonp,
         writeTextToCanvas,
         Cartesian2,
@@ -59,7 +60,7 @@ define(['Core/defaultValue', 'Core/jsonp', 'Core/writeTextToCanvas', 'Core/Carte
     var ArcGisMapServerImageryProvider = function ArcGisMapServerImageryProvider(description) {
         description = defaultValue(description, {});
 
-        if (typeof description.url === 'undefined') {
+        if (!defined(description.url)) {
             throw new DeveloperError('description.url is required.');
         }
 
@@ -84,7 +85,7 @@ define(['Core/defaultValue', 'Core/jsonp', 'Core/writeTextToCanvas', 'Core/Carte
 
         function metadataSuccess(data) {
             var tileInfo = data.tileInfo;
-            if (!that._useTiles || typeof tileInfo === 'undefined') {
+            if (!that._useTiles || !defined(tileInfo)) {
                 that._tileWidth = 256;
                 that._tileHeight = 256;
                 that._tilingScheme = new GeographicTilingScheme();
@@ -105,7 +106,7 @@ define(['Core/defaultValue', 'Core/jsonp', 'Core/writeTextToCanvas', 'Core/Carte
                 that._maximumLevel = data.tileInfo.lods.length - 1;
 
                 // Install the default tile discard policy if none has been supplied.
-                if (typeof that._tileDiscardPolicy === 'undefined') {
+                if (!defined(that._tileDiscardPolicy)) {
                     that._tileDiscardPolicy = new DiscardMissingTileImagePolicy({
                         missingImageUrl : buildImageUrl(that, 0, 0, that._maximumLevel),
                         pixelsToCheck : [new Cartesian2(0, 0), new Cartesian2(200, 20), new Cartesian2(20, 200), new Cartesian2(80, 110), new Cartesian2(160, 130)],
@@ -116,7 +117,7 @@ define(['Core/defaultValue', 'Core/jsonp', 'Core/writeTextToCanvas', 'Core/Carte
                 that._useTiles = true;
             }
 
-            if (typeof data.copyrightText !== 'undefined' && data.copyrightText.length > 0) {
+            if (defined(data.copyrightText) && data.copyrightText.length > 0) {
                 that._credit = new Credit(data.copyrightText);
             }
 
@@ -156,7 +157,7 @@ define(['Core/defaultValue', 'Core/jsonp', 'Core/writeTextToCanvas', 'Core/Carte
         }
 
         var proxy = imageryProvider._proxy;
-        if (typeof proxy !== 'undefined') {
+        if (defined(proxy)) {
             url = proxy.getURL(url);
         }
 

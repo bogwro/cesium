@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/TimeStandard'], function(
+define(['Core/defined', 'Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/TimeStandard'], function(
+        defined,
         DeveloperError,
         freezeObject,
         JulianDate,
@@ -31,19 +32,19 @@ define(['Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/Tim
      * var interval = new TimeInterval(JulianDate.fromTotalDays(1000), JulianDate.fromTotalDays(1001), true, false, Color.WHITE);
      */
     var TimeInterval = function(start, stop, isStartIncluded, isStopIncluded, data) {
-        if (typeof start === 'undefined') {
+        if (!defined(start)) {
             throw new DeveloperError('start must be specified.');
         }
 
-        if (typeof stop === 'undefined') {
+        if (!defined(stop)) {
             throw new DeveloperError('stop must be specified.');
         }
 
-        if (typeof isStartIncluded === 'undefined') {
+        if (!defined(isStartIncluded)) {
             isStartIncluded = true;
         }
 
-        if (typeof isStopIncluded === 'undefined') {
+        if (!defined(isStopIncluded)) {
             isStopIncluded = true;
         }
 
@@ -85,7 +86,7 @@ define(['Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/Tim
      * @param {Boolean} [isStopIncluded=true] <code>true</code> if the stop date is included in the interval, <code>false</code> otherwise.
      * @param {Object} [data] The data associated with this interval.
      *
-     * @return {TimeInterval} The new {@Link TimeInterval} instance or <code>undefined</code> if an invalid ISO8601 string is provided.
+     * @returns {TimeInterval} The new {@Link TimeInterval} instance or <code>undefined</code> if an invalid ISO8601 string is provided.
      *
      * @see TimeInterval
      * @see TimeIntervalCollection
@@ -110,12 +111,12 @@ define(['Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/Tim
      *
      * @param {TimeInterval} [left] The first Cartesian.
      * @param {TimeInterval} [right] The second Cartesian.
-     * @return {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
      */
     TimeInterval.equals = function(left, right) {
         return left === right ||
-               typeof left !== 'undefined' &&
-               typeof right !== 'undefined' &&
+               defined(left) &&
+               defined(right) &&
                (left.isEmpty && right.isEmpty ||
                 left.isStartIncluded === right.isStartIncluded &&
                 left.isStopIncluded === right.isStopIncluded &&
@@ -133,7 +134,7 @@ define(['Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/Tim
      * @param {TimeInterval} [right] The second TimeInterval.
      * @param {Number} epsilon The epsilon to use for equality testing.
      *
-     * @return {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
      *
      * @exception {DeveloperError} epsilon is required and must be number.
      */
@@ -143,8 +144,8 @@ define(['Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/Tim
         }
 
         return left === right ||
-               typeof left !== 'undefined' &&
-               typeof right !== 'undefined' &&
+               defined(left) &&
+               defined(right) &&
                (left.isEmpty && right.isEmpty ||
                 left.isStartIncluded === right.isStartIncluded &&
                 left.isStopIncluded === right.isStopIncluded &&
@@ -180,11 +181,11 @@ define(['Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/Tim
      * this will intersect the two intervals and return the new interval with the data from this
      * interval.
      *
-     * @return {TimeInterval} The new {@Link TimeInterval} that is the intersection of the two intervals,
+     * @returns {TimeInterval} The new {@Link TimeInterval} that is the intersection of the two intervals,
      * with its data representing the merge of the data in the two existing intervals.
      */
     TimeInterval.prototype.intersect = function(other, mergeCallback) {
-        if (typeof other === 'undefined') {
+        if (!defined(other)) {
             return TimeInterval.EMPTY;
         }
 
@@ -208,7 +209,7 @@ define(['Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/Tim
 
             isStopIncluded = thisIsStopIncluded && otherIsStopIncluded;
 
-            outputData = typeof mergeCallback !== 'undefined' ? mergeCallback(this.data, other.data) : this.data;
+            outputData = defined(mergeCallback) ? mergeCallback(this.data, other.data) : this.data;
 
             if (thisStop.greaterThanOrEquals(otherStop)) {
                 isStopIncluded = isStopIncluded || (!otherStop.equals(thisStop) && otherIsStopIncluded);
@@ -225,7 +226,7 @@ define(['Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/Tim
 
             isStopIncluded = thisIsStopIncluded && otherIsStopIncluded;
 
-            outputData = typeof mergeCallback !== 'undefined' ? mergeCallback(this.data, other.data) : this.data;
+            outputData = defined(mergeCallback) ? mergeCallback(this.data, other.data) : this.data;
             if (thisStop.greaterThanOrEquals(otherStop)) {
                 isStopIncluded = isStopIncluded || (otherStop.equals(thisStop) === false && otherIsStopIncluded);
                 return new TimeInterval(thisStart, otherStop, isStartIncluded, isStopIncluded, outputData);
@@ -245,7 +246,7 @@ define(['Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/Tim
      *
      * @param {JulianDate} date The date to check for.
      *
-     * @return {Boolean} <code>true</code> if the TimeInterval contains the specified date, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if the TimeInterval contains the specified date, <code>false</code> otherwise.
      */
     TimeInterval.prototype.contains = function(date) {
         if (this.isEmpty) {
@@ -274,7 +275,7 @@ define(['Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/Tim
      * @memberof TimeInterval
      *
      * @param {TimeInterval} [right] The right hand side Cartesian.
-     * @return {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
      */
     TimeInterval.prototype.equals = function(other) {
         return TimeInterval.equals(this, other);
@@ -288,7 +289,7 @@ define(['Core/DeveloperError', 'Core/freezeObject', 'Core/JulianDate', 'Core/Tim
      *
      * @param {TimeInterval} [right] The right hand side Cartesian.
      * @param {Number} epsilon The epsilon to use for equality testing.
-     * @return {Boolean} <code>true</code> if they are within the provided epsilon, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if they are within the provided epsilon, <code>false</code> otherwise.
      *
      * @exception {DeveloperError} epsilon is required and must be a number.
      */

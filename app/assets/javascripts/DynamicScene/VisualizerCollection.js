@@ -1,9 +1,8 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'DynamicScene/CzmlDefaults'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject'], function(
         defaultValue,
-        destroyObject,
-        DeveloperError,
-        CzmlDefaults) {
+        defined,
+        destroyObject) {
     "use strict";
 
     /**
@@ -14,32 +13,11 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Dynam
      *
      * @param {Object} The array of visualizers to use.
      * @param {DynamicObjectCollection} The objects to be visualized.
-     *
-     * @see CzmlDefaults#createVisualizers
      */
     var VisualizerCollection = function(visualizers, dynamicObjectCollection) {
-        this._visualizers = typeof visualizers !== 'undefined' ? visualizers : [];
+        this._visualizers = defined(visualizers) ? visualizers : [];
         this._dynamicObjectCollection = undefined;
         this.setDynamicObjectCollection(dynamicObjectCollection);
-    };
-
-    /**
-     * Creates a new VisualizerCollection which includes all standard visualizers.
-     *
-     * @memberof VisualizerCollection
-     *
-     * @param {Scene} The scene where visualization will take place.
-     * @param {DynamicObjectCollection} The objects to be visualized.
-     *
-     * @exception {DeveloperError} scene is required.
-     *
-     * @see CzmlDefaults#createVisualizers
-     */
-    VisualizerCollection.createCzmlStandardCollection = function(scene, dynamicObjectCollection) {
-        if (typeof scene === 'undefined') {
-            throw new DeveloperError('scene is required.');
-        }
-        return new VisualizerCollection(CzmlDefaults.createVisualizers(scene), dynamicObjectCollection);
     };
 
     /**
@@ -70,7 +48,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Dynam
             }
         }
 
-        if (typeof visualizers === 'undefined') {
+        if (!defined(visualizers)) {
             visualizers = [];
         }
         this._visualizers = visualizers;
@@ -132,7 +110,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Dynam
      *
      * @memberof VisualizerCollection
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
      * @see VisualizerCollection#destroy
      */
@@ -150,7 +128,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Dynam
      *
      * @memberof VisualizerCollection
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *

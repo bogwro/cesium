@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/loadImage', 'Core/loadXML', 'Core/getImagePixels', 'Core/throttleRequestByServer', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Extent', 'Core/Math', 'Core/Ellipsoid', 'Core/Event', 'Scene/Credit', 'Scene/TerrainProvider', 'Scene/TileProviderError', 'Scene/GeographicTilingScheme', 'Scene/HeightmapTerrainData', 'ThirdParty/when'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/loadImage', 'Core/loadXML', 'Core/getImagePixels', 'Core/throttleRequestByServer', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Extent', 'Core/Math', 'Core/Ellipsoid', 'Core/Event', 'Scene/Credit', 'Scene/TerrainProvider', 'Scene/TileProviderError', 'Scene/GeographicTilingScheme', 'Scene/HeightmapTerrainData', 'ThirdParty/when'], function(
         defaultValue,
+        defined,
         loadImage,
         loadXML,
         getImagePixels,
@@ -47,7 +48,7 @@ define(['Core/defaultValue', 'Core/loadImage', 'Core/loadXML', 'Core/getImagePix
      */
     var VRTheWorldTerrainProvider = function VRTheWorldTerrainProvider(description) {
         description = defaultValue(description, defaultValue.EMPTY_OBJECT);
-        if (typeof description.url === 'undefined') {
+        if (!defined(description.url)) {
             throw new DeveloperError('description.url is required.');
         }
 
@@ -152,7 +153,7 @@ define(['Core/defaultValue', 'Core/loadImage', 'Core/loadXML', 'Core/getImagePix
         var url = this._url + level + '/' + x + '/' + (yTiles - y - 1) + '.tif?cesium=true';
 
         var proxy = this._proxy;
-        if (typeof proxy !== 'undefined') {
+        if (defined(proxy)) {
             url = proxy.getURL(url);
         }
 
@@ -161,7 +162,7 @@ define(['Core/defaultValue', 'Core/loadImage', 'Core/loadXML', 'Core/getImagePix
         throttleRequests = defaultValue(throttleRequests, true);
         if (throttleRequests) {
             promise = throttleRequestByServer(url, loadImage);
-            if (typeof promise === 'undefined') {
+            if (!defined(promise)) {
                 return undefined;
             }
         } else {

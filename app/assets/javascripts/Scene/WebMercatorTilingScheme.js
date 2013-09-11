@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/Ellipsoid', 'Core/Extent', 'Core/Cartesian2', 'Core/WebMercatorProjection', 'Scene/TilingScheme'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/Ellipsoid', 'Core/Extent', 'Core/Cartesian2', 'Core/WebMercatorProjection', 'Scene/TilingScheme'], function(
         defaultValue,
+        defined,
         Ellipsoid,
         Extent,
         Cartesian2,
@@ -39,8 +40,8 @@ define(['Core/defaultValue', 'Core/Ellipsoid', 'Core/Extent', 'Core/Cartesian2',
 
         this._projection = new WebMercatorProjection(this._ellipsoid);
 
-        if (typeof description.extentSouthwestInMeters !== 'undefined' &&
-            typeof description.extentNortheastInMeters !== 'undefined') {
+        if (defined(description.extentSouthwestInMeters) &&
+            defined(description.extentNortheastInMeters)) {
             this._extentSouthwestInMeters = description.extentSouthwestInMeters;
             this._extentNortheastInMeters = description.extentNortheastInMeters;
         } else {
@@ -141,7 +142,7 @@ define(['Core/defaultValue', 'Core/Ellipsoid', 'Core/Extent', 'Core/Cartesian2',
         var southwest = projection.project(extent.getSouthwest());
         var northeast = projection.project(extent.getNortheast());
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Extent(southwest.x, southwest.y, northeast.x, northeast.y);
         }
 
@@ -179,7 +180,7 @@ define(['Core/defaultValue', 'Core/Ellipsoid', 'Core/Extent', 'Core/Cartesian2',
         var north = this._extentNortheastInMeters.y - y * yTileHeight;
         var south = this._extentNortheastInMeters.y - (y + 1) * yTileHeight;
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Extent(west, south, east, north);
         }
 
@@ -265,7 +266,7 @@ define(['Core/defaultValue', 'Core/Ellipsoid', 'Core/Extent', 'Core/Cartesian2',
             yTileCoordinate = yTiles - 1;
         }
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian2(xTileCoordinate, yTileCoordinate);
         }
 

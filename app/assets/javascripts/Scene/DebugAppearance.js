@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Scene/Appearance'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Scene/Appearance'], function(
         defaultValue,
+        defined,
         DeveloperError,
         Appearance) {
     "use strict";
@@ -38,7 +39,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Scene/Appearance'], functio
 
         var attributeName = options.attributeName;
 
-        if (typeof attributeName === 'undefined') {
+        if (!defined(attributeName)) {
             throw new DeveloperError('options.attributeName is required.');
         }
 
@@ -150,6 +151,24 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Scene/Appearance'], functio
          * @readonly
          */
         this.glslDatatype = glslDatatype;
+
+        /**
+         * When <code>true</code>, the geometry is expected to appear translucent.
+         *
+         * @readonly
+         *
+         * @default false
+         */
+        this.translucent = defaultValue(options.translucent, false);
+
+        /**
+         * When <code>true</code>, the geometry is expected to be closed.
+         *
+         * @readonly
+         *
+         * @default false
+         */
+        this.closed = defaultValue(options.closed, false);
     };
 
     /**
@@ -158,7 +177,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Scene/Appearance'], functio
      *
      * @memberof DebugAppearance
      *
-     * @return String The full GLSL fragment shader source.
+     * @returns String The full GLSL fragment shader source.
      */
     DebugAppearance.prototype.getFragmentShaderSource = Appearance.prototype.getFragmentShaderSource;
 

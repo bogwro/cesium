@@ -1,7 +1,8 @@
 /*global define*/
-define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/DeveloperError', 'Scene/TerrainProvider', 'Scene/TerrainState', 'Scene/TileProviderError', 'ThirdParty/when'], function(
+define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/defined', 'Core/DeveloperError', 'Scene/TerrainProvider', 'Scene/TerrainState', 'Scene/TileProviderError', 'ThirdParty/when'], function(
         BoundingSphere,
         Cartesian3,
+        defined,
         DeveloperError,
         TerrainProvider,
         TerrainState,
@@ -39,13 +40,13 @@ define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/DeveloperError', 'Scene/
         this.data = undefined;
         this.mesh = undefined;
 
-        if (typeof this.vertexArray !== 'undefined') {
+        if (defined(this.vertexArray)) {
             var indexBuffer = this.vertexArray.getIndexBuffer();
 
             this.vertexArray.destroy();
             this.vertexArray = undefined;
 
-            if (!indexBuffer.isDestroyed() && typeof indexBuffer.referenceCount !== 'undefined') {
+            if (!indexBuffer.isDestroyed() && defined(indexBuffer.referenceCount)) {
                 --indexBuffer.referenceCount;
                 if (indexBuffer.referenceCount === 0) {
                     indexBuffer.destroy();
@@ -112,7 +113,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/DeveloperError', 'Scene/
 
             // If the request method returns undefined (instead of a promise), the request
             // has been deferred.
-            if (typeof tileTerrain.data !== 'undefined') {
+            if (defined(tileTerrain.data)) {
                 tileTerrain.state = TerrainState.RECEIVING;
 
                 when(tileTerrain.data, success, failure);
@@ -128,7 +129,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/DeveloperError', 'Scene/
     TileTerrain.prototype.processUpsampleStateMachine = function(context, terrainProvider, x, y, level) {
         if (this.state === TerrainState.UNLOADED) {
             var upsampleDetails = this.upsampleDetails;
-            if (typeof upsampleDetails === 'undefined') {
+            if (!defined(upsampleDetails)) {
                 throw new DeveloperError('TileTerrain cannot upsample unless provided upsampleDetails.');
             }
 
@@ -138,7 +139,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/DeveloperError', 'Scene/
             var sourceLevel = upsampleDetails.level;
 
             this.data = sourceData.upsample(terrainProvider.getTilingScheme(), sourceX, sourceY, sourceLevel, x, y, level);
-            if (typeof this.data === 'undefined') {
+            if (!defined(this.data)) {
                 // The upsample request has been deferred - try again later.
                 return;
             }
@@ -169,7 +170,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/DeveloperError', 'Scene/
         var terrainData = tileTerrain.data;
         var meshPromise = terrainData.createMesh(tilingScheme, x, y, level);
 
-        if (typeof meshPromise === 'undefined') {
+        if (!defined(meshPromise)) {
             // Postponed.
             return;
         }

@@ -206,7 +206,7 @@ define(['Core/defaultValue', 'Core/VertexFormat', 'Scene/Appearance', 'Shaders/A
      *
      * @memberof PerInstanceColorAppearance
      *
-     * @return String The full GLSL fragment shader source.
+     * @returns String The full GLSL fragment shader source.
      */
     PerInstanceColorAppearance.prototype.getFragmentShaderSource = Appearance.prototype.getFragmentShaderSource;
 

@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/DeveloperError'], function (
-            DeveloperError) {
+define(['Core/defined', 'Core/DeveloperError'], function (
+        defined,
+        DeveloperError) {
     "use strict";
 
     /**
@@ -19,9 +20,9 @@ define(['Core/DeveloperError'], function (
      */
 
     var Credit = function(text, imageUrl, link) {
-        var hasLink = (typeof link !== 'undefined');
-        var hasImage = (typeof imageUrl !== 'undefined');
-        var hasText = (typeof text !== 'undefined');
+        var hasLink = (defined(link));
+        var hasImage = (defined(imageUrl));
+        var hasText = (defined(text));
         if (!hasText && !hasImage && !hasLink) {
             throw new DeveloperError('text, imageUrl or link is required');
         }
@@ -94,11 +95,11 @@ define(['Core/DeveloperError'], function (
      * @param {Credit} left The first credit
      * @param {Credit} left The second credit
      *
-     * @return {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
      */
     Credit.equals = function(left, right) {
-        var leftUndefined = (typeof left === 'undefined');
-        var rightUndefined = (typeof right === 'undefined');
+        var leftUndefined = (!defined(left));
+        var rightUndefined = (!defined(right));
 
         return ((left === right) ||
                ((leftUndefined && rightUndefined) ||
@@ -115,7 +116,7 @@ define(['Core/DeveloperError'], function (
      *
      * @param {Credit} credits The credit to compare to.
      *
-     * @return {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
      */
     Credit.prototype.equals = function(credit) {
         return Credit.equals(this, credit);

@@ -1,7 +1,8 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/LeapSecond', 'Core/TimeStandard', 'Core/isLeapYear', 'ThirdParty/sprintf'], function(
+define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeConstants', 'Core/LeapSecond', 'Core/TimeStandard', 'Core/isLeapYear', 'ThirdParty/sprintf'], function(
         DeveloperError,
         binarySearch,
+        defined,
         TimeConstants,
         LeapSecond,
         TimeStandard,
@@ -143,7 +144,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
             secondsOfDay += TimeConstants.SECONDS_PER_DAY;
         }
 
-        if (typeof julianDate === 'undefined') {
+        if (!defined(julianDate)) {
             return new JulianDate(wholeDays, secondsOfDay, TimeStandard.TAI);
         }
 
@@ -246,8 +247,8 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
         var wholeDays;
         var secondsOfDay;
         //If any of the properties are defined, then we are constructing from components.
-        if (typeof julianDayNumber !== 'undefined' || typeof julianSecondsOfDay !== 'undefined' || typeof timeStandard !== 'undefined') {
-            if (typeof timeStandard === 'undefined') {
+        if (defined(julianDayNumber) || defined(julianSecondsOfDay) || defined(timeStandard)) {
+            if (!defined(timeStandard)) {
                 timeStandard = TimeStandard.UTC;
             } else if (timeStandard !== TimeStandard.UTC && timeStandard !== TimeStandard.TAI) {
                 throw new DeveloperError('timeStandard is not a known TimeStandard.');
@@ -287,13 +288,13 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {Cartesian3} date The JulianDate to duplicate.
      * @param {Cartesian3} [result] The object onto which to store the JulianDate.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided. (Returns undefined if date is undefined)
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided. (Returns undefined if date is undefined)
      */
     JulianDate.clone = function(date, result) {
-        if (typeof date === 'undefined') {
+        if (!defined(date)) {
             return undefined;
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new JulianDate(date._julianDayNumber, date._secondsOfDay, TimeStandard.TAI);
         }
         result._julianDayNumber = date._julianDayNumber;
@@ -311,7 +312,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      * @param {Date} date The JavaScript Date object representing the time to be converted to a JulianDate.
      * @param {TimeStandard} [timeStandard = TimeStandard.UTC] Indicates the time standard in which this JulianDate is represented.
      *
-     * @return {JulianDate} The new {@Link JulianDate} instance.
+     * @returns {JulianDate} The new {@Link JulianDate} instance.
      *
      * @exception {DeveloperError} date must be a valid JavaScript Date.
      *
@@ -329,7 +330,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      * var julianDate = JulianDate.fromDate(date, TimeStandard.UTC);
      */
     JulianDate.fromDate = function(date, timeStandard) {
-        if (typeof date === 'undefined' || date === null || isNaN(date.getTime())) {
+        if (!(date instanceof Date) || isNaN(date.getTime())) {
             throw new DeveloperError('date must be a valid JavaScript Date.');
         }
 
@@ -346,7 +347,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {String} iso8601String The ISO 8601 date string representing the time to be converted to a JulianDate.
      *
-     * @return {JulianDate} The new {@Link JulianDate} instance.
+     * @returns {JulianDate} The new {@Link JulianDate} instance.
      *
      * @exception {DeveloperError} Valid ISO 8601 date string required.
      *
@@ -388,7 +389,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
         var time = tokens[1];
         var tmp;
         var inLeapYear;
-        if (typeof date === 'undefined') {
+        if (!defined(date)) {
             throw new DeveloperError(iso8601ErrorMessage);
         }
 
@@ -438,8 +439,8 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
 
                             dashCount = date.split('-').length - 1;
                             if (dashCount > 0 &&
-                               ((typeof tokens[3] === 'undefined' && dashCount !== 1) ||
-                               (typeof tokens[3] !== 'undefined' && dashCount !== 2))) {
+                               ((!defined(tokens[3]) && dashCount !== 1) ||
+                               (defined(tokens[3]) && dashCount !== 2))) {
                                 throw new DeveloperError(iso8601ErrorMessage);
                             }
 
@@ -467,7 +468,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
 
         //Not move onto the time string, which is much simpler.
         var offsetIndex;
-        if (typeof time !== 'undefined') {
+        if (defined(time)) {
             tokens = time.match(matchHoursMinutesSeconds);
             if (tokens !== null) {
                 dashCount = time.split(':').length - 1;
@@ -611,7 +612,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      * @param {Number} totalDays The combined Julian Day Number and fractional day.
      * @param {TimeStandard} [timeStandard = TimeStandard.UTC] Indicates the time standard in which the first parameter is defined.
      *
-     * @return {JulianDate} The new {@Link JulianDate} instance.
+     * @returns {JulianDate} The new {@Link JulianDate} instance.
      *
      * @exception {DeveloperError} totalDays is required.
      *
@@ -640,7 +641,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      * @param {JulianDate} a The first instance.
      * @param {JulianDate} b The second instance.
      *
-     * @return {Number} A negative value if a is less than b,
+     * @returns {Number} A negative value if a is less than b,
      *                  a positive value if a is greater than b,
      *                  or zero if a and b are equal.
      */
@@ -658,12 +659,12 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {JulianDate} left The first JulianDate to compare for equality.
      * @param {JulianDate} right The second JulianDate to compare for equality.
-     * @return {Boolean} <code>true</code> if the JulianDates are equal; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if the JulianDates are equal; otherwise, <code>false</code>.
      */
     JulianDate.equals = function(left, right) {
         return (left === right) ||
-               (typeof left !== 'undefined' &&
-                typeof right !== 'undefined' &&
+               (defined(left) &&
+                defined(right) &&
                 left._julianDayNumber === right._julianDayNumber &&
                 left._secondsOfDay === right._secondsOfDay);
     };
@@ -673,7 +674,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      * @memberof JulianDate
      *
      * @param {Cartesian3} [result] The object onto which to store the JulianDate.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      */
     JulianDate.prototype.clone = function(result) {
         return JulianDate.clone(this, result);
@@ -684,7 +685,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @memberof JulianDate
      *
-     * @return {Number} The Julian date as single floating point number.
+     * @returns {Number} The Julian date as single floating point number.
      *
      * @see JulianDate#getJulianDayNumber
      * @see JulianDate#getJulianTimeFraction
@@ -698,7 +699,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @memberof JulianDate
      *
-     * @return {Number} A whole number representing the Julian day number.
+     * @returns {Number} A whole number representing the Julian day number.
      *
      * @see JulianDate#getTotalDays
      * @see JulianDate#getJulianTimeFraction
@@ -712,7 +713,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @memberof JulianDate
      *
-     * @return {Number} The floating point component of the Julian date representing the time of day.
+     * @returns {Number} The floating point component of the Julian date representing the time of day.
      *
      * @see JulianDate#getTotalDays
      * @see JulianDate#getJulianDayNumber
@@ -726,7 +727,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @memberof JulianDate
      *
-     * @return {Number} The number of seconds elapsed into the current day.
+     * @returns {Number} The number of seconds elapsed into the current day.
      *
      * @see JulianDate#getJulianDayNumber
      */
@@ -740,12 +741,12 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      * Creates a GregorianDate representation of this date in UTC.
      * @memberof JulianDate
      *
-     * @return {GregorianDate} A gregorian date.
+     * @returns {GregorianDate} A gregorian date.
      */
     JulianDate.prototype.toGregorianDate = function() {
         var isLeapSecond = false;
         var thisUtc = convertTaiToUtc(this, toGregorianDateScratch);
-        if (typeof thisUtc === 'undefined') {
+        if (!defined(thisUtc)) {
             //Conversion to UTC will fail if we are during a leap second.
             //If that's the case, subtract a second and convert again.
             //JavaScript doesn't support leap seconds, so this results in second 59 being repeated twice.
@@ -800,7 +801,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      * Javascript dates are only accurate to the nearest millisecond.
      * @memberof JulianDate
      *
-     * @return {Date} A new JavaScript Date equivalent to this JulianDate.
+     * @returns {Date} A new JavaScript Date equivalent to this JulianDate.
      */
     JulianDate.prototype.toDate = function() {
         var gDate = this.toGregorianDate();
@@ -816,20 +817,20 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      * @memberof JulianDate
      *
      * @param {Number} [precision] The number of fractional digits used to represent the seconds component.  By default, the most precise representation is used.
-     * @return {String} An ISO8601 string represenation of this JulianDate.
+     * @returns {String} An ISO8601 string represenation of this JulianDate.
      */
     JulianDate.prototype.toIso8601 = function(precision) {
         var gDate = this.toGregorianDate();
         var millisecondStr;
 
-        if (typeof precision === 'undefined' && gDate.millisecond !== 0) {
+        if (!defined(precision) && gDate.millisecond !== 0) {
             //Forces milliseconds into a number with at least 3 digits to whatever the default toString() precision is.
             millisecondStr = (gDate.millisecond * 0.01).toString().replace('.', '');
             return sprintf("%04d-%02d-%02dT%02d:%02d:%02d.%sZ", gDate.year, gDate.month, gDate.day, gDate.hour, gDate.minute, gDate.second, millisecondStr);
         }
 
         //Precision is either 0 or milliseconds is 0 with undefined precision, in either case, leave off milliseconds entirely
-        if (typeof precision === 'undefined' || precision === 0) {
+        if (!defined(precision) || precision === 0) {
             return sprintf("%04d-%02d-%02dT%02d:%02d:%02dZ", gDate.year, gDate.month, gDate.day, gDate.hour, gDate.minute, gDate.second);
         }
 
@@ -846,7 +847,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {JulianDate} other The other JulianDate, which is the end of the interval.
      *
-     * @return {Number} The number of seconds that have elpased from this JulianDate to the other JulianDate.
+     * @returns {Number} The number of seconds that have elpased from this JulianDate to the other JulianDate.
      *
      * @see JulianDate#getMinutesDifference
      * @see JulianDate#getDaysDifference
@@ -871,7 +872,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {JulianDate} other The other JulianDate, which is the end of the interval.
      *
-     * @return {Number} The number of seconds that have elpased from this JulianDate to the other JulianDate.
+     * @returns {Number} The number of seconds that have elpased from this JulianDate to the other JulianDate.
      *
      * @see JulianDate#getSecondsDifference
      * @see JulianDate#getDaysDifference
@@ -893,7 +894,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {JulianDate} other The other JulianDate, which is the end of the interval.
      *
-     * @return {Number} The number of days that have elpased from this JulianDate to the other JulianDate.
+     * @returns {Number} The number of days that have elpased from this JulianDate to the other JulianDate.
      *
      * @see JulianDate#getSecondsDifference
      * @see JulianDate#getMinutesDifference
@@ -916,7 +917,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @memberof JulianDate
      *
-     * @return {Number} The number of seconds this TAI date is ahead of UTC
+     * @returns {Number} The number of seconds this TAI date is ahead of UTC
      *
      * @see LeapSecond
      * @see TimeStandard
@@ -949,7 +950,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      * @param {Number} seconds The number of seconds to add or subtract.
      * @param {JulianDate} [result] The JulianDate to store the result into.
      *
-     * @return {JulianDate} The modified result parameter or a new JulianDate instance if it was not provided.
+     * @returns {JulianDate} The modified result parameter or a new JulianDate instance if it was not provided.
      *
      * @exception {DeveloperError} seconds is required and must be a number.
      *
@@ -979,7 +980,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {Number} duration An integer number of minutes to add or subtract.
      *
-     * @return {JulianDate} A new JulianDate object
+     * @returns {JulianDate} A new JulianDate object
      *
      * @exception {DeveloperError} duration is required and must be a number.
      *
@@ -1010,7 +1011,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {Number} duration An integer number of hours to add or subtract.
      *
-     * @return {JulianDate} A new JulianDate object
+     * @returns {JulianDate} A new JulianDate object
      *
      * @exception {DeveloperError} duration is required and must be a number.
      *
@@ -1041,7 +1042,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {Number} duration An integer number of days to add or subtract.
      *
-     * @return {JulianDate} A new JulianDate object
+     * @returns {JulianDate} A new JulianDate object
      *
      * @exception {DeveloperError} duration is required and must be a number.
      *
@@ -1071,7 +1072,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {JulianDate} other The JulianDate to be compared.
      *
-     * @return {Boolean} <code>true</code> if this JulianDate is chronologically earlier than <code>other</code>; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this JulianDate is chronologically earlier than <code>other</code>; otherwise, <code>false</code>.
      *
      * @see JulianDate#lessThanOrEquals
      * @see JulianDate#greaterThan
@@ -1093,7 +1094,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {JulianDate} other The JulianDate to be compared.
      *
-     * @return {Boolean} <code>true</code> if this JulianDate is chronologically less than or equal to<code>other</code>; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this JulianDate is chronologically less than or equal to<code>other</code>; otherwise, <code>false</code>.
      *
      * @see JulianDate#lessThan
      * @see JulianDate#greaterThan
@@ -1115,7 +1116,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {JulianDate} other The JulianDate to be compared.
      *
-     * @return {Boolean} <code>true</code> if this JulianDate is chronologically later than <code>other</code>; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this JulianDate is chronologically later than <code>other</code>; otherwise, <code>false</code>.
      *
      * @see JulianDate#lessThan
      * @see JulianDate#lessThanOrEquals
@@ -1137,7 +1138,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {JulianDate} other The JulianDate to be compared.
      *
-     * @return {Boolean} <code>true</code> if this JulianDate is chronologically later than or equal to <code>other</code>; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this JulianDate is chronologically later than or equal to <code>other</code>; otherwise, <code>false</code>.
      *
      * @see JulianDate#lessThan
      * @see JulianDate#lessThanOrEquals
@@ -1159,7 +1160,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {JulianDate} other The other JulianDate to compare to.
      *
-     * @return {Number} A negative value if this instance is less than the other,
+     * @returns {Number} A negative value if this instance is less than the other,
      *                  a positive value if this instance is greater than the other,
      *                  or zero if this instance and the other are equal.
      */
@@ -1174,7 +1175,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      *
      * @param {JulianDate} other The JulianDate to be compared.
      *
-     * @return {Boolean} <code>true</code> if the two JulianDates are equal; otherwise <code>false</code>.
+     * @returns {Boolean} <code>true</code> if the two JulianDates are equal; otherwise <code>false</code>.
      *
      * @see JulianDate#equalsEpsilon
      *
@@ -1198,7 +1199,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/TimeConstants', 'Core/
      * @param {JulianDate} other The JulianDate to be compared.
      * @param {Number} epsilon The number of seconds that should separate the two JulianDates
      *
-     * @return {Boolean} <code>true</code> if the two JulianDates are within <code>epsilon</code> seconds of each other; otherwise <code>false</code>.
+     * @returns {Boolean} <code>true</code> if the two JulianDates are within <code>epsilon</code> seconds of each other; otherwise <code>false</code>.
      *
      * @exception {DeveloperError} epsilon is required and must be number.
      *

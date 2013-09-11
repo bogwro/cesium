@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Matrix3', 'Core/Matrix4', 'Core/Color', 'Core/Transforms', 'Core/ReferenceFrame', 'Scene/Material', 'Scene/SceneMode', 'Scene/PolylineCollection'], function(
+define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Matrix3', 'Core/Matrix4', 'Core/Color', 'Core/Transforms', 'Core/ReferenceFrame', 'DynamicScene/SampledPositionProperty', 'DynamicScene/CompositePositionProperty', 'DynamicScene/TimeIntervalCollectionPositionProperty', 'Scene/Material', 'Scene/SceneMode', 'Scene/PolylineCollection'], function(
+         defined,
          DeveloperError,
          destroyObject,
          Cartesian3,
@@ -8,10 +9,177 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
          Color,
          Transforms,
          ReferenceFrame,
+         SampledPositionProperty,
+         CompositePositionProperty,
+         TimeIntervalCollectionPositionProperty,
          Material,
          SceneMode,
          PolylineCollection) {
     "use strict";
+
+    function subSampleSampledProperty(property, start, stop, updateTime, referenceFrame, maximumStep, startingIndex, result) {
+        var times = property._property._times;
+
+        var r = startingIndex;
+        //Always step exactly on start (but only use it if it exists.)
+        var tmp;
+        tmp = property.getValueInReferenceFrame(start, referenceFrame, result[r]);
+        if (defined(tmp)) {
+            result[r++] = tmp;
+        }
+
+        var steppedOnNow = !defined(updateTime) || updateTime.lessThanOrEquals(start) || updateTime.greaterThanOrEquals(stop);
+
+        //Iterate over all interval times and add the ones that fall in our
+        //time range.  Note that times can contain data outside of
+        //the intervals range.  This is by design for use with interpolation.
+        var t = 0;
+        var len = times.length;
+        var current = times[t];
+        var loopStop = stop;
+        var sampling = false;
+        var sampleStepsToTake;
+        var sampleStepsTaken;
+        var sampleStepSize;
+
+        while (t < len) {
+            if (!steppedOnNow && current.greaterThanOrEquals(updateTime)) {
+                tmp = property.getValueInReferenceFrame(updateTime, referenceFrame, result[r]);
+                if (defined(tmp)) {
+                    result[r++] = tmp;
+                }
+                steppedOnNow = true;
+            }
+            if (current.greaterThan(start) && current.lessThan(loopStop) && !current.equals(updateTime)) {
+                tmp = property.getValueInReferenceFrame(current, referenceFrame, result[r]);
+                if (defined(tmp)) {
+                    result[r++] = tmp;
+                }
+            }
+
+            if (t < (len - 1)) {
+                if (!sampling) {
+                    var next = times[t + 1];
+                    var secondsUntilNext = current.getSecondsDifference(next);
+                    sampling = secondsUntilNext > maximumStep;
+
+                    if (sampling) {
+                        sampleStepsToTake = Math.floor(secondsUntilNext / maximumStep);
+                        sampleStepsTaken = 0;
+                        sampleStepSize = secondsUntilNext / Math.max(sampleStepsToTake, 2);
+                        sampleStepsToTake = Math.max(sampleStepsToTake - 2, 1);
+                    }
+                }
+
+                if (sampling && sampleStepsTaken < sampleStepsToTake) {
+                    current = current.addSeconds(sampleStepSize);
+                    sampleStepsTaken++;
+                    continue;
+                }
+            }
+            sampling = false;
+            t++;
+            current = times[t];
+        }
+
+        //Always step exactly on stop (but only use it if it exists.)
+        tmp = property.getValueInReferenceFrame(stop, referenceFrame, result[r]);
+        if (defined(tmp)) {
+            result[r++] = tmp;
+        }
+
+        return r;
+    }
+
+    function subSampleGenericProperty(property, start, stop, updateTime, referenceFrame, maximumStep, startingIndex, result) {
+        var tmp;
+        var i = 0;
+        var index = startingIndex;
+        var time = start;
+        var steppedOnNow = !defined(updateTime) || updateTime.lessThanOrEquals(start) || updateTime.greaterThanOrEquals(stop);
+        while (time.lessThan(stop)) {
+            if (!steppedOnNow && time.greaterThanOrEquals(updateTime)) {
+                steppedOnNow = true;
+                tmp = property.getValueInReferenceFrame(updateTime, referenceFrame, result[index]);
+                if (defined(tmp)) {
+                    result[index] = tmp;
+                    index++;
+                }
+            }
+            tmp = property.getValueInReferenceFrame(time, referenceFrame, result[index]);
+            if (defined(tmp)) {
+                result[index] = tmp;
+                index++;
+            }
+            i++;
+            time = start.addSeconds(maximumStep * i);
+        }
+        //Always sample stop.
+        tmp = property.getValueInReferenceFrame(stop, referenceFrame, result[index]);
+        if (defined(tmp)) {
+            result[index] = tmp;
+            index++;
+        }
+        return index;
+    }
+
+    function subSampleIntervalProperty(property, start, stop, updateTime, referenceFrame, maximumStep, startingIndex, result) {
+        var index = startingIndex;
+        var intervals = property.getIntervals();
+        for ( var i = 0; i < intervals.getLength(); i++) {
+            var interval = intervals.get(0);
+            if (interval.start.lessThanOrEquals(stop)) {
+                var tmp = property.getValueInReferenceFrame(stop, referenceFrame, result[index]);
+                if (defined(tmp)) {
+                    result[index] = tmp;
+                    index++;
+                }
+            }
+        }
+        return index;
+    }
+
+    function subSampleCompositeProperty(property, start, stop, updateTime, referenceFrame, maximumStep, startingIndex, result) {
+        var index = startingIndex;
+        var intervals = property.getIntervals();
+        for ( var i = 0; i < intervals.getLength(); i++) {
+            var interval = intervals.get(0);
+            if (interval.start.lessThanOrEquals(stop)) {
+                var intervalProperty = interval.data;
+                if (intervalProperty instanceof SampledPositionProperty) {
+                    index = subSampleSampledProperty(intervalProperty, interval.start, interval.stop, updateTime, referenceFrame, maximumStep, index, result);
+                } else if (intervalProperty instanceof CompositePositionProperty) {
+                    index = subSampleCompositeProperty(intervalProperty, interval.start, interval.stop, updateTime, referenceFrame, maximumStep, index, result);
+                } else if (intervalProperty instanceof TimeIntervalCollectionPositionProperty) {
+                    index = subSampleIntervalProperty(intervalProperty, interval.start, interval.stop, updateTime, referenceFrame, maximumStep, index, result);
+                } else {
+                    //Fallback to generic sampling.
+                    index = subSampleGenericProperty(intervalProperty, interval.start, interval.stop, updateTime, referenceFrame, maximumStep, index, result);
+                }
+            }
+        }
+        return index;
+    }
+
+    function subSample(property, start, stop, updateTime, referenceFrame, maximumStep, result) {
+        if (!defined(result)) {
+            result = [];
+        }
+
+        var length = 0;
+        if (property instanceof SampledPositionProperty) {
+            length = subSampleSampledProperty(property, start, stop, updateTime, referenceFrame, maximumStep, 0, result);
+        } else if (property instanceof CompositePositionProperty) {
+            length = subSampleCompositeProperty(property, start, stop, updateTime, referenceFrame, maximumStep, 0, result);
+        } else if (property instanceof TimeIntervalCollectionPositionProperty) {
+            length = subSampleCompositeProperty(property, start, stop, updateTime, referenceFrame, maximumStep, 0, result);
+        } else {
+            //Fallback to generic sampling.
+            length = subSampleGenericProperty(property, start, stop, updateTime, referenceFrame, maximumStep, 0, result);
+        }
+        result.length = length;
+        return result;
+    }
 
     var toFixedScratch = new Matrix3();
     var PolylineUpdater = function(scene, referenceFrame) {
@@ -25,7 +193,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
     PolylineUpdater.prototype.update = function(time) {
         if (this._referenceFrame === ReferenceFrame.INERTIAL) {
             var toFixed = Transforms.computeIcrfToFixedMatrix(time, toFixedScratch);
-            if (typeof toFixed === 'undefined') {
+            if (!defined(toFixed)) {
                 toFixed = Transforms.computeTemeToPseudoFixedMatrix(time, toFixedScratch);
             }
             Matrix4.fromRotationTranslation(toFixed, Cartesian3.ZERO, this._polylineCollection.modelMatrix);
@@ -34,12 +202,12 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
 
     PolylineUpdater.prototype.updateObject = function(time, dynamicObject) {
         var dynamicPath = dynamicObject.path;
-        if (typeof dynamicPath === 'undefined') {
+        if (!defined(dynamicPath)) {
             return;
         }
 
         var positionProperty = dynamicObject.position;
-        if (typeof positionProperty === 'undefined') {
+        if (!defined(positionProperty)) {
             return;
         }
 
@@ -49,7 +217,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
         var sampleStop;
         var showProperty = dynamicPath.show;
         var pathVisualizerIndex = dynamicObject._pathVisualizerIndex;
-        var show = typeof showProperty === 'undefined' || showProperty.getValue(time);
+        var show = !defined(showProperty) || showProperty.getValue(time);
 
         //While we want to show the path, there may not actually be anything to show
         //depending on lead/trail settings.  Compute the interval of the path to
@@ -57,20 +225,20 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
         if (show) {
             property = dynamicPath.leadTime;
             var leadTime;
-            if (typeof property !== 'undefined') {
+            if (defined(property)) {
                 leadTime = property.getValue(time);
             }
 
             property = dynamicPath.trailTime;
             var trailTime;
-            if (typeof property !== 'undefined') {
+            if (defined(property)) {
                 trailTime = property.getValue(time);
             }
 
             var availability = dynamicObject.availability;
-            var hasAvailability = typeof availability !== 'undefined';
-            var hasLeadTime = typeof leadTime !== 'undefined';
-            var hasTrailTime = typeof trailTime !== 'undefined';
+            var hasAvailability = defined(availability);
+            var hasLeadTime = defined(leadTime);
+            var hasTrailTime = defined(trailTime);
 
             //Objects need to have either defined availability or both a lead and trail time in order to
             //draw a path (since we can't draw "infinite" paths.
@@ -99,7 +267,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
 
         if (!show) {
             //don't bother creating or updating anything else
-            if (typeof pathVisualizerIndex !== 'undefined') {
+            if (defined(pathVisualizerIndex)) {
                 polyline = this._polylineCollection.get(pathVisualizerIndex);
                 polyline.setShow(false);
                 dynamicObject._pathVisualizerIndex = undefined;
@@ -109,7 +277,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
         }
 
         var uniforms;
-        if (typeof pathVisualizerIndex === 'undefined') {
+        if (!defined(pathVisualizerIndex)) {
             var unusedIndexes = this._unusedIndexes;
             var length = unusedIndexes.length;
             if (length > 0) {
@@ -125,7 +293,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
             // CZML_TODO Determine official defaults
             polyline.setWidth(1);
             var material = polyline.getMaterial();
-            if (typeof material === 'undefined' || (material.type !== Material.PolylineOutlineType)) {
+            if (!defined(material) || (material.type !== Material.PolylineOutlineType)) {
                 material = Material.fromType(this._scene.getContext(), Material.PolylineOutlineType);
                 polyline.setMaterial(material);
             }
@@ -142,31 +310,31 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
 
         var resolution = 60.0;
         property = dynamicPath.resolution;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             resolution = property.getValue(time);
         }
 
-        polyline.setPositions(positionProperty._getValueRangeInReferenceFrame(sampleStart, sampleStop, time, this._referenceFrame, resolution, polyline.getPositions()));
+        polyline.setPositions(subSample(positionProperty, sampleStart, sampleStop, time, this._referenceFrame, resolution, polyline.getPositions()));
 
         property = dynamicPath.color;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             uniforms.color = property.getValue(time, uniforms.color);
         }
 
         property = dynamicPath.outlineColor;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             uniforms.outlineColor = property.getValue(time, uniforms.outlineColor);
         }
 
         property = dynamicPath.outlineWidth;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             uniforms.outlineWidth = property.getValue(time);
         }
 
         property = dynamicPath.width;
-        if (typeof property !== 'undefined') {
+        if (defined(property)) {
             var width = property.getValue(time);
-            if (typeof width !== 'undefined') {
+            if (defined(width)) {
                 polyline.setWidth(width);
             }
         }
@@ -174,7 +342,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
 
     PolylineUpdater.prototype.removeObject = function(dynamicObject) {
         var pathVisualizerIndex = dynamicObject._pathVisualizerIndex;
-        if (typeof pathVisualizerIndex !== 'undefined') {
+        if (defined(pathVisualizerIndex)) {
             var polyline = this._polylineCollection.get(pathVisualizerIndex);
             polyline.setShow(false);
             this._unusedIndexes.push(pathVisualizerIndex);
@@ -215,7 +383,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
      *
      */
     var DynamicPathVisualizer = function(scene, dynamicObjectCollection) {
-        if (typeof scene === 'undefined') {
+        if (!defined(scene)) {
             throw new DeveloperError('scene is required.');
         }
         this._scene = scene;
@@ -250,12 +418,12 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
     DynamicPathVisualizer.prototype.setDynamicObjectCollection = function(dynamicObjectCollection) {
         var oldCollection = this._dynamicObjectCollection;
         if (oldCollection !== dynamicObjectCollection) {
-            if (typeof oldCollection !== 'undefined') {
+            if (defined(oldCollection)) {
                 oldCollection.objectsRemoved.removeEventListener(DynamicPathVisualizer.prototype._onObjectsRemoved, this);
                 this.removeAllPrimitives();
             }
             this._dynamicObjectCollection = dynamicObjectCollection;
-            if (typeof dynamicObjectCollection !== 'undefined') {
+            if (defined(dynamicObjectCollection)) {
                 dynamicObjectCollection.objectsRemoved.addEventListener(DynamicPathVisualizer.prototype._onObjectsRemoved, this);
             }
         }
@@ -270,11 +438,11 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
      * @exception {DeveloperError} time is required.
      */
     DynamicPathVisualizer.prototype.update = function(time) {
-        if (typeof time === 'undefined') {
+        if (!defined(time)) {
             throw new DeveloperError('time is requied.');
         }
 
-        if (typeof this._dynamicObjectCollection !== 'undefined') {
+        if (defined(this._dynamicObjectCollection)) {
             var updaters = this._updaters;
             for ( var key in updaters) {
                 if (updaters.hasOwnProperty(key)) {
@@ -286,12 +454,12 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
             for ( var i = 0, len = dynamicObjects.length; i < len; i++) {
                 var dynamicObject = dynamicObjects[i];
 
-                if (typeof dynamicObject.path === 'undefined') {
+                if (!defined(dynamicObject.path)) {
                     continue;
                 }
 
                 var positionProperty = dynamicObject.position;
-                if (typeof positionProperty === 'undefined') {
+                if (!defined(positionProperty)) {
                     continue;
                 }
 
@@ -299,28 +467,28 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
 
                 var frameToVisualize = ReferenceFrame.FIXED;
                 if (this._scene.mode === SceneMode.SCENE3D) {
-                    frameToVisualize = positionProperty._getReferenceFrame();
+                    frameToVisualize = positionProperty.referenceFrame;
                 }
 
                 var currentUpdater = this._updaters[frameToVisualize];
 
-                if ((lastUpdater === currentUpdater) && (typeof currentUpdater !== 'undefined')) {
+                if ((lastUpdater === currentUpdater) && (defined(currentUpdater))) {
                     currentUpdater.updateObject(time, dynamicObject);
                     continue;
                 }
 
-                if (typeof lastUpdater !== 'undefined') {
+                if (defined(lastUpdater)) {
                     lastUpdater.removeObject(dynamicObject);
                 }
 
-                if (typeof currentUpdater === 'undefined') {
+                if (!defined(currentUpdater)) {
                     currentUpdater = new PolylineUpdater(this._scene, frameToVisualize);
                     currentUpdater.update(time);
                     this._updaters[frameToVisualize] = currentUpdater;
                 }
 
                 dynamicObject._pathUpdater = currentUpdater;
-                if (typeof currentUpdater !== 'undefined') {
+                if (defined(currentUpdater)) {
                     currentUpdater.updateObject(time, dynamicObject);
                 }
             }
@@ -339,7 +507,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
         }
         this._updaters = {};
 
-        if (typeof this._dynamicObjectCollection !== 'undefined') {
+        if (defined(this._dynamicObjectCollection)) {
             var dynamicObjects = this._dynamicObjectCollection.getObjects();
             for ( var i = dynamicObjects.length - 1; i > -1; i--) {
                 dynamicObjects[i]._pathUpdater = undefined;
@@ -356,7 +524,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
      *
      * @memberof DynamicPathVisualizer
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
      * @see DynamicPathVisualizer#destroy
      */
@@ -374,7 +542,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
      *
      * @memberof DynamicPathVisualizer
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *
@@ -392,7 +560,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Ma
         for ( var i = dynamicObjects.length - 1; i > -1; i--) {
             var dynamicObject = dynamicObjects[i];
             var _pathUpdater = dynamicObject._pathUpdater;
-            if (typeof _pathUpdater !== 'undefined') {
+            if (defined(_pathUpdater)) {
                 _pathUpdater.removeObject(dynamicObject);
             }
         }

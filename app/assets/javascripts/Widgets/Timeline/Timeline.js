@@ -1,7 +1,8 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/ClockRange', 'Core/destroyObject', 'Core/JulianDate', 'Widgets/getElement', 'Widgets/Timeline/TimelineTrack', 'Widgets/Timeline/TimelineHighlightRange'], function(
+define(['Core/DeveloperError', 'Core/ClockRange', 'Core/defined', 'Core/destroyObject', 'Core/JulianDate', 'Widgets/getElement', 'Widgets/Timeline/TimelineTrack', 'Widgets/Timeline/TimelineHighlightRange'], function(
         DeveloperError,
         ClockRange,
+        defined,
         destroyObject,
         JulianDate,
         getElement,
@@ -64,11 +65,11 @@ define(['Core/DeveloperError', 'Core/ClockRange', 'Core/destroyObject', 'Core/Ju
     var timelineMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     function Timeline(container, clock) {
-        if (typeof container === 'undefined') {
+        if (!defined(container)) {
             throw new DeveloperError('container is required.');
         }
 
-        if (typeof clock === 'undefined') {
+        if (!defined(clock)) {
             throw new DeveloperError('clock is required.');
         }
 
@@ -475,7 +476,7 @@ define(['Core/DeveloperError', 'Core/ClockRange', 'Core/destroyObject', 'Core/Ju
     Timeline.prototype.updateFromClock = function() {
         this._scrubJulian = this._clock.currentTime;
         var scrubElement = this._scrubElement;
-        if (typeof this._scrubElement !== 'undefined') {
+        if (defined(this._scrubElement)) {
             var seconds = this._startJulian.getSecondsDifference(this._scrubJulian);
             var xPos = Math.round(seconds * this._topDiv.clientWidth / this._timeBarSecondsSpan);
 
@@ -486,7 +487,7 @@ define(['Core/DeveloperError', 'Core/ClockRange', 'Core/destroyObject', 'Core/Ju
                 this._needleEle.style.left = xPos + 'px';
             }
         }
-        if (typeof this._timelineDragLocation !== 'undefined') {
+        if (defined(this._timelineDragLocation)) {
             this._setTimeBarTime(this._timelineDragLocation, this._timelineDragLocation * this._timeBarSecondsSpan / this._topDiv.clientWidth);
             this.zoomTo(this._startJulian.addSeconds(this._timelineDrag), this._endJulian.addSeconds(this._timelineDrag));
         }
@@ -660,7 +661,7 @@ define(['Core/DeveloperError', 'Core/ClockRange', 'Core/destroyObject', 'Core/Ju
                     newSpan = 0;
                 }
 
-                if (typeof newCenter !== 'undefined') {
+                if (defined(newCenter)) {
                     if ((newSpan > 0) && (timeline._touchState.spanX > 0)) {
                         // Zoom and slide
                         zoom = (timeline._touchState.spanX / newSpan);

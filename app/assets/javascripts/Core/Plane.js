@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/Cartesian3', 'Core/DeveloperError'], function(
+define(['Core/Cartesian3', 'Core/defined', 'Core/DeveloperError'], function(
         Cartesian3,
+        defined,
         DeveloperError) {
     "use strict";
 
@@ -31,11 +32,11 @@ define(['Core/Cartesian3', 'Core/DeveloperError'], function(
      * var plane = new Plane(Cartesian3.UNIT_X, 0.0);
      */
     var Plane = function(normal, distance) {
-        if (typeof normal === 'undefined')  {
+        if (!defined(normal))  {
             throw new DeveloperError('normal is required.');
         }
 
-        if (typeof distance === 'undefined') {
+        if (!defined(distance)) {
             throw new DeveloperError('distance is required.');
         }
 
@@ -76,17 +77,17 @@ define(['Core/Cartesian3', 'Core/DeveloperError'], function(
      * var tangentPlane = Plane.fromPointNormal(point, normal);
      */
     Plane.fromPointNormal = function(point, normal, result) {
-        if (typeof point === 'undefined') {
+        if (!defined(point)) {
             throw new DeveloperError('point is required.');
         }
 
-        if (typeof normal === 'undefined') {
+        if (!defined(normal)) {
             throw new DeveloperError('normal is required.');
         }
 
         var distance = -Cartesian3.dot(normal, point);
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Plane(normal, distance);
         }
 
@@ -111,11 +112,11 @@ define(['Core/Cartesian3', 'Core/DeveloperError'], function(
      * @exception {DeveloperError} point is required.
      */
     Plane.getPointDistance = function(plane, point) {
-        if (typeof plane === 'undefined') {
+        if (!defined(plane)) {
             throw new DeveloperError('plane is required.');
         }
 
-        if (typeof point === 'undefined') {
+        if (!defined(point)) {
             throw new DeveloperError('point is required.');
         }
 

@@ -1,10 +1,11 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Color', 'Scene/Billboard', 'Scene/LabelStyle', 'Scene/HorizontalOrigin', 'Scene/VerticalOrigin'], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Color', 'Core/defined', 'Scene/Billboard', 'Scene/LabelStyle', 'Scene/HorizontalOrigin', 'Scene/VerticalOrigin'], function(
         defaultValue,
         DeveloperError,
         Cartesian2,
         Cartesian3,
         Color,
+        defined,
         Billboard,
         LabelStyle,
         HorizontalOrigin,
@@ -69,7 +70,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      *
      * @memberof Label
      *
-     * @return {Boolean} <code>true</code> if this label will be shown; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this label will be shown; otherwise, <code>false</code>.
      *
      * @see Label#setShow
      */
@@ -90,7 +91,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * @see Label#getShow
      */
     Label.prototype.setShow = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -100,7 +101,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
             var glyphs = this._glyphs;
             for ( var i = 0, len = glyphs.length; i < len; i++) {
                 var glyph = glyphs[i];
-                if (typeof glyph.billboard !== 'undefined') {
+                if (defined(glyph.billboard)) {
                     glyph.billboard.setShow(value);
                 }
             }
@@ -112,7 +113,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      *
      * @memberof Label
      *
-     * @return {Cartesian3} The Cartesian position of this label.
+     * @returns {Cartesian3} The Cartesian position of this label.
      *
      * @see Label#setPosition
      */
@@ -150,7 +151,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * });
      */
     Label.prototype.setPosition = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -161,7 +162,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
             var glyphs = this._glyphs;
             for ( var i = 0, len = glyphs.length; i < len; i++) {
                 var glyph = glyphs[i];
-                if (typeof glyph.billboard !== 'undefined') {
+                if (defined(glyph.billboard)) {
                     glyph.billboard.setPosition(value);
                 }
             }
@@ -191,7 +192,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * @see Label#getText
      */
     Label.prototype.setText = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -228,7 +229,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * @see <a href='http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#text-styles'>HTML canvas 2D context text styles</a>
      */
     Label.prototype.setFont = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -265,7 +266,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * @see <a href='http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#fill-and-stroke-styles'>HTML canvas 2D context fill and stroke styles</a>
      */
     Label.prototype.setFillColor = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -303,7 +304,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * @see <a href='http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#fill-and-stroke-styles'>HTML canvas 2D context fill and stroke styles</a>
      */
     Label.prototype.setOutlineColor = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -341,7 +342,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * @see <a href='http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#fill-and-stroke-styles'>HTML canvas 2D context fill and stroke styles</a>
      */
     Label.prototype.setOutlineWidth = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -376,7 +377,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * @see Label#setFillColor
      */
     Label.prototype.setStyle = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -391,7 +392,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      *
      * @memberof Label
      *
-     * @return {Cartesian2} The pixel offset of this label.
+     * @returns {Cartesian2} The pixel offset of this label.
      *
      * @see Label#setPixelOffset
      */
@@ -428,7 +429,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * @see Billboard#setPixelOffset
      */
     Label.prototype.setPixelOffset = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -444,7 +445,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      *
      * @memberof Label
      *
-     * @return {Cartesian3} The 3D Cartesian offset applied to this label in eye coordinates.
+     * @returns {Cartesian3} The 3D Cartesian offset applied to this label in eye coordinates.
      *
      * @see Label#setEyeOffset
      */
@@ -486,7 +487,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * @see Label#getEyeOffset
      */
     Label.prototype.setEyeOffset = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -497,7 +498,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
             var glyphs = this._glyphs;
             for ( var i = 0, len = glyphs.length; i < len; i++) {
                 var glyph = glyphs[i];
-                if (typeof glyph.billboard !== 'undefined') {
+                if (defined(glyph.billboard)) {
                     glyph.billboard.setEyeOffset(value);
                 }
             }
@@ -509,7 +510,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      *
      * @memberof Label
      *
-     * @return {HorizontalOrigin} The horizontal origin of this label.
+     * @returns {HorizontalOrigin} The horizontal origin of this label.
      *
      * @see Label#setHorizontalOrigin
      */
@@ -540,7 +541,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * l.setVerticalOrigin(VerticalOrigin.TOP);
      */
     Label.prototype.setHorizontalOrigin = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -555,7 +556,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      *
      * @memberof Label
      *
-     * @return {VerticalOrigin} The vertical origin of this label.
+     * @returns {VerticalOrigin} The vertical origin of this label.
      *
      * @see Label#setVerticalOrigin
      */
@@ -586,7 +587,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * l.setVerticalOrigin(VerticalOrigin.TOP);
      */
     Label.prototype.setVerticalOrigin = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -601,7 +602,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      *
      * @memberof Label
      *
-     * @return {Number} The scale used to size the label.
+     * @returns {Number} The scale used to size the label.
      *
      * @see Label#setScale
      */
@@ -634,7 +635,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * @see Label#setFont
      */
     Label.prototype.setScale = function(value) {
-        if (typeof value === 'undefined') {
+        if (!defined(value)) {
             throw new DeveloperError('value is required.');
         }
 
@@ -644,7 +645,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
             var glyphs = this._glyphs;
             for ( var i = 0, len = glyphs.length; i < len; i++) {
                 var glyph = glyphs[i];
-                if (typeof glyph.billboard !== 'undefined') {
+                if (defined(glyph.billboard)) {
                     glyph.billboard.setScale(value);
                 }
             }
@@ -663,7 +664,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * @param {Context} context The context.
      * @param {FrameState} frameState The same state object passed to {@link LabelCollection#update}.
      *
-     * @return {Cartesian2} The screen-space position of the label.
+     * @returns {Cartesian2} The screen-space position of the label.
      *
      * @exception {DeveloperError} context is required.
      * @exception {DeveloperError} frameState is required.
@@ -675,11 +676,11 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      * console.log(l.computeScreenSpacePosition(scene.getContext(), scene.getFrameState()).toString());
      */
     Label.prototype.computeScreenSpacePosition = function(context, frameState) {
-        if (typeof context === 'undefined') {
+        if (!defined(context)) {
             throw new DeveloperError('context is required.');
         }
 
-        if (typeof frameState === 'undefined') {
+        if (!defined(frameState)) {
             throw new DeveloperError('frameState is required.');
         }
 
@@ -698,11 +699,11 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      *
      * @param {Label} other The label to compare for equality.
      *
-     * @return {Boolean} <code>true</code> if the labels are equal; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if the labels are equal; otherwise, <code>false</code>.
      */
     Label.prototype.equals = function(other) {
         return this === other ||
-               typeof other !== 'undefined' &&
+               defined(other) &&
                this._show === other._show &&
                this._scale === other._scale &&
                this._style === other._style &&
@@ -725,7 +726,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Car
      *
      * @memberof Label
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      */
     Label.prototype.isDestroyed = function() {
         return false;

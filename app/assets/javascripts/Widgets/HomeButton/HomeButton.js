@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Widgets/getElement', 'Widgets/HomeButton/HomeButtonViewModel', 'ThirdParty/knockout'], function(
+define(['Core/defined', 'Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Widgets/getElement', 'Widgets/HomeButton/HomeButtonViewModel', 'ThirdParty/knockout'], function(
+        defined,
         defineProperties,
         destroyObject,
         DeveloperError,
@@ -23,7 +24,7 @@ define(['Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'W
      * @exception {DeveloperError} scene is required.
      */
     var HomeButton = function(container, scene, transitioner, ellipsoid, flightDuration) {
-        if (typeof container === 'undefined') {
+        if (!defined(container)) {
             throw new DeveloperError('container is required.');
         }
 

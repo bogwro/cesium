@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/BoundingSphere'], function(
         defaultValue,
+        defined,
         DeveloperError,
         BoundingSphere) {
     "use strict";
@@ -64,11 +65,11 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere'], func
     var Geometry = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
 
-        if (typeof options.attributes === 'undefined') {
+        if (!defined(options.attributes)) {
             throw new DeveloperError('options.attributes is required.');
         }
 
-        if (typeof options.primitiveType === 'undefined') {
+        if (!defined(options.primitiveType)) {
             throw new DeveloperError('options.primitiveType is required.');
         }
 
@@ -160,7 +161,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere'], func
      *
      * @param {Cartesian3} geometry The geometry.
      *
-     * @return {Number} The number of vertices in the geometry.
+     * @returns {Number} The number of vertices in the geometry.
      *
      * @exception {DeveloperError} geometries is required.
      *
@@ -168,15 +169,15 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/BoundingSphere'], func
      * var numVertices = Geometry.computeNumberOfVertices(geometry);
      */
     Geometry.computeNumberOfVertices = function(geometry) {
-        if (typeof geometry === 'undefined') {
+        if (!defined(geometry)) {
             throw new DeveloperError('geometry is required.');
         }
 
         var numberOfVertices = -1;
         for ( var property in geometry.attributes) {
             if (geometry.attributes.hasOwnProperty(property) &&
-                    typeof geometry.attributes[property] !== 'undefined' &&
-                    typeof geometry.attributes[property].values !== 'undefined') {
+                    defined(geometry.attributes[property]) &&
+                    defined(geometry.attributes[property].values)) {
 
                 var attribute = geometry.attributes[property];
                 var num = attribute.values.length / attribute.componentsPerAttribute;

@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/loadImage', 'Core/loadImageViaBlob', 'Core/DeveloperError', 'Core/throttleRequestByServer'], function(
+define(['Core/defined', 'Core/loadImage', 'Core/loadImageViaBlob', 'Core/DeveloperError', 'Core/throttleRequestByServer'], function(
+        defined,
         loadImage,
         loadImageViaBlob,
         DeveloperError,
@@ -290,7 +291,7 @@ define(['Core/loadImage', 'Core/loadImageViaBlob', 'Core/DeveloperError', 'Core/
      *          Image or a Canvas DOM object.
      */
     ImageryProvider.loadImage = function(imageryProvider, url) {
-        if (typeof imageryProvider.getTileDiscardPolicy() !== 'undefined') {
+        if (defined(imageryProvider.getTileDiscardPolicy())) {
             return throttleRequestByServer(url, loadImageViaBlob);
         }
         return throttleRequestByServer(url, loadImage);

@@ -1,10 +1,11 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Cartesian4', 'Core/TridiagonalSystemSolver'], function(
-                defaultValue,
-                DeveloperError,
-                Matrix4,
-                Cartesian4,
-                TridiagonalSystemSolver) {
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Cartesian4', 'Core/TridiagonalSystemSolver'], function(
+        defaultValue,
+        defined,
+        DeveloperError,
+        Matrix4,
+        Cartesian4,
+        TridiagonalSystemSolver) {
     "use strict";
 
     /**
@@ -59,7 +60,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Cartes
      * var spline = new HermiteSpline(controlPoints);
      */
     var HermiteSpline = function(controlPoints) {
-        if (typeof controlPoints === 'undefined' || !(controlPoints instanceof Array) || controlPoints.length < 3) {
+        if (!defined(controlPoints) || !(controlPoints instanceof Array) || controlPoints.length < 3) {
             throw new DeveloperError('controlPoints is required. It must be an array with at least a length of 3.');
         }
 
@@ -67,9 +68,9 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Cartes
 
         this._lastTimeIndex = 0;
 
-        if (typeof this._points[0].tangent === 'undefined' || typeof this._points[this._points.length - 1].tangent === 'undefined') {
+        if (!defined(this._points[0].tangent) || !defined(this._points[this._points.length - 1].tangent)) {
             generateNatural(this);
-        } else if (typeof this._points[0].tangent !== 'undefined' && typeof this._points[1].tangent === 'undefined' && typeof this._points[this._points.length - 1].tangent !== 'undefined' && typeof this._points[this._points.length - 2].tangent === 'undefined') {
+        } else if (defined(this._points[0].tangent) && !defined(this._points[1].tangent) && defined(this._points[this._points.length - 1].tangent) && !defined(this._points[this._points.length - 2].tangent)) {
             generateClamped(this);
         }
     };
@@ -167,7 +168,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Cartes
      * Returns the array of control points.
      *
      * @memberof HermiteSpline
-     * @return {Array} The array of control points.
+     * @returns {Array} The array of control points.
      */
     HermiteSpline.prototype.getControlPoints = function() {
         return this._points;
@@ -185,7 +186,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Cartes
      * where <code>a<sub>0</sub></code> and <code>a<sub>n</sub></code> are the time properties of first and
      * last elements in the array given during construction, respectively.
      *
-     * @return {Cartesian3} The point on the curve at the given <code>time</code>.
+     * @returns {Cartesian3} The point on the curve at the given <code>time</code>.
      *
      * @example
      * // spline above the earth from Philadelphia to Los Angeles
@@ -202,7 +203,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Cartes
      * var position = spline.evaluate(5.0);
      */
     HermiteSpline.prototype.evaluate = function(time) {
-        if (typeof time === 'undefined') {
+        if (!defined(time)) {
             throw new DeveloperError('time is required.');
         }
 

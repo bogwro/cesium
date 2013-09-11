@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Event'], function(
+define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Event'], function(
         DeveloperError,
+        defined,
         destroyObject,
         Event) {
     "use strict";
@@ -37,7 +38,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Event'], function(
      * @exception {DeveloperError} dataSource is required.
      */
     DataSourceCollection.prototype.add = function(dataSource) {
-        if (typeof dataSource === 'undefined') {
+        if (!defined(dataSource)) {
             throw new DeveloperError('dataSource is required.');
         }
         this._dataSources.push(dataSource);
@@ -122,7 +123,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Event'], function(
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      */
     DataSourceCollection.prototype.get = function(index) {
-        if (typeof index === 'undefined') {
+        if (!defined(index)) {
             throw new DeveloperError('index is required.');
         }
 
@@ -148,7 +149,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Event'], function(
      *
      * @memberof DataSourceCollection
      *
-     * @return {Boolean} true if this object was destroyed; otherwise, false.
+     * @returns {Boolean} true if this object was destroyed; otherwise, false.
      *
      * @see DataSourceCollection#destroy
      */
@@ -167,7 +168,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Event'], function(
      *
      * @memberof DataSourceCollection
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *

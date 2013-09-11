@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/destroyObject', 'Core/DeveloperError', 'Scene/CustomSensorVolume', 'Scene/RectangularPyramidSensorVolume', 'Scene/SceneMode'], function(
+define(['Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Scene/CustomSensorVolume', 'Scene/RectangularPyramidSensorVolume', 'Scene/SceneMode'], function(
+        defined,
         destroyObject,
         DeveloperError,
         CustomSensorVolume,
@@ -105,7 +106,7 @@ define(['Core/destroyObject', 'Core/DeveloperError', 'Scene/CustomSensorVolume',
      * @see SensorVolumeCollection#getLength
      */
     SensorVolumeCollection.prototype.get = function(index) {
-        if (typeof index === 'undefined') {
+        if (!defined(index)) {
             throw new DeveloperError('index is required.');
         }
 

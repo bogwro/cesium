@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Math', 'Core/Event', 'Core/ScreenSpaceEventHandler', 'Core/ScreenSpaceEventType', 'Core/Ellipsoid', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/Matrix4', 'ThirdParty/Tween', 'Scene/OrthographicFrustum', 'Scene/PerspectiveFrustum', 'Scene/SceneMode'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Math', 'Core/Event', 'Core/ScreenSpaceEventHandler', 'Core/ScreenSpaceEventType', 'Core/Ellipsoid', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/Matrix4', 'ThirdParty/Tween', 'Scene/OrthographicFrustum', 'Scene/PerspectiveFrustum', 'Scene/SceneMode'], function(
         defaultValue,
+        defined,
         destroyObject,
         DeveloperError,
         CesiumMath,
@@ -33,7 +34,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * @see SceneMode
      */
     var SceneTransitioner = function(scene, ellipsoid) {
-        if (typeof scene === 'undefined') {
+        if (!defined(scene)) {
             throw new DeveloperError('scene is required.');
         }
 
@@ -154,7 +155,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * @memberof SceneTransitioner
      */
     SceneTransitioner.prototype.to2D = function() {
-        if (typeof this._completeMorph !== 'undefined') {
+        if (defined(this._completeMorph)) {
             this._completeMorph();
         }
 
@@ -170,7 +171,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * @memberof SceneTransitioner
      */
     SceneTransitioner.prototype.toColumbusView = function() {
-        if (typeof this._completeMorph !== 'undefined') {
+        if (defined(this._completeMorph)) {
             this._completeMorph();
         }
 
@@ -188,7 +189,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * @memberof SceneTransitioner
      */
     SceneTransitioner.prototype.to3D = function() {
-        if (typeof this._completeMorph !== 'undefined') {
+        if (defined(this._completeMorph)) {
             this._completeMorph();
         }
 
@@ -208,7 +209,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * @exception {DeveloperError} completeMorph can only be called during a transition.
      */
     SceneTransitioner.prototype.completeMorph = function() {
-        if (typeof this._completeMorph === 'undefined') {
+        if (!defined(this._completeMorph)) {
             throw new DeveloperError('completeMorph can only be called while morphing');
         }
         this._completeMorph();
@@ -219,7 +220,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * @memberof SceneTransitioner
      */
     SceneTransitioner.prototype.morphTo2D = function() {
-        if (typeof this._completeMorph !== 'undefined') {
+        if (defined(this._completeMorph)) {
             this._completeMorph();
         }
 
@@ -247,7 +248,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * @memberof SceneTransitioner
      */
     SceneTransitioner.prototype.morphToColumbusView = function() {
-        if (typeof this._completeMorph !== 'undefined') {
+        if (defined(this._completeMorph)) {
             this._completeMorph();
         }
 
@@ -275,7 +276,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * @memberof SceneTransitioner
      */
     SceneTransitioner.prototype.morphTo3D = function() {
-        if (typeof this._completeMorph !== 'undefined') {
+        if (defined(this._completeMorph)) {
             this._completeMorph();
         }
 
@@ -305,7 +306,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.
      * @memberof SceneTransitioner
      *
-     * @return {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
      */
     SceneTransitioner.prototype.isDestroyed = function() {
         return false;
@@ -683,7 +684,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
             easingFunction : Tween.Easing.Quartic.Out
         };
 
-        if (typeof onComplete !== 'undefined') {
+        if (defined(onComplete)) {
             template.onComplete = function() {
                 onComplete(transitioner);
             };
@@ -745,7 +746,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
             camera.up = transitioner._camera3D.up.clone();
         }
 
-        var wasMorphing = typeof transitioner._completeMorph !== 'undefined';
+        var wasMorphing = defined(transitioner._completeMorph);
         transitioner._completeMorph = undefined;
         transitioner.onTransitionComplete.raiseEvent(transitioner, transitioner._previousMode, SceneMode.SCENE3D, wasMorphing);
     }
@@ -767,7 +768,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
         camera.direction = transitioner._camera2D.direction.clone();
         camera.up = transitioner._camera2D.up.clone();
 
-        var wasMorphing = typeof transitioner._completeMorph !== 'undefined';
+        var wasMorphing = defined(transitioner._completeMorph);
         transitioner._completeMorph = undefined;
         transitioner.onTransitionComplete.raiseEvent(transitioner, transitioner._previousMode, SceneMode.SCENE2D, wasMorphing);
     }
@@ -793,7 +794,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
             camera.right = camera.direction.cross(camera.up);
         }
 
-        var wasMorphing = typeof transitioner._completeMorph !== 'undefined';
+        var wasMorphing = defined(transitioner._completeMorph);
         transitioner._completeMorph = undefined;
         transitioner.onTransitionComplete.raiseEvent(transitioner, transitioner._previousMode, SceneMode.COLUMBUS_VIEW, wasMorphing);
     }

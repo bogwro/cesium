@@ -1,6 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/Cartesian2', 'Scene/SceneMode'], function(
-        DeveloperError,
+define(['Core/defined', 'Core/Cartesian2', 'Scene/SceneMode'], function(
+        defined,
         Cartesian2,
         SceneMode) {
     "use strict";
@@ -15,10 +15,6 @@ define(['Core/DeveloperError', 'Core/Cartesian2', 'Scene/SceneMode'], function(
      * @constructor
      */
     var FrameState = function(creditDisplay) {
-        if (typeof creditDisplay === 'undefined') {
-            throw new DeveloperError('credit display is required');
-        }
-
         /**
          * The current mode of the scene.
          * @type {SceneMode}

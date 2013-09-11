@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/clone', 'ThirdParty/Tween', 'Core/defaultValue'], function(
+define(['Core/defined', 'Core/DeveloperError', 'Core/clone', 'ThirdParty/Tween', 'Core/defaultValue'], function(
+        defined,
         DeveloperError,
         clone,
         Tween,
@@ -26,7 +27,7 @@ define(['Core/DeveloperError', 'Core/clone', 'ThirdParty/Tween', 'Core/defaultVa
     AnimationCollection.prototype.add = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
 
-        if (typeof options.duration === 'undefined') {
+        if (!defined(options.duration)) {
             throw new DeveloperError('duration is required.');
         }
 
@@ -36,6 +37,9 @@ define(['Core/DeveloperError', 'Core/clone', 'ThirdParty/Tween', 'Core/defaultVa
 
             var value = clone(options.startValue);
             var tween = new Tween.Tween(value);
+            // set the callback on the instance to avoid extra bookkeeping
+            // or patching Tween.js
+            tween.onCancel = options.onCancel;
             tween.to(options.stopValue, options.duration);
             tween.delay(delayDuration);
             tween.easing(easingFunction);
@@ -63,7 +67,7 @@ define(['Core/DeveloperError', 'Core/clone', 'ThirdParty/Tween', 'Core/defaultVa
      * @exception {DeveloperError} material has no properties with alpha components.
      */
     AnimationCollection.prototype.addAlpha = function(material, start, stop, options) {
-        if (typeof material === 'undefined') {
+        if (!defined(material)) {
             throw new DeveloperError('material is required.');
         }
 
@@ -71,8 +75,8 @@ define(['Core/DeveloperError', 'Core/clone', 'ThirdParty/Tween', 'Core/defaultVa
 
         for ( var property in material.uniforms) {
             if (material.uniforms.hasOwnProperty(property) &&
-                typeof material.uniforms[property] !== 'undefined' &&
-                typeof material.uniforms[property].alpha !== 'undefined') {
+                defined(material.uniforms[property]) &&
+                defined(material.uniforms[property].alpha)) {
                 properties.push(property);
             }
         }
@@ -122,15 +126,15 @@ define(['Core/DeveloperError', 'Core/clone', 'ThirdParty/Tween', 'Core/defaultVa
      * @exception {DeveloperError} pbject must have the specified property.
      */
     AnimationCollection.prototype.addProperty = function(object, property, start, stop, options) {
-        if (typeof object === 'undefined') {
+        if (!defined(object)) {
             throw new DeveloperError('object is required.');
         }
 
-        if (typeof property === 'undefined') {
+        if (!defined(property)) {
             throw new DeveloperError('property is required.');
         }
 
-        if (typeof object[property] === 'undefined') {
+        if (!defined(object[property])) {
             throw new DeveloperError('object must have the specified property.');
         }
 
@@ -167,11 +171,11 @@ define(['Core/DeveloperError', 'Core/clone', 'ThirdParty/Tween', 'Core/defaultVa
      * @exception {DeveloperError} material must have an offset property.
      */
     AnimationCollection.prototype.addOffsetIncrement = function(material, options) {
-        if (typeof material === 'undefined') {
+        if (!defined(material)) {
             throw new DeveloperError('material is required.');
         }
 
-        if (typeof material.uniforms.offset === 'undefined') {
+        if (!defined(material.uniforms.offset)) {
             throw new DeveloperError('material must have an offset property.');
         }
 
@@ -211,7 +215,7 @@ define(['Core/DeveloperError', 'Core/clone', 'ThirdParty/Tween', 'Core/defaultVa
      * @memberof AnimationCollection
      */
     AnimationCollection.prototype.remove = function(animation) {
-        if (typeof animation !== 'undefined') {
+        if (defined(animation)) {
             var count = Tween.getAll().length;
             Tween.remove(animation._tween);
 
@@ -226,6 +230,15 @@ define(['Core/DeveloperError', 'Core/clone', 'ThirdParty/Tween', 'Core/defaultVa
      * @memberof AnimationCollection
      */
     AnimationCollection.prototype.removeAll = function() {
+        var tweens = Tween.getAll();
+        var n = tweens.length;
+        var i = -1;
+        while (++i < n) {
+            var t = tweens[i];
+            if (typeof t.onCancel === 'function') {
+                t.onCancel();
+            }
+        }
         Tween.removeAll();
     };
 
@@ -234,7 +247,7 @@ define(['Core/DeveloperError', 'Core/clone', 'ThirdParty/Tween', 'Core/defaultVa
      * @memberof Animationcollection
      */
     AnimationCollection.prototype.contains = function(animation) {
-        if (typeof animation !== 'undefined') {
+        if (defined(animation)) {
             return Tween.getAll().indexOf(animation._tween) !== -1;
         }
         return false;

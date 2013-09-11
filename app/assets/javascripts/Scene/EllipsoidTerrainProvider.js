@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/Ellipsoid', 'Core/Event', 'Scene/HeightmapTerrainData', 'Scene/TerrainProvider', 'Scene/GeographicTilingScheme'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/Ellipsoid', 'Core/Event', 'Scene/HeightmapTerrainData', 'Scene/TerrainProvider', 'Scene/GeographicTilingScheme'], function(
         defaultValue,
+        defined,
         Ellipsoid,
         Event,
         HeightmapTerrainData,
@@ -28,7 +29,7 @@ define(['Core/defaultValue', 'Core/Ellipsoid', 'Core/Event', 'Scene/HeightmapTer
         description = defaultValue(description, {});
 
         this._tilingScheme = description.tilingScheme;
-        if (typeof this._tilingScheme === 'undefined') {
+        if (!defined(this._tilingScheme)) {
             this._tilingScheme = new GeographicTilingScheme({
                 ellipsoid : defaultValue(description.ellipsoid, Ellipsoid.WGS84)
             });

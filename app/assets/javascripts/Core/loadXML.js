@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/RequestErrorEvent', 'ThirdParty/when'], function(
+define(['Core/defined', 'Core/DeveloperError', 'Core/RequestErrorEvent', 'ThirdParty/when'], function(
+        defined,
         DeveloperError,
         RequestErrorEvent,
         when) {
@@ -24,7 +25,7 @@ define(['Core/DeveloperError', 'Core/RequestErrorEvent', 'ThirdParty/when'], fun
      * @see <a href='http://wiki.commonjs.org/wiki/Promises/A'>CommonJS Promises/A</a>
      */
     var loadXML = function(url, headers) {
-        if (typeof url === 'undefined') {
+        if (!defined(url)) {
             throw new DeveloperError('url is required.');
         }
 
@@ -43,7 +44,7 @@ define(['Core/DeveloperError', 'Core/RequestErrorEvent', 'ThirdParty/when'], fun
         xhr.overrideMimeType('text/xml');
         xhr.open("GET", url, true);
 
-        if (typeof headers !== 'undefined') {
+        if (defined(headers)) {
             for ( var key in headers) {
                 if (headers.hasOwnProperty(key)) {
                     xhr.setRequestHeader(key, headers[key]);

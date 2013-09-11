@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/loadImage', 'ThirdParty/when'], function(
+define(['Core/defined', 'Core/DeveloperError', 'Core/loadImage', 'ThirdParty/when'], function(
+        defined,
         DeveloperError,
         loadImage,
         when) {
@@ -40,17 +41,17 @@ define(['Core/DeveloperError', 'Core/loadImage', 'ThirdParty/when'], function(
      * @see <a href='http://wiki.commonjs.org/wiki/Promises/A'>CommonJS Promises/A</a>
      */
     var loadCubeMap = function(context, urls, allowCrossOrigin) {
-        if (typeof context === 'undefined') {
+        if (!defined(context)) {
             throw new DeveloperError('context is required.');
         }
 
-        if ((typeof urls === 'undefined') ||
-            (typeof urls.positiveX === 'undefined') ||
-            (typeof urls.negativeX === 'undefined') ||
-            (typeof urls.positiveY === 'undefined') ||
-            (typeof urls.negativeY === 'undefined') ||
-            (typeof urls.positiveZ === 'undefined') ||
-            (typeof urls.negativeZ === 'undefined')) {
+        if ((!defined(urls)) ||
+            (!defined(urls.positiveX)) ||
+            (!defined(urls.negativeX)) ||
+            (!defined(urls.positiveY)) ||
+            (!defined(urls.negativeY)) ||
+            (!defined(urls.positiveZ)) ||
+            (!defined(urls.negativeZ))) {
             throw new DeveloperError('urls is required and must have positiveX, negativeX, positiveY, negativeY, positiveZ, and negativeZ properties.');
         }
 

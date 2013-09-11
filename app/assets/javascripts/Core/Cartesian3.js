@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freezeObject'], function(
         defaultValue,
+        defined,
         DeveloperError,
         freezeObject) {
     "use strict";
@@ -16,6 +17,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @see Cartesian2
      * @see Cartesian4
+     * @see Packable
      */
     var Cartesian3 = function(x, y, z) {
         /**
@@ -46,15 +48,15 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Spherical} spherical The Spherical to be converted to Cartesian3.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} spherical is required.
      */
     Cartesian3.fromSpherical = function(spherical, result) {
-        if (typeof spherical === 'undefined') {
+        if (!defined(spherical)) {
             throw new DeveloperError('spherical is required');
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             result = new Cartesian3();
         }
         var clock = spherical.clock;
@@ -75,7 +77,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @param {Number} [offset=0] The offset into the array of the first element, which corresponds to the x component.
      * @param {Cartesian3} [result] The object onto which to store the result.
      *
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} values is required.
      * @exception {DeveloperError} offset + 3 is greater than the length of the array.
@@ -90,7 +92,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * var p2 = Cartesian3.fromArray(v2, 2);
      */
     Cartesian3.fromArray = function(values, offset, result) {
-        if (typeof values === 'undefined') {
+        if (!defined(values)) {
             throw new DeveloperError('values is required.');
         }
 
@@ -100,7 +102,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
 
         offset = defaultValue(offset, 0);
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             result = new Cartesian3();
         }
 
@@ -118,10 +120,10 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @param {Number} y The y coordinate.
      * @param {Number} z The z coordinate.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      */
     Cartesian3.fromElements = function(x, y, z, result) {
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(x, y, z);
         }
 
@@ -137,14 +139,14 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian3} cartesian The Cartesian to duplicate.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided. (Returns undefined if cartesian is undefined)
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided. (Returns undefined if cartesian is undefined)
      */
     Cartesian3.clone = function(cartesian, result) {
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             return undefined;
         }
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(cartesian.x, cartesian.y, cartesian.z);
         }
 
@@ -161,23 +163,82 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian4} cartesian The Cartesian4 instance to create a Cartesian3 instance from.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} cartesian is required.
      */
     Cartesian3.fromCartesian4 = Cartesian3.clone;
 
     /**
+     * The number of elements used to pack the object into an array.
+     * @Type {Number}
+     */
+    Cartesian3.packedLength = 3;
+
+    /**
+     * Stores the provided instance into the provided array.
+     * @memberof Cartesian3
+     *
+     * @param {Cartesian3} value The value to pack.
+     * @param {Array} array The array to pack into.
+     * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     *
+     * @exception {DeveloperError} value is required.
+     * @exception {DeveloperError} array is required.
+     */
+    Cartesian3.pack = function(value, array, startingIndex) {
+        if (!defined(value)) {
+            throw new DeveloperError('value is required');
+        }
+
+        if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+
+        startingIndex = defaultValue(startingIndex, 0);
+
+        array[startingIndex++] = value.x;
+        array[startingIndex++] = value.y;
+        array[startingIndex] = value.z;
+    };
+
+    /**
+     * Retrieves an instance from a packed array.
+     * @memberof Cartesian3
+     *
+     * @param {Array} array The packed array.
+     * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
+     * @param {Cartesian3} [result] The object into which to store the result.
+     *
+     * @exception {DeveloperError} array is required.
+     */
+    Cartesian3.unpack = function(array, startingIndex, result) {
+        if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+
+        startingIndex = defaultValue(startingIndex, 0);
+
+        if (!defined(result)) {
+            result = new Cartesian3();
+        }
+        result.x = array[startingIndex++];
+        result.y = array[startingIndex++];
+        result.z = array[startingIndex];
+        return result;
+    };
+
+    /**
      * Computes the value of the maximum component for the supplied Cartesian.
      * @memberof Cartesian3
      *
      * @param {Cartesian3} The cartesian to use.
-     * @return {Number} The value of the maximum component.
+     * @returns {Number} The value of the maximum component.
      *
      * @exception {DeveloperError} cartesian is required.
      */
     Cartesian3.getMaximumComponent = function(cartesian) {
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
         return Math.max(cartesian.x, cartesian.y, cartesian.z);
@@ -188,12 +249,12 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @memberof Cartesian3
      *
      * @param {Cartesian3} The cartesian to use.
-     * @return {Number} The value of the minimum component.
+     * @returns {Number} The value of the minimum component.
      *
      * @exception {DeveloperError} cartesian is required.
      */
     Cartesian3.getMinimumComponent = function(cartesian) {
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
         return Math.min(cartesian.x, cartesian.y, cartesian.z);
@@ -204,12 +265,12 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @memberof Cartesian3
      *
      * @param {Cartesian3} cartesian The Cartesian instance whose squared magnitude is to be computed.
-     * @return {Number} The squared magnitude.
+     * @returns {Number} The squared magnitude.
      *
      * @exception {DeveloperError} cartesian is required.
      */
     Cartesian3.magnitudeSquared = function(cartesian) {
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
         return cartesian.x * cartesian.x + cartesian.y * cartesian.y + cartesian.z * cartesian.z;
@@ -220,7 +281,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @memberof Cartesian3
      *
      * @param {Cartesian3} cartesian The Cartesian instance whose magnitude is to be computed.
-     * @return {Number} The magnitude.
+     * @returns {Number} The magnitude.
      *
      * @exception {DeveloperError} cartesian is required.
      */
@@ -237,7 +298,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @param {Cartesian3} left The first point to compute the distance from.
      * @param {Cartesian3} right The second point to compute the distance to.
      *
-     * @return {Number} The distance between two points.
+     * @returns {Number} The distance between two points.
      *
      * @exception {DeveloperError} left and right are required.
      *
@@ -246,7 +307,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * var d = Cartesian3.distance(new Cartesian3(1.0, 0.0, 0.0), new Cartesian3(2.0, 0.0, 0.0));
      */
     Cartesian3.distance = function(left, right) {
-        if ((typeof left === 'undefined') || (typeof right === 'undefined')) {
+        if (!defined(left) || !defined(right)) {
             throw new DeveloperError('left and right are required.');
         }
 
@@ -260,16 +321,16 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian3} cartesian The Cartesian to be normalized.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} cartesian is required.
      */
     Cartesian3.normalize = function(cartesian, result) {
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
         var magnitude = Cartesian3.magnitude(cartesian);
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(cartesian.x / magnitude, cartesian.y / magnitude, cartesian.z / magnitude);
         }
         result.x = cartesian.x / magnitude;
@@ -284,16 +345,16 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian3} left The first Cartesian.
      * @param {Cartesian3} right The second Cartesian.
-     * @return {Number} The dot product.
+     * @returns {Number} The dot product.
      *
      * @exception {DeveloperError} left is required.
      * @exception {DeveloperError} right is required.
      */
     Cartesian3.dot = function(left, right) {
-        if (typeof left === 'undefined') {
+        if (!defined(left)) {
             throw new DeveloperError('left is required');
         }
-        if (typeof right === 'undefined') {
+        if (!defined(right)) {
             throw new DeveloperError('right is required');
         }
         return left.x * right.x + left.y * right.y + left.z * right.z;
@@ -306,19 +367,19 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @param {Cartesian3} left The first Cartesian.
      * @param {Cartesian3} right The second Cartesian.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} left is required.
      * @exception {DeveloperError} right is required.
      */
     Cartesian3.multiplyComponents = function(left, right, result) {
-        if (typeof left === 'undefined') {
+        if (!defined(left)) {
             throw new DeveloperError('left is required');
         }
-        if (typeof right === 'undefined') {
+        if (!defined(right)) {
             throw new DeveloperError('right is required');
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(left.x * right.x, left.y * right.y, left.z * right.z);
         }
         result.x = left.x * right.x;
@@ -334,19 +395,19 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @param {Cartesian3} left The first Cartesian.
      * @param {Cartesian3} right The second Cartesian.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} left is required.
      * @exception {DeveloperError} right is required.
      */
     Cartesian3.add = function(left, right, result) {
-        if (typeof left === 'undefined') {
+        if (!defined(left)) {
             throw new DeveloperError('left is required');
         }
-        if (typeof right === 'undefined') {
+        if (!defined(right)) {
             throw new DeveloperError('right is required');
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(left.x + right.x, left.y + right.y, left.z + right.z);
         }
         result.x = left.x + right.x;
@@ -362,19 +423,19 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @param {Cartesian3} left The first Cartesian.
      * @param {Cartesian3} right The second Cartesian.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} left is required.
      * @exception {DeveloperError} right is required.
      */
     Cartesian3.subtract = function(left, right, result) {
-        if (typeof left === 'undefined') {
+        if (!defined(left)) {
             throw new DeveloperError('left is required');
         }
-        if (typeof right === 'undefined') {
+        if (!defined(right)) {
             throw new DeveloperError('right is required');
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(left.x - right.x, left.y - right.y, left.z - right.z);
         }
         result.x = left.x - right.x;
@@ -390,19 +451,19 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @param {Cartesian3} cartesian The Cartesian to be scaled.
      * @param {Number} scalar The scalar to multiply with.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} cartesian is required.
      * @exception {DeveloperError} scalar is required and must be a number.
      */
     Cartesian3.multiplyByScalar = function(cartesian, scalar, result) {
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
         if (typeof scalar !== 'number') {
             throw new DeveloperError('scalar is required and must be a number.');
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(cartesian.x * scalar,  cartesian.y * scalar,  cartesian.z * scalar);
         }
         result.x = cartesian.x * scalar;
@@ -418,19 +479,19 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @param {Cartesian3} cartesian The Cartesian to be divided.
      * @param {Number} scalar The scalar to divide by.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} cartesian is required.
      * @exception {DeveloperError} scalar is required and must be a number.
      */
     Cartesian3.divideByScalar = function(cartesian, scalar, result) {
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
         if (typeof scalar !== 'number') {
             throw new DeveloperError('scalar is required and must be a number.');
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(cartesian.x / scalar, cartesian.y / scalar, cartesian.z / scalar);
         }
         result.x = cartesian.x / scalar;
@@ -445,15 +506,15 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian3} cartesian The Cartesian to be negated.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} cartesian is required.
      */
     Cartesian3.negate = function(cartesian, result) {
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(-cartesian.x, -cartesian.y, -cartesian.z);
         }
         result.x = -cartesian.x;
@@ -468,15 +529,15 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian3} cartesian The Cartesian whose absolute value is to be computed.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} cartesian is required.
      */
     Cartesian3.abs = function(cartesian, result) {
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(Math.abs(cartesian.x), Math.abs(cartesian.y), Math.abs(cartesian.z));
         }
         result.x = Math.abs(cartesian.x);
@@ -494,17 +555,17 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @param end The value corresponding to t at 1.0.
      * @param t The point along t at which to interpolate.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} start is required.
      * @exception {DeveloperError} end is required.
      * @exception {DeveloperError} t is required and must be a number.
      */
     Cartesian3.lerp = function(start, end, t, result) {
-        if (typeof start === 'undefined') {
+        if (!defined(start)) {
             throw new DeveloperError('start is required.');
         }
-        if (typeof end === 'undefined') {
+        if (!defined(end)) {
             throw new DeveloperError('end is required.');
         }
         if (typeof t !== 'number') {
@@ -523,16 +584,16 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian3} left The first Cartesian.
      * @param {Cartesian3} right The second Cartesian.
-     * @return {Number} The angle between the Cartesians.
+     * @returns {Number} The angle between the Cartesians.
      *
      * @exception {DeveloperError} left is required.
      * @exception {DeveloperError} right is required.
      */
     Cartesian3.angleBetween = function(left, right) {
-        if (typeof left === 'undefined') {
+        if (!defined(left)) {
             throw new DeveloperError('left is required');
         }
-        if (typeof right === 'undefined') {
+        if (!defined(right)) {
             throw new DeveloperError('right is required');
         }
         Cartesian3.normalize(left, angleBetweenScratch);
@@ -549,12 +610,12 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian3} cartesian The Cartesian on which to find the most orthogonal axis.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The most orthogonal axis.
+     * @returns {Cartesian3} The most orthogonal axis.
      *
      * @exception {DeveloperError} cartesian is required.
      */
     Cartesian3.mostOrthogonalAxis = function(cartesian, result) {
-        if (typeof cartesian === 'undefined') {
+        if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required.');
         }
 
@@ -585,12 +646,12 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian3} [left] The first Cartesian.
      * @param {Cartesian3} [right] The second Cartesian.
-     * @return {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
      */
     Cartesian3.equals = function(left, right) {
         return (left === right) ||
-               ((typeof left !== 'undefined') &&
-                (typeof right !== 'undefined') &&
+               ((defined(left)) &&
+                (defined(right)) &&
                 (left.x === right.x) &&
                 (left.y === right.y) &&
                 (left.z === right.z));
@@ -605,7 +666,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @param {Cartesian3} [left] The first Cartesian.
      * @param {Cartesian3} [right] The second Cartesian.
      * @param {Number} epsilon The epsilon to use for equality testing.
-     * @return {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
      *
      * @exception {DeveloperError} epsilon is required and must be a number.
      */
@@ -614,8 +675,8 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
             throw new DeveloperError('epsilon is required and must be a number.');
         }
         return (left === right) ||
-               ((typeof left !== 'undefined') &&
-                (typeof right !== 'undefined') &&
+               ((defined(left)) &&
+                (defined(right)) &&
                 (Math.abs(left.x - right.x) <= epsilon) &&
                 (Math.abs(left.y - right.y) <= epsilon) &&
                 (Math.abs(left.z - right.z) <= epsilon));
@@ -628,16 +689,16 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @param {Cartesian3} left The first Cartesian.
      * @param {Cartesian3} right The second Cartesian.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The cross product.
+     * @returns {Cartesian3} The cross product.
      *
      * @exception {DeveloperError} left is required.
      * @exception {DeveloperError} right is required.
      */
     Cartesian3.cross = function(left, right, result) {
-        if (typeof left === 'undefined') {
+        if (!defined(left)) {
             throw new DeveloperError('left is required');
         }
-        if (typeof right === 'undefined') {
+        if (!defined(right)) {
             throw new DeveloperError('right is required');
         }
 
@@ -652,7 +713,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
         var y = leftZ * rightX - leftX * rightZ;
         var z = leftX * rightY - leftY * rightX;
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Cartesian3(x, y, z);
         }
         result.x = x;
@@ -689,7 +750,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * Computes the value of the maximum component for this Cartesian.
      * @memberof Cartesian3
      *
-     * @return {Number} The value of the maximum component.
+     * @returns {Number} The value of the maximum component.
      */
     Cartesian3.prototype.getMaximumComponent = function() {
         return Cartesian3.getMaximumComponent(this);
@@ -699,7 +760,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * Computes the value of the minimum component for this Cartesian.
      * @memberof Cartesian3
      *
-     * @return {Number} The value of the minimum component.
+     * @returns {Number} The value of the minimum component.
      */
     Cartesian3.prototype.getMinimumComponent = function() {
         return Cartesian3.getMinimumComponent(this);
@@ -710,7 +771,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @memberof Cartesian3
      *
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      */
     Cartesian3.prototype.clone = function(result) {
         return Cartesian3.clone(this, result);
@@ -720,7 +781,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * Computes this Cartesian's squared magnitude.
      * @memberof Cartesian3
      *
-     * @return {Number} The squared magnitude.
+     * @returns {Number} The squared magnitude.
      */
     Cartesian3.prototype.magnitudeSquared = function() {
         return Cartesian3.magnitudeSquared(this);
@@ -730,7 +791,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * Computes this Cartesian's magnitude (length).
      * @memberof Cartesian3
      *
-     * @return {Number} The magnitude.
+     * @returns {Number} The magnitude.
      */
     Cartesian3.prototype.magnitude = function() {
         return Cartesian3.magnitude(this);
@@ -741,7 +802,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @memberof Cartesian3
      *
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      */
     Cartesian3.prototype.normalize = function(result) {
         return Cartesian3.normalize(this, result);
@@ -752,7 +813,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @memberof Cartesian3
      *
      * @param {Cartesian3} right The right hand side Cartesian.
-     * @return {Number} The dot product.
+     * @returns {Number} The dot product.
      *
      * @exception {DeveloperError} right is required.
      */
@@ -766,7 +827,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian3} right The right hand side Cartesian.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} right is required.
      */
@@ -780,7 +841,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian3} right The right hand side Cartesian.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} right is required.
      */
@@ -794,7 +855,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian3} right The right hand side Cartesian.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} right is required.
      */
@@ -808,7 +869,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Number} scalar The scalar to multiply with.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} scalar is required and must be a number.
      */
@@ -822,7 +883,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Number} scalar The scalar to divide by.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} scalar is required and must be a number.
      */
@@ -835,7 +896,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @memberof Cartesian3
      *
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      */
     Cartesian3.prototype.negate = function(result) {
         return Cartesian3.negate(this, result);
@@ -846,7 +907,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @memberof Cartesian3
      *
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      */
     Cartesian3.prototype.abs = function(result) {
         return Cartesian3.abs(this, result);
@@ -860,7 +921,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @param end The value corresponding to t at 1.0.
      * @param t The point along t at which to interpolate.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
      *
      * @exception {DeveloperError} end is required.
      * @exception {DeveloperError} t is required and must be a number.
@@ -874,7 +935,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @memberof Cartesian3
      *
      * @param {Cartesian3} right The right hand side Cartesian.
-     * @return {Number} The angle between the Cartesians.
+     * @returns {Number} The angle between the Cartesians.
      *
      * @exception {DeveloperError} left is required.
      * @exception {DeveloperError} right is required.
@@ -888,7 +949,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @memberof Cartesian3
      *
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The most orthogonal axis.
+     * @returns {Cartesian3} The most orthogonal axis.
      */
     Cartesian3.prototype.mostOrthogonalAxis = function(result) {
         return Cartesian3.mostOrthogonalAxis(this, result);
@@ -900,7 +961,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * @memberof Cartesian3
      *
      * @param {Cartesian3} [right] The right hand side Cartesian.
-     * @return {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
      */
     Cartesian3.prototype.equals = function(right) {
         return Cartesian3.equals(this, right);
@@ -914,7 +975,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian3} [right] The right hand side Cartesian.
      * @param {Number} epsilon The epsilon to use for equality testing.
-     * @return {Boolean} <code>true</code> if they are within the provided epsilon, <code>false</code> otherwise.
+     * @returns {Boolean} <code>true</code> if they are within the provided epsilon, <code>false</code> otherwise.
      *
      * @exception {DeveloperError} epsilon is required and must be a number.
      */
@@ -926,7 +987,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      * Creates a string representing this Cartesian in the format '(x, y, z)'.
      * @memberof Cartesian3
      *
-     * @return {String} A string representing this Cartesian in the format '(x, y, z)'.
+     * @returns {String} A string representing this Cartesian in the format '(x, y, z)'.
      */
     Cartesian3.prototype.toString = function() {
         return '(' + this.x + ', ' + this.y + ', ' + this.z + ')';
@@ -938,7 +999,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/freezeObject'], functi
      *
      * @param {Cartesian3} right The right hand side Cartesian.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     * @return {Cartesian3} The cross product.
+     * @returns {Cartesian3} The cross product.
      *
      * @exception {DeveloperError} right is required.
      */

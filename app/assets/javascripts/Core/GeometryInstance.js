@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Geometry', 'Core/GeometryInstanceAttribute'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Geometry', 'Core/GeometryInstanceAttribute'], function(
         defaultValue,
+        defined,
         DeveloperError,
         Matrix4,
         Geometry,
@@ -55,7 +56,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Geomet
     var GeometryInstance = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
 
-        if (typeof options.geometry === 'undefined') {
+        if (!defined(options.geometry)) {
             throw new DeveloperError('options.geometry is required.');
         }
 

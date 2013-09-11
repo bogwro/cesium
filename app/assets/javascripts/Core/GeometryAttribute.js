@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
         defaultValue,
+        defined,
         DeveloperError) {
     "use strict";
 
@@ -43,11 +44,11 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
     var GeometryAttribute = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
 
-        if (typeof options.componentDatatype === 'undefined') {
+        if (!defined(options.componentDatatype)) {
             throw new DeveloperError('options.componentDatatype is required.');
         }
 
-        if (typeof options.componentsPerAttribute === 'undefined') {
+        if (!defined(options.componentsPerAttribute)) {
             throw new DeveloperError('options.componentsPerAttribute is required.');
         }
 
@@ -55,7 +56,7 @@ define(['Core/defaultValue', 'Core/DeveloperError'], function(
             throw new DeveloperError('options.componentsPerAttribute must be between 1 and 4.');
         }
 
-        if (typeof options.values === 'undefined') {
+        if (!defined(options.values)) {
             throw new DeveloperError('options.values is required.');
         }
 

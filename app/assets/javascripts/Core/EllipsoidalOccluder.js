@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/BoundingSphere'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/BoundingSphere'], function(
         defaultValue,
+        defined,
         DeveloperError,
         Cartesian3,
         BoundingSphere) {
@@ -30,7 +31,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Bou
      * var occluder = new EllipsoidalOccluder(occluderEllipsoid, cameraPosition);
      */
     var EllipsoidalOccluder = function(ellipsoid, cameraPosition) {
-        if (typeof ellipsoid === 'undefined') {
+        if (!defined(ellipsoid)) {
             throw new DeveloperError('ellipsoid is required.');
         }
 
@@ -40,7 +41,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Bou
         this._distanceToLimbInScaledSpaceSquared = 0.0;
 
         // setCameraPosition fills in the above values
-        if (typeof cameraPosition !== 'undefined') {
+        if (defined(cameraPosition)) {
             this.setCameraPosition(cameraPosition);
         }
     };
@@ -50,7 +51,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Bou
      *
      * @memberof EllipsoidalOccluder
      *
-     * @return {Ellipsoid} The ellipsoid.
+     * @returns {Ellipsoid} The ellipsoid.
      */
     EllipsoidalOccluder.prototype.getEllipsoid = function() {
         return this._ellipsoid;
@@ -94,7 +95,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Bou
      *
      * @param {Cartesian3} occludee The point to test for visibility.
      *
-     * @return {boolean} <code>true</code> if the occludee is visible; otherwise <code>false</code>.
+     * @returns {boolean} <code>true</code> if the occludee is visible; otherwise <code>false</code>.
      *
      * @example
      * var cameraPosition = new Cartesian3(0, 0, 2.5);
@@ -118,7 +119,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Bou
      *
      * @param {Cartesian3} occludeeScaledSpacePosition The point to test for visibility, represented in the scaled space.
      *
-     * @return {boolean} <code>true</code> if the occludee is visible; otherwise <code>false</code>.
+     * @returns {boolean} <code>true</code> if the occludee is visible; otherwise <code>false</code>.
      *
      * @example
      * var cameraPosition = new Cartesian3(0, 0, 2.5);
@@ -156,10 +157,10 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Bou
      * @returns {Cartesian3} The computed horizon culling point, expressed in the ellipsoid-scaled space.
      */
     EllipsoidalOccluder.prototype.computeHorizonCullingPoint = function(directionToPoint, positions, result) {
-        if (typeof directionToPoint === 'undefined') {
+        if (!defined(directionToPoint)) {
             throw new DeveloperError('directionToPoint is required');
         }
-        if (typeof positions === 'undefined') {
+        if (!defined(positions)) {
             throw new DeveloperError('positions is required');
         }
 
@@ -199,13 +200,13 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Bou
      * @returns {Cartesian3} The computed horizon culling point, expressed in the ellipsoid-scaled space.
      */
     EllipsoidalOccluder.prototype.computeHorizonCullingPointFromVertices = function(directionToPoint, vertices, stride, center, result) {
-        if (typeof directionToPoint === 'undefined') {
+        if (!defined(directionToPoint)) {
             throw new DeveloperError('directionToPoint is required');
         }
-        if (typeof vertices === 'undefined') {
+        if (!defined(vertices)) {
             throw new DeveloperError('vertices is required');
         }
-        if (typeof stride === 'undefined') {
+        if (!defined(stride)) {
             throw new DeveloperError('stride is required');
         }
 
@@ -244,7 +245,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Bou
      * @returns {Cartesian3} The computed horizon culling point, expressed in the ellipsoid-scaled space.
      */
     EllipsoidalOccluder.prototype.computeHorizonCullingPointFromExtent = function(extent, ellipsoid, result) {
-        if (typeof extent === 'undefined') {
+        if (!defined(extent)) {
             throw new DeveloperError('extent is required.');
         }
 

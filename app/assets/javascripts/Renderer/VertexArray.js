@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/ComponentDatatype'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Core/ComponentDatatype'], function(
         defaultValue,
+        defined,
         destroyObject,
         DeveloperError,
         ComponentDatatype) {
@@ -57,7 +58,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
             // Common case: vertex buffer for per-vertex data
             attr.vertexAttrib = function(gl) {
                 gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer._getBuffer());
-                gl.vertexAttribPointer(this.index, this.componentsPerAttribute, this.componentDatatype, this.normalize, this.strideInBytes, this.offsetInBytes);
+                gl.vertexAttribPointer(this.index, this.componentsPerAttribute, this.componentDatatype.value, this.normalize, this.strideInBytes, this.offsetInBytes);
                 gl.enableVertexAttribArray(this.index);
             };
 
@@ -104,7 +105,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
             }
         }
 
-        if (typeof indexBuffer !== 'undefined') {
+        if (defined(indexBuffer)) {
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer._getBuffer());
         }
     }
@@ -122,7 +123,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
     var VertexArray = function(gl, vertexArrayObject, attributes, indexBuffer) {
         var vaAttributes = [];
 
-        if (typeof attributes !== 'undefined') {
+        if (defined(attributes)) {
             for ( var i = 0; i < attributes.length; ++i) {
                 addAttribute(vaAttributes, attributes[i], i);
             }
@@ -167,7 +168,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      * @exception {DeveloperError} This vertex array was destroyed, i.e., destroy() was called.
      */
     VertexArray.prototype.getAttribute = function(index) {
-        if (typeof index === 'undefined') {
+        if (!defined(index)) {
             throw new DeveloperError('index is required.');
         }
 
@@ -190,7 +191,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      *
      * @memberof VertexArray
      *
-     * @return {Buffer} DOC_TBA.
+     * @returns {Buffer} DOC_TBA.
      * @exception {DeveloperError} This vertex array was destroyed, i.e., destroy() was called.
      */
     VertexArray.prototype.getIndexBuffer = function() {
@@ -198,7 +199,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
     };
 
     VertexArray.prototype._bind = function() {
-        if (typeof this._vao !== 'undefined') {
+        if (defined(this._vao)) {
             this._vaoExtension.bindVertexArrayOES(this._vao);
         } else {
             bind(this._gl, this._attributes, this._indexBuffer);
@@ -206,7 +207,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
     };
 
     VertexArray.prototype._unBind = function() {
-        if (typeof this._vao !== 'undefined') {
+        if (defined(this._vao)) {
             this._vaoExtension.bindVertexArrayOES(null);
         } else {
             var attributes = this._attributes;
@@ -247,7 +248,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      *
      * @memberof VertexArray
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
      * @see VertexArray#destroy
      */
@@ -271,7 +272,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
      *
      * @memberof VertexArray
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This vertex array was destroyed, i.e., destroy() was called.
      *
@@ -306,7 +307,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/
             indexBuffer.destroy();
         }
 
-        if (typeof this._vao !== 'undefined') {
+        if (defined(this._vao)) {
             this._vaoExtension.deleteVertexArrayOES(this._vao);
         }
 

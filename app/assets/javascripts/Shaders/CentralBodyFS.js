@@ -24,6 +24,16 @@ uniform sampler2D u_oceanNormalMap;\n\
 varying vec3 v_positionMC;\n\
 varying vec3 v_positionEC;\n\
 varying vec2 v_textureCoordinates;\n\
+float getLambertDiffuse(vec3 lightDirectionEC, vec3 normalEC)\n\
+{\n\
+return max(dot(lightDirectionEC, normalEC), 0.0);\n\
+}\n\
+float getSpecular(vec3 lightDirectionEC, vec3 toEyeEC, vec3 normalEC, float shininess)\n\
+{\n\
+vec3 toReflectedLight = reflect(-lightDirectionEC, normalEC);\n\
+float specular = max(dot(toReflectedLight, toEyeEC), 0.0);\n\
+return pow(specular, shininess);\n\
+}\n\
 vec3 sampleAndBlend(\n\
 vec3 previousColor,\n\
 sampler2D texture,\n\

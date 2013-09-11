@@ -1,7 +1,8 @@
 /*global define*/
-define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Matrix4', 'Core/GeometryPipeline', 'Core/VertexFormat', 'Core/PrimitiveType', 'Renderer/loadCubeMap', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Renderer/BlendingState', 'Scene/SceneMode', 'Shaders/SkyBoxVS', 'Shaders/SkyBoxFS'], function(
+define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Matrix4', 'Core/GeometryPipeline', 'Core/VertexFormat', 'Core/PrimitiveType', 'Renderer/loadCubeMap', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Renderer/BlendingState', 'Scene/SceneMode', 'Shaders/SkyBoxVS', 'Shaders/SkyBoxFS'], function(
         BoxGeometry,
         Cartesian3,
+        defined,
         destroyObject,
         DeveloperError,
         Matrix4,
@@ -45,13 +46,13 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/destroyObject', 'Core/Devel
      * @see Transforms.computeTemeToPseudoFixedMatrix
      */
     var SkyBox = function(sources) {
-        if ((typeof sources === 'undefined') ||
-            (typeof sources.positiveX === 'undefined') ||
-            (typeof sources.negativeX === 'undefined') ||
-            (typeof sources.positiveY === 'undefined') ||
-            (typeof sources.negativeY === 'undefined') ||
-            (typeof sources.positiveZ === 'undefined') ||
-            (typeof sources.negativeZ === 'undefined')) {
+        if ((!defined(sources)) ||
+            (!defined(sources.positiveX)) ||
+            (!defined(sources.negativeX)) ||
+            (!defined(sources.positiveY)) ||
+            (!defined(sources.negativeY)) ||
+            (!defined(sources.positiveZ)) ||
+            (!defined(sources.negativeZ))) {
             throw new DeveloperError('sources is required and must have positiveX, negativeX, positiveY, negativeY, positiveZ, and negativeZ properties.');
         }
 
@@ -86,7 +87,7 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/destroyObject', 'Core/Devel
      *
      * @memberof SkyBox
      *
-     * @return {Object} The sources used to create the cube map faces.
+     * @returns {Object} The sources used to create the cube map faces.
      */
     SkyBox.prototype.getSources = function() {
         return this._sources;
@@ -112,7 +113,7 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/destroyObject', 'Core/Devel
 
         var command = this._command;
 
-        if (typeof command.vertexArray === 'undefined') {
+        if (!defined(command.vertexArray)) {
             var sources = this._sources;
             var that = this;
 
@@ -133,10 +134,10 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/destroyObject', 'Core/Devel
                 }
             };
 
-            var geometry = BoxGeometry.fromDimensions({
+            var geometry = BoxGeometry.createGeometry(BoxGeometry.fromDimensions({
                 dimensions : new Cartesian3(2.0, 2.0, 2.0),
                 vertexFormat : VertexFormat.POSITION_ONLY
-            });
+            }));
             var attributeIndices = GeometryPipeline.createAttributeIndices(geometry);
 
             command.primitiveType = PrimitiveType.TRIANGLES;
@@ -152,7 +153,7 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/destroyObject', 'Core/Devel
             });
         }
 
-        if (typeof this._cubeMap === 'undefined') {
+        if (!defined(this._cubeMap)) {
             return undefined;
         }
 
@@ -167,7 +168,7 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/destroyObject', 'Core/Devel
      *
      * @memberof SkyBox
      *
-     * @return {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
      *
      * @see SkyBox#destroy
      */
@@ -185,7 +186,7 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/destroyObject', 'Core/Devel
      *
      * @memberof SkyBox
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *

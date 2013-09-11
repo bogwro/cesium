@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/loadImage', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Event', 'Core/Extent', 'Scene/Credit', 'Scene/GeographicTilingScheme', 'Scene/TileProviderError', 'ThirdParty/when'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/loadImage', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Event', 'Core/Extent', 'Scene/Credit', 'Scene/GeographicTilingScheme', 'Scene/TileProviderError', 'ThirdParty/when'], function(
         defaultValue,
+        defined,
         loadImage,
         writeTextToCanvas,
         DeveloperError,
@@ -36,7 +37,7 @@ define(['Core/defaultValue', 'Core/loadImage', 'Core/writeTextToCanvas', 'Core/D
         description = defaultValue(description, {});
 
         var url = description.url;
-        if (typeof url === 'undefined') {
+        if (!defined(url)) {
             throw new DeveloperError('url is required.');
         }
 
@@ -63,7 +64,7 @@ define(['Core/defaultValue', 'Core/loadImage', 'Core/writeTextToCanvas', 'Core/D
         this._ready = false;
 
         var imageUrl = url;
-        if (typeof proxy !== 'undefined') {
+        if (defined(proxy)) {
             imageUrl = proxy.getURL(imageUrl);
         }
 

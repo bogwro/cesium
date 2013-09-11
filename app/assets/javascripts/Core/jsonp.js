@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'ThirdParty/when'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/when'], function(
         defaultValue,
+        defined,
         DeveloperError,
         when) {
     "use strict";
@@ -32,7 +33,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'ThirdParty/when'], function
      * });
      */
     var jsonp = function(url, options) {
-        if (typeof url === 'undefined') {
+        if (!defined(url)) {
             throw new DeveloperError('url is required.');
         }
 
@@ -44,7 +45,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'ThirdParty/when'], function
         var functionName;
         do {
             functionName = 'jsonp' + Math.random().toString().substring(2, 8);
-        } while (typeof window[functionName] !== 'undefined');
+        } while (defined(window[functionName]));
 
         //assign a function with that name in the global scope
         window[functionName] = function(data) {
@@ -79,7 +80,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'ThirdParty/when'], function
         }
 
         var proxy = options.proxy;
-        if (typeof proxy !== 'undefined') {
+        if (defined(proxy)) {
             url = proxy.getURL(url);
         }
 

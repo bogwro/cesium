@@ -1,7 +1,8 @@
 /*global define*/
-define(['Core/ComponentDatatype', 'Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Math', 'Renderer/BufferUsage'], function(
+define(['Core/ComponentDatatype', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Math', 'Renderer/BufferUsage'], function(
         ComponentDatatype,
         defaultValue,
+        defined,
         destroyObject,
         DeveloperError,
         CesiumMath,
@@ -57,13 +58,13 @@ define(['Core/ComponentDatatype', 'Core/defaultValue', 'Core/destroyObject', 'Co
 
             purpose = attribute.purpose;
             attributesByUsage = attributesByPurposeAndUsage[purpose];
-            if (typeof attributesByUsage === 'undefined') {
+            if (!defined(attributesByUsage)) {
                 attributesByUsage = attributesByPurposeAndUsage[purpose] = {};
             }
 
             usage = attribute.usage.toString();
             attributesForUsage = attributesByUsage[usage];
-            if (typeof attributesForUsage === 'undefined') {
+            if (!defined(attributesForUsage)) {
                 attributesForUsage = attributesByUsage[usage] = [];
             }
 
@@ -85,7 +86,7 @@ define(['Core/ComponentDatatype', 'Core/defaultValue', 'Core/destroyObject', 'Co
                 attributesByUsage = attributesByPurposeAndUsage[purpose];
 
                 var buffersByUsage = this._buffersByPurposeAndUsage[purpose];
-                if (typeof buffersByUsage === 'undefined') {
+                if (!defined(buffersByUsage)) {
                     buffersByUsage = this._buffersByPurposeAndUsage[purpose] = {};
                 }
 
@@ -194,7 +195,7 @@ define(['Core/ComponentDatatype', 'Core/defaultValue', 'Core/destroyObject', 'Co
                 if (uniqueIndex === true) {
                     throw new DeveloperError('Index ' + index + ' is used by more than one attribute.');
                 }
-                if (typeof uniqueIndex !== 'undefined') {
+                if (defined(uniqueIndex)) {
                     if (uniqueIndex[purpose]) {
                         throw new DeveloperError('Index ' + index + ' is used by more than one attribute with the same purpose.');
                     }
@@ -276,7 +277,7 @@ define(['Core/ComponentDatatype', 'Core/defaultValue', 'Core/destroyObject', 'Co
             VertexArrayFacade._resize(buffer, this._size);
 
             var writersForPurpose = this.writers[buffer.purpose];
-            if (typeof writersForPurpose === 'undefined') {
+            if (!defined(writersForPurpose)) {
                 writersForPurpose = this.writers[buffer.purpose] = [];
             }
 
@@ -308,7 +309,7 @@ define(['Core/ComponentDatatype', 'Core/defaultValue', 'Core/destroyObject', 'Co
             var length = views.length;
             for ( var i = 0; i < length; ++i) {
                 var view = views[i];
-                view.view = view.componentDatatype.createArrayBufferView(arrayBuffer, view.offsetInBytes);
+                view.view = ComponentDatatype.createArrayBufferView(view.componentDatatype, arrayBuffer, view.offsetInBytes);
             }
 
             buffer.arrayBuffer = arrayBuffer;
@@ -384,7 +385,7 @@ define(['Core/ComponentDatatype', 'Core/defaultValue', 'Core/destroyObject', 'Co
 
         ///////////////////////////////////////////////////////////////////////
 
-        if (recreateVA || typeof this.vaByPurpose === 'undefined') {
+        if (recreateVA || !defined(this.vaByPurpose)) {
             var buffersByPurposeAndUsage = this._buffersByPurposeAndUsage;
 
             destroyVA(this);
@@ -439,7 +440,7 @@ define(['Core/ComponentDatatype', 'Core/defaultValue', 'Core/destroyObject', 'Co
 
             var vertexBuffer = buffer.vertexBuffer;
             var vertexBufferSizeInBytes = vertexArrayFacade._size * buffer.vertexSizeInBytes;
-            var vertexBufferDefined = typeof vertexBuffer !== 'undefined';
+            var vertexBufferDefined = defined(vertexBuffer);
             if (!vertexBufferDefined || (vertexBuffer.getSizeInBytes() < vertexBufferSizeInBytes)) {
                 if (vertexBufferDefined) {
                     vertexBuffer.destroy();
@@ -522,7 +523,7 @@ define(['Core/ComponentDatatype', 'Core/defaultValue', 'Core/destroyObject', 'Co
 
     function destroyVA(vertexArrayFacade) {
         var vaByPurpose = vertexArrayFacade.vaByPurpose;
-        if (typeof vaByPurpose === 'undefined') {
+        if (!defined(vaByPurpose)) {
             return;
         }
 

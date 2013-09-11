@@ -63,6 +63,7 @@ define(['Core/loadBlob', 'Core/loadImage'], function(
     var xhrBlobSupported = (function() {
         try {
             var xhr = new XMLHttpRequest();
+            xhr.open('GET', '#', true);
             xhr.responseType = 'blob';
             return xhr.responseType === 'blob';
         } catch (e) {

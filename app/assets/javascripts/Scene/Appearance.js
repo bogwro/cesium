@@ -1,8 +1,10 @@
 /*global define*/
-define(['Core/defaultValue', 'Renderer/BlendingState', 'Renderer/CullFace'], function(
+define(['Core/defaultValue', 'Core/defined', 'Renderer/BlendingState', 'Renderer/CullFace', 'Renderer/createShaderSource'], function(
         defaultValue,
+        defined,
         BlendingState,
-        CullFace) {
+        CullFace,
+        createShaderSource) {
     "use strict";
 
     /**
@@ -61,6 +63,24 @@ define(['Core/defaultValue', 'Renderer/BlendingState', 'Renderer/CullFace'], fun
          * @readonly
          */
         this.renderState = options.renderState;
+
+        /**
+         * When <code>true</code>, the geometry is expected to appear translucent.
+         *
+         * @readonly
+         *
+         * @default true
+         */
+        this.translucent = defaultValue(options.translucent, true);
+
+        /**
+         * When <code>true</code>, the geometry is expected to be closed.
+         *
+         * @readonly
+         *
+         * @default false
+         */
+        this.closed = defaultValue(options.closed, false);
     };
 
     /**
@@ -69,21 +89,13 @@ define(['Core/defaultValue', 'Renderer/BlendingState', 'Renderer/CullFace'], fun
      *
      * @memberof Appearance
      *
-     * @return String The full GLSL fragment shader source.
+     * @returns String The full GLSL fragment shader source.
      */
     Appearance.prototype.getFragmentShaderSource = function() {
-        var flat = this.flat ? '#define FLAT 1\n#line 0 \n' : '#line 0 \n';
-        var faceForward = this.faceForward ? '#define FACE_FORWARD 1\n#line 0 \n' : '#line 0 \n';
-
-        if (typeof this.material !== 'undefined') {
-            return '#line 0\n' +
-                this.material.shaderSource +
-                flat +
-                faceForward +
-                this.fragmentShaderSource;
-        }
-
-        return flat + faceForward + this.fragmentShaderSource;
+        return createShaderSource({
+            defines : [this.flat ? 'FLAT' : '', this.faceForward ? 'FACE_FORWARD' : ''],
+            sources : [defined(this.material) ? this.material.shaderSource : '', this.fragmentShaderSource]
+        });
     };
 
     /**

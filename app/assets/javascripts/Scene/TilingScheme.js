@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError', 'Scene/Tile'], function(
+define(['Core/defined', 'Core/DeveloperError', 'Scene/Tile'], function(
+        defined,
         DeveloperError,
         Tile) {
     "use strict";
@@ -179,13 +180,13 @@ define(['Core/DeveloperError', 'Scene/Tile'], function(
      * @exception {DeveloperError} <code>numberOfLevelZeroTilesY</code> is required.
      */
     TilingScheme.createRectangleOfLevelZeroTiles = function(tilingScheme, numberOfLevelZeroTilesX, numberOfLevelZeroTilesY) {
-        if (typeof tilingScheme === 'undefined') {
+        if (!defined(tilingScheme)) {
             throw new DeveloperError('tilingScheme is required.');
         }
-        if (typeof numberOfLevelZeroTilesX === 'undefined') {
+        if (!defined(numberOfLevelZeroTilesX)) {
             throw new DeveloperError('numberOfLevelZeroTilesX is required.');
         }
-        if (typeof numberOfLevelZeroTilesY === 'undefined') {
+        if (!defined(numberOfLevelZeroTilesY)) {
             throw new DeveloperError('numberOfLevelZeroTilesY is required.');
         }
 

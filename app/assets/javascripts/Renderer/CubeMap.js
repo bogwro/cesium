@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Renderer/MipmapHint', 'Renderer/PixelDatatype', 'Renderer/TextureMagnificationFilter', 'Renderer/TextureMinificationFilter', 'Renderer/TextureWrap', 'Renderer/CubeMapFace'], function(
+define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Renderer/MipmapHint', 'Renderer/PixelDatatype', 'Renderer/TextureMagnificationFilter', 'Renderer/TextureMinificationFilter', 'Renderer/TextureWrap', 'Renderer/CubeMapFace'], function(
+        defined,
         DeveloperError,
         destroyObject,
         CesiumMath,
@@ -170,7 +171,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Renderer/Mipm
      * @exception {DeveloperError} This CubeMap was destroyed, i.e., destroy() was called.
      */
     CubeMap.prototype.setSampler = function(sampler) {
-        if (typeof sampler === 'undefined') {
+        if (!defined(sampler)) {
             var minFilter = TextureMinificationFilter.LINEAR;
             var magFilter = TextureMagnificationFilter.LINEAR;
             if (this._pixelDatatype === PixelDatatype.FLOAT) {
@@ -303,7 +304,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Renderer/Mipm
      *
      * @memberof CubeMap
      *
-     * @return {Boolean} True if the source pixels are flipped vertically; otherwise, false.
+     * @returns {Boolean} True if the source pixels are flipped vertically; otherwise, false.
      *
      * @exception {DeveloperError} This cube map was destroyed, i.e., destroy() was called.
      */
@@ -327,7 +328,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Renderer/Mipm
      *
      * @memberof CubeMap
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
      * @see CubeMap#destroy
      */
@@ -345,7 +346,7 @@ define(['Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Renderer/Mipm
      *
      * @memberof CubeMap
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This cube map was destroyed, i.e., destroy() was called.
      *

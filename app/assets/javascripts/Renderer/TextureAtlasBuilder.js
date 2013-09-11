@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/Event', 'Core/DeveloperError', 'Core/loadImage'], function(
+define(['Core/Event', 'Core/defined', 'Core/DeveloperError', 'Core/loadImage'], function(
          Event,
+         defined,
          DeveloperError,
          loadImage) {
     "use strict";
@@ -23,7 +24,7 @@ define(['Core/Event', 'Core/DeveloperError', 'Core/loadImage'], function(
      * @see TextureAtlas
      */
     var TextureAtlasBuilder  = function(textureAtlas) {
-        if (typeof textureAtlas === 'undefined') {
+        if (!defined(textureAtlas)) {
             throw new DeveloperError('textureAtlas is required.');
         }
         this.textureAtlas = textureAtlas;
@@ -45,11 +46,11 @@ define(['Core/Event', 'Core/DeveloperError', 'Core/loadImage'], function(
      * @exception {DeveloperError} textureAvailableCallback is required.
      */
     TextureAtlasBuilder.prototype.addTextureFromUrl = function(url, textureAvailableCallback) {
-        if (typeof url === 'undefined') {
+        if (!defined(url)) {
             throw new DeveloperError('url is required.');
         }
 
-        if (typeof textureAvailableCallback === 'undefined') {
+        if (!defined(textureAvailableCallback)) {
             throw new DeveloperError('textureAvailableCallback is required.');
         }
 
@@ -85,20 +86,20 @@ define(['Core/Event', 'Core/DeveloperError', 'Core/loadImage'], function(
      * @exception {DeveloperError} textureAvailableCallback is required.
      */
     TextureAtlasBuilder.prototype.addTextureFromFunction = function(id, getImageCallback, textureAvailableCallback) {
-        if (typeof id === 'undefined') {
+        if (!defined(id)) {
             throw new DeveloperError('id is required.');
         }
 
-        if (typeof getImageCallback === 'undefined') {
+        if (!defined(getImageCallback)) {
             throw new DeveloperError('getImageCallback is required.');
         }
 
-        if (typeof textureAvailableCallback === 'undefined') {
+        if (!defined(textureAvailableCallback)) {
             throw new DeveloperError('textureAvailableCallback is required.');
         }
 
         var sourceHolder = this._idHash[id];
-        if (typeof sourceHolder !== 'undefined') {
+        if (defined(sourceHolder)) {
             //we're already aware of this source
             if (sourceHolder.loaded) {
                 //and it's already loaded, tell the callback what index to use

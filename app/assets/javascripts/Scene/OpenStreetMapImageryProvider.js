@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Event', 'Core/writeTextToCanvas', 'Scene/ImageryProvider', 'Scene/WebMercatorTilingScheme', 'Scene/Credit'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Event', 'Core/writeTextToCanvas', 'Scene/ImageryProvider', 'Scene/WebMercatorTilingScheme', 'Scene/Credit'], function(
         defaultValue,
+        defined,
         DeveloperError,
         Event,
         writeTextToCanvas,
@@ -81,7 +82,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Event', 'Core/writeTex
         var url = imageryProvider._url + level + '/' + x + '/' + y + '.' + imageryProvider._fileExtension;
 
         var proxy = imageryProvider._proxy;
-        if (typeof proxy !== 'undefined') {
+        if (defined(proxy)) {
             url = proxy.getURL(url);
         }
 

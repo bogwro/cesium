@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/EncodedCartesian3', 'Core/Matrix4', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/VertexArrayFacade', 'Scene/SceneMode', 'Scene/Billboard', 'Scene/HorizontalOrigin', 'Shaders/BillboardCollectionVS', 'Shaders/BillboardCollectionFS'], function(
+define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/EncodedCartesian3', 'Core/Matrix4', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/VertexArrayFacade', 'Renderer/createShaderSource', 'Scene/SceneMode', 'Scene/Billboard', 'Scene/HorizontalOrigin', 'Shaders/BillboardCollectionVS', 'Shaders/BillboardCollectionFS'], function(
+        defined,
         DeveloperError,
         Color,
         defaultValue,
@@ -17,6 +18,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
         CommandLists,
         DrawCommand,
         VertexArrayFacade,
+        createShaderSource,
         SceneMode,
         Billboard,
         HorizontalOrigin,
@@ -35,6 +37,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
     var COLOR_INDEX = Billboard.COLOR_INDEX;
     var ROTATION_INDEX = Billboard.ROTATION_INDEX;
     var ALIGNED_AXIS_INDEX = Billboard.ALIGNED_AXIS_INDEX;
+    var SCALE_BY_DISTANCE_INDEX = Billboard.SCALE_BY_DISTANCE_INDEX;
     var NUMBER_OF_PROPERTIES = Billboard.NUMBER_OF_PROPERTIES;
 
     // PERFORMANCE_IDEA:  Use vertex compression so we don't run out of
@@ -49,7 +52,8 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
         direction : 6,
         pickColor : 7,  // pickColor and color shared an index because pickColor is only used during
         color : 7,      // the 'pick' pass and 'color' is only used during the 'color' pass.
-        rotationAndAlignedAxis : 8
+        rotationAndAlignedAxis : 8,
+        scaleByDistance : 9
     };
 
     // Identifies to the VertexArrayFacade the attributes that are used only for the pick
@@ -123,6 +127,10 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
         this._compiledShaderRotation = false;
         this._compiledShaderRotationPick = false;
 
+        this._shaderScaleByDistance = false;
+        this._compiledShaderScaleByDistance = false;
+        this._compiledShaderScaleByDistancePick = false;
+
         this._propertiesChanged = new Uint32Array(NUMBER_OF_PROPERTIES);
 
         this._maxSize = 0.0;
@@ -179,7 +187,8 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
                               BufferUsage.STATIC_DRAW, // IMAGE_INDEX_INDEX
                               BufferUsage.STATIC_DRAW, // COLOR_INDEX
                               BufferUsage.STATIC_DRAW, // ROTATION_INDEX
-                              BufferUsage.STATIC_DRAW  // ALIGNED_AXIS_INDEX
+                              BufferUsage.STATIC_DRAW, // ALIGNED_AXIS_INDEX
+                              BufferUsage.STATIC_DRAW  // SCALE_BY_DISTANCE_INDEX
                           ];
 
         var that = this;
@@ -198,7 +207,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
      *
      * @param {Object}[billboard=undefined] A template describing the billboard's properties as shown in Example 1.
      *
-     * @return {Billboard} The billboard that was added to the collection.
+     * @returns {Billboard} The billboard that was added to the collection.
      *
      * @performance Calling <code>add</code> is expected constant time.  However, when
      * {@link BillboardCollection#update} is called, the collection's vertex buffer
@@ -221,6 +230,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
      *   horizontalOrigin : HorizontalOrigin.CENTER,
      *   verticalOrigin : VerticalOrigin.CENTER,
      *   scale : 1.0,
+     *   scaleByDistance : new NearFarScalar(5e6, 1.0, 2e7, 0.0),
      *   imageIndex : 0,
      *   color : Color.WHITE
      * });
@@ -247,7 +257,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
      *
      * @param {Billboard} billboard The billboard to remove.
      *
-     * @return {Boolean} <code>true</code> if the billboard was removed; <code>false</code> if the billboard was not found in the collection.
+     * @returns {Boolean} <code>true</code> if the billboard was removed; <code>false</code> if the billboard was not found in the collection.
      *
      * @performance Calling <code>remove</code> is expected constant time.  However, when
      * {@link BillboardCollection#update} is called, the collection's vertex buffer
@@ -342,12 +352,12 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
      *
      * @param {Billboard} billboard The billboard to check for.
      *
-     * @return {Boolean} true if this collection contains the billboard, false otherwise.
+     * @returns {Boolean} true if this collection contains the billboard, false otherwise.
      *
      * @see BillboardCollection#get
      */
     BillboardCollection.prototype.contains = function(billboard) {
-        return typeof billboard !== 'undefined' && billboard._billboardCollection === this;
+        return defined(billboard) && billboard._billboardCollection === this;
     };
 
     /**
@@ -361,7 +371,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
      *
      * @param {Number} index The zero-based index of the billboard.
      *
-     * @return {Billboard} The billboard at the specified index.
+     * @returns {Billboard} The billboard at the specified index.
      *
      * @performance Expected constant time.  If billboards were removed from the collection and
      * {@link BillboardCollection#update} was not called, an implicit <code>O(n)</code>
@@ -381,7 +391,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
      * }
      */
     BillboardCollection.prototype.get = function(index) {
-        if (typeof index === 'undefined') {
+        if (!defined(index)) {
             throw new DeveloperError('index is required.');
         }
 
@@ -396,7 +406,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
      *
      * @memberof BillboardCollection
      *
-     * @return {Number} The number of billboards in this collection.
+     * @returns {Number} The number of billboards in this collection.
      *
      * @performance Expected constant time.  If billboards were removed from the collection and
      * {@link BillboardCollection#update} was not called, an implicit <code>O(n)</code>
@@ -474,7 +484,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
      *
      * @memberof BillboardCollection
      *
-     * @return <code>true</code> if the texture atlas is destroyed when the collection is
+     * @returns <code>true</code> if the texture atlas is destroyed when the collection is
      * destroyed; otherwise, <code>false</code>.
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
@@ -517,7 +527,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
         var sixteenK = 16 * 1024;
 
         var directionsVertexBuffer = context.cache.billboardCollection_directionsVertexBuffer;
-        if (typeof directionsVertexBuffer !== 'undefined') {
+        if (defined(directionsVertexBuffer)) {
             return directionsVertexBuffer;
         }
 
@@ -548,7 +558,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
         var sixteenK = 16 * 1024;
 
         var indexBuffer = context.cache.billboardCollection_indexBuffer;
-        if (typeof indexBuffer !== 'undefined') {
+        if (defined(indexBuffer)) {
             return indexBuffer;
         }
 
@@ -645,6 +655,11 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
             componentsPerAttribute : 4,
             componentDatatype : ComponentDatatype.FLOAT,
             usage : buffersUsage[ROTATION_INDEX] // buffersUsage[ALIGNED_AXIS_INDEX] ignored
+        }, {
+            index : attributeIndices.scaleByDistance,
+            componentsPerAttribute : 4,
+            componentDatatype : ComponentDatatype.FLOAT,
+            usage : buffersUsage[SCALE_BY_DISTANCE_INDEX]
         }], 4 * numberOfBillboards); // 4 vertices per billboard
     }
 
@@ -778,7 +793,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
         var index = billboard.getImageIndex();
         if (index !== -1) {
             var imageRectangle = textureAtlasCoordinates[index];
-            if (typeof imageRectangle === 'undefined') {
+            if (!defined(imageRectangle)) {
                 throw new DeveloperError('Invalid billboard image index: ' + index);
             }
             bottomLeftX = imageRectangle.x;
@@ -824,6 +839,35 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
         writer(i + 3, rotation, x, y, z);
     }
 
+    function writeScaleByDistance(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard) {
+        var i = billboard._index * 4;
+        var allPurposeWriters = vafWriters[allPassPurpose];
+        var writer = allPurposeWriters[attributeIndices.scaleByDistance];
+        var near = 0.0;
+        var nearValue = 0.0;
+        var far = 0.0;
+        var farValue = 0.0;
+
+        var scale = billboard.getScaleByDistance();
+        if (defined(scale)) {
+            near = scale.near;
+            nearValue = scale.nearValue;
+            far = scale.far;
+            farValue = scale.farValue;
+
+            if (nearValue !== 1.0 || farValue !== 1.0) {
+                // scale by distance calculation in shader need not be enabled
+                // until a billboard with near and far !== 1.0 is found
+                billboardCollection._shaderScaleByDistance = true;
+            }
+        }
+
+        writer(i + 0, near, nearValue, far, farValue);
+        writer(i + 1, near, nearValue, far, farValue);
+        writer(i + 2, near, nearValue, far, farValue);
+        writer(i + 3, near, nearValue, far, farValue);
+    }
+
     function writeBillboard(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard) {
         writePosition(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard);
         writePixelOffset(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard);
@@ -833,6 +877,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
         writeOriginAndShow(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard);
         writeTextureCoordinatesAndImageSize(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard);
         writeRotationAndAlignedAxis(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard);
+        writeScaleByDistance(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard);
     }
 
     function recomputeActualPositions(billboardCollection, billboards, length, frameState, modelMatrix, recomputeBoundingVolume) {
@@ -848,7 +893,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
             var billboard = billboards[i];
             var position = billboard.getPosition();
             var actualPosition = Billboard._computeActualPosition(position, frameState, modelMatrix);
-            if (typeof actualPosition !== 'undefined') {
+            if (defined(actualPosition)) {
                 billboard._setActualPosition(actualPosition);
 
                 if (recomputeBoundingVolume) {
@@ -927,7 +972,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
      */
     BillboardCollection.prototype.update = function(context, frameState, commandList) {
         var textureAtlas = this._textureAtlas;
-        if (typeof textureAtlas === 'undefined') {
+        if (!defined(textureAtlas)) {
             // Can't write billboard vertices until we have texture coordinates
             // provided by a texture atlas
             return;
@@ -1018,6 +1063,10 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
                     writers.push(writeRotationAndAlignedAxis);
                 }
 
+                if (properties[SCALE_BY_DISTANCE_INDEX]) {
+                    writers.push(writeScaleByDistance);
+                }
+
                 vafWriters = this._vaf.writers;
 
                 if ((billboardsToUpdateLength / billboardsLength) > 0.1) {
@@ -1058,7 +1107,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
             billboardsToUpdate.length = billboardsLength;
         }
 
-        if (typeof this._vaf === 'undefined' || typeof this._vaf.vaByPurpose === 'undefined') {
+        if (!defined(this._vaf) || !defined(this._vaf.vaByPurpose)) {
             return;
         }
 
@@ -1083,7 +1132,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
             var colorList = this._colorCommands;
             commandLists.colorList = colorList;
 
-            if (typeof this._rs === 'undefined') {
+            if (!defined(this._rs)) {
                 this._rs = context.createRenderState({
                     depthTest : {
                         enabled : true
@@ -1092,13 +1141,19 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
                 });
             }
 
-            if (typeof this._sp === 'undefined' || (this._shaderRotation && !this._compiledShaderRotation)) {
+            if (!defined(this._sp) || (this._shaderRotation && !this._compiledShaderRotation) ||
+                    (this._shaderScaleByDistance && !this._compiledShaderScaleByDistance)) {
                 this._sp = context.getShaderCache().replaceShaderProgram(
-                        this._sp,
-                        (this._shaderRotation ? '#define ROTATION 1\n' : '') + BillboardCollectionVS,
-                        BillboardCollectionFS,
-                        attributeIndices);
+                    this._sp,
+                    createShaderSource({
+                        defines : [this._shaderRotation ? 'ROTATION' : '',
+                                   this._shaderScaleByDistance ? 'EYE_DISTANCE_SCALING' : ''],
+                        sources : [BillboardCollectionVS]
+                    }),
+                    BillboardCollectionFS,
+                    attributeIndices);
                 this._compiledShaderRotation = this._shaderRotation;
+                this._compiledShaderScaleByDistance = this._shaderScaleByDistance;
             }
 
             va = this._vaf.vaByPurpose[colorPassPurpose];
@@ -1107,7 +1162,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
             colorList.length = vaLength;
             for (j = 0; j < vaLength; ++j) {
                 command = colorList[j];
-                if (typeof command === 'undefined') {
+                if (!defined(command)) {
                     command = colorList[j] = new DrawCommand();
                 }
 
@@ -1126,13 +1181,24 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
             var pickList = this._pickCommands;
             commandLists.pickList = pickList;
 
-            if (typeof this._spPick === 'undefined' || (this._shaderRotation && !this._compiledShaderRotationPick)) {
+            if (!defined(this._spPick) ||
+                    (this._shaderRotation && !this._compiledShaderRotationPick) ||
+                    (this._shaderScaleByDistance && !this._compiledShaderScaleByDistancePick)) {
                 this._spPick = context.getShaderCache().replaceShaderProgram(
-                        this._spPick,
-                        (this._shaderRotation ? '#define ROTATION 1\n' : '') + '#define RENDER_FOR_PICK 1\n' + BillboardCollectionVS,
-                        '#define RENDER_FOR_PICK 1\n' + BillboardCollectionFS,
-                        attributeIndices);
-                this._compiledShaderRotation = this._shaderRotationPick;
+                    this._spPick,
+                    createShaderSource({
+                        defines : ['RENDER_FOR_PICK',
+                                   this._shaderRotation ? 'ROTATION' : '',
+                                   this._shaderScaleByDistance ? 'EYE_DISTANCE_SCALING' : ''],
+                        sources : [BillboardCollectionVS]
+                    }),
+                    createShaderSource({
+                        defines : ['RENDER_FOR_PICK'],
+                        sources : [BillboardCollectionFS]
+                    }),
+                    attributeIndices);
+                this._compiledShaderRotationPick = this._shaderRotation;
+                this._compiledShaderScaleByDistancePick = this._shaderScaleByDistance;
             }
 
             va = this._vaf.vaByPurpose[pickPassPurpose];
@@ -1141,7 +1207,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
             pickList.length = vaLength;
             for (j = 0; j < vaLength; ++j) {
                 command = pickList[j];
-                if (typeof command === 'undefined') {
+                if (!defined(command)) {
                     command = pickList[j] = new DrawCommand();
                 }
 
@@ -1170,7 +1236,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
      *
      * @memberof BillboardCollection
      *
-     * @return {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
+     * @returns {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
      *
      * @see BillboardCollection#destroy
      */
@@ -1188,7 +1254,7 @@ define(['Core/DeveloperError', 'Core/Color', 'Core/defaultValue', 'Core/destroyO
      *
      * @memberof BillboardCollection
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *

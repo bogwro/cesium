@@ -1,7 +1,8 @@
 /*global define*/
-define(['Core/Cartesian2', 'Core/defaultValue', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Math', 'Renderer/MipmapHint', 'Renderer/PixelDatatype', 'Renderer/PixelFormat', 'Renderer/TextureMagnificationFilter', 'Renderer/TextureMinificationFilter', 'Renderer/TextureWrap'], function(
+define(['Core/Cartesian2', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Math', 'Renderer/MipmapHint', 'Renderer/PixelDatatype', 'Renderer/PixelFormat', 'Renderer/TextureMagnificationFilter', 'Renderer/TextureMinificationFilter', 'Renderer/TextureWrap'], function(
         Cartesian2,
         defaultValue,
+        defined,
         destroyObject,
         DeveloperError,
         CesiumMath,
@@ -66,7 +67,7 @@ define(['Core/Cartesian2', 'Core/defaultValue', 'Core/destroyObject', 'Core/Deve
      * });
      */
     Texture.prototype.copyFrom = function(source, xOffset, yOffset) {
-        if (typeof source === 'undefined') {
+        if (!defined(source)) {
             throw new DeveloperError('source is required.');
         }
 
@@ -252,7 +253,7 @@ define(['Core/Cartesian2', 'Core/defaultValue', 'Core/destroyObject', 'Core/Deve
     * @see Context#createSampler
     */
     Texture.prototype.setSampler = function(sampler) {
-        if (typeof sampler === 'undefined') {
+        if (!defined(sampler)) {
             var minFilter = TextureMinificationFilter.LINEAR;
             var magFilter = TextureMagnificationFilter.LINEAR;
             if (this._pixelDatatype === PixelDatatype.FLOAT) {
@@ -326,7 +327,7 @@ define(['Core/Cartesian2', 'Core/defaultValue', 'Core/destroyObject', 'Core/Deve
      *
      * @memberof Texture
      *
-     * @return {Cartesian2} The dimensions of this texture.
+     * @returns {Cartesian2} The dimensions of this texture.
      *
      * @exception {DeveloperError} This texture was destroyed, i.e., destroy() was called.
      */
@@ -349,7 +350,7 @@ define(['Core/Cartesian2', 'Core/defaultValue', 'Core/destroyObject', 'Core/Deve
      *
      * @memberof Texture
      *
-     * @return {Boolean} True if the source pixels are flipped vertically; otherwise, false.
+     * @returns {Boolean} True if the source pixels are flipped vertically; otherwise, false.
      *
      * @exception {DeveloperError} This texture was destroyed, i.e., destroy() was called.
      */
@@ -393,7 +394,7 @@ define(['Core/Cartesian2', 'Core/defaultValue', 'Core/destroyObject', 'Core/Deve
      *
      * @memberof Texture
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
      * @see Texture#destroy
      */
@@ -411,7 +412,7 @@ define(['Core/Cartesian2', 'Core/defaultValue', 'Core/destroyObject', 'Core/Deve
      *
      * @memberof Texture
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This texture was destroyed, i.e., destroy() was called.
      *

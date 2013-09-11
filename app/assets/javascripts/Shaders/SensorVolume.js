@@ -14,7 +14,6 @@ vec3 temp = D * pointWC - q;\n\
 float d = dot(temp, q);\n\
 return (d < -test) && (d / length(temp) < -sqrt(test));\n\
 }\n\
-#ifndef RENDER_FOR_PICK\n\
 vec4 getIntersectionColor()\n\
 {\n\
 return u_intersectionColor;\n\
@@ -30,6 +29,5 @@ float s = 1.0 + (atan(pointMC.y, pointMC.x) / czm_twoPi);\n\
 s = s - floor(s);\n\
 return vec2(s, t);\n\
 }\n\
-#endif\n\
 ";
 });

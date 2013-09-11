@@ -1,7 +1,8 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core/Iau2006XysSample', 'Core/Math', 'Core/Matrix3', 'Core/Matrix4', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/TimeConstants', 'Core/Ellipsoid', 'Core/EarthOrientationParameters', 'Core/EarthOrientationParametersSample', 'ThirdParty/when'],
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core/Iau2006XysSample', 'Core/Math', 'Core/Matrix3', 'Core/Matrix4', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/TimeConstants', 'Core/Ellipsoid', 'Core/EarthOrientationParameters', 'Core/EarthOrientationParametersSample', 'ThirdParty/when'],
     function(
         defaultValue,
+        defined,
         DeveloperError,
         Iau2006XysData,
         Iau2006XysSample,
@@ -43,7 +44,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
      * @param {Cartesian3} origin The center point of the local reference frame.
      * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
      * @param {Matrix4} [result] The object onto which to store the result.
-     * @return {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
+     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
      *
      * @exception {DeveloperError} origin is required.
      *
@@ -54,7 +55,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
      * var transform = Transforms.eastNorthUpToFixedFrame(center);
      */
     Transforms.eastNorthUpToFixedFrame = function(origin, ellipsoid, result) {
-        if (typeof origin === 'undefined') {
+        if (!defined(origin)) {
             throw new DeveloperError('origin is required.');
         }
 
@@ -62,7 +63,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
         if (CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
             CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
             var sign = CesiumMath.sign(origin.z);
-            if (typeof result === 'undefined') {
+            if (!defined(result)) {
                 return new Matrix4(
                         0.0, -sign,  0.0, origin.x,
                         1.0,   0.0,  0.0, origin.y,
@@ -102,7 +103,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
 
         normal.cross(tangent, bitangent);
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix4(
                     tangent.x, bitangent.x, normal.x, origin.x,
                     tangent.y, bitangent.y, normal.y, origin.y,
@@ -147,7 +148,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
      * @param {Cartesian3} origin The center point of the local reference frame.
      * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
      * @param {Matrix4} [result] The object onto which to store the result.
-     * @return {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
+     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
      *
      * @exception {DeveloperError} origin is required.
      *
@@ -158,7 +159,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
      * var transform = Transforms.northEastDownToFixedFrame(center);
      */
     Transforms.northEastDownToFixedFrame = function(origin, ellipsoid, result) {
-        if (typeof origin === 'undefined') {
+        if (!defined(origin)) {
             throw new DeveloperError('origin is required.');
         }
 
@@ -166,7 +167,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
             CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
             // The poles are special cases.  If x and y are zero, assume origin is at a pole.
             var sign = CesiumMath.sign(origin.z);
-            if (typeof result === 'undefined') {
+            if (!defined(result)) {
                 return new Matrix4(
                   -sign, 0.0,   0.0, origin.x,
                     0.0, 1.0,   0.0, origin.y,
@@ -206,7 +207,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
 
         normal.cross(tangent, bitangent);
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix4(
                     bitangent.x, tangent.x, -normal.x, origin.x,
                     bitangent.y, tangent.y, -normal.y, origin.y,
@@ -248,7 +249,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
      *
      * @param {JulianDate} date The time at which to compute the rotation matrix.
      * @param {Matrix3} [result] The object onto which to store the result.
-     * @return {Matrix3} The modified result parameter or a new Matrix3 instance if none was provided.
+     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if none was provided.
      *
      * @exception {DeveloperError} date is required.
      *
@@ -265,7 +266,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
      * updateAndRender();
      */
     Transforms.computeTemeToPseudoFixedMatrix = function (date, result) {
-        if (typeof date === 'undefined') {
+        if (!defined(date)) {
             throw new DeveloperError('date is required.');
         }
 
@@ -293,7 +294,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
         var cosGha = Math.cos(gha);
         var sinGha = Math.sin(gha);
 
-        if (typeof result === 'undefined') {
+        if (!defined(result)) {
             return new Matrix3(cosGha, sinGha, 0.0,
                               -sinGha, cosGha, 0.0,
                                   0.0,    0.0, 1.0);
@@ -383,7 +384,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
      * @param {JulianDate} date The time at which to compute the rotation matrix.
      * @param {Matrix3} [result] The object onto which to store the result.  If this parameter is
      *                  not specified, a new instance is created and returned.
-     * @return {Matrix3} The rotation matrix, or undefined if the data necessary to do the
+     * @returns {Matrix3} The rotation matrix, or undefined if the data necessary to do the
      *                   transformation is not yet loaded.
      *
      * @exception {DeveloperError} date is required.
@@ -397,7 +398,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
      *     scene.initializeFrame();
      *     scene.setSunPosition(Simon1994PlanetaryPositions.ComputeSunPositionInEarthInertialFrame(now));
      *     var icrfToFixed = Transforms.computeIcrfToFixedMatrix(now);
-     *     if (typeof icrfToFixed !== 'undefined') {
+     *     if (defined(icrfToFixed)) {
      *         scene.getCamera().transform = Matrix4.fromRotationTranslation(icrfToFixed, Cartesian3.ZERO);
      *     }
      *     scene.render();
@@ -406,12 +407,12 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
      * updateAndRender();
      */
     Transforms.computeIcrfToFixedMatrix = function(date, result) {
-        if (typeof date === 'undefined') {
+        if (!defined(date)) {
             throw new DeveloperError('date is required.');
         }
 
         var fixedToIcrfMtx = Transforms.computeFixedToIcrfMatrix(date, result);
-        if (typeof fixedToIcrfMtx === 'undefined') {
+        if (!defined(fixedToIcrfMtx)) {
             return undefined;
         }
 
@@ -434,7 +435,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
      * @param {JulianDate} date The time at which to compute the rotation matrix.
      * @param {Matrix3} [result] The object onto which to store the result.  If this parameter is
      *                  not specified, a new instance is created and returned.
-     * @return {Matrix3} The rotation matrix, or undefined if the data necessary to do the
+     * @returns {Matrix3} The rotation matrix, or undefined if the data necessary to do the
      *                   transformation is not yet loaded.
      *
      * @exception {DeveloperError} date is required.
@@ -447,18 +448,18 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
      * var pointInFixed = new Cartesian3(...);
      * var fixedToIcrf = Transforms.computeIcrfToFixedMatrix(now);
      * var pointInInertial;
-     * if (typeof fixedToIcrf !== 'undefined') {
+     * if (defined(fixedToIcrf)) {
      *     pointInInertial = fixedToIcrf.multiplyByVector(pointInFixed);
      * }
      */
     Transforms.computeFixedToIcrfMatrix = function(date, result) {
-        if (typeof date === 'undefined') {
+        if (!defined(date)) {
             throw new DeveloperError('date is required.');
         }
 
         // Compute pole wander
         var eop = Transforms.earthOrientationParameters.compute(date, eopScratch);
-        if (typeof eop === 'undefined') {
+        if (!defined(eop)) {
             return undefined;
         }
 
@@ -471,7 +472,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
         var secondTT = date.getSecondsOfDay() + ttMinusTai;
 
         var xys = Transforms.iau2006XysData.computeXysRadians(dayTT, secondTT, xysScratch);
-        if (typeof xys === 'undefined') {
+        if (!defined(xys)) {
             return undefined;
         }
 
@@ -560,7 +561,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
      * @param {Matrix4} viewportTransformation The 4x4 viewport transformation.
      * @param {Cartesian3} point The point to transform.
      * @param {Cartesian2} [result] The object onto which to store the result.
-     * @return {Cartesian2} The modified result parameter or a new Cartesian2 instance if none was provided.
+     * @returns {Cartesian2} The modified result parameter or a new Cartesian2 instance if none was provided.
      *
      * @exception {DeveloperError} modelViewProjectionMatrix is required.
      * @exception {DeveloperError} viewportTransformation is required.
@@ -572,15 +573,15 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Iau2006XysData', 'Core
      * @see czm_viewportTransformation
      */
     Transforms.pointToWindowCoordinates = function (modelViewProjectionMatrix, viewportTransformation, point, result) {
-        if (typeof modelViewProjectionMatrix === 'undefined') {
+        if (!defined(modelViewProjectionMatrix)) {
             throw new DeveloperError('modelViewProjectionMatrix is required.');
         }
 
-        if (typeof viewportTransformation === 'undefined') {
+        if (!defined(viewportTransformation)) {
             throw new DeveloperError('viewportTransformation is required.');
         }
 
-        if (typeof point === 'undefined') {
+        if (!defined(point)) {
             throw new DeveloperError('point is required.');
         }
 

@@ -1,10 +1,10 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/destroyObject', 'Core/Color', 'Core/BoundingRectangle', 'Renderer/ClearCommand', 'Renderer/PassState', 'Renderer/RenderbufferFormat'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Color', 'Core/BoundingRectangle', 'Renderer/PassState', 'Renderer/RenderbufferFormat'], function(
         defaultValue,
+        defined,
         destroyObject,
         Color,
         BoundingRectangle,
-        ClearCommand,
         PassState,
         RenderbufferFormat) {
     "use strict";
@@ -21,18 +21,11 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/Color', 'Core/BoundingR
             rectangle : new BoundingRectangle()
         };
 
-        // Clear to black.  Since this is the background color, no objects will be black
-        var command = new ClearCommand();
-        command.color = new Color(0.0, 0.0, 0.0, 0.0);
-        command.depth = 1.0;
-        command.stencil = 0;
-
         this._context = context;
         this._fb = undefined;
         this._passState = passState;
         this._width = 0;
         this._height = 0;
-        this._clearCommand = command;
     };
 
     PickFramebuffer.prototype.begin = function(screenSpaceRectangle) {
@@ -43,7 +36,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/Color', 'Core/BoundingR
         BoundingRectangle.clone(screenSpaceRectangle, this._passState.scissorTest.rectangle);
 
         // Initially create or recreate renderbuffers and framebuffer used for picking
-        if ((typeof this._fb === 'undefined') || (this._width !== width) || (this._height !== height)) {
+        if ((!defined(this._fb)) || (this._width !== width) || (this._height !== height)) {
             this._width = width;
             this._height = height;
 
@@ -59,8 +52,6 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/Color', 'Core/BoundingR
             });
             this._passState.framebuffer = this._fb;
         }
-
-        this._clearCommand.execute(context, this._passState);
 
         return this._passState;
     };
@@ -105,7 +96,7 @@ define(['Core/defaultValue', 'Core/destroyObject', 'Core/Color', 'Core/BoundingR
                 colorScratch.alpha = Color.byteToFloat(pixels[index + 3]);
 
                 var object = context.getObjectByPickColor(colorScratch);
-                if (typeof object !== 'undefined') {
+                if (defined(object)) {
                     return object;
                 }
             }

@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/destroyObject', 'Core/DeveloperError', 'Renderer/PixelDatatype', 'Renderer/PixelFormat', 'Renderer/Texture'], function(
+define(['Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Renderer/PixelDatatype', 'Renderer/PixelFormat', 'Renderer/Texture'], function(
+        defined,
         destroyObject,
         DeveloperError,
         PixelDatatype,
@@ -9,7 +10,7 @@ define(['Core/destroyObject', 'Core/DeveloperError', 'Renderer/PixelDatatype', '
 
     var PooledTexture;
     function createPooledTexture(texture, textureTypeKey, pool) {
-        if (typeof PooledTexture === 'undefined') {
+        if (!defined(PooledTexture)) {
             // define the class only when needed, so we can use modern
             // language features without breaking legacy browsers at setup time.
             PooledTexture = function(texture, textureTypeKey, pool) {
@@ -29,7 +30,7 @@ define(['Core/destroyObject', 'Core/DeveloperError', 'Renderer/PixelDatatype', '
             // except for destroy, which releases back into the pool
             PooledTexture.prototype.destroy = function() {
                 var freeList = this._pool._free[this._textureTypeKey];
-                if (typeof freeList === 'undefined') {
+                if (!defined(freeList)) {
                     freeList = this._pool._free[this._textureTypeKey] = [];
                 }
 
@@ -78,8 +79,8 @@ define(['Core/destroyObject', 'Core/DeveloperError', 'Renderer/PixelDatatype', '
         }
 
         var source = description.source;
-        var width = typeof source !== 'undefined' ? source.width : description.width;
-        var height = typeof source !== 'undefined' ? source.height : description.height;
+        var width = defined(source) ? source.width : description.width;
+        var height = defined(source) ? source.height : description.height;
         //coerce values to primitive numbers to make textureTypeKey smaller.
         var pixelFormat = +(description.pixelFormat || PixelFormat.RGBA);
         var pixelDatatype = +(description.pixelDatatype || PixelDatatype.UNSIGNED_BYTE);
@@ -88,9 +89,9 @@ define(['Core/destroyObject', 'Core/DeveloperError', 'Renderer/PixelDatatype', '
         var textureTypeKey = JSON.stringify([width, height, pixelFormat, pixelDatatype, preMultiplyAlpha]);
 
         var freeList = this._free[textureTypeKey];
-        if (typeof freeList !== 'undefined' && freeList.length > 0) {
+        if (defined(freeList) && freeList.length > 0) {
             var texture = freeList.pop();
-            if (typeof source !== 'undefined') {
+            if (defined(source)) {
                 texture.copyFrom(source);
             }
             return texture;
@@ -107,7 +108,7 @@ define(['Core/destroyObject', 'Core/DeveloperError', 'Renderer/PixelDatatype', '
      *
      * @memberof TexturePool
      *
-     * @return {Boolean} True if this object was destroyed; otherwise, false.
+     * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
      * @see TexturePool#destroy
      */
@@ -125,7 +126,7 @@ define(['Core/destroyObject', 'Core/DeveloperError', 'Renderer/PixelDatatype', '
      *
      * @memberof TexturePool
      *
-     * @return {undefined}
+     * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *
