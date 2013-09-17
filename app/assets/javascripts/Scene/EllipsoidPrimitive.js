@@ -284,7 +284,9 @@ define(['Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/combine'
             var pickCommand = this._pickCommand;
 
             if (!defined(this._pickId)) {
-                this._pickId = context.createPickId(this);
+                this._pickId = context.createPickId({
+                    primitive : this
+                });
             }
 
             // Recompile shader when material changes

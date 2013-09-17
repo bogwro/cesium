@@ -210,7 +210,7 @@ define(['Core/buildModuleUrl', 'Core/combine', 'Core/loadImage', 'Core/defaultVa
 
     function computeDepthQuad(centralBody, frameState) {
         var radii = centralBody._ellipsoid.getRadii();
-        var p = frameState.camera.getPositionWC();
+        var p = frameState.camera.positionWC;
 
         // Find the corresponding position in the scaled space of the ellipsoid.
         var q = centralBody._ellipsoid.getOneOverRadii().multiplyComponents(p);
@@ -640,7 +640,7 @@ define(['Core/buildModuleUrl', 'Core/combine', 'Core/loadImage', 'Core/defaultVa
             this._hasWaterMask = hasWaterMask;
         }
 
-        var cameraPosition = frameState.camera.getPositionWC();
+        var cameraPosition = frameState.camera.positionWC;
 
         this._occluder.setCameraPosition(cameraPosition);
 

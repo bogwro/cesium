@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "uniform vec3 u_radii;\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "uniform vec3 u_radii;\n\
 uniform vec3 u_oneOverEllipsoidRadiiSquared;\n\
 varying vec3 v_positionEC;\n\
 vec4 computeEllipsoidColor(czm_ray ray, float intersection, float side)\n\

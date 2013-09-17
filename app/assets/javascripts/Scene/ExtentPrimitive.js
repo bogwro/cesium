@@ -29,6 +29,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
      * @param {Number} [options.textureRotationAngle=0.0] The rotation of the texture coordinates, in radians. A positive rotation is counter-clockwise.
      * @param {Boolean} [options.show=true] Determines if this primitive will be shown.
      * @param {Material} [options.material=undefined] The surface appearance of the primitive.
+     * @param {Boolean} [options.asynchronous=true] Determines if the extent will be created asynchronously or block until ready.
      *
      * @example
      * var extentPrimitive = new ExtentPrimitive({
@@ -142,8 +143,6 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
          * @type Boolean
          *
          * @default true
-         *
-         * @private
          */
         this.asynchronous = defaultValue(options.asynchronous, true);
 
@@ -194,7 +193,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
                     rotation : this.rotation,
                     stRotation : this.textureRotationAngle
                 }),
-                id : this
+                pickPrimitive : this
             });
 
             if (defined(this._primitive)) {

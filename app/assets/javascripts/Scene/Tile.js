@@ -683,8 +683,8 @@ define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/defin
 
             if (!defined(waterMaskData.sampler)) {
                 waterMaskData.sampler = context.createSampler({
-                    wrapS : TextureWrap.CLAMP,
-                    wrapT : TextureWrap.CLAMP,
+                    wrapS : TextureWrap.CLAMP_TO_EDGE,
+                    wrapT : TextureWrap.CLAMP_TO_EDGE,
                     minificationFilter : TextureMinificationFilter.LINEAR,
                     magnificationFilter : TextureMagnificationFilter.LINEAR
                 });

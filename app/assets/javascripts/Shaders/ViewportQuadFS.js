@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "varying vec2 v_textureCoordinates;\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "varying vec2 v_textureCoordinates;\n\
 void main()\n\
 {\n\
 czm_materialInput materialInput;\n\

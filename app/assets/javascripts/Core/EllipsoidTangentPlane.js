@@ -44,8 +44,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Transf
         this._yAxis = Cartesian3.fromCartesian4(eastNorthUp.getColumn(1));
 
         var normal = Cartesian3.fromCartesian4(eastNorthUp.getColumn(2));
-        var distance = -Cartesian3.dot(origin, origin); //The shortest distance from the origin to the plane.
-        this._plane = new Plane(normal, distance);
+        this._plane = Plane.fromPointNormal(origin, normal);
     };
 
     var tmp = new AxisAlignedBoundingBox();
@@ -107,6 +106,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Transf
         Cartesian3.normalize(cartesian, ray.direction);
 
         var intersectionPoint = IntersectionTests.rayPlane(ray, this._plane, projectPointOntoPlaneCartesian3);
+        if (!defined(intersectionPoint)) {
+            Cartesian3.negate(ray.direction, ray.direction);
+            intersectionPoint = IntersectionTests.rayPlane(ray, this._plane, projectPointOntoPlaneCartesian3);
+        }
 
         if (defined(intersectionPoint)) {
             var v = intersectionPoint.subtract(this._origin, intersectionPoint);

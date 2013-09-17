@@ -122,9 +122,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
          *
          * @type Boolean
          *
-         * @default true
-         *
-         * @private
+         * @default false
          */
         this.asynchronous = defaultValue(options.asynchronous, true);
 
@@ -286,7 +284,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
                         ellipsoid : this.ellipsoid,
                         granularity : this.granularity
                     }),
-                    id : this
+                    pickPrimitive : this
                 });
             } else {
                 instance = new GeometryInstance({
@@ -298,7 +296,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
                         ellipsoid : this.ellipsoid,
                         granularity : this.granularity
                     }),
-                    id : this
+                    pickPrimitive : this
                 });
             }
 

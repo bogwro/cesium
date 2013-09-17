@@ -1,5 +1,5 @@
 /*global define*/
-define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/EncodedCartesian3', 'Core/Matrix4', 'Core/Math', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Core/Intersect', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Scene/Material', 'Scene/SceneMode', 'Scene/Polyline', 'Shaders/PolylineVS', 'Shaders/PolylineFS'], function(
+define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/EncodedCartesian3', 'Core/Matrix4', 'Core/Math', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Core/Intersect', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Scene/Material', 'Scene/SceneMode', 'Scene/Polyline', 'Shaders/PolylineCommon', 'Shaders/PolylineVS', 'Shaders/PolylineFS'], function(
         defined,
         DeveloperError,
         Color,
@@ -23,6 +23,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Co
         Material,
         SceneMode,
         Polyline,
+        PolylineCommon,
         PolylineVS,
         PolylineFS) {
     "use strict";
@@ -1011,10 +1012,11 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Co
             return;
         }
 
+        var vsSource = createShaderSource({ sources : [PolylineCommon, PolylineVS] });
         var fsSource = createShaderSource({ sources : [this.material.shaderSource, PolylineFS] });
         var fsPick = createShaderSource({ sources : [fsSource], pickColorQualifier : 'varying' });
-        this.shaderProgram = context.getShaderCache().getShaderProgram(PolylineVS, fsSource, attributeIndices);
-        this.pickShaderProgram = context.getShaderCache().getShaderProgram(PolylineVS, fsPick, attributeIndices);
+        this.shaderProgram = context.getShaderCache().getShaderProgram(vsSource, fsSource, attributeIndices);
+        this.pickShaderProgram = context.getShaderCache().getShaderProgram(vsSource, fsPick, attributeIndices);
     };
 
     function intersectsIDL(polyline) {

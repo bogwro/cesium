@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "varying vec4 positionEC;\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "varying vec4 positionEC;\n\
 void main()\n\
 {\n\
 czm_ellipsoid ellipsoid = czm_getWgs84EllipsoidEC();\n\

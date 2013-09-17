@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "uniform samplerCube cubeMap;\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "uniform samplerCube cubeMap;\n\
 uniform float indexOfRefractionRatio;\n\
 czm_material czm_getMaterial(czm_materialInput materialInput)\n\
 {\n\

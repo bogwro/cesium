@@ -29,11 +29,11 @@
  *
  * Modifications made by Analytical Graphics, Inc.
  */
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "attribute vec4 position;\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "attribute vec4 position;\n\
 uniform float fCameraHeight;\n\
 uniform float fCameraHeight2;\n\
 uniform float fOuterRadius;\n\

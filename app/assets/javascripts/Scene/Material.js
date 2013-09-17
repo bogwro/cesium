@@ -1,5 +1,5 @@
 /*global define*/
-define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/createGuid', 'Core/clone', 'Core/Color', 'Core/combine', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Matrix2', 'Core/Matrix3', 'Core/Matrix4', 'Renderer/Texture', 'Renderer/CubeMap', 'Shaders/Materials/AsphaltMaterial', 'Shaders/Materials/BlobMaterial', 'Shaders/Materials/BrickMaterial', 'Shaders/Materials/BumpMapMaterial', 'Shaders/Materials/CementMaterial', 'Shaders/Materials/CheckerboardMaterial', 'Shaders/Materials/DotMaterial', 'Shaders/Materials/FacetMaterial', 'Shaders/Materials/FresnelMaterial', 'Shaders/Materials/GrassMaterial', 'Shaders/Materials/GridMaterial', 'Shaders/Materials/NormalMapMaterial', 'Shaders/Materials/ReflectionMaterial', 'Shaders/Materials/RefractionMaterial', 'Shaders/Materials/StripeMaterial', 'Shaders/Materials/TieDyeMaterial', 'Shaders/Materials/Water', 'Shaders/Materials/WoodMaterial', 'Shaders/Materials/RimLightingMaterial', 'Shaders/Materials/ErosionMaterial', 'Shaders/Materials/FadeMaterial', 'Shaders/Materials/PolylineArrowMaterial', 'Shaders/Materials/PolylineGlowMaterial', 'Shaders/Materials/PolylineOutlineMaterial'], function(
+define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/createGuid', 'Core/clone', 'Core/Color', 'Core/combine', 'Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Matrix2', 'Core/Matrix3', 'Core/Matrix4', 'Renderer/Texture', 'Renderer/CubeMap', 'Shaders/Materials/AsphaltMaterial', 'Shaders/Materials/BlobMaterial', 'Shaders/Materials/BrickMaterial', 'Shaders/Materials/BumpMapMaterial', 'Shaders/Materials/CementMaterial', 'Shaders/Materials/CheckerboardMaterial', 'Shaders/Materials/DotMaterial', 'Shaders/Materials/FacetMaterial', 'Shaders/Materials/FresnelMaterial', 'Shaders/Materials/GrassMaterial', 'Shaders/Materials/GridMaterial', 'Shaders/Materials/NormalMapMaterial', 'Shaders/Materials/ReflectionMaterial', 'Shaders/Materials/RefractionMaterial', 'Shaders/Materials/StripeMaterial', 'Shaders/Materials/TieDyeMaterial', 'Shaders/Materials/Water', 'Shaders/Materials/WoodMaterial', 'Shaders/Materials/RimLightingMaterial', 'Shaders/Materials/ErosionMaterial', 'Shaders/Materials/FadeMaterial', 'Shaders/Materials/PolylineArrowMaterial', 'Shaders/Materials/PolylineGlowMaterial', 'Shaders/Materials/PolylineOutlineMaterial'], function(
         when,
         loadImage,
         DeveloperError,
@@ -9,6 +9,7 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         combine,
         defaultValue,
         defined,
+        defineProperties,
         destroyObject,
         Cartesian2,
         Matrix2,
@@ -355,9 +356,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         this._count = undefined;
 
         initializeMaterial(description, this);
-        Object.defineProperty(this, 'type', {
-            value : this.type,
-            writable : false
+        defineProperties(this, {
+            type : {
+                value : this.type,
+                writable : false
+            }
         });
 
         if (!defined(Material._uniformList[this.type])) {

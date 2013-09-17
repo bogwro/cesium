@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defined', 'Core/DeveloperError', 'Core/Math', 'Core/Ellipsoid', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Matrix4', 'Scene/CameraController', 'Scene/PerspectiveFrustum'], function(
+define(['Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/Math', 'Core/Ellipsoid', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Matrix4', 'Scene/CameraController', 'Scene/PerspectiveFrustum'], function(
         defined,
+        defineProperties,
         DeveloperError,
         CesiumMath,
         Ellipsoid,
@@ -53,6 +54,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Math', 'Core/Ellipsoid', 'C
          * @default {@link Matrix4.IDENTITY}
          *
          * @see Transforms
+         * @see Camera#inverseTransform
          */
         this.transform = Matrix4.IDENTITY.clone();
         this._transform = this.transform.clone();
@@ -219,82 +221,109 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Math', 'Core/Ellipsoid', 'C
         }
     }
 
-    /**
-     * DOC_TBA
-     *
-     * @memberof Camera
-     *
-     * @returns {Matrix4} DOC_TBA
-     */
-    Camera.prototype.getInverseTransform = function() {
-        update(this);
-        return this._invTransform;
-    };
+    defineProperties(Camera.prototype, {
+        /**
+         * Gets the inverse camera transform.
+         *
+         * @memberof Camera
+         * @type {Matrix4}
+         * @default {@link Matrix4.IDENTITY}
+         *
+         * @see Camera#transform
+         */
+        inverseTransform : {
+            get : function () {
+                update(this);
+                return this._invTransform;
+            }
+        },
 
-    /**
-     * Returns the view matrix.
-     *
-     * @memberof Camera
-     *
-     * @returns {Matrix4} The view matrix.
-     *
-     * @see UniformState#getView
-     * @see UniformState#setView
-     * @see czm_view
-     */
-    Camera.prototype.getViewMatrix = function() {
-        update(this);
-        return this._viewMatrix;
-    };
+        /**
+         * The view matrix.
+         *
+         * @memberof Camera
+         * @type {Matrix4}
+         *
+         * @see UniformState#getView
+         * @see czm_view
+         * @see Camera#inverseViewMatrix
+         */
+        viewMatrix : {
+            get : function () {
+                update(this);
+                return this._viewMatrix;
+            }
+        },
 
-    /**
-     * DOC_TBA
-     * @memberof Camera
-     */
-    Camera.prototype.getInverseViewMatrix = function() {
-        update(this);
-        return this._invViewMatrix;
-    };
+        /**
+         * The inverse view matrix.
+         *
+         * @memberof Camera
+         * @type {Matrix4}
+         *
+         * @see UniformState#getInverseView
+         * @see czm_inverseView
+         * @see Camera#viewMatrix
+         */
+        inverseViewMatrix : {
+            get : function () {
+                update(this);
+                return this._invViewMatrix;
+            }
+        },
 
-    /**
-     * The position of the camera in world coordinates.
-     *
-     * @type {Cartesian3}
-     */
-    Camera.prototype.getPositionWC = function() {
-        update(this);
-        return this._positionWC;
-    };
+        /**
+         * The position of the camera in world coordinates.
+         *
+         * @memberof Camera
+         * @type {Cartesian3}
+         */
+        positionWC : {
+            get : function() {
+                update(this);
+                return this._positionWC;
+            }
+        },
 
-    /**
-     * The view direction of the camera in world coordinates.
-     *
-     * @type {Cartesian3}
-     */
-    Camera.prototype.getDirectionWC = function() {
-        update(this);
-        return this._directionWC;
-    };
+        /**
+         * The view direction of the camera in world coordinates.
+         *
+         * @memberof Camera
+         * @type {Cartesian3}
+         */
+        directionWC : {
+            get : function() {
+                update(this);
+                return this._directionWC;
+            }
+        },
 
-    /**
-     * The up direction of the camera in world coordinates.
-     *
-     * @type {Cartesian3}
-     */
-    Camera.prototype.getUpWC = function() {
-        update(this);
-        return this._upWC;
-    };
+        /**
+         * The up direction of the camera in world coordinates.
+         *
+         * @memberof Camera
+         * @type {Cartesian3}
+         */
+        upWC : {
+            get : function() {
+                update(this);
+                return this._upWC;
+            }
+        },
 
-    /**
-     * The right direction of the camera in world coordinates.
-     *
-     * @type {Cartesian3}
-     */
-    Camera.prototype.getRightWC = function() {
-        update(this);
-        return this._rightWC;
-    };
+        /**
+         * The right direction of the camera in world coordinates.
+         *
+         * @memberof Camera
+         * @type {Cartesian3}
+         */
+        rightWC : {
+            get : function() {
+                update(this);
+                return this._rightWC;
+            }
+        }
+    });
 
     /**
      * Returns a duplicate of a Camera instance.
@@ -329,7 +358,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Math', 'Core/Ellipsoid', 'C
         if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required.');
         }
-        return Matrix4.multiplyByVector(this.getInverseTransform(), cartesian, result);
+        return Matrix4.multiplyByVector(this.inverseTransform, cartesian, result);
     };
 
     /**

@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "uniform sampler2D u_texture;\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "uniform sampler2D u_texture;\n\
 uniform float u_avgLuminance;\n\
 uniform float u_threshold;\n\
 uniform float u_offset;\n\

@@ -333,7 +333,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
             }
         }
 
-        var cameraPosition = frameState.camera.getPositionWC();
+        var cameraPosition = frameState.camera.positionWC;
 
         var ellipsoid = surface._terrainProvider.getTilingScheme().getEllipsoid();
         var cameraPositionCartographic = ellipsoid.cartesianToCartographic(cameraPosition);
@@ -680,8 +680,16 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
         return a.distance - b.distance;
     }
 
-    function createTileUniformMap() {
-        return {
+    function mergeUniformMap(target, source) {
+        for (var property in source) {
+            if (source.hasOwnProperty(property)) {
+                target[property] = source[property];
+            }
+        }
+    }
+
+    function createTileUniformMap(centralBodyUniformMap) {
+        var uniformMap = {
             u_center3D : function() {
                 return this.center3D;
             },
@@ -755,14 +763,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
             waterMask : undefined,
             waterMaskTranslationAndScale : new Cartesian4()
         };
-    }
 
-    function mergeUniformMap(target, source) {
-        for (var property in source) {
-            if (source.hasOwnProperty(property)) {
-                target[property] = source[property];
-            }
-        }
+        mergeUniformMap(uniformMap, centralBodyUniformMap);
+
+        return uniformMap;
     }
 
     var float32ArrayScratch = FeatureDetection.supportsTypedArrays() ? new Float32Array(1) : undefined;
@@ -772,7 +776,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
     var centerEyeScratch = new Cartesian4();
 
     function createRenderCommandsForSelectedTiles(surface, context, frameState, shaderSet, projection, centralBodyUniformMap, colorCommandList, renderState) {
-        var viewMatrix = frameState.camera.getViewMatrix();
+        var viewMatrix = frameState.camera.viewMatrix;
 
         var maxTextures = context.getMaximumTextureImageUnits();
 
@@ -863,14 +867,13 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
                         command.owner = tile;
                         command.cull = false;
                         tileCommands[tileCommandIndex] = command;
-                        tileCommandUniformMaps[tileCommandIndex] = createTileUniformMap();
+                        tileCommandUniformMaps[tileCommandIndex] = createTileUniformMap(centralBodyUniformMap);
                     }
                     command.owner = tile;
 
                     command.debugShowBoundingVolume = (tile === surface._debug.boundingSphereTile);
 
                     var uniformMap = tileCommandUniformMaps[tileCommandIndex];
-                    mergeUniformMap(uniformMap, centralBodyUniformMap);
 
                     uniformMap.center3D = tile.center;
 

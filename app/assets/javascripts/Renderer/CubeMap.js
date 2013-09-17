@@ -180,8 +180,8 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Math'
             }
 
             sampler = {
-                wrapS : TextureWrap.CLAMP,
-                wrapT : TextureWrap.CLAMP,
+                wrapS : TextureWrap.CLAMP_TO_EDGE,
+                wrapT : TextureWrap.CLAMP_TO_EDGE,
                 minificationFilter : minFilter,
                 magnificationFilter : magFilter,
                 maximumAnisotropy : 1.0

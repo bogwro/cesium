@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "vec3 czm_multiplyWithColorBalance(vec3 left, vec3 right)\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "vec3 czm_multiplyWithColorBalance(vec3 left, vec3 right)\n\
 {\n\
 const vec3 W = vec3(0.2125, 0.7154, 0.0721);\n\
 vec3 target = left * right;\n\

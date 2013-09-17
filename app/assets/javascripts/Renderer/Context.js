@@ -217,6 +217,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/destro
         this._currentFramebuffer = undefined;
         this._currentSp = undefined;
         this._currentRenderState = rs;
+        this._maxFrameTextureUnitIndex = 0;
 
         this._pickObjects = {};
         this._nextPickColor = new Uint32Array(1);
@@ -1812,8 +1813,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/destro
      */
     Context.prototype.createSampler = function(sampler) {
         var s = {
-            wrapS : sampler.wrapS || TextureWrap.CLAMP,
-            wrapT : sampler.wrapT || TextureWrap.CLAMP,
+            wrapS : sampler.wrapS || TextureWrap.CLAMP_TO_EDGE,
+            wrapT : sampler.wrapT || TextureWrap.CLAMP_TO_EDGE,
             minificationFilter : sampler.minificationFilter || TextureMinificationFilter.LINEAR,
             magnificationFilter : sampler.magnificationFilter || TextureMagnificationFilter.LINEAR,
             maximumAnisotropy : (defined(sampler.maximumAnisotropy)) ? sampler.maximumAnisotropy : 1.0
@@ -2034,6 +2035,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/destro
 
         this._currentFramebuffer = framebuffer;
         this._currentSp = sp;
+        this._maxFrameTextureUnitIndex = Math.max(this._maxFrameTextureUnitIndex, sp.maximumTextureUnitIndex);
     };
 
     /**
@@ -2105,8 +2107,24 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/destro
             this._currentFramebuffer._unBind();
             this._currentFramebuffer = undefined;
         }
-        this._currentSp._unBind();
         this._currentSp = undefined;
+    };
+
+    /**
+     * @private
+     */
+    Context.prototype.endFrame = function() {
+        var gl = this._gl;
+        gl.useProgram(null);
+
+        var length = this._maxFrameTextureUnitIndex;
+        this._maxFrameTextureUnitIndex = 0;
+
+        for (var i = 0; i < length; ++i) {
+            gl.activeTexture(gl.TEXTURE0 + i);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
+        }
     };
 
     /**
@@ -2489,7 +2507,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/destro
      * @see Context#getObjectByPickColor
      *
      * @example
-     * this._pickId = context.createPickId(this);
+     * this._pickId = context.createPickId({
+     *   primitive : this
+     * });
      */
     Context.prototype.createPickId = function(object) {
         if (!defined(object)) {

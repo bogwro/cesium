@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "uniform vec4 lightColor;\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "uniform vec4 lightColor;\n\
 uniform vec4 darkColor;\n\
 uniform float frequency;\n\
 czm_material czm_getMaterial(czm_materialInput materialInput)\n\

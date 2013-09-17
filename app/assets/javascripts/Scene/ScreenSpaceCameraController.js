@@ -703,7 +703,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
         cameraController.rotateUp(deltaTheta, transform);
 
         if (defined(restrictedAngle)) {
-            var direction = Cartesian3.clone(cameraController._camera.getDirectionWC(), rotate3DRestrictedDirection);
+            var direction = Cartesian3.clone(cameraController._camera.directionWC, rotate3DRestrictedDirection);
             var invTransform = transform.inverseTransformation();
             Matrix4.multiplyByVector(invTransform, direction, direction);
 

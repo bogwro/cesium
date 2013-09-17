@@ -202,6 +202,7 @@ define(['Core/Cartesian3', 'Core/defined', 'Core/DeveloperError', 'Core/destroyO
             } else {
                 polygonVisualizerIndex = dynamicPolygonVisualizer._polygonCollection.length;
                 polygon = new Polygon();
+                polygon.asynchronous = false;
                 dynamicPolygonVisualizer._polygonCollection.push(polygon);
                 dynamicPolygonVisualizer._primitives.add(polygon);
             }
