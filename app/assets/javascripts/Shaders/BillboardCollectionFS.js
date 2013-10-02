@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "uniform sampler2D u_atlas;\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "uniform sampler2D u_atlas;\n\
 varying vec2 v_textureCoordinates;\n\
 #ifdef RENDER_FOR_PICK\n\
 varying vec4 v_pickColor;\n\

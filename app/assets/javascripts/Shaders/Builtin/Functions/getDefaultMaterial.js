@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "czm_material czm_getDefaultMaterial(czm_materialInput materialInput)\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "czm_material czm_getDefaultMaterial(czm_materialInput materialInput)\n\
 {\n\
 czm_material material;\n\
 material.diffuse = vec3(0.0);\n\

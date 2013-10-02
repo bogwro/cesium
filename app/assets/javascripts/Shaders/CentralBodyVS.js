@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "attribute vec4 position3DAndHeight;\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "attribute vec4 position3DAndHeight;\n\
 attribute vec2 textureCoordinates;\n\
 uniform vec3 u_center3D;\n\
 uniform mat4 u_modifiedModelView;\n\

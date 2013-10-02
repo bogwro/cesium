@@ -1,8 +1,9 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Matrix4', 'Scene/CullingVolume'], function(
+define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Matrix4', 'Scene/CullingVolume'], function(
         DeveloperError,
         defaultValue,
         defined,
+        defineProperties,
         destroyObject,
         Cartesian2,
         Cartesian3,
@@ -85,34 +86,6 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/destro
         this._infinitePerspective = undefined;
     };
 
-    /**
-     * Returns the perspective projection matrix computed from the view frustum.
-     *
-     * @memberof PerspectiveOffCenterFrustum
-     *
-     * @returns {Matrix4} The perspective projection matrix.
-     *
-     * @see PerspectiveOffCenterFrustum#getInfiniteProjectionMatrix
-     */
-    PerspectiveOffCenterFrustum.prototype.getProjectionMatrix = function() {
-        update(this);
-        return this._perspectiveMatrix;
-    };
-
-    /**
-     * Returns the perspective projection matrix computed from the view frustum with an infinite far plane.
-     *
-     * @memberof PerspectiveOffCenterFrustum
-     *
-     * @returns {Matrix4} The infinite perspective projection matrix.
-     *
-     * @see PerspectiveOffCenterFrustum#getProjectionMatrix
-     */
-    PerspectiveOffCenterFrustum.prototype.getInfiniteProjectionMatrix = function() {
-        update(this);
-        return this._infinitePerspective;
-    };
-
     function update(frustum) {
         if (!defined(frustum.right) || !defined(frustum.left) ||
             !defined(frustum.top) || !defined(frustum.bottom) ||
@@ -145,6 +118,36 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/destro
             frustum._infinitePerspective = Matrix4.computeInfinitePerspectiveOffCenter(l, r, b, t, n);
         }
     }
+
+    defineProperties(PerspectiveOffCenterFrustum.prototype, {
+        /**
+         * The perspective projection matrix computed from the view frustum.
+         * @memberof PerspectiveOffCenterFrustum
+         * @type {Matrix4}
+         *
+         * @see PerspectiveOffCenterFrustum#infiniteProjectionMatrix
+         */
+        projectionMatrix : {
+            get : function() {
+                update(this);
+                return this._perspectiveMatrix;
+            }
+        },
+
+        /**
+         * The perspective projection matrix computed from the view frustum with an infinite far plane.
+         * @memberof PerspectiveOffCenterFrustum
+         * @type {Matrix4}
+         *
+         * @see PerspectiveOffCenterFrustum#projectionMatrix
+         */
+        infiniteProjectionMatrix : {
+            get : function() {
+                update(this);
+                return this._infinitePerspective;
+            }
+        }
+    });
 
     var getPlanesRight = new Cartesian3();
     var getPlanesNearCenter = new Cartesian3();
@@ -298,12 +301,12 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/destro
      *
      * @memberof PerspectiveOffCenterFrustum
      *
-     * @param {Cartesian2} canvasDimensions A {@link Cartesian2} with width and height in the x and y properties, respectively.
+     * @param {Cartesian2} drawingBufferDimensions A {@link Cartesian2} with width and height in the x and y properties, respectively.
      * @param {Number} [distance=near plane distance] The distance to the near plane in meters.
      *
-     * @exception {DeveloperError} canvasDimensions is required.
-     * @exception {DeveloperError} canvasDimensions.x must be greater than zero.
-     * @exception {DeveloperError} canvasDimensione.y must be greater than zero.
+     * @exception {DeveloperError} drawingBufferDimensions is required.
+     * @exception {DeveloperError} drawingBufferDimensions.x must be greater than zero.
+     * @exception {DeveloperError} drawingBufferDimensions.y must be greater than zero.
      *
      * @returns {Cartesian2} A {@link Cartesian2} with the pixel's width and height in the x and y properties, respectively.
      *
@@ -317,27 +320,27 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/destro
      * // For example, get the size of a pixel of an image on a billboard.
      * var position = camera.position;
      * var direction = camera.direction;
-     * var toCenter = primitive.boundingVolume.center.subtract(position);      // vector from camera to a primitive
-     * var toCenterProj = direction.multiplyByScalar(direction.dot(toCenter)); // project vector onto camera direction vector
-     * var distance = toCenterProj.magnitude();
+     * var toCenter = Cartesian3.subtract(primitive.boundingVolume.center, position);      // vector from camera to a primitive
+     * var toCenterProj = Cartesian3.multiplyByScalar(direction, Cartesian3.dot(direction, toCenter)); // project vector onto camera direction vector
+     * var distance = Cartesian3.magnitude(toCenterProj);
      * var pixelSize = camera.frustum.getPixelSize(new Cartesian2(canvas.clientWidth, canvas.clientHeight), distance);
      */
-    PerspectiveOffCenterFrustum.prototype.getPixelSize = function(canvasDimensions, distance) {
+    PerspectiveOffCenterFrustum.prototype.getPixelSize = function(drawingBufferDimensions, distance) {
         update(this);
 
-        if (!defined(canvasDimensions)) {
-            throw new DeveloperError('canvasDimensions is required.');
+        if (!defined(drawingBufferDimensions)) {
+            throw new DeveloperError('drawingBufferDimensions is required.');
         }
 
-        var width = canvasDimensions.x;
-        var height = canvasDimensions.y;
+        var width = drawingBufferDimensions.x;
+        var height = drawingBufferDimensions.y;
 
         if (width <= 0) {
-            throw new DeveloperError('canvasDimensions.x must be greater than zero.');
+            throw new DeveloperError('drawingBufferDimensions.x must be greater than zero.');
         }
 
         if (height <= 0) {
-            throw new DeveloperError('canvasDimensions.y must be greater than zero.');
+            throw new DeveloperError('drawingBufferDimensions.y must be greater than zero.');
         }
 
         distance = defaultValue(distance, this.near);

@@ -139,7 +139,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
                     normal.y = y;
 
                     if (computeTangent) {
-                        tangent = Cartesian3.cross(Cartesian3.UNIT_Z, normal, tangent).normalize(tangent);
+                        tangent = Cartesian3.normalize(Cartesian3.cross(Cartesian3.UNIT_Z, normal, tangent), tangent);
                     }
 
                     if (vertexFormat.normal) {
@@ -161,7 +161,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
                     }
 
                     if (vertexFormat.binormal) {
-                        binormal = Cartesian3.cross(normal, tangent, binormal).normalize(binormal);
+                        binormal = Cartesian3.normalize(Cartesian3.cross(normal, tangent, binormal), binormal);
                         binormals[binormalIndex++] = binormal.x;
                         binormals[binormalIndex++] = binormal.y;
                         binormals[binormalIndex++] = binormal.z;
@@ -298,7 +298,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
         radiusScratch.x = length * 0.5;
         radiusScratch.y = Math.max(bottomRadius, topRadius);
 
-        var boundingSphere = new BoundingSphere(Cartesian3.ZERO, radiusScratch.magnitude());
+        var boundingSphere = new BoundingSphere(Cartesian3.ZERO, Cartesian2.magnitude(radiusScratch));
 
         return new Geometry({
             attributes : attributes,

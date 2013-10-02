@@ -63,8 +63,8 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Math'
                 if (that._isDown) {
                     // Aggregate several input events into a single animation frame.
                     if (!that._update) {
-                        that._movement.distance.endPosition = movement.distance.endPosition.clone();
-                        that._movement.angleAndHeight.endPosition = movement.angleAndHeight.endPosition.clone();
+                        that._movement.distance.endPosition = Cartesian2.clone(movement.distance.endPosition);
+                        that._movement.angleAndHeight.endPosition = Cartesian2.clone(movement.angleAndHeight.endPosition);
                     } else {
                         //that._lastMovement = that._movement;
                         that._movement = movement;
@@ -138,7 +138,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Math'
             this._eventHandler.setInputAction(function(movement) {
                 if (that._isDown) {
                     if (!that._update) {
-                        that._movement.endPosition = movement.endPosition.clone();
+                        that._movement.endPosition = Cartesian2.clone(movement.endPosition);
                     } else {
                         that._lastMovement = that._movement;
                         that._movement = movement;

@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "vec4 czm_windowToEyeCoordinates(vec4 fragmentCoordinate)\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "vec4 czm_windowToEyeCoordinates(vec4 fragmentCoordinate)\n\
 {\n\
 float x = 2.0 * (fragmentCoordinate.x - czm_viewport.x) / czm_viewport.z - 1.0;\n\
 float y = 2.0 * (fragmentCoordinate.y - czm_viewport.y) / czm_viewport.w - 1.0;\n\

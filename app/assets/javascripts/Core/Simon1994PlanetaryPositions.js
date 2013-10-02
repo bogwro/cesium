@@ -455,9 +455,8 @@ define(['Core/Cartesian3', 'Core/defined', 'Core/DeveloperError', 'Core/JulianDa
     var moonEarthMassRatio = 0.012300034; // From 1992 mu value in Table 2
     var factor = moonEarthMassRatio / (moonEarthMassRatio + 1.0) * -1;
     function computeSimonEarth(date, result) {
-        var moon = computeSimonMoon(date);
-        result = moon.multiplyByScalar(factor, result);
-        return result;
+        result = computeSimonMoon(date, result);
+        return Cartesian3.multiplyByScalar(result, factor, result);
     }
 
     // Values for the <code>axesTransformation</code> needed for the rotation were found using the STK Components
@@ -480,12 +479,12 @@ define(['Core/Cartesian3', 'Core/defined', 'Core/DeveloperError', 'Core/JulianDa
         }
         //first forward transformation
         translation = computeSimonEarthMoonBarycenter(date, translation);
-        result = translation.negate(result);
+        result = Cartesian3.negate(translation, result);
 
         //second forward transformation
         computeSimonEarth(date, translation);
 
-        result.subtract(translation, result);
+        Cartesian3.subtract(result, translation, result);
         axesTransformation.multiplyByVector(result, result);
 
         return result;

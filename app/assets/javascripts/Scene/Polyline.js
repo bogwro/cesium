@@ -28,7 +28,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Boundi
 
         this._material = description.material;
         if (!defined(this._material)) {
-            this._material = Material.fromType(undefined, Material.ColorType);
+            this._material = Material.fromType(Material.ColorType);
             this._material.uniforms.color = new Color(1.0, 1.0, 1.0, 1.0);
         }
 
@@ -273,7 +273,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Boundi
 
     Polyline.prototype.getPickId = function(context) {
         if (!defined(this._pickId)) {
-            this._pickId = context.createPickId(defaultValue(this._pickIdThis, this));
+            this._pickId = context.createPickId({
+                primitive : defaultValue(this._pickIdThis, this)
+            });
         }
         return this._pickId;
     };

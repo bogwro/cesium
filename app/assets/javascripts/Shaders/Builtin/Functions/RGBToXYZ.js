@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "vec3 czm_RGBToXYZ(vec3 rgb)\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "vec3 czm_RGBToXYZ(vec3 rgb)\n\
 {\n\
 const mat3 RGB2XYZ = mat3(0.4124, 0.2126, 0.0193,\n\
 0.3576, 0.7152, 0.1192,\n\

@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "uniform vec3 u_color;\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "uniform vec3 u_color;\n\
 varying vec2 v_textureCoordinates;\n\
 void main()\n\
 {\n\

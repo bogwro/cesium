@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Matrix4', 'Scene/CullingVolume'], function(
+define(['Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Matrix4', 'Scene/CullingVolume'], function(
         defined,
+        defineProperties,
         DeveloperError,
         destroyObject,
         Cartesian2,
@@ -83,18 +84,6 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
         this._orthographicMatrix = undefined;
     };
 
-    /**
-     * Returns the orthographic projection matrix computed from the view frustum.
-     *
-     * @memberof OrthographicFrustum
-     *
-     * @returns {Matrix4} The orthographic projection matrix.
-     */
-    OrthographicFrustum.prototype.getProjectionMatrix = function() {
-        update(this);
-        return this._orthographicMatrix;
-    };
-
     function update(frustum) {
         if (!defined(frustum.right) || !defined(frustum.left) ||
             !defined(frustum.top) || !defined(frustum.bottom) ||
@@ -127,6 +116,20 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
             frustum._orthographicMatrix = Matrix4.computeOrthographicOffCenter(frustum.left, frustum.right, frustum.bottom, frustum.top, frustum.near, frustum.far);
         }
     }
+
+    defineProperties(OrthographicFrustum.prototype, {
+        /**
+         * The orthographic projection matrix computed from the view frustum.
+         * @memberof OrthographicFrustum
+         * @type {Matrix4}
+         */
+        projectionMatrix : {
+            get : function() {
+                update(this);
+                return this._orthographicMatrix;
+            }
+        }
+    });
 
     var getPlanesRight = new Cartesian3();
     var getPlanesNearCenter = new Cartesian3();
@@ -205,7 +208,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
         plane.x = -right.x;
         plane.y = -right.y;
         plane.z = -right.z;
-        plane.w = -Cartesian3.dot(right.negate(), point);
+        plane.w = -Cartesian3.dot(Cartesian3.negate(right), point);
 
         // Bottom plane
         Cartesian3.multiplyByScalar(up, b, point);
@@ -231,7 +234,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
         plane.x = -up.x;
         plane.y = -up.y;
         plane.z = -up.z;
-        plane.w = -Cartesian3.dot(up.negate(), point);
+        plane.w = -Cartesian3.dot(Cartesian3.negate(up), point);
 
         // Near plane
         plane = planes[4];
@@ -254,7 +257,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
         plane.x = -direction.x;
         plane.y = -direction.y;
         plane.z = -direction.z;
-        plane.w = -Cartesian3.dot(direction.negate(), point);
+        plane.w = -Cartesian3.dot(Cartesian3.negate(direction), point);
 
         return this._cullingVolume;
     };
@@ -264,11 +267,11 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
      *
      * @memberof OrthographicFrustum
      *
-     * @param {Cartesian2} canvasDimensions A {@link Cartesian2} with width and height in the x and y properties, respectively.
+     * @param {Cartesian2} drawingBufferDimensions A {@link Cartesian2} with width and height in the x and y properties, respectively.
      *
-     * @exception {DeveloperError} canvasDimensions is required.
-     * @exception {DeveloperError} canvasDimensions.x must be greater than zero.
-     * @exception {DeveloperError} canvasDimensione.y must be greater than zero.
+     * @exception {DeveloperError} drawingBufferDimensions is required.
+     * @exception {DeveloperError} drawingBufferDimensions.x must be greater than zero.
+     * @exception {DeveloperError} drawingBufferDimensions.y must be greater than zero.
      *
      * @returns {Cartesian2} A {@link Cartesian2} with the pixel's width and height in the x and y properties, respectively.
      *
@@ -277,22 +280,22 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
      * // Get the width and height of a pixel.
      * var pixelSize = camera.frustum.getPixelSize(new Cartesian2(canvas.clientWidth, canvas.clientHeight));
      */
-    OrthographicFrustum.prototype.getPixelSize = function(canvasDimensions) {
+    OrthographicFrustum.prototype.getPixelSize = function(drawingBufferDimensions) {
         update(this);
 
-        if (!defined(canvasDimensions)) {
-            throw new DeveloperError('canvasDimensions is required.');
+        if (!defined(drawingBufferDimensions)) {
+            throw new DeveloperError('drawingBufferDimensions is required.');
         }
 
-        var width = canvasDimensions.x;
-        var height = canvasDimensions.y;
+        var width = drawingBufferDimensions.x;
+        var height = drawingBufferDimensions.y;
 
         if (width <= 0) {
-            throw new DeveloperError('canvasDimensions.x must be greater than zero.');
+            throw new DeveloperError('drawingBufferDimensions.x must be greater than zero.');
         }
 
         if (height <= 0) {
-            throw new DeveloperError('canvasDimensions.y must be greater than zero.');
+            throw new DeveloperError('drawingBufferDimensions.y must be greater than zero.');
         }
 
         var frustumWidth = this.right - this.left;

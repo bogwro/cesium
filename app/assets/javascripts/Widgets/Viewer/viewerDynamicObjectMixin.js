@@ -1,9 +1,10 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/defineProperties', 'Core/EventHelper', 'Core/ScreenSpaceEventType', 'Core/wrapFunction', 'Scene/SceneMode', 'DynamicScene/DynamicObjectView'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/defineProperties', 'Core/Event', 'Core/EventHelper', 'Core/ScreenSpaceEventType', 'Core/wrapFunction', 'Scene/SceneMode', 'DynamicScene/DynamicObjectView'], function(
         defaultValue,
         defined,
         DeveloperError,
         defineProperties,
+        Event,
         EventHelper,
         ScreenSpaceEventType,
         wrapFunction,
@@ -38,8 +39,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/define
         if (viewer.hasOwnProperty('trackedObject')) {
             throw new DeveloperError('trackedObject is already defined by another mixin.');
         }
+        if (viewer.hasOwnProperty('onObjectTracked')) {
+            throw new DeveloperError('onObjectTracked is already defined by another mixin.');
+        }
 
         var eventHelper = new EventHelper();
+        var onObjectTracked = new Event();
         var trackedObject;
         var dynamicObjectView;
 
@@ -52,11 +57,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/define
         eventHelper.add(viewer.clock.onTick, updateView);
 
         function pickAndTrackObject(e) {
-            var pickedPrimitive = viewer.scene.pick(e.position);
-            if (defined(pickedPrimitive) &&
-                defined(pickedPrimitive.dynamicObject) &&
-                defined(pickedPrimitive.dynamicObject.position)) {
-                viewer.trackedObject = pickedPrimitive.dynamicObject;
+            var p = viewer.scene.pick(e.position);
+            if (defined(p) &&
+                defined(p.primitive) &&
+                defined(p.primitive.dynamicObject) &&
+                defined(p.primitive.dynamicObject.position)) {
+                viewer.trackedObject = p.primitive.dynamicObject;
             }
         }
 
@@ -84,10 +90,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/define
                     return trackedObject;
                 },
                 set : function(value) {
-                    if (trackedObject !== value) {
-                        trackedObject = value;
-                        dynamicObjectView = defined(value) ? new DynamicObjectView(value, viewer.scene, viewer.centralBody.getEllipsoid()) : undefined;
-                    }
                     var sceneMode = viewer.scene.getFrameState().mode;
 
                     if (sceneMode === SceneMode.COLUMBUS_VIEW || sceneMode === SceneMode.SCENE2D) {
@@ -97,6 +99,25 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/define
                     if (sceneMode === SceneMode.COLUMBUS_VIEW || sceneMode === SceneMode.SCENE3D) {
                         viewer.scene.getScreenSpaceCameraController().enableTilt = !defined(value);
                     }
+
+                    if (trackedObject !== value) {
+                        trackedObject = value;
+                        dynamicObjectView = defined(value) ? new DynamicObjectView(value, viewer.scene, viewer.centralBody.getEllipsoid()) : undefined;
+                        onObjectTracked.raiseEvent(viewer, value);
+                    }
+                }
+            },
+
+            /**
+             * Gets an event that will be raised when an object is tracked by the camera.  The event
+             * has two parameters: a reference to the viewer instance, and the newly tracked object.
+             *
+             * @memberof viewerDynamicObjectMixin.prototype
+             * @type {Event}
+             */
+            onObjectTracked : {
+                get : function() {
+                    return onObjectTracked;
                 }
             }
         });

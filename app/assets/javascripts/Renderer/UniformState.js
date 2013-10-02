@@ -159,10 +159,10 @@ define(['Core/Matrix3', 'Core/Matrix4', 'Core/Cartesian2', 'Core/Cartesian3', 'C
     }
 
     function setCamera(uniformState, camera) {
-        Cartesian3.clone(camera.getPositionWC(), uniformState._cameraPosition);
-        Cartesian3.clone(camera.getDirectionWC(), uniformState._cameraDirection);
-        Cartesian3.clone(camera.getRightWC(), uniformState._cameraRight);
-        Cartesian3.clone(camera.getUpWC(), uniformState._cameraUp);
+        Cartesian3.clone(camera.positionWC, uniformState._cameraPosition);
+        Cartesian3.clone(camera.directionWC, uniformState._cameraDirection);
+        Cartesian3.clone(camera.rightWC, uniformState._cameraRight);
+        Cartesian3.clone(camera.upWC, uniformState._cameraUp);
         uniformState._encodedCameraPositionMCDirty = true;
     }
 
@@ -202,13 +202,15 @@ define(['Core/Matrix3', 'Core/Matrix4', 'Core/Cartesian2', 'Core/Cartesian3', 'C
      * @param {Object} frustum The frustum to synchronize with.
      */
     UniformState.prototype.updateFrustum = function(frustum) {
-        setProjection(this, frustum.getProjectionMatrix());
-        if (defined(frustum.getInfiniteProjectionMatrix)) {
-            setInfiniteProjection(this, frustum.getInfiniteProjectionMatrix());
+        setProjection(this, frustum.projectionMatrix);
+        if (defined(frustum.infiniteProjectionMatrix)) {
+            setInfiniteProjection(this, frustum.infiniteProjectionMatrix);
         }
         this._currentFrustum.x = frustum.near;
         this._currentFrustum.y = frustum.far;
     };
+
+    var scratchDrawingBufferDimensions = new Cartesian2();
 
     /**
      * Synchronizes frame state with the uniform state.  This is called
@@ -219,14 +221,14 @@ define(['Core/Matrix3', 'Core/Matrix4', 'Core/Cartesian2', 'Core/Cartesian3', 'C
      *
      * @param {FrameState} frameState The frameState to synchronize with.
      */
-    UniformState.prototype.update = function(frameState) {
+    UniformState.prototype.update = function(context, frameState) {
         this._mode = frameState.mode;
         this._mapProjection = frameState.scene2D.projection;
 
         var camera = frameState.camera;
 
-        setView(this, camera.getViewMatrix());
-        setInverseView(this, camera.getInverseViewMatrix());
+        setView(this, camera.viewMatrix);
+        setInverseView(this, camera.inverseViewMatrix);
         setCamera(this, camera);
 
         if (frameState.mode === SceneMode.SCENE2D) {
@@ -241,7 +243,9 @@ define(['Core/Matrix3', 'Core/Matrix4', 'Core/Cartesian2', 'Core/Cartesian3', 'C
 
         setSunAndMoonDirections(this, frameState);
 
-        var pixelSize = camera.frustum.getPixelSize(frameState.canvasDimensions);
+        scratchDrawingBufferDimensions.x = context.getDrawingBufferWidth();
+        scratchDrawingBufferDimensions.y = context.getDrawingBufferHeight();
+        var pixelSize = camera.frustum.getPixelSize(scratchDrawingBufferDimensions);
         this._pixelSize = Math.max(pixelSize.x, pixelSize.y);
 
         this._entireFrustum.x = camera.frustum.near;

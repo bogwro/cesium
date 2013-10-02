@@ -9,11 +9,11 @@
  *               Distributed under the MIT License. See LICENSE file.
  *               https://github.com/ashima/webgl-noise
  */
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "vec4 _czm_mod289(vec4 x)\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "vec4 _czm_mod289(vec4 x)\n\
 {\n\
 return x - floor(x * (1.0 / 289.0)) * 289.0;\n\
 }\n\

@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "vec4 czm_eyeToWindowCoordinates(vec4 positionEC)\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "vec4 czm_eyeToWindowCoordinates(vec4 positionEC)\n\
 {\n\
 vec4 q = czm_projection * positionEC;\n\
 q.xyz /= q.w;\n\

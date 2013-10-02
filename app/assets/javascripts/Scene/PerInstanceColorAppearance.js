@@ -35,7 +35,9 @@ define(['Core/defaultValue', 'Core/VertexFormat', 'Scene/Appearance', 'Shaders/A
      *         Cartographic.fromDegrees(5.0, 0.0)
      *       ])
      *     }),
-     *     color : new Color(1.0, 1.0, 1.0, 1.0)
+     *     attributes : {
+     *       color : Cesium.ColorGeometryInstanceAttribute.fromColor(new Color(1.0, 1.0, 1.0, 1.0))
+     *     }
      *   }),
      *   appearance : new PerInstanceColorAppearance({
      *     flat : true,

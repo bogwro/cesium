@@ -1,16 +1,28 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "#if TEXTURE_UNITS > 0\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "#if TEXTURE_UNITS > 0\n\
 uniform sampler2D u_dayTextures[TEXTURE_UNITS];\n\
 uniform vec4 u_dayTextureTranslationAndScale[TEXTURE_UNITS];\n\
+#ifdef APPLY_ALPHA\n\
 uniform float u_dayTextureAlpha[TEXTURE_UNITS];\n\
+#endif\n\
+#ifdef APPLY_BRIGHTNESS\n\
 uniform float u_dayTextureBrightness[TEXTURE_UNITS];\n\
+#endif\n\
+#ifdef APPLY_CONTRAST\n\
 uniform float u_dayTextureContrast[TEXTURE_UNITS];\n\
+#endif\n\
+#ifdef APPLY_HUE\n\
 uniform float u_dayTextureHue[TEXTURE_UNITS];\n\
+#endif\n\
+#ifdef APPLY_SATURATION\n\
 uniform float u_dayTextureSaturation[TEXTURE_UNITS];\n\
+#endif\n\
+#ifdef APPLY_GAMMA\n\
 uniform float u_dayTextureOneOverGamma[TEXTURE_UNITS];\n\
+#endif\n\
 uniform vec4 u_dayTextureTexCoordsExtent[TEXTURE_UNITS];\n\
 #endif\n\
 #ifdef SHOW_REFLECTIVE_OCEAN\n\
@@ -24,16 +36,6 @@ uniform sampler2D u_oceanNormalMap;\n\
 varying vec3 v_positionMC;\n\
 varying vec3 v_positionEC;\n\
 varying vec2 v_textureCoordinates;\n\
-float getLambertDiffuse(vec3 lightDirectionEC, vec3 normalEC)\n\
-{\n\
-return max(dot(lightDirectionEC, normalEC), 0.0);\n\
-}\n\
-float getSpecular(vec3 lightDirectionEC, vec3 toEyeEC, vec3 normalEC, float shininess)\n\
-{\n\
-vec3 toReflectedLight = reflect(-lightDirectionEC, normalEC);\n\
-float specular = max(dot(toReflectedLight, toEyeEC), 0.0);\n\
-return pow(specular, shininess);\n\
-}\n\
 vec3 sampleAndBlend(\n\
 vec3 previousColor,\n\
 sampler2D texture,\n\
@@ -133,7 +135,7 @@ vec3 normalTangentSpace = vec3(0.0, 0.0, 1.0);\n\
 #endif\n\
 vec3 normalEC = enuToEye * normalTangentSpace;\n\
 const vec3 waveHighlightColor = vec3(0.3, 0.45, 0.6);\n\
-float diffuseIntensity = getLambertDiffuse(czm_sunDirectionEC, normalEC);\n\
+float diffuseIntensity = czm_getLambertDiffuse(czm_sunDirectionEC, normalEC);\n\
 vec3 diffuseHighlight = waveHighlightColor * diffuseIntensity;\n\
 #ifdef SHOW_OCEAN_WAVES\n\
 float tsPerturbationRatio = normalTangentSpace.z;\n\
@@ -141,7 +143,7 @@ vec3 nonDiffuseHighlight = mix(waveHighlightColor * 5.0 * (1.0 - tsPerturbationR
 #else\n\
 vec3 nonDiffuseHighlight = vec3(0.0);\n\
 #endif\n\
-float specularIntensity = getSpecular(czm_sunDirectionEC, normalizedpositionToEyeEC, normalEC, 10.0) + 0.25 * getSpecular(czm_moonDirectionEC, normalizedpositionToEyeEC, normalEC, 10.0);\n\
+float specularIntensity = czm_getSpecular(czm_sunDirectionEC, normalizedpositionToEyeEC, normalEC, 10.0) + 0.25 * czm_getSpecular(czm_moonDirectionEC, normalizedpositionToEyeEC, normalEC, 10.0);\n\
 float surfaceReflectance = mix(0.0, mix(u_zoomedOutOceanSpecularIntensity, oceanSpecularIntensity, waveIntensity), specularMapValue);\n\
 float specular = specularIntensity * surfaceReflectance;\n\
 return vec4(imageryColor + diffuseHighlight + nonDiffuseHighlight + specular, 1.0);\n\

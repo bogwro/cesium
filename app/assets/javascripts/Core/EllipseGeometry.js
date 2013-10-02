@@ -79,7 +79,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartes
             if (vertexFormat.st) {
                 var rotatedPoint = Matrix3.multiplyByVector(textureMatrix, position, scratchCartesian2);
                 var projectedPoint = projection.project(ellipsoid.cartesianToCartographic(rotatedPoint, scratchCartographic), scratchCartesian3);
-                projectedPoint = Cartesian3.subtract(projectedPoint, projectedCenter, projectedPoint);
+                Cartesian3.subtract(projectedPoint, projectedCenter, projectedPoint);
 
                 texCoordScratch.x = (projectedPoint.x + semiMajorAxis) / (2.0 * semiMajorAxis);
                 texCoordScratch.y = (projectedPoint.y + semiMajorAxis) / (2.0 * semiMajorAxis);
@@ -327,7 +327,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartes
             if (vertexFormat.st) {
                 var rotatedPoint = Matrix3.multiplyByVector(textureMatrix, position, scratchCartesian2);
                 var projectedPoint = projection.project(ellipsoid.cartesianToCartographic(rotatedPoint, scratchCartographic), scratchCartesian3);
-                projectedPoint = Cartesian3.subtract(projectedPoint, projectedCenter, projectedPoint);
+                Cartesian3.subtract(projectedPoint, projectedCenter, projectedPoint);
 
                 texCoordScratch.x = (projectedPoint.x + semiMajorAxis) / (2.0 * semiMajorAxis);
                 texCoordScratch.y = (projectedPoint.y + semiMajorAxis) / (2.0 * semiMajorAxis);
@@ -340,7 +340,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartes
             }
 
             position = ellipsoid.scaleToGeodeticSurface(position, position);
-            extrudedPosition = position.clone(scratchCartesian2);
+            extrudedPosition = Cartesian3.clone(position, scratchCartesian2);
             normal = ellipsoid.geodeticSurfaceNormal(position, normal);
             var scaledNormal = Cartesian3.multiplyByScalar(normal, height, scratchCartesian4);
             position = Cartesian3.add(position, scaledNormal, position);
@@ -359,12 +359,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartes
 
             if (vertexFormat.normal || vertexFormat.tangent || vertexFormat.binormal) {
 
-                binormal = normal.clone(binormal);
+                binormal = Cartesian3.clone(normal, binormal);
                 var next = Cartesian3.fromArray(positions, (i + 3) % length, scratchCartesian4);
-                next = next.subtract(position, next);
-                var bottom = extrudedPosition.subtract(position, scratchCartesian3);
+                Cartesian3.subtract(next, position, next);
+                var bottom = Cartesian3.subtract(extrudedPosition, position, scratchCartesian3);
 
-                normal = bottom.cross(next, normal).normalize(normal);
+                normal = Cartesian3.normalize(Cartesian3.cross(bottom, next, normal), normal);
 
                 if (vertexFormat.normal) {
                     normals[i] = normal.x;
@@ -377,7 +377,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartes
                 }
 
                 if (vertexFormat.tangent) {
-                    tangent = Cartesian3.cross(binormal, normal, tangent).normalize(tangent);
+                    tangent = Cartesian3.normalize(Cartesian3.cross(binormal, normal, tangent), tangent);
                     tangents[i] = tangent.x;
                     tangents[i1] = tangent.y;
                     tangents[i2] = tangent.z;

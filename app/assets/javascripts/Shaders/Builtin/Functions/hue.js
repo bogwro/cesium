@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "vec3 czm_hue(vec3 rgb, float adjustment)\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "vec3 czm_hue(vec3 rgb, float adjustment)\n\
 {\n\
 const mat3 toYIQ = mat3(0.299,     0.587,     0.114,\n\
 0.595716, -0.274453, -0.321263,\n\

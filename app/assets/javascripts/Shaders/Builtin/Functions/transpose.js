@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "mat2 czm_transpose(mat2 matrix)\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "mat2 czm_transpose(mat2 matrix)\n\
 {\n\
 return mat2(\n\
 matrix[0][0], matrix[1][0],\n\

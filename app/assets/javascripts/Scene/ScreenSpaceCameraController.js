@@ -200,7 +200,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
     }
 
     function sameMousePosition(movement) {
-        return movement.startPosition.equalsEpsilon(movement.endPosition, CesiumMath.EPSILON14);
+        return Cartesian2.equalsEpsilon(movement.startPosition, movement.endPosition, CesiumMath.EPSILON14);
     }
 
     // If the time between mouse down and mouse up is not between
@@ -233,7 +233,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
                 };
             } else {
                 object[lastMovementName] = {
-                    startPosition : object[lastMovementName].endPosition.clone(),
+                    startPosition : Cartesian2.clone(object[lastMovementName].endPosition),
                     endPosition : new Cartesian2(
                             object[lastMovementName].endPosition.x + object[lastMovementName].motion.x * d,
                             object[lastMovementName].endPosition.y + object[lastMovementName].motion.y * d),
@@ -439,13 +439,13 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
 
         var position = startRay.origin;
         var direction = startRay.direction;
-        var scalar = -normal.dot(position) / normal.dot(direction);
+        var scalar = -Cartesian3.dot(normal, position) / Cartesian3.dot(normal, direction);
         var startPlanePos = Cartesian3.multiplyByScalar(direction, scalar, translateCVStartPos);
         Cartesian3.add(position, startPlanePos, startPlanePos);
 
         position = endRay.origin;
         direction = endRay.direction;
-        scalar = -normal.dot(position) / normal.dot(direction);
+        scalar = -Cartesian3.dot(normal, position) / Cartesian3.dot(normal, direction);
         var endPlanePos = Cartesian3.multiplyByScalar(direction, scalar, translateCVEndPos);
         Cartesian3.add(position, endPlanePos, endPlanePos);
 
@@ -454,7 +454,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
         diff.x = diff.y;
         diff.y = diff.z;
         diff.z = temp;
-        var mag = diff.magnitude();
+        var mag = Cartesian3.magnitude(diff);
         if (mag > CesiumMath.EPSILON6) {
             Cartesian3.normalize(diff, diff);
             cameraController.move(diff, mag);
@@ -474,7 +474,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
 
         var position = ray.origin;
         var direction = ray.direction;
-        var scalar = -normal.dot(position) / normal.dot(direction);
+        var scalar = -Cartesian3.dot(normal, position) / Cartesian3.dot(normal, direction);
         var center = Cartesian3.multiplyByScalar(direction, scalar, rotateCVCenter);
         Cartesian3.add(position, center, center);
         var transform = Matrix4.fromTranslation(center, rotateTransform);
@@ -498,7 +498,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
 
         var position = ray.origin;
         var direction = ray.direction;
-        var scalar = -normal.dot(position) / normal.dot(direction);
+        var scalar = -Cartesian3.dot(normal, position) / Cartesian3.dot(normal, direction);
 
         handleZoom(controller, movement, controller._zoomFactor, scalar);
     }
@@ -635,7 +635,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
         }
     }
 
-    var rotate3DRestrictedDirection = Cartesian4.ZERO.clone();
+    var rotate3DRestrictedDirection = Cartesian4.clone(Cartesian4.ZERO);
     function rotate3D(controller, movement, transform, constrainedAxis, restrictedAngle) {
         var cameraController = controller._cameraController;
         var oldAxis = cameraController.constrainedAxis;
@@ -645,7 +645,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
 
         // CAMERA TODO: remove access to camera, fixes a problem in Columbus view
         //var rho = cameraController.getMagnitude();
-        var rho = cameraController._camera.position.magnitude();
+        var rho = Cartesian3.magnitude(cameraController._camera.position);
         var rotateRate = controller._rotateFactor * (rho - controller._rotateRateRangeAdjustment);
 
         if (rotateRate > controller._maximumRotateRate) {
@@ -666,9 +666,9 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
 
         if (defined(cameraController.constrainedAxis) && !defined(transform)) {
             var camera = cameraController._camera;
-            var p = camera.position.normalize();
-            var northParallel = p.equalsEpsilon(cameraController.constrainedAxis, CesiumMath.EPSILON2);
-            var southParallel = p.equalsEpsilon(cameraController.constrainedAxis.negate(), CesiumMath.EPSILON2);
+            var p = Cartesian3.normalize(camera.position);
+            var northParallel = Cartesian3.equalsEpsilon(p, cameraController.constrainedAxis, CesiumMath.EPSILON2);
+            var southParallel = Cartesian3.equalsEpsilon(p, Cartesian3.negate(cameraController.constrainedAxis), CesiumMath.EPSILON2);
 
             if (!northParallel && !southParallel) {
                 var up;
@@ -679,10 +679,10 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
                 }
 
                 var east;
-                if (Cartesian3.equalsEpsilon(cameraController.constrainedAxis, camera.position.normalize(), CesiumMath.EPSILON2)) {
+                if (Cartesian3.equalsEpsilon(cameraController.constrainedAxis, Cartesian3.normalize(camera.position), CesiumMath.EPSILON2)) {
                     east = camera.right;
                 } else {
-                    east = Cartesian3.cross(cameraController.constrainedAxis, camera.position).normalize();
+                    east = Cartesian3.normalize(Cartesian3.cross(cameraController.constrainedAxis, camera.position));
                 }
 
                 var rDotE = Cartesian3.dot(camera.right, east);
@@ -703,7 +703,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
         cameraController.rotateUp(deltaTheta, transform);
 
         if (defined(restrictedAngle)) {
-            var direction = Cartesian3.clone(cameraController._camera.getDirectionWC(), rotate3DRestrictedDirection);
+            var direction = Cartesian3.clone(cameraController._camera.directionWC, rotate3DRestrictedDirection);
             var invTransform = transform.inverseTransformation();
             Matrix4.multiplyByVector(invTransform, direction, direction);
 
@@ -718,8 +718,8 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
         cameraController.constrainedAxis = oldAxis;
     }
 
-    var pan3DP0 = Cartesian4.UNIT_W.clone();
-    var pan3DP1 = Cartesian4.UNIT_W.clone();
+    var pan3DP0 = Cartesian4.clone(Cartesian4.UNIT_W);
+    var pan3DP1 = Cartesian4.clone(Cartesian4.UNIT_W);
     var pan3DTemp0 = new Cartesian3();
     var pan3DTemp1 = new Cartesian3();
     var pan3DTemp2 = new Cartesian3();
@@ -743,7 +743,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
             var dot = Cartesian3.dot(p0, p1);
             var axis = Cartesian3.cross(p0, p1, pan3DTemp0);
 
-            if (dot < 1.0 && !axis.equalsEpsilon(Cartesian3.ZERO, CesiumMath.EPSILON14)) { // dot is in [0, 1]
+            if (dot < 1.0 && !Cartesian3.equalsEpsilon(axis, Cartesian3.ZERO, CesiumMath.EPSILON14)) { // dot is in [0, 1]
                 var angle = Math.acos(dot);
                 cameraController.rotate(axis, angle);
             }
@@ -824,7 +824,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
     var tilt3DWindowPos = new Cartesian2();
     var tilt3DRay = new Ray();
     var tilt3DCart = new Cartographic();
-    var tilt3DCenter = Cartesian4.UNIT_W.clone();
+    var tilt3DCenter = Cartesian4.clone(Cartesian4.UNIT_W);
     var tilt3DTransform = new Matrix4();
     function tilt3D(controller, movement) {
         var cameraController = controller._cameraController;
@@ -864,7 +864,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
         var oldEllipsoid = controller._ellipsoid;
         controller.setEllipsoid(Ellipsoid.UNIT_SPHERE);
 
-        var angle = (minHeight * 0.25) / (Cartesian3.subtract(center, camera.position).magnitude());
+        var angle = (minHeight * 0.25) / Cartesian3.magnitude(Cartesian3.subtract(center, camera.position));
         rotate3D(controller, movement, transform, Cartesian3.UNIT_Z, CesiumMath.PI_OVER_TWO - angle);
 
         controller.setEllipsoid(oldEllipsoid);
@@ -887,7 +887,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
         var end = cameraController.getPickRay(endPos, look3DEndRay).direction;
 
         var angle = 0.0;
-        var dot = start.dot(end);
+        var dot = Cartesian3.dot(start, end);
         if (dot < 1.0) { // dot is in [0, 1]
             angle = Math.acos(dot);
         }
@@ -907,7 +907,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Cartesian
         end = cameraController.getPickRay(endPos, look3DEndRay).direction;
 
         angle = 0.0;
-        dot = start.dot(end);
+        dot = Cartesian3.dot(start, end);
         if (dot < 1.0) { // dot is in [0, 1]
             angle = Math.acos(dot);
         }

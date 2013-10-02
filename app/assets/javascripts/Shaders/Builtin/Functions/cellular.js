@@ -5,11 +5,11 @@
  * This code is released under the conditions of the MIT license.
  * See LICENSE file for details.
  */
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "vec3 _czm_permute289(vec3 x)\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "vec3 _czm_permute289(vec3 x)\n\
 {\n\
 return mod((34.0 * x + 1.0) * x, 289.0);\n\
 }\n\

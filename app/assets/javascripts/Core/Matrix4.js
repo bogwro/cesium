@@ -361,9 +361,9 @@ define(['Core/Cartesian3', 'Core/Cartesian4', 'Core/defaultValue', 'Core/defined
             throw new DeveloperError('camera.up is required.');
         }
 
-        Cartesian3.subtract(target, eye, fromCameraF).normalize(fromCameraF);
-        Cartesian3.cross(fromCameraF, up, fromCameraS).normalize(fromCameraS);
-        Cartesian3.cross(fromCameraS, fromCameraF, fromCameraU).normalize(fromCameraU);
+        Cartesian3.normalize(Cartesian3.subtract(target, eye, fromCameraF), fromCameraF);
+        Cartesian3.normalize(Cartesian3.cross(fromCameraF, up, fromCameraS), fromCameraS);
+        Cartesian3.normalize(Cartesian3.cross(fromCameraS, fromCameraF, fromCameraU), fromCameraU);
 
         var sX = fromCameraS.x;
         var sY = fromCameraS.y;

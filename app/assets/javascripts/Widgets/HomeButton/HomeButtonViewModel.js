@@ -29,7 +29,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/defineProp
         controller.setEllipsoid(ellipsoid);
         controller.columbusViewMode = CameraColumbusViewMode.FREE;
 
-        var canvas = scene.getCanvas();
+        var context = scene.getContext();
         if (defined(transitioner) && mode === SceneMode.MORPHING) {
             transitioner.completeMorph();
         }
@@ -54,7 +54,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/defineProp
             rotation.multiplyByVector(camera.up, camera.up);
             rotation.multiplyByVector(camera.right, camera.right);
             camera.transform = Matrix4.IDENTITY.clone();
-            var defaultCamera = new Camera(canvas);
+            var defaultCamera = new Camera(context);
             description = {
                 destination : defaultCamera.position,
                 duration : flightDuration,
@@ -69,10 +69,10 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/defineProp
                                            0.0, 1.0, 0.0, 0.0,
                                            0.0, 0.0, 0.0, 1.0);
             var maxRadii = ellipsoid.getMaximumRadius();
-            var position = new Cartesian3(0.0, -1.0, 1.0).normalize().multiplyByScalar(5.0 * maxRadii);
-            var direction = Cartesian3.ZERO.subtract(position).normalize();
-            var right = direction.cross(Cartesian3.UNIT_Z);
-            var up = right.cross(direction);
+            var position = Cartesian3.multiplyByScalar(Cartesian3.normalize(new Cartesian3(0.0, -1.0, 1.0)), 5.0 * maxRadii);
+            var direction = Cartesian3.normalize(Cartesian3.subtract(Cartesian3.ZERO, position));
+            var right = Cartesian3.cross(direction, Cartesian3.UNIT_Z);
+            var up = Cartesian3.cross(right, direction);
 
             description = {
                 destination : position,

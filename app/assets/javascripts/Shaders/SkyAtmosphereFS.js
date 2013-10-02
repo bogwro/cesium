@@ -29,11 +29,11 @@
  *
  * Modifications made by Analytical Graphics, Inc.
  */
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "const float g = -0.95;\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "const float g = -0.95;\n\
 const float g2 = g * g;\n\
 varying vec3 v_rayleighColor;\n\
 varying vec3 v_mieColor;\n\

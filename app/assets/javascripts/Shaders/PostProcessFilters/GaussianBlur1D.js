@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "#define SAMPLES 8\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "#define SAMPLES 8\n\
 uniform float delta;\n\
 uniform float sigma;\n\
 uniform float direction;\n\

@@ -44,8 +44,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Transf
         this._yAxis = Cartesian3.fromCartesian4(eastNorthUp.getColumn(1));
 
         var normal = Cartesian3.fromCartesian4(eastNorthUp.getColumn(2));
-        var distance = -Cartesian3.dot(origin, origin); //The shortest distance from the origin to the plane.
-        this._plane = new Plane(normal, distance);
+        this._plane = Plane.fromPointNormal(origin, normal);
     };
 
     var tmp = new AxisAlignedBoundingBox();
@@ -107,11 +106,15 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Transf
         Cartesian3.normalize(cartesian, ray.direction);
 
         var intersectionPoint = IntersectionTests.rayPlane(ray, this._plane, projectPointOntoPlaneCartesian3);
+        if (!defined(intersectionPoint)) {
+            Cartesian3.negate(ray.direction, ray.direction);
+            intersectionPoint = IntersectionTests.rayPlane(ray, this._plane, projectPointOntoPlaneCartesian3);
+        }
 
         if (defined(intersectionPoint)) {
-            var v = intersectionPoint.subtract(this._origin, intersectionPoint);
-            var x = this._xAxis.dot(v);
-            var y = this._yAxis.dot(v);
+            var v = Cartesian3.subtract(intersectionPoint, this._origin, intersectionPoint);
+            var x = Cartesian3.dot(this._xAxis, v);
+            var y = Cartesian3.dot(this._yAxis, v);
 
             if (!defined(result)) {
                 return new Cartesian2(x, y);
@@ -187,9 +190,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Transf
 
         for ( var i = 0; i < length; ++i) {
             var position = cartesians[i];
-            xAxis.multiplyByScalar(position.x, tmp);
+            Cartesian3.multiplyByScalar(xAxis, position.x, tmp);
             var point = result[i] = Cartesian3.add(origin, tmp, result[i]);
-            yAxis.multiplyByScalar(position.y, tmp);
+            Cartesian3.multiplyByScalar(yAxis, position.y, tmp);
             Cartesian3.add(point, tmp, point);
             ellipsoid.scaleToGeocentricSurface(point, point);
         }

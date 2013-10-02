@@ -77,12 +77,12 @@ define(['Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject',
         var oldCollection = this._dynamicObjectCollection;
         if (oldCollection !== dynamicObjectCollection) {
             if (defined(oldCollection)) {
-                oldCollection.objectsRemoved.removeEventListener(DynamicPointVisualizer.prototype._onObjectsRemoved, this);
+                oldCollection.collectionChanged.removeEventListener(DynamicPointVisualizer.prototype._onObjectsRemoved, this);
                 this.removeAllPrimitives();
             }
             this._dynamicObjectCollection = dynamicObjectCollection;
             if (defined(dynamicObjectCollection)) {
-                dynamicObjectCollection.objectsRemoved.addEventListener(DynamicPointVisualizer.prototype._onObjectsRemoved, this);
+                dynamicObjectCollection.collectionChanged.addEventListener(DynamicPointVisualizer.prototype._onObjectsRemoved, this);
             }
         }
     };
@@ -166,18 +166,18 @@ define(['Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject',
     var position;
     var outlineColor;
     function updateObject(dynamicPointVisualizer, time, dynamicObject) {
-        var dynamicPoint = dynamicObject.point;
+        var dynamicPoint = dynamicObject._point;
         if (!defined(dynamicPoint)) {
             return;
         }
 
-        var positionProperty = dynamicObject.position;
+        var positionProperty = dynamicObject._position;
         if (!defined(positionProperty)) {
             return;
         }
 
         var billboard;
-        var showProperty = dynamicPoint.show;
+        var showProperty = dynamicPoint._show;
         var pointVisualizerIndex = dynamicObject._pointVisualizerIndex;
         var show = dynamicObject.isAvailable(time) && (!defined(showProperty) || showProperty.getValue(time));
 
@@ -224,7 +224,7 @@ define(['Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject',
             billboard.setPosition(position);
         }
 
-        var property = dynamicPoint.color;
+        var property = dynamicPoint._color;
         if (defined(property)) {
             color = property.getValue(time, color);
             if (!Color.equals(billboard._visualizerColor, color)) {
@@ -233,7 +233,7 @@ define(['Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject',
             }
         }
 
-        property = dynamicPoint.outlineColor;
+        property = dynamicPoint._outlineColor;
         if (defined(property)) {
             outlineColor = property.getValue(time, outlineColor);
             if (!Color.equals(billboard._visualizerOutlineColor, outlineColor)) {
@@ -242,7 +242,7 @@ define(['Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject',
             }
         }
 
-        property = dynamicPoint.outlineWidth;
+        property = dynamicPoint._outlineWidth;
         if (defined(property)) {
             var outlineWidth = property.getValue(time);
             if (billboard._visualizerOutlineWidth !== outlineWidth) {
@@ -251,7 +251,7 @@ define(['Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject',
             }
         }
 
-        property = dynamicPoint.pixelSize;
+        property = dynamicPoint._pixelSize;
         if (defined(property)) {
             var pixelSize = property.getValue(time);
             if (billboard._visualizerPixelSize !== pixelSize) {
@@ -297,7 +297,7 @@ define(['Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject',
         }
     }
 
-    DynamicPointVisualizer.prototype._onObjectsRemoved = function(dynamicObjectCollection, dynamicObjects) {
+    DynamicPointVisualizer.prototype._onObjectsRemoved = function(dynamicObjectCollection, added, dynamicObjects) {
         var thisBillboardCollection = this._billboardCollection;
         var thisUnusedIndexes = this._unusedIndexes;
         for ( var i = dynamicObjects.length - 1; i > -1; i--) {

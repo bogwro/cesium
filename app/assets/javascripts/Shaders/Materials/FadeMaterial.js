@@ -1,8 +1,8 @@
-//This file is automatically rebuilt by the Cesium build process.
-/*global define*/
-define(function() {
-"use strict";
-return "uniform vec4 fadeInColor;\n\
+    //This file is automatically rebuilt by the Cesium build process.
+    /*global define*/
+    define(function() {
+    "use strict";
+    return "uniform vec4 fadeInColor;\n\
 uniform vec4 fadeOutColor;\n\
 uniform float maximumDistance;\n\
 uniform bool repeat;\n\
