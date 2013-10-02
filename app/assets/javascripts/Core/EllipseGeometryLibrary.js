@@ -66,7 +66,7 @@ define(['Core/Cartesian3', 'Core/Ellipsoid', 'Core/Math', 'Core/Matrix3', 'Core/
             var extrudedPosition;
 
             position = ellipsoid.scaleToGeodeticSurface(position, position);
-            extrudedPosition = position.clone(scratchCartesian2);
+            extrudedPosition = Cartesian3.clone(position, scratchCartesian2);
             normal = ellipsoid.geodeticSurfaceNormal(position, normal);
             var scaledNormal = Cartesian3.multiplyByScalar(normal, height, scratchCartesian3);
             position = Cartesian3.add(position, scaledNormal, position);
@@ -108,7 +108,7 @@ define(['Core/Cartesian3', 'Core/Ellipsoid', 'Core/Math', 'Core/Matrix3', 'Core/
         var bSqr = semiMajorAxis * semiMajorAxis;
         var ab = semiMajorAxis * semiMinorAxis;
 
-        var mag = center.magnitude();
+        var mag = Cartesian3.magnitude(center);
 
         var unitPos = Cartesian3.normalize(center, unitPosScratch);
         var eastVec = Cartesian3.cross(Cartesian3.UNIT_Z, center, eastVecScratch);

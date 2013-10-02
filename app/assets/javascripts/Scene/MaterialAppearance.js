@@ -40,7 +40,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/VertexFo
      *     })
      *   }),
      *   appearance : new MaterialAppearance({
-     *     material : Material.fromType(scene.getContext(), 'Color'),
+     *     material : Material.fromType('Color'),
      *     faceForward : true
      *   })
      * });
@@ -64,7 +64,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/VertexFo
          *
          * @see <a href='https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric'>Fabric</a>
          */
-        this.material = (defined(options.material)) ? options.material : Material.fromType(undefined, Material.ColorType);
+        this.material = (defined(options.material)) ? options.material : Material.fromType(Material.ColorType);
 
         /**
          * The GLSL source code for the vertex shader.

@@ -1,8 +1,9 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/GeographicProjection', 'Core/Intersect'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Cartographic', 'Core/GeographicProjection', 'Core/Intersect'], function(
         defaultValue,
         defined,
         DeveloperError,
+        Cartesian2,
         Cartographic,
         GeographicProjection,
         Intersect) {
@@ -128,7 +129,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartog
         var lowerLeft = projection.project(extent.getSouthwest(fromExtentLowerLeft));
         var upperRight = projection.project(extent.getNortheast(fromExtentUpperRight));
 
-        upperRight.subtract(lowerLeft, upperRight);
+        Cartesian2.subtract(upperRight, lowerLeft, upperRight);
 
         result.x = lowerLeft.x;
         result.y = lowerLeft.y;

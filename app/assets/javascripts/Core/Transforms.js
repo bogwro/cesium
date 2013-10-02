@@ -101,7 +101,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
         tangent.z = 0.0;
         Cartesian3.normalize(tangent, tangent);
 
-        normal.cross(tangent, bitangent);
+        Cartesian3.cross(normal, tangent, bitangent);
 
         if (!defined(result)) {
             return new Matrix4(
@@ -205,7 +205,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
         tangent.z = 0.0;
         Cartesian3.normalize(tangent, tangent);
 
-        normal.cross(tangent, bitangent);
+        Cartesian3.cross(normal, tangent, bitangent);
 
         if (!defined(result)) {
             return new Matrix4(

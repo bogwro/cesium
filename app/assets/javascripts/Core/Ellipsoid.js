@@ -398,7 +398,7 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/defined', 'Core/Develope
         return result;
     };
 
-    var scaleToGeodeticSurfaceIntersection;
+    var scaleToGeodeticSurfaceIntersection = new Cartesian3();
     var scaleToGeodeticSurfaceGradient = new Cartesian3();
 
     /**

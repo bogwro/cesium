@@ -1,7 +1,8 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/EllipsoidGeometry', 'Core/destroyObject', 'Core/GeometryPipeline', 'Core/PrimitiveType', 'Core/Ellipsoid', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Renderer/CullFace', 'Renderer/BlendingState', 'Renderer/createShaderSource', 'Scene/SceneMode', 'Shaders/SkyAtmosphereVS', 'Shaders/SkyAtmosphereFS'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/Cartesian3', 'Core/EllipsoidGeometry', 'Core/destroyObject', 'Core/GeometryPipeline', 'Core/PrimitiveType', 'Core/Ellipsoid', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Renderer/CullFace', 'Renderer/BlendingState', 'Renderer/createShaderSource', 'Scene/SceneMode', 'Shaders/SkyAtmosphereVS', 'Shaders/SkyAtmosphereFS'], function(
         defaultValue,
         defined,
+        Cartesian3,
         EllipsoidGeometry,
         destroyObject,
         GeometryPipeline,
@@ -54,7 +55,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/EllipsoidGeometry', 'Core/des
 
         this._fCameraHeight = undefined;
         this._fCameraHeight2 = undefined;
-        this._outerRadius = ellipsoid.getRadii().multiplyByScalar(1.025).getMaximumComponent();
+        this._outerRadius = Cartesian3.getMaximumComponent(Cartesian3.multiplyByScalar(ellipsoid.getRadii(), 1.025));
         var innerRadius = ellipsoid.getMaximumRadius();
         var rayleighScaleDepth = 0.25;
 
@@ -121,7 +122,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/EllipsoidGeometry', 'Core/des
 
         if (!defined(command.vertexArray)) {
             var geometry = EllipsoidGeometry.createGeometry(new EllipsoidGeometry({
-                radii : this._ellipsoid.getRadii().multiplyByScalar(1.025),
+                radii : Cartesian3.multiplyByScalar(this._ellipsoid.getRadii(), 1.025),
                 slicePartitions : 256,
                 stackPartitions : 256
             }));
@@ -155,7 +156,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/EllipsoidGeometry', 'Core/des
 
         var cameraPosition = frameState.camera.positionWC;
 
-        this._fCameraHeight2 = cameraPosition.magnitudeSquared();
+        this._fCameraHeight2 = Cartesian3.magnitudeSquared(cameraPosition);
         this._fCameraHeight = Math.sqrt(this._fCameraHeight2);
 
         if (this._fCameraHeight > this._outerRadius) {

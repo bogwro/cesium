@@ -30,7 +30,7 @@ define(['Core/createGuid', 'Core/Cartographic', 'Core/Color', 'Core/defined', 'C
         } else {
             var i = 2;
             var finalId = id;
-            while (defined(dynamicObjectCollection.getObject(finalId))) {
+            while (defined(dynamicObjectCollection.getById(finalId))) {
                 finalId = id + "_" + i;
                 i++;
             }
@@ -386,7 +386,7 @@ define(['Core/createGuid', 'Core/Cartographic', 'Core/Color', 'Core/defined', 'C
             }
         }
 
-        this._dynamicObjectCollection.clear();
+        this._dynamicObjectCollection.removeAll();
 
         var dataSource = this;
         return when(crsFunction, function(crsFunction) {

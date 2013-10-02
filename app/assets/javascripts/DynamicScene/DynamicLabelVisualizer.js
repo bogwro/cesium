@@ -78,12 +78,12 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
         var oldCollection = this._dynamicObjectCollection;
         if (oldCollection !== dynamicObjectCollection) {
             if (defined(oldCollection)) {
-                oldCollection.objectsRemoved.removeEventListener(DynamicLabelVisualizer.prototype._onObjectsRemoved, this);
+                oldCollection.collectionChanged.removeEventListener(DynamicLabelVisualizer.prototype._onObjectsRemoved, this);
                 this.removeAllPrimitives();
             }
             this._dynamicObjectCollection = dynamicObjectCollection;
             if (defined(dynamicObjectCollection)) {
-                dynamicObjectCollection.objectsRemoved.addEventListener(DynamicLabelVisualizer.prototype._onObjectsRemoved, this);
+                dynamicObjectCollection.collectionChanged.addEventListener(DynamicLabelVisualizer.prototype._onObjectsRemoved, this);
             }
         }
     };
@@ -169,23 +169,23 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
     var eyeOffset;
     var pixelOffset;
     function updateObject(dynamicLabelVisualizer, time, dynamicObject) {
-        var dynamicLabel = dynamicObject.label;
+        var dynamicLabel = dynamicObject._label;
         if (!defined(dynamicLabel)) {
             return;
         }
 
-        var textProperty = dynamicLabel.text;
+        var textProperty = dynamicLabel._text;
         if (!defined(textProperty)) {
             return;
         }
 
-        var positionProperty = dynamicObject.position;
+        var positionProperty = dynamicObject._position;
         if (!defined(positionProperty)) {
             return;
         }
 
         var label;
-        var showProperty = dynamicLabel.show;
+        var showProperty = dynamicLabel._show;
         var labelVisualizerIndex = dynamicObject._labelVisualizerIndex;
         var show = dynamicObject.isAvailable(time) && (!defined(showProperty) || showProperty.getValue(time));
 
@@ -241,7 +241,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
             label.setPosition(position);
         }
 
-        var property = dynamicLabel.scale;
+        var property = dynamicLabel._scale;
         if (defined(property)) {
             var scale = property.getValue(time);
             if (defined(scale)) {
@@ -249,7 +249,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
             }
         }
 
-        property = dynamicLabel.font;
+        property = dynamicLabel._font;
         if (defined(property)) {
             var font = property.getValue(time);
             if (defined(font)) {
@@ -257,7 +257,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
             }
         }
 
-        property = dynamicLabel.fillColor;
+        property = dynamicLabel._fillColor;
         if (defined(property)) {
             fillColor = property.getValue(time, fillColor);
             if (defined(fillColor)) {
@@ -265,7 +265,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
             }
         }
 
-        property = dynamicLabel.outlineColor;
+        property = dynamicLabel._outlineColor;
         if (defined(property)) {
             outlineColor = property.getValue(time, outlineColor);
             if (defined(outlineColor)) {
@@ -273,7 +273,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
             }
         }
 
-        property = dynamicLabel.outlineWidth;
+        property = dynamicLabel._outlineWidth;
         if (defined(property)) {
             var outlineWidth = property.getValue(time);
             if (defined(outlineWidth)) {
@@ -281,7 +281,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
             }
         }
 
-        property = dynamicLabel.style;
+        property = dynamicLabel._style;
         if (defined(property)) {
             var style = property.getValue(time);
             if (defined(style)) {
@@ -289,7 +289,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
             }
         }
 
-        property = dynamicLabel.pixelOffset;
+        property = dynamicLabel._pixelOffset;
         if (defined(property)) {
             pixelOffset = property.getValue(time, pixelOffset);
             if (defined(pixelOffset)) {
@@ -297,7 +297,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
             }
         }
 
-        property = dynamicLabel.eyeOffset;
+        property = dynamicLabel._eyeOffset;
         if (defined(property)) {
             eyeOffset = property.getValue(time, eyeOffset);
             if (defined(eyeOffset)) {
@@ -305,7 +305,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
             }
         }
 
-        property = dynamicLabel.horizontalOrigin;
+        property = dynamicLabel._horizontalOrigin;
         if (defined(property)) {
             var horizontalOrigin = property.getValue(time);
             if (defined(horizontalOrigin)) {
@@ -313,7 +313,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
             }
         }
 
-        property = dynamicLabel.verticalOrigin;
+        property = dynamicLabel._verticalOrigin;
         if (defined(property)) {
             var verticalOrigin = property.getValue(time);
             if (defined(verticalOrigin)) {
@@ -322,7 +322,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
         }
     }
 
-    DynamicLabelVisualizer.prototype._onObjectsRemoved = function(dynamicObjectCollection, dynamicObjects) {
+    DynamicLabelVisualizer.prototype._onObjectsRemoved = function(dynamicObjectCollection, added, dynamicObjects) {
         var thisLabelCollection = this._labelCollection;
         var thisUnusedIndexes = this._unusedIndexes;
         for ( var i = dynamicObjects.length - 1; i > -1; i--) {

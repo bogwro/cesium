@@ -430,14 +430,14 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Co
             var colorList = this._colorCommands;
             commandLists.colorList = colorList;
 
-            createCommandLists(this, frameState, colorList, modelMatrix, this._vertexArrays, this._rs, true);
+            createCommandLists(this, context, frameState, colorList, modelMatrix, this._vertexArrays, this._rs, true);
         }
 
         if (pass.pick) {
             var pickList = this._pickCommands;
             commandLists.pickList = pickList;
 
-            createCommandLists(this, frameState, pickList, modelMatrix, this._vertexArrays, this._rs, false);
+            createCommandLists(this, context, frameState, pickList, modelMatrix, this._vertexArrays, this._rs, false);
         }
 
         if (!this._commandLists.empty()) {
@@ -448,7 +448,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Co
     var boundingSphereScratch = new BoundingSphere();
     var boundingSphereScratch2 = new BoundingSphere();
 
-    function createCommandLists(polylineCollection, frameState, commands, modelMatrix, vertexArrays, renderState, colorPass) {
+    function createCommandLists(polylineCollection, context, frameState, commands, modelMatrix, vertexArrays, renderState, colorPass) {
         var length = vertexArrays.length;
 
         var commandsLength = commands.length;
@@ -505,6 +505,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Co
                         }
 
                         currentMaterial = polyline._material;
+                        currentMaterial.update(context);
                         currentId = mId;
                     }
 

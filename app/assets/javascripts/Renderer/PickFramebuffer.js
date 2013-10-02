@@ -30,8 +30,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Color',
 
     PickFramebuffer.prototype.begin = function(screenSpaceRectangle) {
         var context = this._context;
-        var width = context.getCanvas().clientWidth;
-        var height = context.getCanvas().clientHeight;
+        var width = context.getDrawingBufferWidth();
+        var height = context.getDrawingBufferHeight();
 
         BoundingRectangle.clone(screenSpaceRectangle, this._passState.scissorTest.rectangle);
 

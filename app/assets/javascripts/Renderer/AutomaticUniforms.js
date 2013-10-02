@@ -1,8 +1,10 @@
 /*global define*/
-define(['Renderer/UniformDatatype'],function(
+define(['Core/Cartesian3', 'Renderer/UniformDatatype'],function(
+        Cartesian3,
         UniformDatatype) {
-
     "use strict";
+
+    var viewerPositionWCScratch = new Cartesian3();
 
     return {
         /**
@@ -1396,7 +1398,7 @@ define(['Renderer/UniformDatatype'],function(
             },
 
             getValue : function(uniformState) {
-                return uniformState.getInverseView().getTranslation();
+                return uniformState.getInverseView().getTranslation(viewerPositionWCScratch);
             }
         },
 

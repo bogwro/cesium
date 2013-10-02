@@ -54,7 +54,8 @@ define(['Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Carte
         this._boundingVolume2D = new BoundingSphere();
 
         this._texture = undefined;
-        this._dimensions = undefined;
+        this._drawingBufferWidth = undefined;
+        this._drawingBufferHeight = undefined;
         this._radiusTS = undefined;
         this._size = undefined;
 
@@ -164,14 +165,19 @@ define(['Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Carte
             return undefined;
         }
 
-        var canvasDimensions = frameState.canvasDimensions;
+        var drawingBufferWidth = context.getDrawingBufferWidth();
+        var drawingBufferHeight = context.getDrawingBufferHeight();
 
-        if (!defined(this._texture) || !Cartesian2.equals(canvasDimensions, this._dimensions) || this._glowFactorDirty) {
+        if (!defined(this._texture) ||
+                drawingBufferWidth !== this._drawingBufferWidth ||
+                drawingBufferHeight !== this._drawingBufferHeight ||
+                this._glowFactorDirty) {
             this._texture = this._texture && this._texture.destroy();
-            this._dimensions = Cartesian2.clone(canvasDimensions, this._dimensions);
+            this._drawingBufferWidth = drawingBufferWidth;
+            this._drawingBufferHeight = drawingBufferHeight;
             this._glowFactorDirty = false;
 
-            var size = Math.max(canvasDimensions.x, canvasDimensions.y);
+            var size = Math.max(drawingBufferWidth, drawingBufferHeight);
             size = Math.pow(2.0, Math.ceil(Math.log(size) / Math.log(2.0)) - 2.0);
 
             this._texture = context.createTexture2D({
@@ -286,11 +292,11 @@ define(['Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Carte
         var positionEC = Cartesian3.clone(Cartesian3.ZERO, scratchCartesian3);
         positionEC.z = -dist;
         var positionCC = Matrix4.multiplyByPoint(projMatrix, positionEC, scratchCartesian4);
-        var positionWC = SceneTransforms.clipToWindowCoordinates(context.getCanvas(), positionCC, scratchPositionWC);
+        var positionWC = SceneTransforms.clipToDrawingBufferCoordinates(context, positionCC, scratchPositionWC);
 
         positionEC.x = CesiumMath.SOLAR_RADIUS;
         var limbCC = Matrix4.multiplyByPoint(projMatrix, positionEC, scratchCartesian4);
-        var limbWC = SceneTransforms.clipToWindowCoordinates(context.getCanvas(), limbCC, scratchLimbWC);
+        var limbWC = SceneTransforms.clipToDrawingBufferCoordinates(context, limbCC, scratchLimbWC);
 
         this._size = Math.ceil(Cartesian2.magnitude(Cartesian2.subtract(limbWC, positionWC, scratchCartesian4)));
         this._size = 2.0 * this._size * (1.0 + 2.0 * this._glowLengthTS);

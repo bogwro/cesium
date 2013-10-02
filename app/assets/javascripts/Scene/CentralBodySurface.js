@@ -446,8 +446,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
         var distance = Math.sqrt(distanceSquaredToTile(frameState, cameraPosition, cameraPositionCartographic, tile));
         tile.distance = distance;
 
-        var canvas = context.getCanvas();
-        var height = canvas.clientHeight;
+        var height = context.getDrawingBufferHeight();
 
         var camera = frameState.camera;
         var frustum = camera.frustum;
@@ -460,9 +459,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
     function screenSpaceError2D(surface, context, frameState, cameraPosition, cameraPositionCartographic, tile) {
         var camera = frameState.camera;
         var frustum = camera.frustum;
-        var canvas = context.getCanvas();
-        var width = canvas.clientWidth;
-        var height = canvas.clientHeight;
+        var width = context.getDrawingBufferWidth();
+        var height = context.getDrawingBufferHeight();
 
         var maxGeometricError = surface._terrainProvider.getLevelMaximumGeometricError(tile.level);
         var pixelSize = Math.max(frustum.top - frustum.bottom, frustum.right - frustum.left) / Math.max(width, height);
@@ -527,8 +525,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
 
     var southwestCornerScratch = new Cartesian3();
     var northeastCornerScratch = new Cartesian3();
-    var negativeUnitY = Cartesian3.UNIT_Y.negate();
-    var negativeUnitZ = Cartesian3.UNIT_Z.negate();
+    var negativeUnitY = Cartesian3.negate(Cartesian3.UNIT_Y);
+    var negativeUnitZ = Cartesian3.negate(Cartesian3.UNIT_Z);
     var vectorScratch = new Cartesian3();
 
     function distanceSquaredToTile(frameState, cameraCartesianPosition, cameraCartographicPosition, tile) {
@@ -556,13 +554,13 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
             maximumHeight = 0.0;
         }
 
-        var vectorFromSouthwestCorner = cameraCartesianPosition.subtract(southwestCornerCartesian, vectorScratch);
-        var distanceToWestPlane = vectorFromSouthwestCorner.dot(westNormal);
-        var distanceToSouthPlane = vectorFromSouthwestCorner.dot(southNormal);
+        var vectorFromSouthwestCorner = Cartesian3.subtract(cameraCartesianPosition, southwestCornerCartesian, vectorScratch);
+        var distanceToWestPlane = Cartesian3.dot(vectorFromSouthwestCorner, westNormal);
+        var distanceToSouthPlane = Cartesian3.dot(vectorFromSouthwestCorner, southNormal);
 
-        var vectorFromNortheastCorner = cameraCartesianPosition.subtract(northeastCornerCartesian, vectorScratch);
-        var distanceToEastPlane = vectorFromNortheastCorner.dot(eastNormal);
-        var distanceToNorthPlane = vectorFromNortheastCorner.dot(northNormal);
+        var vectorFromNortheastCorner = Cartesian3.subtract(cameraCartesianPosition, northeastCornerCartesian, vectorScratch);
+        var distanceToEastPlane = Cartesian3.dot(vectorFromNortheastCorner, eastNormal);
+        var distanceToNorthPlane = Cartesian3.dot(vectorFromNortheastCorner, northNormal);
 
         var cameraHeight;
         if (frameState.mode === SceneMode.SCENE3D) {
@@ -666,7 +664,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
         }
 
         if (defined(result)) {
-            console.log('x: ' + result.x + ' y: ' + result.y + ' level: ' + result.level + ' radius: ' + result.boundingSphere3D.radius + ' center magnitude: ' + result.boundingSphere3D.center.magnitude());
+            console.log('x: ' + result.x + ' y: ' + result.y + ' level: ' + result.level + ' radius: ' + result.boundingSphere3D.radius + ' center magnitude: ' + Cartesian3.magnitude(result.boundingSphere3D.center));
         }
 
         this._debug.boundingSphereTile = result;

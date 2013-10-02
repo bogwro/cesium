@@ -201,12 +201,12 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
     };
 
     PolylineUpdater.prototype.updateObject = function(time, dynamicObject) {
-        var dynamicPath = dynamicObject.path;
+        var dynamicPath = dynamicObject._path;
         if (!defined(dynamicPath)) {
             return;
         }
 
-        var positionProperty = dynamicObject.position;
+        var positionProperty = dynamicObject._position;
         if (!defined(positionProperty)) {
             return;
         }
@@ -215,7 +215,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
         var property;
         var sampleStart;
         var sampleStop;
-        var showProperty = dynamicPath.show;
+        var showProperty = dynamicPath._show;
         var pathVisualizerIndex = dynamicObject._pathVisualizerIndex;
         var show = !defined(showProperty) || showProperty.getValue(time);
 
@@ -223,19 +223,19 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
         //depending on lead/trail settings.  Compute the interval of the path to
         //show and check against actual availability.
         if (show) {
-            property = dynamicPath.leadTime;
+            property = dynamicPath._leadTime;
             var leadTime;
             if (defined(property)) {
                 leadTime = property.getValue(time);
             }
 
-            property = dynamicPath.trailTime;
+            property = dynamicPath._trailTime;
             var trailTime;
             if (defined(property)) {
                 trailTime = property.getValue(time);
             }
 
-            var availability = dynamicObject.availability;
+            var availability = dynamicObject._availability;
             var hasAvailability = defined(availability);
             var hasLeadTime = defined(leadTime);
             var hasTrailTime = defined(trailTime);
@@ -294,7 +294,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
             polyline.setWidth(1);
             var material = polyline.getMaterial();
             if (!defined(material) || (material.type !== Material.PolylineOutlineType)) {
-                material = Material.fromType(this._scene.getContext(), Material.PolylineOutlineType);
+                material = Material.fromType(Material.PolylineOutlineType);
                 polyline.setMaterial(material);
             }
             uniforms = material.uniforms;
@@ -309,29 +309,29 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
         polyline.setShow(true);
 
         var resolution = 60.0;
-        property = dynamicPath.resolution;
+        property = dynamicPath._resolution;
         if (defined(property)) {
             resolution = property.getValue(time);
         }
 
         polyline.setPositions(subSample(positionProperty, sampleStart, sampleStop, time, this._referenceFrame, resolution, polyline.getPositions()));
 
-        property = dynamicPath.color;
+        property = dynamicPath._color;
         if (defined(property)) {
             uniforms.color = property.getValue(time, uniforms.color);
         }
 
-        property = dynamicPath.outlineColor;
+        property = dynamicPath._outlineColor;
         if (defined(property)) {
             uniforms.outlineColor = property.getValue(time, uniforms.outlineColor);
         }
 
-        property = dynamicPath.outlineWidth;
+        property = dynamicPath._outlineWidth;
         if (defined(property)) {
             uniforms.outlineWidth = property.getValue(time);
         }
 
-        property = dynamicPath.width;
+        property = dynamicPath._width;
         if (defined(property)) {
             var width = property.getValue(time);
             if (defined(width)) {
@@ -419,12 +419,12 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
         var oldCollection = this._dynamicObjectCollection;
         if (oldCollection !== dynamicObjectCollection) {
             if (defined(oldCollection)) {
-                oldCollection.objectsRemoved.removeEventListener(DynamicPathVisualizer.prototype._onObjectsRemoved, this);
+                oldCollection.collectionChanged.removeEventListener(DynamicPathVisualizer.prototype._onObjectsRemoved, this);
                 this.removeAllPrimitives();
             }
             this._dynamicObjectCollection = dynamicObjectCollection;
             if (defined(dynamicObjectCollection)) {
-                dynamicObjectCollection.objectsRemoved.addEventListener(DynamicPathVisualizer.prototype._onObjectsRemoved, this);
+                dynamicObjectCollection.collectionChanged.addEventListener(DynamicPathVisualizer.prototype._onObjectsRemoved, this);
             }
         }
     };
@@ -454,11 +454,11 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
             for ( var i = 0, len = dynamicObjects.length; i < len; i++) {
                 var dynamicObject = dynamicObjects[i];
 
-                if (!defined(dynamicObject.path)) {
+                if (!defined(dynamicObject._path)) {
                     continue;
                 }
 
-                var positionProperty = dynamicObject.position;
+                var positionProperty = dynamicObject._position;
                 if (!defined(positionProperty)) {
                     continue;
                 }
@@ -467,7 +467,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
 
                 var frameToVisualize = ReferenceFrame.FIXED;
                 if (this._scene.mode === SceneMode.SCENE3D) {
-                    frameToVisualize = positionProperty.referenceFrame;
+                    frameToVisualize = positionProperty._referenceFrame;
                 }
 
                 var currentUpdater = this._updaters[frameToVisualize];
@@ -556,7 +556,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
         return destroyObject(this);
     };
 
-    DynamicPathVisualizer.prototype._onObjectsRemoved = function(dynamicObjectCollection, dynamicObjects) {
+    DynamicPathVisualizer.prototype._onObjectsRemoved = function(dynamicObjectCollection, added, dynamicObjects) {
         for ( var i = dynamicObjects.length - 1; i > -1; i--) {
             var dynamicObject = dynamicObjects[i];
             var _pathUpdater = dynamicObject._pathUpdater;

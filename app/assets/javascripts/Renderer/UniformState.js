@@ -210,6 +210,8 @@ define(['Core/Matrix3', 'Core/Matrix4', 'Core/Cartesian2', 'Core/Cartesian3', 'C
         this._currentFrustum.y = frustum.far;
     };
 
+    var scratchDrawingBufferDimensions = new Cartesian2();
+
     /**
      * Synchronizes frame state with the uniform state.  This is called
      * by the {@link Scene} when rendering to ensure that automatic GLSL uniforms
@@ -219,7 +221,7 @@ define(['Core/Matrix3', 'Core/Matrix4', 'Core/Cartesian2', 'Core/Cartesian3', 'C
      *
      * @param {FrameState} frameState The frameState to synchronize with.
      */
-    UniformState.prototype.update = function(frameState) {
+    UniformState.prototype.update = function(context, frameState) {
         this._mode = frameState.mode;
         this._mapProjection = frameState.scene2D.projection;
 
@@ -241,7 +243,9 @@ define(['Core/Matrix3', 'Core/Matrix4', 'Core/Cartesian2', 'Core/Cartesian3', 'C
 
         setSunAndMoonDirections(this, frameState);
 
-        var pixelSize = camera.frustum.getPixelSize(frameState.canvasDimensions);
+        scratchDrawingBufferDimensions.x = context.getDrawingBufferWidth();
+        scratchDrawingBufferDimensions.y = context.getDrawingBufferHeight();
+        var pixelSize = camera.frustum.getPixelSize(scratchDrawingBufferDimensions);
         this._pixelSize = Math.max(pixelSize.x, pixelSize.y);
 
         this._entireFrustum.x = camera.frustum.near;
