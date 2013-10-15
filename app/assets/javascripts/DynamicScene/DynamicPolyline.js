@@ -14,10 +14,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
      * @constructor
      */
     var DynamicPolyline = function() {
-        this._color = undefined;
-        this._outlineColor = undefined;
-        this._outlineWidth = undefined;
         this._show = undefined;
+        this._material = undefined;
         this._width = undefined;
         this._propertyChanged = new Event();
     };
@@ -35,32 +33,18 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
         },
 
         /**
-         * Gets or sets the {@link Color} {@link Property} specifying the the line's color.
-         * @memberof DynamicPolyline.prototype
-         * @type {Property}
-         */
-        color : createDynamicPropertyDescriptor('color', '_color'),
-
-        /**
-         * Gets or sets the {@link Color} {@link Property} specifying the the line's outline color.
-         * @memberof DynamicPolyline.prototype
-         * @type {Property}
-         */
-        outlineColor : createDynamicPropertyDescriptor('outlineColor', '_outlineColor'),
-
-        /**
-         * Gets or sets the numeric {@link Property} specifying the the line's outline width.
-         * @memberof DynamicPolyline.prototype
-         * @type {Property}
-         */
-        outlineWidth : createDynamicPropertyDescriptor('outlineWidth', '_outlineWidth'),
-
-        /**
-         * @memberof DynamicPolyline.prototype
          * Gets or sets the boolean {@link Property} specifying the line's visibility.
+         * @memberof DynamicPolyline.prototype
          * @type {Property}
          */
         show : createDynamicPropertyDescriptor('show', '_show'),
+
+        /**
+         * Gets or sets the {@link MaterialProperty} specifying the appearance of the polyline.
+         * @memberof DynamicPolyline.prototype
+         * @type {MaterialProperty}
+         */
+        material : createDynamicPropertyDescriptor('material', '_material'),
 
         /**
          * Gets or sets the numeric {@link Property} specifying the the line's width.
@@ -81,11 +65,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
         if (!defined(result)) {
             result = new DynamicPolyline();
         }
-        result.color = this.color;
-        result.width = this.width;
-        result.outlineColor = this.outlineColor;
-        result.outlineWidth = this.outlineWidth;
         result.show = this.show;
+        result.material = this.material;
+        result.width = this.width;
         return result;
     };
 
@@ -101,11 +83,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
         if (!defined(source)) {
             throw new DeveloperError('source is required.');
         }
-        this.color = defaultValue(this.color, source.color);
-        this.width = defaultValue(this.width, source.width);
-        this.outlineColor = defaultValue(this.outlineColor, source.outlineColor);
-        this.outlineWidth = defaultValue(this.outlineWidth, source.outlineWidth);
         this.show = defaultValue(this.show, source.show);
+        this.material = defaultValue(this.material, source.material);
+        this.width = defaultValue(this.width, source.width);
     };
 
     return DynamicPolyline;

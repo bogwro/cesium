@@ -2,7 +2,12 @@
     /*global define*/
     define(function() {
     "use strict";
-    return "uniform vec3 u_radii;\n\
+    return "#ifdef WRITE_DEPTH\n\
+#ifdef GL_EXT_frag_depth\n\
+#extension GL_EXT_frag_depth : enable\n\
+#endif\n\
+#endif\n\
+uniform vec3 u_radii;\n\
 uniform vec3 u_oneOverEllipsoidRadiiSquared;\n\
 varying vec3 v_positionEC;\n\
 vec4 computeEllipsoidColor(czm_ray ray, float intersection, float side)\n\
@@ -23,7 +28,11 @@ materialInput.normalEC = normalEC;\n\
 materialInput.tangentToEyeMatrix = czm_eastNorthUpToEyeCoordinates(positionMC, normalEC);\n\
 materialInput.positionToEyeEC = positionToEyeEC;\n\
 czm_material material = czm_getMaterial(materialInput);\n\
+#ifdef ONLY_SUN_LIGHTING\n\
+return czm_private_phong(normalize(positionToEyeEC), material);\n\
+#else\n\
 return czm_phong(normalize(positionToEyeEC), material);\n\
+#endif\n\
 }\n\
 void main()\n\
 {\n\
@@ -57,6 +66,17 @@ vec4 outsideFaceColor = (intersection.start != 0.0) ? computeEllipsoidColor(ray,
 vec4 insideFaceColor = (outsideFaceColor.a < 1.0) ? computeEllipsoidColor(ray, intersection.stop, -1.0) : vec4(0.0);\n\
 gl_FragColor = mix(insideFaceColor, outsideFaceColor, outsideFaceColor.a);\n\
 gl_FragColor.a = 1.0 - (1.0 - insideFaceColor.a) * (1.0 - outsideFaceColor.a);\n\
+#ifdef WRITE_DEPTH\n\
+#ifdef GL_EXT_frag_depth\n\
+t = (intersection.start != 0.0) ? intersection.start : intersection.stop;\n\
+vec3 positionEC = czm_pointAlongRay(ray, t);\n\
+vec4 positionCC = czm_projection * vec4(positionEC, 1.0);\n\
+float z = positionCC.z / positionCC.w;\n\
+float n = gl_DepthRange.near;\n\
+float f = gl_DepthRange.far;\n\
+gl_FragDepthEXT = (z * (f - n) + f + n) * 0.5;\n\
+#endif\n\
+#endif\n\
 }\n\
 ";
 });

@@ -1,10 +1,10 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Color', 'Scene/Material', 'Scene/PolylineCollection'], function(
+define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Cartesian3', 'DynamicScene/MaterialProperty', 'Scene/Material', 'Scene/PolylineCollection'], function(
          DeveloperError,
          defined,
          destroyObject,
          Cartesian3,
-         Color,
+         MaterialProperty,
          Material,
          PolylineCollection) {
     "use strict";
@@ -177,6 +177,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
         var vertexPositionsProperty = dynamicObject._vertexPositions;
         var polylineVisualizerIndex = dynamicObject._polylineVisualizerIndex;
         var show = dynamicObject.isAvailable(time) && (!defined(showProperty) || showProperty.getValue(time));
+        var context = dynamicPolylineVisualizer._scene.getContext();
 
         if (!show || //
            (!defined(vertexPositionsProperty) && //
@@ -191,7 +192,6 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
             return;
         }
 
-        var uniforms;
         if (!defined(polylineVisualizerIndex)) {
             var unusedIndexes = dynamicPolylineVisualizer._unusedIndexes;
             var length = unusedIndexes.length;
@@ -212,13 +212,8 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
                 material = Material.fromType(Material.PolylineOutlineType);
                 polyline.setMaterial(material);
             }
-            uniforms = material.uniforms;
-            Color.clone(Color.WHITE, uniforms.color);
-            Color.clone(Color.BLACK, uniforms.outlineColor);
-            uniforms.outlineWidth = 0;
         } else {
             polyline = dynamicPolylineVisualizer._polylineCollection.get(polylineVisualizerIndex);
-            uniforms = polyline.getMaterial().uniforms;
         }
 
         polyline.setShow(true);
@@ -235,19 +230,9 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
             polyline._visualizerPositions = vertexPositions;
         }
 
-        var property = dynamicPolyline._color;
+        var property = dynamicPolyline._material;
         if (defined(property)) {
-            uniforms.color = property.getValue(time, uniforms.color);
-        }
-
-        property = dynamicPolyline._outlineColor;
-        if (defined(property)) {
-            uniforms.outlineColor = property.getValue(time, uniforms.outlineColor);
-        }
-
-        property = dynamicPolyline._outlineWidth;
-        if (defined(property)) {
-            uniforms.outlineWidth = property.getValue(time);
+            polyline.setMaterial(MaterialProperty.getValue(time, property, polyline.getMaterial()));
         }
 
         property = dynamicPolyline._width;

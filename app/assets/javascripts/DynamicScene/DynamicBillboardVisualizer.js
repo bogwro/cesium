@@ -341,9 +341,14 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
             billboard.setHeight(property.getValue(time));
         }
 
-        property = dynamicBillboard._nearFarScalar;
+        property = dynamicBillboard._scaleByDistance;
         if (defined(property)) {
             billboard.setScaleByDistance(property.getValue(time));
+        }
+
+        property = dynamicBillboard._translucencyByDistance;
+        if (defined(property)) {
+            billboard.setTranslucencyByDistance(property.getValue(time));
         }
     }
 

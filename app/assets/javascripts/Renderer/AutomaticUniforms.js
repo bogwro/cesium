@@ -1,6 +1,7 @@
 /*global define*/
-define(['Core/Cartesian3', 'Renderer/UniformDatatype'],function(
+define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
         Cartesian3,
+        Matrix4,
         UniformDatatype) {
     "use strict";
 
@@ -1398,7 +1399,7 @@ define(['Core/Cartesian3', 'Renderer/UniformDatatype'],function(
             },
 
             getValue : function(uniformState) {
-                return uniformState.getInverseView().getTranslation(viewerPositionWCScratch);
+                return Matrix4.getTranslation(uniformState.getInverseView(), viewerPositionWCScratch);
             }
         },
 

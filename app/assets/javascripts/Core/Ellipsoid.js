@@ -129,6 +129,12 @@ define(['Core/freezeObject', 'Core/defaultValue', 'Core/defined', 'Core/Develope
     Ellipsoid.UNIT_SPHERE = freezeObject(new Ellipsoid(1.0, 1.0, 1.0));
 
     /**
+     * An Ellipsoid instance initialized to a sphere with the lunar radius.
+     * @memberof Ellipsoid
+     */
+    Ellipsoid.MOON = freezeObject(new Ellipsoid(CesiumMath.LUNAR_RADIUS, CesiumMath.LUNAR_RADIUS, CesiumMath.LUNAR_RADIUS));
+
+    /**
      * @memberof Ellipsoid
      * @returns {Cartesian3} The radii of the ellipsoid.
      */

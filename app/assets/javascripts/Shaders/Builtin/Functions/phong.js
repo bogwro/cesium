@@ -20,5 +20,15 @@ color += material.diffuse * diffuse;\n\
 color += material.specular * specular;\n\
 return vec4(color, material.alpha);\n\
 }\n\
+vec4 czm_private_phong(vec3 toEye, czm_material material)\n\
+{\n\
+float diffuse = czm_private_getLambertDiffuseOfMaterial(czm_sunDirectionEC, material);\n\
+float specular = czm_private_getSpecularOfMaterial(czm_sunDirectionEC, toEye, material);\n\
+vec3 ambient = vec3(0.0);\n\
+vec3 color = ambient + material.emission;\n\
+color += material.diffuse * diffuse;\n\
+color += material.specular * specular;\n\
+return vec4(color, material.alpha);\n\
+}\n\
 ";
 });

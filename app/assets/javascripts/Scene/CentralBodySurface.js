@@ -849,7 +849,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
                 centerEye.w = 1.0;
 
                 Matrix4.multiplyByVector(viewMatrix, centerEye, centerEye);
-                viewMatrix.setColumn(3, centerEye, modifiedModelViewScratch);
+                Matrix4.setColumn(viewMatrix, 3, centerEye, modifiedModelViewScratch);
 
                 var tileImageryCollection = tile.imagery;
                 var imageryIndex = 0;

@@ -1,5 +1,5 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Transforms', 'Core/AxisAlignedBoundingBox', 'Core/IntersectionTests', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Ellipsoid', 'Core/Ray', 'Core/Plane'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Transforms', 'Core/AxisAlignedBoundingBox', 'Core/IntersectionTests', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Ellipsoid', 'Core/Matrix4', 'Core/Ray', 'Core/Plane'], function(
         defaultValue,
         defined,
         DeveloperError,
@@ -9,6 +9,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Transf
         Cartesian2,
         Cartesian3,
         Ellipsoid,
+        Matrix4,
         Ray,
         Plane) {
     "use strict";
@@ -40,10 +41,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Transf
         var eastNorthUp = Transforms.eastNorthUpToFixedFrame(origin, ellipsoid);
         this._ellipsoid = ellipsoid;
         this._origin = Cartesian3.clone(origin);
-        this._xAxis = Cartesian3.fromCartesian4(eastNorthUp.getColumn(0));
-        this._yAxis = Cartesian3.fromCartesian4(eastNorthUp.getColumn(1));
+        this._xAxis = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 0));
+        this._yAxis = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 1));
 
-        var normal = Cartesian3.fromCartesian4(eastNorthUp.getColumn(2));
+        var normal = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 2));
         this._plane = Plane.fromPointNormal(origin, normal);
     };
 

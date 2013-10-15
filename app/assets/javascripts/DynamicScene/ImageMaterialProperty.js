@@ -26,7 +26,7 @@ define(['Core/Cartesian2', 'Core/defined', 'DynamicScene/ConstantProperty'], fun
 
     /**
      * Gets the {@link Material} type at the provided time.
-     * @memberof MaterialProperty
+     * @memberof ImageMaterialProperty
      *
      * @param {JulianDate} time The time for which to retrieve the type.
      * @type {String} The type of material.
@@ -37,7 +37,7 @@ define(['Core/Cartesian2', 'Core/defined', 'DynamicScene/ConstantProperty'], fun
 
     /**
      * Gets the value of the property at the provided time.
-     * @memberof MaterialProperty
+     * @memberof ImageMaterialProperty
      *
      * @param {JulianDate} time The time for which to retrieve the value.
      * @param {Object} [result] The object to store the value into, if omitted, a new instance is created and returned.

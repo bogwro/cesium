@@ -343,7 +343,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartes
 
             Cartesian3.subtract(nw, center, nw);
             Matrix2.fromRotation(rotation, rotationMatrix);
-            rotationMatrix.multiplyByVector(nw, nw);
+            Matrix2.multiplyByVector(rotationMatrix, nw, nw);
             Cartesian3.add(nw, center, nw);
             proj.unproject(nw, nwCartographic);
 

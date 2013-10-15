@@ -119,7 +119,8 @@ define(['Core/DeveloperError'], function(
     Event.prototype.raiseEvent = function() {
         var listeners = this._listeners;
         var scopes = this._scopes;
-        for ( var i = listeners.length - 1; i > -1; i--) {
+        var length = listeners.length;
+        for (var i = 0; i < length; i++) {
             listeners[i].apply(scopes[i], arguments);
         }
     };

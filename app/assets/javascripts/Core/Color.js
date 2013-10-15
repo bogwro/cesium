@@ -289,7 +289,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/Develope
 
         var namedColor = Color[color.toUpperCase()];
         if (defined(namedColor)) {
-            return namedColor.clone();
+            return Color.clone(namedColor);
         }
 
         var matches = rgbMatcher.exec(color);
