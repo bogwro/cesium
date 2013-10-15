@@ -1,10 +1,11 @@
 /*global define*/
-define(['Core/createGuid', 'Core/Cartographic', 'Core/Color', 'Core/defined', 'Core/DeveloperError', 'Core/RuntimeError', 'Core/Ellipsoid', 'Core/Event', 'Core/loadJson', 'DynamicScene/ConstantProperty', 'DynamicScene/DynamicObject', 'DynamicScene/DynamicPoint', 'DynamicScene/DynamicPolyline', 'DynamicScene/DynamicPolygon', 'DynamicScene/ColorMaterialProperty', 'DynamicScene/DynamicObjectCollection', 'ThirdParty/when', 'ThirdParty/topojson'], function(
+define(['Core/createGuid', 'Core/Cartographic', 'Core/Color', 'Core/defined', 'Core/DeveloperError', 'Core/getFilenameFromUri', 'Core/RuntimeError', 'Core/Ellipsoid', 'Core/Event', 'Core/loadJson', 'DynamicScene/ConstantProperty', 'DynamicScene/DynamicObject', 'DynamicScene/DynamicPoint', 'DynamicScene/DynamicPolyline', 'DynamicScene/DynamicPolygon', 'DynamicScene/ColorMaterialProperty', 'DynamicScene/DynamicObjectCollection', 'ThirdParty/when', 'ThirdParty/topojson'], function(
         createGuid,
         Cartographic,
         Color,
         defined,
         DeveloperError,
+        getFilenameFromUri,
         RuntimeError,
         Ellipsoid,
         Event,
@@ -203,26 +204,26 @@ define(['Core/createGuid', 'Core/Cartographic', 'Core/Color', 'Core/defined', 'C
         //default line
         var defaultLine = new DynamicObject('GeoJsonDataSource.defaultLine');
         var polyline = new DynamicPolyline();
-        polyline.color = new ConstantProperty(Color.YELLOW);
+        var material = new ColorMaterialProperty();
+        material.color = new ConstantProperty(Color.YELLOW);
+        polyline.material = material;
         polyline.width = new ConstantProperty(2);
-        polyline.outlineColor = new ConstantProperty(Color.BLACK);
-        polyline.outlineWidth = new ConstantProperty(1);
         defaultLine.polyline = polyline;
 
         //default polygon
         var defaultPolygon = new DynamicObject('GeoJsonDataSource.defaultPolygon');
 
         polyline = new DynamicPolyline();
-        polyline.color = new ConstantProperty(Color.YELLOW);
+        material = new ColorMaterialProperty();
+        material.color = new ConstantProperty(Color.YELLOW);
+        polyline.material = material;
         polyline.width = new ConstantProperty(1);
-        polyline.outlineColor = new ConstantProperty(Color.BLACK);
-        polyline.outlineWidth = new ConstantProperty(0);
         defaultPolygon.polyline = polyline;
 
         var polygon = new DynamicPolygon();
         defaultPolygon.polygon = polygon;
 
-        var material = new ColorMaterialProperty();
+        material = new ColorMaterialProperty();
         material.color = new ConstantProperty(new Color(1.0, 1.0, 0.0, 0.1));
         polygon.material = material;
 
@@ -247,6 +248,18 @@ define(['Core/createGuid', 'Core/Cartographic', 'Core/Color', 'Core/defined', 'C
          * @type {DynamicObject}
          */
         this.defaultPolygon = defaultPolygon;
+
+        this._name = undefined;
+    };
+
+    /**
+     * Gets the name of this data source.
+     * @memberof GeoJsonDataSource
+     *
+     * @returns {String} The name.
+     */
+    GeoJsonDataSource.prototype.getName = function() {
+        return this._name;
     };
 
     /**
@@ -341,6 +354,11 @@ define(['Core/createGuid', 'Core/Cartographic', 'Core/Color', 'Core/defined', 'C
     GeoJsonDataSource.prototype.load = function(geoJson, source) {
         if (!defined(geoJson)) {
             throw new DeveloperError('geoJson is required.');
+        }
+
+        this._name = undefined;
+        if (defined(source)) {
+            this._name = getFilenameFromUri(source);
         }
 
         var typeHandler = geoJsonObjectTypes[geoJson.type];

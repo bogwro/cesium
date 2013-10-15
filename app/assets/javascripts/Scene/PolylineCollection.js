@@ -114,8 +114,8 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Co
          * @see Transforms.eastNorthUpToFixedFrame
          * @see czm_model
          */
-        this.modelMatrix = Matrix4.IDENTITY.clone();
-        this._modelMatrix = Matrix4.IDENTITY.clone();
+        this.modelMatrix = Matrix4.clone(Matrix4.IDENTITY);
+        this._modelMatrix = Matrix4.clone(Matrix4.IDENTITY);
 
         this._rs = undefined;
 
@@ -401,6 +401,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Co
             this._polylinesUpdated = false;
         }
 
+        properties = this._propertiesChanged;
         for ( var k = 0; k < NUMBER_OF_PROPERTIES; ++k) {
             properties[k] = 0;
         }
@@ -477,7 +478,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Co
                     var polyline = polylines[s];
                     var mId = createMaterialId(polyline._material);
                     if (mId !== currentId) {
-                        if (defined(currentId)) {
+                        if (defined(currentId) && count > 0) {
                             if (commandIndex >= commandsLength) {
                                 command = new DrawCommand();
                                 command.owner = polylineCollection;
@@ -918,10 +919,10 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Co
         var mode = frameState.mode;
         var projection = frameState.scene2D.projection;
 
-        if (collection._mode !== mode || (collection._projection !== projection) || (!collection._modelMatrix.equals(collection.modelMatrix))) {
+        if (collection._mode !== mode || (collection._projection !== projection) || (!Matrix4.equals(collection._modelMatrix, collection.modelMatrix))) {
             collection._mode = mode;
             collection._projection = projection;
-            collection._modelMatrix = collection.modelMatrix.clone();
+            collection._modelMatrix = Matrix4.clone(collection.modelMatrix);
             collection._createVertexArray = true;
         }
     }
@@ -1330,7 +1331,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Co
 
         for ( var n = 0; n < length; ++n) {
             position = positions[n];
-            p = modelMatrix.multiplyByPoint(position);
+            p = Matrix4.multiplyByPoint(modelMatrix, position);
             newPositions.push(projection.project(ellipsoid.cartesianToCartographic(Cartesian3.fromCartesian4(p))));
         }
 

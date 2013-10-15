@@ -164,7 +164,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math',
             updateColumbusCartesian4.z = projectedPosition.y;
 
             var tranform = camera.transform;
-            tranform.setColumn(3, updateColumbusCartesian4, tranform);
+            Matrix4.setColumn(tranform, 3, updateColumbusCartesian4, tranform);
 
             var controller = that._screenSpaceCameraController;
             controller.enableTranslate = false;
@@ -209,9 +209,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math',
                 first2dUp.x = 0.0;
                 first2dUp.y = 0.0;
 
-                var theta = startTheta - endTheta;
+                var theta = endTheta - startTheta;
                 var rotation = Quaternion.fromAxisAngle(Cartesian3.UNIT_Z, theta, update3DControllerQuaternion);
-                Matrix3.fromQuaternion(rotation, update3DControllerMatrix3).multiplyByVector(offset, offset);
+                Matrix3.multiplyByVector(Matrix3.fromQuaternion(rotation, update3DControllerMatrix3), offset, offset);
             }
             Cartesian3.multiplyByScalar(Cartesian3.normalize(offset, offset), that._lastDistance, offset);
             camera.controller.lookAt(offset, Cartesian3.ZERO, Cartesian3.UNIT_Z);

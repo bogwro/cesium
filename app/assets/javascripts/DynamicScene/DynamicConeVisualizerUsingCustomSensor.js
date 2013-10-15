@@ -269,7 +269,7 @@ define(['Core/Cartesian3', 'Core/Color', 'Core/defined', 'Core/destroyObject', '
 
             // CZML_TODO Determine official defaults
             cone.material = Material.fromType(Material.ColorType);
-            cone.intersectionColor = Color.YELLOW.clone();
+            cone.intersectionColor = Color.clone(Color.YELLOW);
             cone.intersectionWidth = 5.0;
             cone.radius = Number.POSITIVE_INFINITY;
             cone.showIntersection = true;

@@ -38,6 +38,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
     var ROTATION_INDEX = Billboard.ROTATION_INDEX;
     var ALIGNED_AXIS_INDEX = Billboard.ALIGNED_AXIS_INDEX;
     var SCALE_BY_DISTANCE_INDEX = Billboard.SCALE_BY_DISTANCE_INDEX;
+    var TRANSLUCENCY_BY_DISTANCE_INDEX = Billboard.TRANSLUCENCY_BY_DISTANCE_INDEX;
     var NUMBER_OF_PROPERTIES = Billboard.NUMBER_OF_PROPERTIES;
 
     // PERFORMANCE_IDEA:  Use vertex compression so we don't run out of
@@ -53,7 +54,8 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
         pickColor : 7,  // pickColor and color shared an index because pickColor is only used during
         color : 7,      // the 'pick' pass and 'color' is only used during the 'color' pass.
         rotationAndAlignedAxis : 8,
-        scaleByDistance : 9
+        scaleByDistance : 9,
+        translucencyByDistance : 10
     };
 
     // Identifies to the VertexArrayFacade the attributes that are used only for the pick
@@ -131,6 +133,10 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
         this._compiledShaderScaleByDistance = false;
         this._compiledShaderScaleByDistancePick = false;
 
+        this._shaderTranslucencyByDistance = false;
+        this._compiledShaderTranslucencyByDistance = false;
+        this._compiledShaderTranslucencyByDistancePick = false;
+
         this._propertiesChanged = new Uint32Array(NUMBER_OF_PROPERTIES);
 
         this._maxSize = 0.0;
@@ -169,8 +175,8 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
          * billboards.add({ imageIndex: 0, position : new Cartesian3(0.0, 0.0, 1000000.0) }); // up
          * ]);
          */
-        this.modelMatrix = Matrix4.IDENTITY.clone();
-        this._modelMatrix = Matrix4.IDENTITY.clone();
+        this.modelMatrix = Matrix4.clone(Matrix4.IDENTITY);
+        this._modelMatrix = Matrix4.clone(Matrix4.IDENTITY);
 
         this._mode = SceneMode.SCENE3D;
         this._projection = undefined;
@@ -188,7 +194,8 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
                               BufferUsage.STATIC_DRAW, // COLOR_INDEX
                               BufferUsage.STATIC_DRAW, // ROTATION_INDEX
                               BufferUsage.STATIC_DRAW, // ALIGNED_AXIS_INDEX
-                              BufferUsage.STATIC_DRAW  // SCALE_BY_DISTANCE_INDEX
+                              BufferUsage.STATIC_DRAW, // SCALE_BY_DISTANCE_INDEX
+                              BufferUsage.STATIC_DRAW  // TRANSLUCENCY_BY_DISTANCE_INDEX
                           ];
 
         var that = this;
@@ -230,9 +237,9 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
      *   horizontalOrigin : HorizontalOrigin.CENTER,
      *   verticalOrigin : VerticalOrigin.CENTER,
      *   scale : 1.0,
-     *   scaleByDistance : new NearFarScalar(5e6, 1.0, 2e7, 0.0),
      *   imageIndex : 0,
-     *   color : Color.WHITE
+     *   color : Color.WHITE,
+     *   id : undefined
      * });
      *
      * // Example 2:  Specify only the billboard's cartographic position.
@@ -660,6 +667,11 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
             componentsPerAttribute : 4,
             componentDatatype : ComponentDatatype.FLOAT,
             usage : buffersUsage[SCALE_BY_DISTANCE_INDEX]
+        }, {
+            index : attributeIndices.translucencyByDistance,
+            componentsPerAttribute : 4,
+            componentDatatype : ComponentDatatype.FLOAT,
+            usage : buffersUsage[TRANSLUCENCY_BY_DISTANCE_INDEX]
         }], 4 * numberOfBillboards); // 4 vertices per billboard
     }
 
@@ -844,9 +856,9 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
         var allPurposeWriters = vafWriters[allPassPurpose];
         var writer = allPurposeWriters[attributeIndices.scaleByDistance];
         var near = 0.0;
-        var nearValue = 0.0;
-        var far = 0.0;
-        var farValue = 0.0;
+        var nearValue = 1.0;
+        var far = 1.0;
+        var farValue = 1.0;
 
         var scale = billboard.getScaleByDistance();
         if (defined(scale)) {
@@ -868,6 +880,35 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
         writer(i + 3, near, nearValue, far, farValue);
     }
 
+    function writeTranslucencyByDistance(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard) {
+        var i = billboard._index * 4;
+        var allPurposeWriters = vafWriters[allPassPurpose];
+        var writer = allPurposeWriters[attributeIndices.translucencyByDistance];
+        var near = 0.0;
+        var nearValue = 1.0;
+        var far = 1.0;
+        var farValue = 1.0;
+
+        var translucency = billboard.getTranslucencyByDistance();
+        if (defined(translucency)) {
+            near = translucency.near;
+            nearValue = translucency.nearValue;
+            far = translucency.far;
+            farValue = translucency.farValue;
+
+            if (nearValue !== 1.0 || farValue !== 1.0) {
+                // translucency by distance calculation in shader need not be enabled
+                // until a billboard with near and far !== 1.0 is found
+                billboardCollection._shaderTranslucencyByDistance = true;
+            }
+        }
+
+        writer(i + 0, near, nearValue, far, farValue);
+        writer(i + 1, near, nearValue, far, farValue);
+        writer(i + 2, near, nearValue, far, farValue);
+        writer(i + 3, near, nearValue, far, farValue);
+    }
+
     function writeBillboard(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard) {
         writePosition(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard);
         writePixelOffset(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard);
@@ -878,6 +919,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
         writeTextureCoordinatesAndImageSize(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard);
         writeRotationAndAlignedAxis(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard);
         writeScaleByDistance(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard);
+        writeTranslucencyByDistance(billboardCollection, context, textureAtlasCoordinates, vafWriters, billboard);
     }
 
     function recomputeActualPositions(billboardCollection, billboards, length, frameState, modelMatrix, recomputeBoundingVolume) {
@@ -920,11 +962,11 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
         if (billboardCollection._mode !== mode ||
             billboardCollection._projection !== projection ||
             mode !== SceneMode.SCENE3D &&
-            !modelMatrix.equals(billboardCollection.modelMatrix)) {
+            !Matrix4.equals(modelMatrix, billboardCollection.modelMatrix)) {
 
             billboardCollection._mode = mode;
             billboardCollection._projection = projection;
-            billboardCollection.modelMatrix.clone(modelMatrix);
+            Matrix4.clone(billboardCollection.modelMatrix, modelMatrix);
             billboardCollection._createVertexArray = true;
 
             if (mode === SceneMode.SCENE3D || mode === SceneMode.SCENE2D || mode === SceneMode.COLUMBUS_VIEW) {
@@ -1066,6 +1108,10 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
                     writers.push(writeScaleByDistance);
                 }
 
+                if (properties[TRANSLUCENCY_BY_DISTANCE_INDEX]) {
+                    writers.push(writeTranslucencyByDistance);
+                }
+
                 vafWriters = this._vaf.writers;
 
                 if ((billboardsToUpdateLength / billboardsLength) > 0.1) {
@@ -1140,19 +1186,23 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
                 });
             }
 
-            if (!defined(this._sp) || (this._shaderRotation && !this._compiledShaderRotation) ||
-                    (this._shaderScaleByDistance && !this._compiledShaderScaleByDistance)) {
+            if (!defined(this._sp) ||
+                    (this._shaderRotation && !this._compiledShaderRotation) ||
+                    (this._shaderScaleByDistance && !this._compiledShaderScaleByDistance) ||
+                    (this._shaderTranslucencyByDistance && !this._compiledShaderTranslucencyByDistance)) {
                 this._sp = context.getShaderCache().replaceShaderProgram(
                     this._sp,
                     createShaderSource({
                         defines : [this._shaderRotation ? 'ROTATION' : '',
-                                   this._shaderScaleByDistance ? 'EYE_DISTANCE_SCALING' : ''],
+                                   this._shaderScaleByDistance ? 'EYE_DISTANCE_SCALING' : '',
+                                   this._shaderTranslucencyByDistance ? 'EYE_DISTANCE_TRANSLUCENCY' : ''],
                         sources : [BillboardCollectionVS]
                     }),
                     BillboardCollectionFS,
                     attributeIndices);
                 this._compiledShaderRotation = this._shaderRotation;
                 this._compiledShaderScaleByDistance = this._shaderScaleByDistance;
+                this._compiledShaderTranslucencyByDistance = this._shaderTranslucencyByDistance;
             }
 
             va = this._vaf.vaByPurpose[colorPassPurpose];
@@ -1182,13 +1232,15 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
 
             if (!defined(this._spPick) ||
                     (this._shaderRotation && !this._compiledShaderRotationPick) ||
-                    (this._shaderScaleByDistance && !this._compiledShaderScaleByDistancePick)) {
+                    (this._shaderScaleByDistance && !this._compiledShaderScaleByDistancePick) ||
+                    (this._shaderTranslucencyByDistance && !this._compiledShaderTranslucencyByDistancePick)) {
                 this._spPick = context.getShaderCache().replaceShaderProgram(
                     this._spPick,
                     createShaderSource({
                         defines : ['RENDER_FOR_PICK',
                                    this._shaderRotation ? 'ROTATION' : '',
-                                   this._shaderScaleByDistance ? 'EYE_DISTANCE_SCALING' : ''],
+                                   this._shaderScaleByDistance ? 'EYE_DISTANCE_SCALING' : '',
+                                   this._shaderTranslucencyByDistance ? 'EYE_DISTANCE_TRANSLUCENCY' : ''],
                         sources : [BillboardCollectionVS]
                     }),
                     createShaderSource({
@@ -1198,6 +1250,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
                     attributeIndices);
                 this._compiledShaderRotationPick = this._shaderRotation;
                 this._compiledShaderScaleByDistancePick = this._shaderScaleByDistance;
+                this._compiledShaderTranslucencyByDistancePick = this._shaderTranslucencyByDistance;
             }
 
             va = this._vaf.vaByPurpose[pickPassPurpose];

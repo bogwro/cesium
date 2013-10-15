@@ -416,7 +416,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
             return undefined;
         }
 
-        return fixedToIcrfMtx.transpose(result);
+        return Matrix3.transpose(fixedToIcrfMtx, result);
     };
 
     var xysScratch = new Iau2006XysSample(0.0, 0.0, 0.0);
@@ -449,7 +449,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
      * var fixedToIcrf = Transforms.computeIcrfToFixedMatrix(now);
      * var pointInInertial;
      * if (defined(fixedToIcrf)) {
-     *     pointInInertial = fixedToIcrf.multiplyByVector(pointInFixed);
+     *     pointInInertial = Matrix3.multiplyByVector(fixedToIcrf, pointInFixed);
      * }
      */
     Transforms.computeFixedToIcrfMatrix = function(date, result) {
@@ -494,7 +494,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
         rotation1[8] = 1 - a * (x * x + y * y);
 
         var rotation2 = Matrix3.fromRotationZ(-xys.s, rotation2Scratch);
-        var matrixQ = rotation1.multiply(rotation2, rotation1Scratch);
+        var matrixQ = Matrix3.multiply(rotation1, rotation2, rotation1Scratch);
 
         // Similar to TT conversions above
         // It's possible here that secondTT could roll over 86400
@@ -520,7 +520,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
         var earthRotation = Matrix3.fromRotationZ(era, rotation2Scratch);
 
         // pseudoFixed to ICRF
-        var pfToIcrf = matrixQ.multiply(earthRotation, rotation1Scratch);
+        var pfToIcrf = Matrix3.multiply(matrixQ, earthRotation, rotation1Scratch);
 
         // Compute pole wander matrix
         var cosxp = Math.cos(eop.xPoleWander);
@@ -547,7 +547,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
         fToPfMtx[7] = sinyp * cossp - cosyp * sinxp * sinsp;
         fToPfMtx[8] = cosyp * cosxp;
 
-        return pfToIcrf.multiply(fToPfMtx, result);
+        return Matrix3.multiply(pfToIcrf, fToPfMtx, result);
     };
 
     var pointToWindowCoordinatesTemp = new Cartesian4();

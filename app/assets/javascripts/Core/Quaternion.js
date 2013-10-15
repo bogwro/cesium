@@ -127,9 +127,9 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
             w = 0.5 * root;
             root = 0.5 / root; // 1/(4w)
 
-            x = (matrix[Matrix3.COLUMN2ROW1] - matrix[Matrix3.COLUMN1ROW2]) * root;
-            y = (matrix[Matrix3.COLUMN0ROW2] - matrix[Matrix3.COLUMN2ROW0]) * root;
-            z = (matrix[Matrix3.COLUMN1ROW0] - matrix[Matrix3.COLUMN0ROW1]) * root;
+            x = (matrix[Matrix3.COLUMN1ROW2] - matrix[Matrix3.COLUMN2ROW1]) * root;
+            y = (matrix[Matrix3.COLUMN2ROW0] - matrix[Matrix3.COLUMN0ROW2]) * root;
+            z = (matrix[Matrix3.COLUMN0ROW1] - matrix[Matrix3.COLUMN1ROW0]) * root;
         } else {
             // |w| <= 1/2
             var next = fromRotationMatrixNext;
@@ -153,9 +153,9 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
             quat[j] = (matrix[Matrix3.getElementIndex(j, i)] + matrix[Matrix3.getElementIndex(i, j)]) * root;
             quat[k] = (matrix[Matrix3.getElementIndex(k, i)] + matrix[Matrix3.getElementIndex(i, k)]) * root;
 
-            x = quat[0];
-            y = quat[1];
-            z = quat[2];
+            x = -quat[0];
+            y = -quat[1];
+            z = -quat[2];
         }
 
         if (!defined(result)) {
@@ -291,9 +291,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         if (!defined(result)) {
             result = new Quaternion();
         }
-        sampledQuaternionRotation.x = array[0];
-        sampledQuaternionRotation.y = array[1];
-        sampledQuaternionRotation.z = array[2];
+        Cartesian3.fromArray(array, 0, sampledQuaternionRotation);
         var magnitude = Cartesian3.magnitude(sampledQuaternionRotation);
 
         Quaternion.unpack(sourceArray, lastIndex * 4, sampledQuaternionQuaternion0);
@@ -304,7 +302,8 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
             Quaternion.fromAxisAngle(sampledQuaternionRotation, magnitude, sampledQuaternionTempQuaternion);
         }
 
-        return Quaternion.multiply(sampledQuaternionTempQuaternion, sampledQuaternionQuaternion0, result);
+        Quaternion.multiply(sampledQuaternionTempQuaternion, sampledQuaternionQuaternion0, result);
+        return Quaternion.conjugate(result, result);
     };
 
     /**
@@ -837,6 +836,34 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      */
     Quaternion.prototype.clone = function(result) {
         return Quaternion.clone(this, result);
+    };
+
+    /**
+     * Compares this and the provided quaternion componentwise and returns
+     * <code>true</code> if they are equal, <code>false</code> otherwise.
+     * @memberof Quaternion
+     *
+     * @param {Quaternion} [right] The right hand side quaternion.
+     * @returns {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
+     */
+    Quaternion.prototype.equals = function(right) {
+        return Quaternion.equals(this, right);
+    };
+
+    /**
+     * Compares this and the provided quaternion componentwise and returns
+     * <code>true</code> if they are within the provided epsilon,
+     * <code>false</code> otherwise.
+     * @memberof Quaternion
+     *
+     * @param {Quaternion} [right] The right hand side quaternion.
+     * @param {Number} epsilon The epsilon to use for equality testing.
+     * @returns {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
+     *
+     * @exception {DeveloperError} epsilon is required and must be a number.
+     */
+    Quaternion.prototype.equalsEpsilon = function(right, epsilon) {
+        return Quaternion.equalsEpsilon(this, right, epsilon);
     };
 
     /**

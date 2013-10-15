@@ -30,6 +30,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
      * @param {Number} [options.textureRotationAngle=0.0] The rotation of the texture coordinates, in radians. A positive rotation is counter-clockwise.
      * @param {Boolean} [options.show=true] Determines if this primitive will be shown.
      * @param {Material} [options.material=undefined] The surface appearance of the primitive.
+     * @param {Object} [options.id=undefined] A user-defined object to return when the instance is picked with {@link Scene#pick}
      * @param {Boolean} [options.asynchronous=true] Determines if the extent will be created asynchronously or block until ready.
      *
      * @exception {DeveloperError} Either options.positions or options.polygonHierarchy can be provided, but not both.
@@ -138,6 +139,18 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
          * @see <a href='https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric'>Fabric</a>
          */
         this.material = defaultValue(options.material, material);
+
+        /**
+         * User-defined object returned when the polygon is picked.
+         *
+         * @type Object
+         *
+         * @default undefined
+         *
+         * @see Scene#pick
+         */
+        this.id = options.id;
+        this._id = undefined;
 
         /**
          * Determines if the geometry instances will be created and batched on
@@ -289,13 +302,15 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
             (this._ellipsoid !== this.ellipsoid) ||
             (this._granularity !== this.granularity) ||
             (this._height !== this.height) ||
-            (this._textureRotationAngle !== this.textureRotationAngle)) {
+            (this._textureRotationAngle !== this.textureRotationAngle) ||
+            (this._id !== this.id)) {
 
             this._createPrimitive = false;
             this._ellipsoid = this.ellipsoid;
             this._granularity = this.granularity;
             this._height = this.height;
             this._textureRotationAngle = this.textureRotationAngle;
+            this._id = this.id;
 
             this._primitive = this._primitive && this._primitive.destroy();
 
@@ -314,6 +329,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
                         ellipsoid : this.ellipsoid,
                         granularity : this.granularity
                     }),
+                    id : this.id,
                     pickPrimitive : this
                 });
             } else {
@@ -326,6 +342,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
                         ellipsoid : this.ellipsoid,
                         granularity : this.granularity
                     }),
+                    id : this.id,
                     pickPrimitive : this
                 });
             }

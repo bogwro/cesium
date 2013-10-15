@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/defined', 'Core/DeveloperError', 'Core/FeatureDetection', 'Core/Enumeration'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/FeatureDetection', 'Core/Enumeration'], function(
+        defaultValue,
         defined,
         DeveloperError,
         FeatureDetection,
@@ -186,19 +187,22 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/FeatureDetection', 'Core/En
             throw new DeveloperError('buffer is required.');
         }
 
+        byteOffset = defaultValue(byteOffset, 0);
+        length = defaultValue(length, (buffer.byteLength - byteOffset) / componentDatatype.sizeInBytes);
+
         switch (componentDatatype.value) {
         case ComponentDatatype.BYTE.value:
-            return new Int8Array(buffer, byteOffset);
+            return new Int8Array(buffer, byteOffset, length);
         case ComponentDatatype.UNSIGNED_BYTE.value:
-            return new Uint8Array(buffer, byteOffset);
+            return new Uint8Array(buffer, byteOffset, length);
         case ComponentDatatype.SHORT.value:
-            return new Int16Array(buffer, byteOffset);
+            return new Int16Array(buffer, byteOffset, length);
         case ComponentDatatype.UNSIGNED_SHORT.value:
-            return new Uint16Array(buffer, byteOffset);
+            return new Uint16Array(buffer, byteOffset, length);
         case ComponentDatatype.FLOAT.value:
-            return new Float32Array(buffer, byteOffset);
+            return new Float32Array(buffer, byteOffset, length);
         case ComponentDatatype.DOUBLE.value:
-            return new Float64Array(buffer, byteOffset);
+            return new Float64Array(buffer, byteOffset, length);
         default:
             throw new DeveloperError('componentDatatype is not a valid enumeration value.');
         }

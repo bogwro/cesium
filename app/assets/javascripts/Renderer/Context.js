@@ -83,6 +83,20 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/destro
         }
     }
 
+    function makeGetterSetter(gl, propertyName, logFunc) {
+        return {
+            get : function() {
+                var value = gl[propertyName];
+                logFunc(gl, 'get: ' + propertyName, value);
+                return gl[propertyName];
+            },
+            set : function(value) {
+                gl[propertyName] = value;
+                logFunc(gl, 'set: ' + propertyName, value);
+            }
+        };
+    }
+
     function wrapGL(gl, logFunc) {
         if (!logFunc) {
             return gl;
@@ -110,7 +124,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/destro
             if (typeof property === 'function') {
                 glWrapper[propertyName] = wrapFunction(property);
             } else {
-                glWrapper[propertyName] = property;
+                Object.defineProperty(glWrapper, propertyName, makeGetterSetter(gl, propertyName, logFunc));
             }
         }
 
@@ -2495,7 +2509,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/destro
      *
      * @memberof Context
      *
-     * @see Context#pick
+     * @see Scene#pick
      */
     Context.prototype.createPickFramebuffer = function() {
         return new PickFramebuffer(this);

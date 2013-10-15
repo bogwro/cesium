@@ -29,6 +29,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
      * @param {Number} [options.textureRotationAngle=0.0] The rotation of the texture coordinates, in radians. A positive rotation is counter-clockwise.
      * @param {Boolean} [options.show=true] Determines if this primitive will be shown.
      * @param {Material} [options.material=undefined] The surface appearance of the primitive.
+     * @param {Object} [options.id=undefined] A user-defined object to return when the instance is picked with {@link Scene#pick}
      * @param {Boolean} [options.asynchronous=true] Determines if the extent will be created asynchronously or block until ready.
      *
      * @example
@@ -137,6 +138,18 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
         this.material = defaultValue(options.material, material);
 
         /**
+         * User-defined object returned when the extent is picked.
+         *
+         * @type Object
+         *
+         * @default undefined
+         *
+         * @see Scene#pick
+         */
+        this.id = options.id;
+        this._id = undefined;
+
+        /**
          * Determines if the geometry instances will be created and batched on
          * a web worker.
          *
@@ -174,7 +187,8 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
             (this._granularity !== this.granularity) ||
             (this._height !== this.height) ||
             (this._rotation !== this.rotation) ||
-            (this._textureRotationAngle !== this.textureRotationAngle)) {
+            (this._textureRotationAngle !== this.textureRotationAngle) ||
+            (this._id !== this.id)) {
 
             this._extent = Extent.clone(this.extent, this._extent);
             this._ellipsoid = this.ellipsoid;
@@ -182,6 +196,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
             this._height = this.height;
             this._rotation = this.rotation;
             this._textureRotationAngle = this.textureRotationAngle;
+            this._id = this.id;
 
             var instance = new GeometryInstance({
                 geometry : new ExtentGeometry({
@@ -193,6 +208,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/Color'
                     rotation : this.rotation,
                     stRotation : this.textureRotationAngle
                 }),
+                id : this.id,
                 pickPrimitive : this
             });
 

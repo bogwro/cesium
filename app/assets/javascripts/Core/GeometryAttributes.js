@@ -11,7 +11,7 @@ define(['Core/defaultValue'], function(defaultValue) {
      * into the vertex buffer for better rendering performance.
      * </p>
      *
-     * @alias VertexFormat
+     * @alias GeometryAttributes
      * @constructor
      */
     var GeometryAttributes = function(options) {

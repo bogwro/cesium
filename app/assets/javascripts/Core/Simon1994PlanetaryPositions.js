@@ -100,7 +100,7 @@ define(['Core/Cartesian3', 'Core/defined', 'Core/DeveloperError', 'Core/JulianDa
             result.z = 0.0;
         }
 
-        return perifocalToEquatorial.multiplyByVector(result, result);
+        return Matrix3.multiplyByVector(perifocalToEquatorial, result, result);
     }
 
     function chooseOrbit(eccentricity, tolerance) {
@@ -485,7 +485,7 @@ define(['Core/Cartesian3', 'Core/defined', 'Core/DeveloperError', 'Core/JulianDa
         computeSimonEarth(date, translation);
 
         Cartesian3.subtract(result, translation, result);
-        axesTransformation.multiplyByVector(result, result);
+        Matrix3.multiplyByVector(axesTransformation, result, result);
 
         return result;
     };
@@ -502,7 +502,7 @@ define(['Core/Cartesian3', 'Core/defined', 'Core/DeveloperError', 'Core/JulianDa
             date = new JulianDate();
         }
         result = computeSimonMoon(date, result);
-        axesTransformation.multiplyByVector(result, result);
+        Matrix3.multiplyByVector(axesTransformation, result, result);
 
         return result;
     };

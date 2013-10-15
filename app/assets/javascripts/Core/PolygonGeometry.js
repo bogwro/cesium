@@ -690,7 +690,7 @@ define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'C
         center = Cartesian3.add(center, scratchPosition, center);
 
         if (extrude) {
-            scratchBoundingSphere = boundingSphere.clone(scratchBoundingSphere);
+            scratchBoundingSphere = BoundingSphere.clone(boundingSphere, scratchBoundingSphere);
             center = scratchBoundingSphere.center;
             scratchPosition = Cartesian3.multiplyByScalar(scratchNormal, extrudedHeight, scratchPosition);
             center = Cartesian3.add(ellipsoid.scaleToGeodeticSurface(center, center), scratchPosition, center);

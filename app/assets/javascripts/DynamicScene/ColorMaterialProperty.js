@@ -21,7 +21,7 @@ define(['Core/Color', 'Core/defined', 'DynamicScene/ConstantProperty'], function
 
     /**
      * Gets the {@link Material} type at the provided time.
-     * @memberof MaterialProperty
+     * @memberof ColorMaterialProperty
      *
      * @param {JulianDate} time The time for which to retrieve the type.
      * @type {String} The type of material.
@@ -32,7 +32,7 @@ define(['Core/Color', 'Core/defined', 'DynamicScene/ConstantProperty'], function
 
     /**
      * Gets the value of the property at the provided time.
-     * @memberof MaterialProperty
+     * @memberof ColorMaterialProperty
      *
      * @param {JulianDate} time The time for which to retrieve the value.
      * @param {Object} [result] The object to store the value into, if omitted, a new instance is created and returned.

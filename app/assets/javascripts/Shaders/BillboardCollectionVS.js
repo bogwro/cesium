@@ -11,6 +11,7 @@ attribute vec2 pixelOffset;\n\
 attribute vec4 eyeOffsetAndScale;\n\
 attribute vec4 rotationAndAlignedAxis;\n\
 attribute vec4 scaleByDistance;\n\
+attribute vec4 translucencyByDistance;\n\
 #ifdef RENDER_FOR_PICK\n\
 attribute vec4 pickColor;\n\
 #else\n\
@@ -23,6 +24,17 @@ varying vec4 v_pickColor;\n\
 #else\n\
 varying vec4 v_color;\n\
 #endif\n\
+float getNearFarScalar(vec4 nearFarScalar, float cameraDistSq)\n\
+{\n\
+float valueAtMin = nearFarScalar.y;\n\
+float valueAtMax = nearFarScalar.w;\n\
+float nearDistanceSq = nearFarScalar.x * nearFarScalar.x;\n\
+float farDistanceSq = nearFarScalar.z * nearFarScalar.z;\n\
+cameraDistSq = clamp(cameraDistSq, nearDistanceSq, farDistanceSq);\n\
+float t = (cameraDistSq - nearDistanceSq) / (farDistanceSq - nearDistanceSq);\n\
+t = pow(t, 0.15);\n\
+return mix(valueAtMin, valueAtMax, t);\n\
+}\n\
 void main()\n\
 {\n\
 vec3 eyeOffset = eyeOffsetAndScale.xyz;\n\
@@ -35,7 +47,6 @@ vec4 p = czm_translateRelativeToEye(positionHigh, positionLow);\n\
 vec4 positionEC = czm_modelViewRelativeToEye * p;\n\
 positionEC = czm_eyeOffset(positionEC, eyeOffset);\n\
 positionEC.xyz *= show;\n\
-#ifdef EYE_DISTANCE_SCALING\n\
 float lengthSq;\n\
 if (czm_sceneMode == czm_sceneMode2D)\n\
 {\n\
@@ -45,14 +56,20 @@ else\n\
 {\n\
 lengthSq = dot(positionEC.xyz, positionEC.xyz);\n\
 }\n\
-float scaleAtMin = scaleByDistance.y;\n\
-float scaleAtMax = scaleByDistance.w;\n\
-float nearDistanceSq = scaleByDistance.x * scaleByDistance.x;\n\
-float farDistanceSq = scaleByDistance.z * scaleByDistance.z;\n\
-lengthSq = clamp(lengthSq, nearDistanceSq, farDistanceSq);\n\
-float t = (lengthSq - nearDistanceSq) / (farDistanceSq - nearDistanceSq);\n\
-t = pow(t, 0.15);\n\
-scale *= mix(scaleAtMin, scaleAtMax, t);\n\
+#ifdef EYE_DISTANCE_SCALING\n\
+scale *= getNearFarScalar(scaleByDistance, lengthSq);\n\
+if (scale == 0.0)\n\
+{\n\
+positionEC.xyz = vec3(0.0);\n\
+}\n\
+#endif\n\
+float translucency = 1.0;\n\
+#ifdef EYE_DISTANCE_TRANSLUCENCY\n\
+translucency = getNearFarScalar(translucencyByDistance, lengthSq);\n\
+if (translucency == 0.0)\n\
+{\n\
+positionEC.xyz = vec3(0.0);\n\
+}\n\
 #endif\n\
 vec4 positionWC = czm_eyeToWindowCoordinates(positionEC);\n\
 vec2 halfSize = imageSize * scale * czm_highResolutionSnapScale;\n\
@@ -86,6 +103,7 @@ v_textureCoordinates = textureCoordinates;\n\
 v_pickColor = pickColor;\n\
 #else\n\
 v_color = color;\n\
+v_color.a *= translucency;\n\
 #endif\n\
 }\n\
 ";
