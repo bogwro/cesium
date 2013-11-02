@@ -1,5 +1,5 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Color', 'Widgets/getElement', 'ThirdParty/knockout'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Color', 'Widgets/getElement', 'Widgets/subscribeAndEvaluate', 'ThirdParty/knockout'], function(
         defaultValue,
         defined,
         defineProperties,
@@ -7,6 +7,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/dest
         DeveloperError,
         Color,
         getElement,
+        subscribeAndEvaluate,
         knockout) {
     "use strict";
 
@@ -28,11 +29,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/dest
 
     function getElementColor(element) {
         return Color.fromCssColorString(window.getComputedStyle(element).getPropertyValue('color'));
-    }
-
-    function subscribeAndEvaluate(owner, observablePropertyName, callback, target) {
-        callback.call(target, owner[observablePropertyName]);
-        return knockout.getObservable(owner, observablePropertyName).subscribe(callback, target);
     }
 
     //Dynamically builds an SVG element from a JSON object.

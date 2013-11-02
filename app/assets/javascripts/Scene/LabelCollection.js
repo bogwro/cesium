@@ -1,5 +1,6 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Matrix4', 'Core/writeTextToCanvas', 'Scene/BillboardCollection', 'Scene/Label', 'Scene/LabelStyle', 'Scene/HorizontalOrigin', 'Scene/VerticalOrigin'], function(
+define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Matrix4', 'Core/writeTextToCanvas', 'Scene/BillboardCollection', 'Scene/Label', 'Scene/LabelStyle', 'Scene/HorizontalOrigin', 'Scene/VerticalOrigin'], function(
+        defaultValue,
         DeveloperError,
         defined,
         destroyObject,
@@ -259,6 +260,9 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
      * @alias LabelCollection
      * @constructor
      *
+     * @param {Matrix4} [options.modelMatrix=Matrix4.IDENTITY] The 4x4 transformation matrix that transforms each label from model to world coordinates.
+     * @param {Boolean} [options.debugShowBoundingVolume=false] For debugging only. Determines if this primitive's commands' bounding spheres are shown.
+     *
      * @performance For best performance, prefer a few collections, each with many labels, to
      * many collections with only a few labels each.  Avoid having collections where some
      * labels change every frame and others do not; instead, create one or more collections
@@ -283,7 +287,9 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
      *
      * @demo <a href="http://cesium.agi.com/Cesium/Apps/Sandcastle/index.html?src=Labels.html">Cesium Sandcastle Labels Demo</a>
      */
-    var LabelCollection = function() {
+    var LabelCollection = function(options) {
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
+
         this._textureAtlas = undefined;
 
         this._billboardCollection = new BillboardCollection();
@@ -328,7 +334,19 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
          *   text     : 'Up'
          * });
          */
-        this.modelMatrix = Matrix4.clone(Matrix4.IDENTITY);
+        this.modelMatrix = Matrix4.clone(defaultValue(options.modelMatrix, Matrix4.IDENTITY));
+
+        /**
+         * This property is for debugging only; it is not for production use nor is it optimized.
+         * <p>
+         * Draws the bounding sphere for each {@see DrawCommand} in the primitive.
+         * </p>
+         *
+         * @type {Boolean}
+         *
+         * @default false
+         */
+        this.debugShowBoundingVolume = defaultValue(options.debugShowBoundingVolume, false);
     };
 
     /**
@@ -544,6 +562,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
         var billboardCollection = this._billboardCollection;
 
         billboardCollection.modelMatrix = this.modelMatrix;
+        billboardCollection.debugShowBoundingVolume = this.debugShowBoundingVolume;
 
         if (!defined(this._textureAtlas)) {
             this._textureAtlas = context.createTextureAtlas();
@@ -574,7 +593,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
         }
         labelsToUpdate.length = 0;
 
-        this._billboardCollection.update(context, frameState, commandList);
+        billboardCollection.update(context, frameState, commandList);
     };
 
     /**

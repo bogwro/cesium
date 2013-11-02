@@ -68,6 +68,16 @@ define(['Core/Cartesian3', 'Core/defined', 'Core/defineProperties', 'Core/Develo
      */
     PositionProperty.prototype.getValueInReferenceFrame = throwInstantiationError;
 
+    /**
+     * Compares this property to the provided property and returns
+     * <code>true</code> if they are equal, <code>false</code> otherwise.
+     * @memberof PositionProperty
+     *
+     * @param {Property} [other] The other property.
+     * @returns {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
+     */
+    PositionProperty.prototype.equals = throwInstantiationError;
+
     var scratchMatrix3 = new Matrix3();
 
     /**

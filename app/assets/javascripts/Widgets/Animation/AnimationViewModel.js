@@ -90,7 +90,7 @@ define(['Core/binarySearch', 'Core/ClockStep', 'Core/ClockRange', 'Core/defined'
      * @alias AnimationViewModel
      * @constructor
      *
-     * @param {ClockViewModel} [clockViewModel] The ClockViewModel instance to use.
+     * @param {ClockViewModel} clockViewModel The ClockViewModel instance to use.
      *
      * @exception {DeveloperError} clockViewModel is required.
      *

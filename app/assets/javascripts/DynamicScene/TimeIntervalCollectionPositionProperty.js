@@ -1,12 +1,13 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/ReferenceFrame', 'Core/TimeIntervalCollection', 'DynamicScene/PositionProperty'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/ReferenceFrame', 'Core/TimeIntervalCollection', 'DynamicScene/PositionProperty', 'DynamicScene/Property'], function(
         defaultValue,
         defined,
         defineProperties,
         DeveloperError,
         ReferenceFrame,
         TimeIntervalCollection,
-        PositionProperty) {
+        PositionProperty,
+        Property) {
     "use strict";
 
     /**
@@ -85,6 +86,21 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
             return PositionProperty.convertToReferenceFrame(time, position, this._referenceFrame, referenceFrame, result);
         }
         return undefined;
+    };
+
+    /**
+     * Compares this property to the provided property and returns
+     * <code>true</code> if they are equal, <code>false</code> otherwise.
+     * @memberof TimeIntervalCollectionPositionProperty
+     *
+     * @param {Property} [other] The other property.
+     * @returns {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
+     */
+    TimeIntervalCollectionPositionProperty.prototype.equals = function(other) {
+        return this === other || //
+               (other instanceof TimeIntervalCollectionPositionProperty && //
+                this._intervals.equals(other._intervals, Property.equals) && //
+                this._referenceFrame === other._referenceFrame);
     };
 
     return TimeIntervalCollectionPositionProperty;

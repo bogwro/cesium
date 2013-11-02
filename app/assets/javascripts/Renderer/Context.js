@@ -2568,7 +2568,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/destro
      *
      * @example
      * this._pickId = context.createPickId({
-     *   primitive : this
+     *   primitive : this,
+     *   id : this.id
      * });
      */
     Context.prototype.createPickId = function(object) {

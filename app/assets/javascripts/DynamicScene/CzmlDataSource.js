@@ -806,7 +806,7 @@ define(['Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartographic', 'Core/Color',
             dynamicObject.ellipse = ellipse = new DynamicEllipse();
         }
 
-        processPacketData(Number, ellipse, 'bearing', ellipseData.bearing, interval, sourceUri);
+        processPacketData(Number, ellipse, 'rotation', ellipseData.rotation, interval, sourceUri);
         processPacketData(Number, ellipse, 'semiMajorAxis', ellipseData.semiMajorAxis, interval, sourceUri);
         processPacketData(Number, ellipse, 'semiMinorAxis', ellipseData.semiMinorAxis, interval, sourceUri);
     }

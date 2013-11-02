@@ -29,6 +29,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/loadImage', 'Core/writeTextTo
      *
      * @see ArcGisMapServerImageryProvider
      * @see BingMapsImageryProvider
+     * @see GoogleEarthImageryProvider
      * @see OpenStreetMapImageryProvider
      * @see TileMapServiceImageryProvider
      * @see WebMapServiceImageryProvider

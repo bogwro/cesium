@@ -47,6 +47,7 @@ vec4 p = czm_translateRelativeToEye(positionHigh, positionLow);\n\
 vec4 positionEC = czm_modelViewRelativeToEye * p;\n\
 positionEC = czm_eyeOffset(positionEC, eyeOffset);\n\
 positionEC.xyz *= show;\n\
+#if defined(EYE_DISTANCE_SCALING) || defined(EYE_DISTANCE_TRANSLUCENCY)\n\
 float lengthSq;\n\
 if (czm_sceneMode == czm_sceneMode2D)\n\
 {\n\
@@ -56,6 +57,7 @@ else\n\
 {\n\
 lengthSq = dot(positionEC.xyz, positionEC.xyz);\n\
 }\n\
+#endif\n\
 #ifdef EYE_DISTANCE_SCALING\n\
 scale *= getNearFarScalar(scaleByDistance, lengthSq);\n\
 if (scale == 0.0)\n\

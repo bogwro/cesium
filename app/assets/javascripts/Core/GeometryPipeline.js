@@ -795,6 +795,8 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
 
         // Transform attributes in known vertex formats
         transformPoint(modelMatrix, attributes.position);
+        transformPoint(modelMatrix, attributes.prevPosition);
+        transformPoint(modelMatrix, attributes.nextPosition);
 
         if ((defined(attributes.normal)) ||
             (defined(attributes.binormal)) ||

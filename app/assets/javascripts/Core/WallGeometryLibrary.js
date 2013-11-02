@@ -68,6 +68,7 @@ define(['Core/defined', 'Core/Cartographic', 'Core/Cartesian3', 'Core/DeveloperE
         if (hasBottomHeights) {
             cleanedBottomHeights.push(bottomHeights[0]);
         }
+
         for (var i = 1; i < length; ++i) {
             var v1 = positions[i];
             var c1 = ellipsoid.cartesianToCartographic(v1, scratchCartographic2);
@@ -81,7 +82,7 @@ define(['Core/defined', 'Core/Cartographic', 'Core/Cartesian3', 'Core/DeveloperE
                     cleanedBottomHeights.push(bottomHeights[i]);
                 }
             } else if (c0.height < c1.height) {
-                cleanedTopHeights[i-1] = c1.height;
+                cleanedTopHeights[cleanedTopHeights.length-1] = c1.height;
             }
 
             Cartographic.clone(c1, c0);

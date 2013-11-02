@@ -6,6 +6,10 @@ define(['Core/clone', 'Core/defined', 'Core/loadText', 'Core/DeveloperError'], f
         DeveloperError) {
     "use strict";
 
+    var defaultHeaders = {
+        Accept : 'application/json,*/*;q=0.01'
+    };
+
     // note: &#42;&#47;&#42; below is */* but that ends the comment block early
     /**
      * Asynchronously loads the given URL as JSON.  Returns a promise that will resolve to
@@ -41,10 +45,12 @@ define(['Core/clone', 'Core/defined', 'Core/loadText', 'Core/DeveloperError'], f
             throw new DeveloperError('url is required.');
         }
 
-        if (defined(headers) && !defined(headers.Accept)) {
+        if (!defined(headers)) {
+            headers = defaultHeaders;
+        } else if (!defined(headers.Accept)) {
             // clone before adding the Accept header
             headers = clone(headers);
-            headers.Accept = 'application/json,*/*;q=0.01';
+            headers.Accept = defaultHeaders.Accept;
         }
 
         return loadText(url, headers).then(function(value) {

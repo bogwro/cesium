@@ -42,6 +42,7 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartes
      * @param {Boolean} [options.show=true] Determines if this primitive will be shown.
      * @param {Material} [options.material=Material.ColorType] The surface appearance of the primitive.
      * @param {Object} [options.id=undefined] A user-defined object to return when the instance is picked with {@link Scene#pick}
+     * @param {Boolean} [options.debugShowBoundingVolume=false] For debugging only. Determines if this primitive's commands' bounding spheres are shown.
      *
      * @example
      * // 1. Create a sphere using the ellipsoid primitive
@@ -110,8 +111,6 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartes
          * @type {Matrix4}
          * @default {@link Matrix4.IDENTITY}
          *
-         * @default Matrix4.IDENTITY
-         *
          * @example
          * var origin = ellipsoid.cartographicToCartesian(
          *   Cartographic.fromDegrees(-95.0, 40.0, 200000.0));
@@ -152,6 +151,7 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartes
          */
         this.material = defaultValue(options.material, Material.fromType(Material.ColorType));
         this._material = undefined;
+        this._translucent = undefined;
 
         /**
          * User-defined object returned when the ellipsoid is picked.
@@ -166,14 +166,24 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartes
         this._id = undefined;
 
         /**
+         * This property is for debugging only; it is not for production use nor is it optimized.
+         * <p>
+         * Draws the bounding sphere for each {@see DrawCommand} in the primitive.
+         * </p>
+         *
+         * @type {Boolean}
+         *
+         * @default false
+         */
+        this.debugShowBoundingVolume = defaultValue(options.debugShowBoundingVolume, false);
+
+        /**
          * @private
          */
         this.onlySunLighting = defaultValue(options.onlySunLighting, false);
         this._onlySunLighting = false;
 
         this._owner = options._owner;
-        this._executeInClosestFrustum = defaultValue(options._executeInClosestFrustum, true);
-        this._writeDepth = defaultValue(options._writeDepth, false);
 
         this._sp = undefined;
         this._rs = undefined;
@@ -243,7 +253,12 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartes
             throw new DeveloperError('this.material must be defined.');
         }
 
-        if (!defined(this._rs)) {
+        var translucent = this.material.isTranslucent();
+        var translucencyChanged = this._translucent !== translucent;
+
+        if (!defined(this._rs) || translucencyChanged) {
+            this._translucent = translucent;
+
             this._rs = context.createRenderState({
                 // Cull front faces - not back faces - so the ellipsoid doesn't
                 // disappear if the viewer enters the bounding box.
@@ -255,17 +270,10 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartes
                     enabled : true
                 },
                 // Do not write depth since the depth for the bounding box is
-                // wrong; it is not the true of the ray casted ellipsoid.
-                // For now, most ellipsoids will be translucent so we don't want
-                // to write depth anyway.
-                //
-                // For ellipsoids that we know are opaque and the EXT_frag_depth
-                // extension is available, we can set _writeDepth to true. This is
-                // a workaround and should be updated when we know which primitives
-                // are translucent.
-                // See the road map: https://github.com/AnalyticalGraphicsInc/cesium/wiki/Data-Driven-Renderer-Details
-                depthMask : this._writeDepth && context.getFragmentDepth(),
-                blending : BlendingState.ALPHA_BLEND
+                // wrong; it is not the true depth of the ray casted ellipsoid.
+                // Only write depth when EXT_frag_depth is supported.
+                depthMask : !translucent && context.getFragmentDepth(),
+                blending : translucent ? BlendingState.ALPHA_BLEND : undefined
             });
         }
 
@@ -298,37 +306,44 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartes
         var lightingChanged = this.onlySunLighting !== this._onlySunLighting;
         this._onlySunLighting = this.onlySunLighting;
 
-        if (frameState.passes.color) {
-            var colorCommand = this._colorCommand;
+        var colorCommand = this._colorCommand;
 
-            // Recompile shader when material changes
-            if (materialChanged || lightingChanged) {
-                var colorFS = createShaderSource({
-                    defines : [
-                        this.onlySunLighting ? 'ONLY_SUN_LIGHTING' : '',
-                        (this._writeDepth && context.getFragmentDepth()) ? 'WRITE_DEPTH' : ''
-                    ],
-                    sources : [this.material.shaderSource, EllipsoidFS] }
-                );
+        // Recompile shader when material, lighting, or transluceny changes
+        if (materialChanged || lightingChanged || translucencyChanged) {
+            var colorFS = createShaderSource({
+                defines : [
+                    this.onlySunLighting ? 'ONLY_SUN_LIGHTING' : '',
+                    (!translucent && context.getFragmentDepth()) ? 'WRITE_DEPTH' : ''
+                ],
+                sources : [this.material.shaderSource, EllipsoidFS] }
+            );
 
-                this._sp = context.getShaderCache().replaceShaderProgram(this._sp, EllipsoidVS, colorFS, attributeIndices);
+            this._sp = context.getShaderCache().replaceShaderProgram(this._sp, EllipsoidVS, colorFS, attributeIndices);
 
-                colorCommand.primitiveType = PrimitiveType.TRIANGLES;
-                colorCommand.vertexArray = this._va;
-                colorCommand.renderState = this._rs;
-                colorCommand.shaderProgram = this._sp;
-                colorCommand.uniformMap = combine([this._uniforms, this.material._uniforms], false, false);
-                colorCommand.executeInClosestFrustum = this._executeInClosestFrustum;
-                colorCommand.owner = defaultValue(this._owner, this);
-            }
-
-            colorCommand.boundingVolume = this._boundingSphere;
-            colorCommand.modelMatrix = this._computedModelMatrix;
-
-            ellipsoidCommandLists.colorList.push(colorCommand);
+            colorCommand.primitiveType = PrimitiveType.TRIANGLES;
+            colorCommand.vertexArray = this._va;
+            colorCommand.renderState = this._rs;
+            colorCommand.shaderProgram = this._sp;
+            colorCommand.uniformMap = combine([this._uniforms, this.material._uniforms], false, false);
+            colorCommand.executeInClosestFrustum = translucent;
+            colorCommand.owner = defaultValue(this._owner, this);
         }
 
-        if (frameState.passes.pick) {
+        var passes = frameState.passes;
+
+        if (passes.color) {
+            colorCommand.boundingVolume = this._boundingSphere;
+            colorCommand.debugShowBoundingVolume = this.debugShowBoundingVolume;
+            colorCommand.modelMatrix = this._computedModelMatrix;
+
+            if (translucent) {
+                ellipsoidCommandLists.translucentList.push(colorCommand);
+            } else {
+                ellipsoidCommandLists.opaqueList.push(colorCommand);
+            }
+        }
+
+        if (passes.pick) {
             var pickCommand = this._pickCommand;
 
             if (!defined(this._pickId) || (this._id !== this.id)) {
@@ -345,7 +360,7 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartes
                 var pickFS = createShaderSource({
                     defines : [
                         this.onlySunLighting ? 'ONLY_SUN_LIGHTING' : '',
-                        (this._writeDepth && context.getFragmentDepth()) ? 'WRITE_DEPTH' : ''
+                        (!translucent && context.getFragmentDepth()) ? 'WRITE_DEPTH' : ''
                     ],
                     sources : [this.material.shaderSource, EllipsoidFS],
                     pickColorQualifier : 'uniform'
@@ -358,14 +373,18 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartes
                 pickCommand.renderState = this._rs;
                 pickCommand.shaderProgram = this._pickSP;
                 pickCommand.uniformMap = combine([this._uniforms, this._pickUniforms, this.material._uniforms], false, false);
-                pickCommand.executeInClosestFrustum = this._executeInClosestFrustum;
+                pickCommand.executeInClosestFrustum = translucent;
                 pickCommand.owner = defaultValue(this._owner, this);
             }
 
             pickCommand.boundingVolume = this._boundingSphere;
             pickCommand.modelMatrix = this._computedModelMatrix;
 
-            ellipsoidCommandLists.pickList.push(pickCommand);
+            if (translucent) {
+                ellipsoidCommandLists.pickList.translucentList.push(pickCommand);
+            } else {
+                ellipsoidCommandLists.pickList.opaqueList.push(pickCommand);
+            }
         }
 
         commandList.push(ellipsoidCommandLists);
