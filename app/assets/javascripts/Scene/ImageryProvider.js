@@ -17,6 +17,7 @@ define(['Core/defined', 'Core/loadImage', 'Core/loadImageViaBlob', 'Core/Develop
      * @see ArcGisMapServerImageryProvider
      * @see SingleTileImageryProvider
      * @see BingMapsImageryProvider
+     * @see GoogleEarthImageryProvider
      * @see OpenStreetMapImageryProvider
      * @see WebMapServiceImageryProvider
      *

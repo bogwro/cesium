@@ -64,7 +64,7 @@ void main()\n\
 {\n\
 vec3 position3DWC = position3DAndHeight.xyz + u_center3D;\n\
 gl_Position = getPosition(position3DWC);\n\
-#ifdef SHOW_REFLECTIVE_OCEAN\n\
+#if defined(SHOW_REFLECTIVE_OCEAN) || defined(ENABLE_LIGHTING)\n\
 v_positionEC = (czm_modelView3D * vec4(position3DWC, 1.0)).xyz;\n\
 v_positionMC = position3DWC;\n\
 #endif\n\

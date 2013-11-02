@@ -1,9 +1,10 @@
 /*global define*/
-define(['Core/Cartesian2', 'Core/Color', 'Core/defined', 'DynamicScene/ConstantProperty'], function(
+define(['Core/Cartesian2', 'Core/Color', 'Core/defined', 'DynamicScene/ConstantProperty', 'DynamicScene/Property'], function(
         Cartesian2,
         Color,
         defined,
-        ConstantProperty) {
+        ConstantProperty,
+        Property) {
     "use strict";
 
     /**
@@ -71,6 +72,23 @@ define(['Core/Cartesian2', 'Core/Color', 'Core/defined', 'DynamicScene/ConstantP
         result.lineCount = defined(this.lineCount) ? this.lineCount.getValue(time, result.lineCount) : undefined;
         result.lineThickness = defined(this.lineThickness) ? this.lineThickness.getValue(time, result.lineThickness) : undefined;
         return result;
+    };
+
+    /**
+     * Compares this property to the provided property and returns
+     * <code>true</code> if they are equal, <code>false</code> otherwise.
+     * @memberof GridMaterialProperty
+     *
+     * @param {Property} [other] The other property.
+     * @returns {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
+     */
+    GridMaterialProperty.prototype.equals = function(other) {
+        return this === other || //
+               (other instanceof GridMaterialProperty && //
+                Property.equals(this.color, other.color) && //
+                Property.equals(this.cellAlpha, other.cellAlpha) && //
+                Property.equals(this.lineCount, other.lineCount) && //
+                Property.equals(this.lineThickness, other.lineThickness));
     };
 
     return GridMaterialProperty;

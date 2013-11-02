@@ -39,6 +39,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
      *
      * @see ArcGisMapServerImageryProvider
      * @see BingMapsImageryProvider
+     * @see GoogleEarthImageryProvider
      * @see OpenStreetMapImageryProvider
      * @see SingleTileImageryProvider
      * @see WebMapServiceImageryProvider

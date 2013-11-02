@@ -1,9 +1,10 @@
 /*global define*/
-define(['Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/TimeIntervalCollection'], function(
+define(['Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/TimeIntervalCollection', 'DynamicScene/Property'], function(
         defined,
         defineProperties,
         DeveloperError,
-        TimeIntervalCollection) {
+        TimeIntervalCollection,
+        Property) {
     "use strict";
 
     /**
@@ -67,6 +68,20 @@ define(['Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/Ti
             return innerProperty.getValue(time, result);
         }
         return undefined;
+    };
+
+    /**
+     * Compares this property to the provided property and returns
+     * <code>true</code> if they are equal, <code>false</code> otherwise.
+     * @memberof CompositeProperty
+     *
+     * @param {Property} [other] The other property.
+     * @returns {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
+     */
+    CompositeProperty.prototype.equals = function(other) {
+        return this === other || //
+               (other instanceof CompositeProperty && //
+                this._intervals.equals(other._intervals, Property.equals));
     };
 
     return CompositeProperty;

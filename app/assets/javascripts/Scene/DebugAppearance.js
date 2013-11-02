@@ -181,5 +181,25 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Scene/Appea
      */
     DebugAppearance.prototype.getFragmentShaderSource = Appearance.prototype.getFragmentShaderSource;
 
+    /**
+     * Determines if the geometry is translucent based on {@link DebugAppearance#translucent}.
+     *
+     * @memberof DebugAppearance
+     *
+     * @returns {Boolean} <code>true</code> if the appearance is translucent.
+     */
+    DebugAppearance.prototype.isTranslucent = Appearance.prototype.isTranslucent;
+
+    /**
+     * Creates a render state.  This is not the final {@link RenderState} instance; instead,
+     * it can contain a subset of render state properties identical to <code>renderState</code>
+     * passed to {@link Context#createRenderState}.
+     *
+     * @memberof DebugAppearance
+     *
+     * @returns {Object} The render state.
+     */
+    DebugAppearance.prototype.getRenderState = Appearance.prototype.getRenderState;
+
     return DebugAppearance;
 });

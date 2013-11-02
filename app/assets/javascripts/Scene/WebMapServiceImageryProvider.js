@@ -34,6 +34,7 @@ define(['Core/clone', 'Core/defaultValue', 'Core/defined', 'Core/freezeObject', 
      *
      * @see ArcGisMapServerImageryProvider
      * @see BingMapsImageryProvider
+     * @see GoogleEarthImageryProvider
      * @see SingleTileImageryProvider
      * @see TileMapServiceImageryProvider
      * @see OpenStreetMapImageryProvider

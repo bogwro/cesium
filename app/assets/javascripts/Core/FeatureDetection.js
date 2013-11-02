@@ -9,6 +9,7 @@ define(['Core/defined', 'Core/Fullscreen'], function(
         for ( var i = 0, len = parts.length; i < len; ++i) {
             parts[i] = parseInt(parts[i], 10);
         }
+        return parts;
     }
 
     var isChromeResult;

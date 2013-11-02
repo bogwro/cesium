@@ -33,6 +33,9 @@ uniform float u_zoomedOutOceanSpecularIntensity;\n\
 #ifdef SHOW_OCEAN_WAVES\n\
 uniform sampler2D u_oceanNormalMap;\n\
 #endif\n\
+#ifdef ENABLE_LIGHTING\n\
+uniform vec2 u_lightingFadeDistance;\n\
+#endif\n\
 varying vec3 v_positionMC;\n\
 varying vec3 v_positionEC;\n\
 varying vec2 v_textureCoordinates;\n\
@@ -90,6 +93,10 @@ startDayColor = vec3(1.0, 0.0, 0.0);\n\
 }\n\
 #endif\n\
 vec4 color = vec4(startDayColor, 1.0);\n\
+#if defined(SHOW_REFLECTIVE_OCEAN) || defined(ENABLE_LIGHTING)\n\
+vec3 normalMC = normalize(czm_geodeticSurfaceNormal(v_positionMC, vec3(0.0), vec3(1.0)));\n\
+vec3 normalEC = normalize(czm_normal3D * normalMC);\n\
+#endif\n\
 #ifdef SHOW_REFLECTIVE_OCEAN\n\
 vec2 waterMaskTranslation = u_waterMaskTranslationAndScale.xy;\n\
 vec2 waterMaskScale = u_waterMaskTranslationAndScale.zw;\n\
@@ -97,8 +104,6 @@ vec2 waterMaskTextureCoordinates = v_textureCoordinates * waterMaskScale + water
 float mask = texture2D(u_waterMask, waterMaskTextureCoordinates).r;\n\
 if (mask > 0.0)\n\
 {\n\
-vec3 normalMC = normalize(czm_geodeticSurfaceNormal(v_positionMC, vec3(0.0), vec3(1.0)));\n\
-vec3 normalEC = normalize(czm_normal3D * normalMC);\n\
 mat3 enuToEye = czm_eastNorthUpToEyeCoordinates(v_positionMC, normalEC);\n\
 vec2 ellipsoidTextureCoordinates = czm_ellipsoidWgs84TextureCoordinates(normalMC);\n\
 vec2 ellipsoidFlippedTextureCoordinates = czm_ellipsoidWgs84TextureCoordinates(normalMC.zyx);\n\
@@ -106,7 +111,17 @@ vec2 textureCoordinates = mix(ellipsoidTextureCoordinates, ellipsoidFlippedTextu
 color = computeWaterColor(v_positionEC, textureCoordinates, enuToEye, startDayColor, mask);\n\
 }\n\
 #endif\n\
+#ifdef ENABLE_LIGHTING\n\
+float diffuseIntensity = clamp(czm_getLambertDiffuse(czm_sunDirectionEC, normalEC) * 5.0 + 0.3, 0.0, 1.0);\n\
+float cameraDist = length(czm_view[3]);\n\
+float fadeOutDist = u_lightingFadeDistance.x;\n\
+float fadeInDist = u_lightingFadeDistance.y;\n\
+float t = clamp((cameraDist - fadeOutDist) / (fadeInDist - fadeOutDist), 0.0, 1.0);\n\
+diffuseIntensity = mix(1.0, diffuseIntensity, t);\n\
+gl_FragColor = vec4(color.rgb * diffuseIntensity, color.a);\n\
+#else\n\
 gl_FragColor = color;\n\
+#endif\n\
 }\n\
 #ifdef SHOW_REFLECTIVE_OCEAN\n\
 float waveFade(float edge0, float edge1, float x)\n\

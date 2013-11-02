@@ -340,6 +340,21 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
         return this._animations;
     };
 
+    var scratchOccluderBoundingSphere = new BoundingSphere();
+
+    function getOccluder(scene) {
+        // TODO: The occluder is the top-level central body. When we add
+        //       support for multiple central bodies, this should be the closest one.
+        var cb = scene._primitives.getCentralBody();
+        if (scene.mode === SceneMode.SCENE3D && defined(cb)) {
+            var ellipsoid = cb.getEllipsoid();
+            scratchOccluderBoundingSphere.radius = ellipsoid.getMinimumRadius();
+            return new Occluder(scratchOccluderBoundingSphere, scene._camera.positionWC);
+        }
+
+        return undefined;
+    }
+
     function clearPasses(passes) {
         passes.color = false;
         passes.pick = false;
@@ -357,16 +372,8 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
         frameState.time = time;
         frameState.camera = camera;
         frameState.cullingVolume = camera.frustum.computeCullingVolume(camera.positionWC, camera.directionWC, camera.upWC);
-        frameState.occluder = undefined;
-
-        // TODO: The occluder is the top-level central body. When we add
-        //       support for multiple central bodies, this should be the closest one.
-        var cb = scene._primitives.getCentralBody();
-        if (scene.mode === SceneMode.SCENE3D && defined(cb)) {
-            var ellipsoid = cb.getEllipsoid();
-            var occluder = new Occluder(new BoundingSphere(Cartesian3.ZERO, ellipsoid.getMinimumRadius()), camera.positionWC);
-            frameState.occluder = occluder;
-        }
+        frameState.occluder = getOccluder(scene);
+        frameState.events.length = 0;
 
         clearPasses(frameState.passes);
     }
@@ -435,7 +442,7 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
     var scratchCullingVolume = new CullingVolume();
     var distances = new Interval();
 
-    function createPotentiallyVisibleSet(scene, listName) {
+    function createPotentiallyVisibleSet(scene, listNames, pick) {
         var commandLists = scene._commandList;
         var cullingVolume = scene._frameState.cullingVolume;
         var camera = scene._camera;
@@ -467,40 +474,44 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
 
         // get user culling volume minus the far plane.
         var planes = scratchCullingVolume.planes;
-        for (var k = 0; k < 5; ++k) {
-            planes[k] = cullingVolume.planes[k];
+        for (var m = 0; m < 5; ++m) {
+            planes[m] = cullingVolume.planes[m];
         }
         cullingVolume = scratchCullingVolume;
 
         var length = commandLists.length;
-        for (var i = 0; i < length; ++i) {
-            var commandList = commandLists[i][listName];
-            var commandListLength = commandList.length;
-            for (var j = 0; j < commandListLength; ++j) {
-                var command = commandList[j];
-                var boundingVolume = command.boundingVolume;
-                if (defined(boundingVolume)) {
-                    var modelMatrix = defaultValue(command.modelMatrix, Matrix4.IDENTITY);
-                    var transformedBV = boundingVolume.transform(modelMatrix);               //TODO: Remove this allocation.
-                    if (command.cull &&
-                            ((cullingVolume.getVisibility(transformedBV) === Intersect.OUTSIDE) ||
-                             (defined(occluder) && !occluder.isBoundingSphereVisible(transformedBV)))) {
-                        continue;
+        var listNameLength = listNames.length;
+        for (var i = 0; i < listNameLength; ++i) {
+            var listName = listNames[i];
+            for (var j = 0; j < length; ++j) {
+                var commandList = !pick ? commandLists[j][listName] : commandLists[j].pickList[listName];
+                var commandListLength = commandList.length;
+                for (var k = 0; k < commandListLength; ++k) {
+                    var command = commandList[k];
+                    var boundingVolume = command.boundingVolume;
+                    if (defined(boundingVolume)) {
+                        var modelMatrix = defaultValue(command.modelMatrix, Matrix4.IDENTITY);
+                        var transformedBV = boundingVolume.transform(modelMatrix);               //TODO: Remove this allocation.
+                        if (command.cull &&
+                                ((cullingVolume.getVisibility(transformedBV) === Intersect.OUTSIDE) ||
+                                 (defined(occluder) && !occluder.isBoundingSphereVisible(transformedBV)))) {
+                            continue;
+                        }
+
+                        distances = transformedBV.getPlaneDistances(position, direction, distances);
+                        near = Math.min(near, distances.start);
+                        far = Math.max(far, distances.stop);
+                    } else {
+                        // Clear commands don't need a bounding volume - just add the clear to all frustums.
+                        // If another command has no bounding volume, though, we need to use the camera's
+                        // worst-case near and far planes to avoid clipping something important.
+                        distances.start = camera.frustum.near;
+                        distances.stop = camera.frustum.far;
+                        undefBV = !(command instanceof ClearCommand);
                     }
 
-                    distances = transformedBV.getPlaneDistances(position, direction, distances);
-                    near = Math.min(near, distances.start);
-                    far = Math.max(far, distances.stop);
-                } else {
-                    // Clear commands don't need a bounding volume - just add the clear to all frustums.
-                    // If another command has no bounding volume, though, we need to use the camera's
-                    // worst-case near and far planes to avoid clipping something important.
-                    distances.start = camera.frustum.near;
-                    distances.stop = camera.frustum.far;
-                    undefBV = !(command instanceof ClearCommand);
+                    insertIntoBin(scene, command, distances);
                 }
-
-                insertIntoBin(scene, command, distances);
             }
         }
 
@@ -522,7 +533,7 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
         if (near !== Number.MAX_VALUE && (numFrustums !== numberOfFrustums || (frustumCommandsList.length !== 0 &&
                 (near < frustumCommandsList[0].near || far > frustumCommandsList[numberOfFrustums - 1].far)))) {
             updateFrustums(near, far, farToNearRatio, numFrustums, frustumCommandsList);
-            createPotentiallyVisibleSet(scene, listName);
+            createPotentiallyVisibleSet(scene, listNames, pick);
         }
     }
 
@@ -604,11 +615,11 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
             }
 
             var m = Matrix4.multiplyByTranslation(defaultValue(command.modelMatrix, Matrix4.IDENTITY), command.boundingVolume.center);
-            scene._debugSphere.modelMatrix = Matrix4.multiplyByUniformScale(Matrix4.fromTranslation(Cartesian3.fromArray(m, 12)), command.boundingVolume.radius);
+            scene._debugSphere.modelMatrix = Matrix4.multiplyByUniformScale(m, command.boundingVolume.radius);
 
             var commandList = [];
             scene._debugSphere.update(context, scene._frameState, commandList);
-            commandList[0].colorList[0].execute(context, passState);
+            commandList[0].opaqueList[0].execute(context, passState);
         }
     }
 
@@ -745,6 +756,16 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
         }
     }
 
+    function executeEvents(frameState) {
+        // Events are queued up during primitive update and executed here in case
+        // the callback modifies scene state that should remain constant over the frame.
+        var events = frameState.events;
+        var length = events.length;
+        for (var i = 0; i < length; ++i) {
+            events[i].raiseEvent();
+        }
+    }
+
     /**
      * DOC_TBA
      * @memberof Scene
@@ -760,6 +781,8 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
         this._camera.controller.update(this.mode, this.scene2D);
         this._screenSpaceCameraController.update(this.mode);
     };
+
+    var renderListNames = ['opaqueList', 'translucentList'];
 
     /**
      * DOC_TBA
@@ -784,7 +807,7 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
 
         this._commandList.length = 0;
         updatePrimitives(this);
-        createPotentiallyVisibleSet(this, 'colorList');
+        createPotentiallyVisibleSet(this, renderListNames);
 
         var passState = this._passState;
 
@@ -792,6 +815,7 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
         executeOverlayCommands(this, passState);
         frameState.creditDisplay.endFrame();
         context.endFrame();
+        executeEvents(frameState);
     };
 
     var orthoPickingFrustum = new OrthographicFrustum();
@@ -912,7 +936,7 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
 
         this._commandList.length = 0;
         updatePrimitives(this);
-        createPotentiallyVisibleSet(this, 'pickList');
+        createPotentiallyVisibleSet(this, renderListNames, true);
 
         scratchRectangle.x = drawingBufferPosition.x - ((rectangleWidth - 1.0) * 0.5);
         scratchRectangle.y = (context.getDrawingBufferHeight() - drawingBufferPosition.y) - ((rectangleHeight - 1.0) * 0.5);
@@ -920,6 +944,7 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
         executeCommands(this, this._pickFramebuffer.begin(scratchRectangle), scratchColorZero);
         var object = this._pickFramebuffer.end(scratchRectangle);
         context.endFrame();
+        executeEvents(frameState);
         return object;
     };
 

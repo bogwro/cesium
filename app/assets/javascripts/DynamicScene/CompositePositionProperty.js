@@ -1,11 +1,12 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/TimeIntervalCollection', 'Core/ReferenceFrame'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/TimeIntervalCollection', 'Core/ReferenceFrame', 'DynamicScene/Property'], function(
         defaultValue,
         defined,
         defineProperties,
         DeveloperError,
         TimeIntervalCollection,
-        ReferenceFrame) {
+        ReferenceFrame,
+        Property) {
     "use strict";
 
     /**
@@ -89,6 +90,21 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
             return innerProperty.getValueInReferenceFrame(time, referenceFrame, result);
         }
         return undefined;
+    };
+
+    /**
+     * Compares this property to the provided property and returns
+     * <code>true</code> if they are equal, <code>false</code> otherwise.
+     * @memberof CompositePositionProperty
+     *
+     * @param {Property} [other] The other property.
+     * @returns {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
+     */
+    CompositePositionProperty.prototype.equals = function(other) {
+        return this === other || //
+               (other instanceof CompositePositionProperty && //
+                this._referenceFrame === other._referenceFrame && //
+                this._intervals.equals(other._intervals, Property.equals));
     };
 
     return CompositePositionProperty;
