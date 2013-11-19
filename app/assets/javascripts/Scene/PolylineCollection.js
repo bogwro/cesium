@@ -474,7 +474,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
             commandLists.pickList.opaqueList = pickList;
             createCommandLists(this, context, frameState, pickList, modelMatrix, false, false);
 
-            var size = pickList.length;
             pickList = this._pickTranslucentCommands;
             commandLists.pickList.translucentList = pickList;
             createCommandLists(this, context, frameState, pickList, modelMatrix, false, true);
@@ -565,7 +564,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
 
                     var boundingVolume;
                     if (frameState.mode === SceneMode.SCENE3D) {
-                        boundingVolume = polyline._boundingVolume;
+                        boundingVolume = polyline._boundingVolumeWC;
                     } else if (frameState.mode === SceneMode.COLUMBUS_VIEW) {
                         boundingVolume = polyline._boundingVolume2D;
                     } else if (frameState.mode === SceneMode.SCENE2D) {
@@ -573,8 +572,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
                             boundingVolume = BoundingSphere.clone(polyline._boundingVolume2D, boundingSphereScratch2);
                             boundingVolume.center.x = 0.0;
                         }
-                    } else if (defined(polyline._boundingVolume) && defined(polyline._boundingVolume2D)) {
-                        boundingVolume = BoundingSphere.union(polyline._boundingVolume, polyline._boundingVolume2D, boundingSphereScratch2);
+                    } else if (defined(polyline._boundingVolumeWC) && defined(polyline._boundingVolume2D)) {
+                        boundingVolume = BoundingSphere.union(polyline._boundingVolumeWC, polyline._boundingVolume2D, boundingSphereScratch2);
                     }
 
                     if (cloneBoundingSphere) {

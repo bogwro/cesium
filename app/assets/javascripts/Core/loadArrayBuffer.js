@@ -28,7 +28,11 @@ define(['Core/loadWithXhr'], function(
      * });
      */
     var loadArrayBuffer = function(url, headers) {
-        return loadWithXhr(url, 'arraybuffer', headers);
+        return loadWithXhr({
+            url : url,
+            responseType : 'arraybuffer',
+            headers : headers
+        });
     };
 
     return loadArrayBuffer;

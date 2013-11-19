@@ -78,6 +78,7 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartes
          * @see EllipsoidPrimitive#modelMatrix
          */
         this.center = Cartesian3.clone(defaultValue(options.center, Cartesian3.ZERO));
+        this._center = new Cartesian3();
 
         /**
          * The radius of the ellipsoid along the <code>x</code>, <code>y</code>, and <code>z</code> axes in the ellipsoid's model coordinates.
@@ -120,6 +121,7 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartes
          * @see czm_model
          */
         this.modelMatrix = Matrix4.clone(defaultValue(options.modelMatrix, Matrix4.IDENTITY));
+        this._modelMatrix = new Matrix4();
         this._computedModelMatrix = new Matrix4();
 
         /**
@@ -281,6 +283,8 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartes
             this._va = getVertexArray(context);
         }
 
+        var boundingSphereDirty = false;
+
         var radii = this.radii;
         if (!Cartesian3.equals(this._radii, radii)) {
             Cartesian3.clone(radii, this._radii);
@@ -290,11 +294,23 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartes
             r.y = 1.0 / (radii.y * radii.y);
             r.z = 1.0 / (radii.z * radii.z);
 
-            this._boundingSphere.radius = Cartesian3.getMaximumComponent(radii);
+            boundingSphereDirty = true;
         }
 
-        // Translate model coordinates used for rendering such that the origin is the center of the ellipsoid.
-        Matrix4.multiplyByTranslation(this.modelMatrix, this.center, this._computedModelMatrix);
+        if (!Matrix4.equals(this.modelMatrix, this._modelMatrix) || !Cartesian3.equals(this.center, this._center)) {
+            Matrix4.clone(this.modelMatrix, this._modelMatrix);
+            Cartesian3.clone(this.center, this._center);
+
+            // Translate model coordinates used for rendering such that the origin is the center of the ellipsoid.
+            Matrix4.multiplyByTranslation(this.modelMatrix, this.center, this._computedModelMatrix);
+            boundingSphereDirty = true;
+        }
+
+        if (boundingSphereDirty) {
+            Cartesian3.clone(Cartesian3.ZERO, this._boundingSphere.center);
+            this._boundingSphere.radius = Cartesian3.getMaximumComponent(radii);
+            BoundingSphere.transform(this._boundingSphere, this._computedModelMatrix, this._boundingSphere);
+        }
 
         var ellipsoidCommandLists = this._commandLists;
         ellipsoidCommandLists.removeAll();
