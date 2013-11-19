@@ -151,8 +151,10 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
         this._allHorizontalCenter = true;
 
         this._baseVolume = new BoundingSphere();
+        this._baseVolumeWC = new BoundingSphere();
         this._baseVolume2D = new BoundingSphere();
         this._boundingVolume = new BoundingSphere();
+        this._boundingVolumeDirty = false;
 
         this._colorCommands = [];
         this._pickCommands = [];
@@ -707,6 +709,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
 
         if (billboardCollection._mode === SceneMode.SCENE3D) {
             billboardCollection._baseVolume.expand(position, billboardCollection._baseVolume);
+            billboardCollection._boundingVolumeDirty = true;
         }
 
         EncodedCartesian3.fromCartesian(position, writePositionScratch);
@@ -943,6 +946,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
         var boundingVolume;
         if (frameState.mode === SceneMode.SCENE3D) {
             boundingVolume = billboardCollection._baseVolume;
+            billboardCollection._boundingVolumeDirty = true;
         } else {
             boundingVolume = billboardCollection._baseVolume2D;
         }
@@ -1173,11 +1177,16 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/defaultValue'
             return;
         }
 
+        if (this._boundingVolumeDirty) {
+            this._boundingVolumeDirty = false;
+            BoundingSphere.transform(this._baseVolume, this.modelMatrix, this._baseVolumeWC);
+        }
+
         var boundingVolume;
         var modelMatrix = Matrix4.IDENTITY;
         if (frameState.mode === SceneMode.SCENE3D) {
             modelMatrix = this.modelMatrix;
-            boundingVolume = BoundingSphere.clone(this._baseVolume, this._boundingVolume);
+            boundingVolume = BoundingSphere.clone(this._baseVolumeWC, this._boundingVolume);
         } else {
             boundingVolume = BoundingSphere.clone(this._baseVolume2D, this._boundingVolume);
         }

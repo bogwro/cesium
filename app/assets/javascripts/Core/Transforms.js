@@ -258,7 +258,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
      * function updateAndRender() {
      *     var now = new JulianDate();
      *     scene.initializeFrame();
-     *     scene.setSunPosition(Simon1994PlanetaryPositions.ComputeSunPositionInEarthInertialFrame(now));
      *     scene.getCamera().transform = Matrix4.fromRotationTranslation(Transforms.computeTemeToPseudoFixedMatrix(now), Cartesian3.ZERO);
      *     scene.render();
      *     requestAnimationFrame(updateAndRender);
@@ -396,7 +395,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
      * function updateAndRender() {
      *     var now = new JulianDate();
      *     scene.initializeFrame();
-     *     scene.setSunPosition(Simon1994PlanetaryPositions.ComputeSunPositionInEarthInertialFrame(now));
      *     var icrfToFixed = Transforms.computeIcrfToFixedMatrix(now);
      *     if (defined(icrfToFixed)) {
      *         scene.getCamera().transform = Matrix4.fromRotationTranslation(icrfToFixed, Cartesian3.ZERO);

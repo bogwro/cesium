@@ -49,8 +49,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
         this._pickCommand = new DrawCommand();
         this._commandLists = new CommandLists();
 
+        this._boundingSphere = new BoundingSphere();
+        this._boundingSphereWC = new BoundingSphere();
+
         this._frontFaceColorCommand.primitiveType = PrimitiveType.TRIANGLES;
-        this._frontFaceColorCommand.boundingVolume = new BoundingSphere();
+        this._frontFaceColorCommand.boundingVolume = this._boundingSphereWC;
         this._frontFaceColorCommand.owner = this;
 
         this._backFaceColorCommand.primitiveType = this._frontFaceColorCommand.primitiveType;
@@ -117,6 +120,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
          * sensor.modelMatrix = Transforms.eastNorthUpToFixedFrame(center);
          */
         this.modelMatrix = Matrix4.clone(defaultValue(options.modelMatrix, Matrix4.IDENTITY));
+        this._modelMatrix = new Matrix4();
 
         /**
          * DOC_TBA
@@ -268,7 +272,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
             boundingVolumePositions.push(p);
         }
 
-        BoundingSphere.fromPoints(boundingVolumePositions, customSensorVolume._frontFaceColorCommand.boundingVolume);
+        BoundingSphere.fromPoints(boundingVolumePositions, customSensorVolume._boundingSphere);
 
         return positions;
     }
@@ -423,7 +427,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
         }
 
         // Recreate vertex buffer when directions change
-        if ((this._directionsDirty) || (this._bufferUsage !== this.bufferUsage)) {
+        var directionsChanged = this._directionsDirty || (this._bufferUsage !== this.bufferUsage);
+        if (directionsChanged) {
             this._directionsDirty = false;
             this._bufferUsage = this.bufferUsage;
             this._va = this._va && this._va.destroy();
@@ -442,6 +447,15 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
 
         var pass = frameState.passes;
         this._commandLists.removeAll();
+
+        var modelMatrixChanged = !Matrix4.equals(this.modelMatrix, this._modelMatrix);
+        if (modelMatrixChanged) {
+            Matrix4.clone(this.modelMatrix, this._modelMatrix);
+        }
+
+        if (directionsChanged || modelMatrixChanged) {
+            BoundingSphere.transform(this._boundingSphere, this.modelMatrix, this._boundingSphereWC);
+        }
 
         this._frontFaceColorCommand.modelMatrix = this.modelMatrix;
         this._backFaceColorCommand.modelMatrix = this._frontFaceColorCommand.modelMatrix;

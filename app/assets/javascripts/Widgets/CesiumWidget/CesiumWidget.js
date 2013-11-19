@@ -432,6 +432,7 @@ define(['Core/buildModuleUrl', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Clock
      * @memberof CesiumWidget
      */
     CesiumWidget.prototype.destroy = function() {
+        this._scene = this._scene && this._scene.destroy();
         this._container.removeChild(this._element);
         destroyObject(this);
     };

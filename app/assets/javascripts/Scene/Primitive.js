@@ -190,6 +190,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
          * @see czm_model
          */
         this.modelMatrix = Matrix4.clone(Matrix4.IDENTITY);
+        this._modelMatrix = new Matrix4();
 
         /**
          * Determines if the primitive will be shown.  This affects all geometry
@@ -278,9 +279,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
         this._vaAttributes = undefined;
         this._error = undefined;
 
-        // When true, geometry is transformed to world coordinates even if there is a single
-        // geometry or all geometries are in the same reference frame.
         this._boundingSphere = undefined;
+        this._boundingSphereWC = undefined;
+        this._boundingSphereCV = undefined;
         this._boundingSphere2D = undefined;
         this._perInstanceAttributeIndices = undefined;
         this._instanceIds = [];
@@ -671,9 +672,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
             var vaAttributes = this._vaAttributes;
 
             this._boundingSphere = BoundingSphere.clone(geometries[0].boundingSphere);
-            if (!this.allow3DOnly && defined(this._boundingSphere)) {
-                this._boundingSphere2D = BoundingSphere.projectTo2D(this._boundingSphere, projection);
-            }
 
             var va = [];
             length = geometries.length;
@@ -881,16 +879,25 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
             attributes.length = 0;
         }
 
+        if (!Matrix4.equals(this.modelMatrix, this._modelMatrix)) {
+            Matrix4.clone(this.modelMatrix, this._modelMatrix);
+            this._boundingSphereWC = BoundingSphere.transform(this._boundingSphere, this.modelMatrix, this._boundingSphereWC);
+            if (!this.allow3DOnly && defined(this._boundingSphere)) {
+                this._boundingSphereCV = BoundingSphere.projectTo2D(this._boundingSphereWC, projection, this._boundingSphereCV);
+                this._boundingSphere2D = BoundingSphere.clone(this._boundingSphereCV, this._boundingSphere2D);
+                this._boundingSphere2D.center.x = 0.0;
+            }
+        }
+
         var boundingSphere;
         if (frameState.mode === SceneMode.SCENE3D) {
-            boundingSphere = this._boundingSphere;
+            boundingSphere = this._boundingSphereWC;
         } else if (frameState.mode === SceneMode.COLUMBUS_VIEW) {
-            boundingSphere = this._boundingSphere2D;
+            boundingSphere = this._boundingSphereCV;
         } else if (frameState.mode === SceneMode.SCENE2D && defined(this._boundingSphere2D)) {
-            boundingSphere = BoundingSphere.clone(this._boundingSphere2D);
-            boundingSphere.center.x = 0.0;
-        } else if (defined(this._boundingSphere) && defined(this._boundingSphere2D)) {
-            boundingSphere = BoundingSphere.union(this._boundingSphere, this._boundingSphere2D);
+            boundingSphere = this._boundingSphere2D;
+        } else if (defined(this._boundingSphereWC) && defined(this._boundingSphereCV)) {
+            boundingSphere = BoundingSphere.union(this._boundingSphereWC, this._boundingSphereCV);
         }
 
         // modelMatrix can change from frame to frame

@@ -42,8 +42,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Boundi
         this._id = options.id;
 
         var modelMatrix;
-        if (defined(this._polylineCollection)) {
-            modelMatrix = Matrix4.clone(this._polylineCollection.modelMatrix);
+        if (defined(polylineCollection)) {
+            modelMatrix = Matrix4.clone(polylineCollection.modelMatrix);
         }
 
         this._modelMatrix = modelMatrix;
@@ -57,6 +57,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Boundi
         this._pickId = undefined;
         this._pickIdThis = options._pickIdThis;
         this._boundingVolume = BoundingSphere.fromPoints(this._positions);
+        this._boundingVolumeWC = BoundingSphere.transform(this._boundingVolume, this._modelMatrix);
         this._boundingVolume2D = new BoundingSphere(); // modified in PolylineCollection
     };
 
@@ -158,6 +159,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Boundi
         this._positions = value;
         this._length = value.length;
         this._boundingVolume = BoundingSphere.fromPoints(this._positions, this._boundingVolume);
+        this._boundingVolumeWC = BoundingSphere.transform(this._boundingVolume, this._modelMatrix, this._boundingVolumeWC);
         makeDirty(this, POSITION_INDEX);
 
         this.update();
@@ -178,6 +180,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Boundi
         var positionsChanged = this._propertiesChanged[POSITION_INDEX] > 0 || this._propertiesChanged[POSITION_SIZE_INDEX] > 0;
         if (!Matrix4.equals(modelMatrix, this._modelMatrix) || positionsChanged) {
             this._segments = PolylinePipeline.wrapLongitude(this._positions, modelMatrix);
+            this._boundingVolumeWC = BoundingSphere.transform(this._boundingVolume, modelMatrix, this._boundingVolumeWC);
         }
 
         this._modelMatrix = modelMatrix;

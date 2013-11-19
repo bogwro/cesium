@@ -32,7 +32,10 @@ define(['Core/loadWithXhr'], function(
      * @see <a href='http://wiki.commonjs.org/wiki/Promises/A'>CommonJS Promises/A</a>
      */
     var loadText = function(url, headers) {
-        return loadWithXhr(url, undefined, headers);
+        return loadWithXhr({
+            url : url,
+            headers : headers
+        });
     };
 
     return loadText;
