@@ -32,7 +32,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_VECTOR4;
+                return UniformDatatype.FLOAT_VEC4;
             },
 
             getValue : function(uniformState) {
@@ -79,7 +79,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -127,7 +127,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -160,7 +160,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -192,7 +192,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -227,7 +227,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -261,7 +261,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -294,7 +294,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX3;
+                return UniformDatatype.FLOAT_MAT3;
             },
 
             getValue : function(uniformState) {
@@ -328,7 +328,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX3;
+                return UniformDatatype.FLOAT_MAT3;
             },
 
             getValue : function(uniformState) {
@@ -360,7 +360,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -394,7 +394,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -427,7 +427,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX3;
+                return UniformDatatype.FLOAT_MAT3;
             },
 
             getValue : function(uniformState) {
@@ -461,7 +461,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX3;
+                return UniformDatatype.FLOAT_MAT3;
             },
 
             getValue : function(uniformState) {
@@ -495,7 +495,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -527,7 +527,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -562,7 +562,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -602,7 +602,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -642,7 +642,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -682,7 +682,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -713,7 +713,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -748,7 +748,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -785,7 +785,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -825,7 +825,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -866,7 +866,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -906,7 +906,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             },
 
             getValue : function(uniformState) {
@@ -941,7 +941,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX3;
+                return UniformDatatype.FLOAT_MAT3;
             },
 
             getValue : function(uniformState) {
@@ -979,7 +979,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX3;
+                return UniformDatatype.FLOAT_MAT3;
             },
 
             getValue : function(uniformState) {
@@ -1013,7 +1013,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX3;
+                return UniformDatatype.FLOAT_MAT3;
             },
 
             getValue : function(uniformState) {
@@ -1049,7 +1049,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX3;
+                return UniformDatatype.FLOAT_MAT3;
             },
 
             getValue : function(uniformState) {
@@ -1072,7 +1072,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_VECTOR2;
+                return UniformDatatype.FLOAT_VEC2;
             },
 
             getValue : function(uniformState) {
@@ -1104,7 +1104,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_VECTOR2;
+                return UniformDatatype.FLOAT_VEC2;
             },
 
             getValue : function(uniformState) {
@@ -1136,7 +1136,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_VECTOR2;
+                return UniformDatatype.FLOAT_VEC2;
             },
 
             getValue : function(uniformState) {
@@ -1192,7 +1192,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_VECTOR3;
+                return UniformDatatype.FLOAT_VEC3;
             },
 
             getValue : function(uniformState) {
@@ -1219,7 +1219,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_VECTOR3;
+                return UniformDatatype.FLOAT_VEC3;
             },
 
             getValue : function(uniformState) {
@@ -1251,7 +1251,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_VECTOR3;
+                return UniformDatatype.FLOAT_VEC3;
             },
 
             getValue : function(uniformState) {
@@ -1280,7 +1280,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_VECTOR3;
+                return UniformDatatype.FLOAT_VEC3;
             },
 
             getValue : function(uniformState) {
@@ -1311,7 +1311,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_VECTOR3;
+                return UniformDatatype.FLOAT_VEC3;
             },
 
             getValue : function(uniformState) {
@@ -1341,7 +1341,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_VECTOR3;
+                return UniformDatatype.FLOAT_VEC3;
             },
 
             getValue : function(uniformState) {
@@ -1371,7 +1371,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_VECTOR3;
+                return UniformDatatype.FLOAT_VEC3;
             },
 
             getValue : function(uniformState) {
@@ -1395,7 +1395,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_VECTOR3;
+                return UniformDatatype.FLOAT_VEC3;
             },
 
             getValue : function(uniformState) {
@@ -1515,7 +1515,7 @@ define(['Core/Cartesian3', 'Core/Matrix4', 'Renderer/UniformDatatype'],function(
             },
 
             getDatatype : function() {
-                return UniformDatatype.FLOAT_MATRIX3;
+                return UniformDatatype.FLOAT_MAT3;
             },
 
             getValue : function(uniformState) {

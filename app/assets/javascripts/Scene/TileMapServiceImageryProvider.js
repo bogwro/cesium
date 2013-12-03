@@ -1,12 +1,11 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/DeveloperError', 'Core/Event', 'Core/loadXML', 'Core/writeTextToCanvas', 'Core/Extent', 'Scene/Credit', 'Scene/ImageryProvider', 'Scene/WebMercatorTilingScheme', 'Scene/GeographicTilingScheme'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/DeveloperError', 'Core/Event', 'Core/loadXML', 'Core/Extent', 'Scene/Credit', 'Scene/ImageryProvider', 'Scene/WebMercatorTilingScheme', 'Scene/GeographicTilingScheme'], function(
         defaultValue,
         defined,
         Cartographic,
         DeveloperError,
         Event,
         loadXML,
-        writeTextToCanvas,
         Extent,
         Credit,
         ImageryProvider,

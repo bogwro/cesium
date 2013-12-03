@@ -1,5 +1,5 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Matrix4', 'Core/BoundingSphere', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/GeometryInstance', 'Core/GeometryInstanceAttribute', 'Core/ComponentDatatype', 'Core/TaskProcessor', 'Core/GeographicProjection', 'Core/Queue', 'Core/clone', 'Renderer/BufferUsage', 'Renderer/VertexLayout', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Renderer/CullFace', 'Scene/PrimitivePipeline', 'Scene/PrimitiveState', 'Scene/SceneMode', 'ThirdParty/when'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Matrix4', 'Core/BoundingSphere', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/GeometryInstance', 'Core/GeometryInstanceAttribute', 'Core/ComponentDatatype', 'Core/TaskProcessor', 'Core/GeographicProjection', 'Core/clone', 'Renderer/BufferUsage', 'Renderer/VertexLayout', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Renderer/CullFace', 'Scene/PrimitivePipeline', 'Scene/PrimitiveState', 'Scene/SceneMode', 'ThirdParty/when'], function(
         defaultValue,
         defined,
         defineProperties,
@@ -15,7 +15,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
         ComponentDatatype,
         TaskProcessor,
         GeographicProjection,
-        Queue,
         clone,
         BufferUsage,
         VertexLayout,

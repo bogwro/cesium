@@ -1,11 +1,10 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/VertexFormat', 'Scene/Material', 'Scene/Appearance', 'Scene/MaterialAppearance', 'Shaders/Appearances/EllipsoidSurfaceAppearanceVS', 'Shaders/Appearances/EllipsoidSurfaceAppearanceFS'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/VertexFormat', 'Scene/Material', 'Scene/Appearance', 'Shaders/Appearances/EllipsoidSurfaceAppearanceVS', 'Shaders/Appearances/EllipsoidSurfaceAppearanceFS'], function(
         defaultValue,
         defined,
         VertexFormat,
         Material,
         Appearance,
-        MaterialAppearance,
         EllipsoidSurfaceAppearanceVS,
         EllipsoidSurfaceAppearanceFS) {
     "use strict";

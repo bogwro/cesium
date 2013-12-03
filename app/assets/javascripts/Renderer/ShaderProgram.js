@@ -22,15 +22,15 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/FeatureDetection', 'Core/Ru
             };
         case gl.FLOAT_VEC2:
             return function() {
-                return UniformDatatype.FLOAT_VECTOR2;
+                return UniformDatatype.FLOAT_VEC2;
             };
         case gl.FLOAT_VEC3:
             return function() {
-                return UniformDatatype.FLOAT_VECTOR3;
+                return UniformDatatype.FLOAT_VEC3;
             };
         case gl.FLOAT_VEC4:
             return function() {
-                return UniformDatatype.FLOAT_VECTOR4;
+                return UniformDatatype.FLOAT_VEC4;
             };
         case gl.INT:
             return function() {
@@ -38,15 +38,15 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/FeatureDetection', 'Core/Ru
             };
         case gl.INT_VEC2:
             return function() {
-                return UniformDatatype.INT_VECTOR2;
+                return UniformDatatype.INT_VEC2;
             };
         case gl.INT_VEC3:
             return function() {
-                return UniformDatatype.INT_VECTOR3;
+                return UniformDatatype.INT_VEC3;
             };
         case gl.INT_VEC4:
             return function() {
-                return UniformDatatype.INT_VECTOR4;
+                return UniformDatatype.INT_VEC4;
             };
         case gl.BOOL:
             return function() {
@@ -54,27 +54,27 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/FeatureDetection', 'Core/Ru
             };
         case gl.BOOL_VEC2:
             return function() {
-                return UniformDatatype.BOOL_VECTOR2;
+                return UniformDatatype.BOOL_VEC2;
             };
         case gl.BOOL_VEC3:
             return function() {
-                return UniformDatatype.BOOL_VECTOR3;
+                return UniformDatatype.BOOL_VEC3;
             };
         case gl.BOOL_VEC4:
             return function() {
-                return UniformDatatype.BOOL_VECTOR4;
+                return UniformDatatype.BOOL_VEC4;
             };
         case gl.FLOAT_MAT2:
             return function() {
-                return UniformDatatype.FLOAT_MATRIX2;
+                return UniformDatatype.FLOAT_MAT2;
             };
         case gl.FLOAT_MAT3:
             return function() {
-                return UniformDatatype.FLOAT_MATRIX3;
+                return UniformDatatype.FLOAT_MAT3;
             };
         case gl.FLOAT_MAT4:
             return function() {
-                return UniformDatatype.FLOAT_MATRIX4;
+                return UniformDatatype.FLOAT_MAT4;
             };
         case gl.SAMPLER_2D:
             return function() {
@@ -231,7 +231,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/FeatureDetection', 'Core/Ru
      *
      * var mvp = sp.getAllUniforms().u_mvp;
      * console.log(mvp.getName());           // 'u_mvp'
-     * console.log(mvp.getDatatype().name);  // 'FLOAT_MATRIX4'
+     * console.log(mvp.getDatatype().name);  // 'FLOAT_MAT4'
      * mvp.value = Matrix4.IDENTITY;
      *
      * //////////////////////////////////////////////////////////////////////
@@ -319,7 +319,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/FeatureDetection', 'Core/Ru
          *
          * @example
          * // GLSL: uniform mat4 u_mvp;
-         * console.log(sp.getAllUniforms().u_mvp.getDatatype().name);  // 'FLOAT_MATRIX4'
+         * console.log(sp.getAllUniforms().u_mvp.getDatatype().name);  // 'FLOAT_MAT4'
          */
         this.getDatatype = getUniformDatatype(_gl, activeUniform.type);
 
@@ -828,39 +828,26 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/FeatureDetection', 'Core/Ru
         var vsSourceVersioned = extractShaderVersion(vertexShaderSource);
         var fsSourceVersioned = extractShaderVersion(fragmentShaderSource);
 
-        var vsSource = vsSourceVersioned.version + getBuiltinsAndAutomaticUniforms(vsSourceVersioned.source) + '\n#line 0\n' + vsSourceVersioned.source;
-        var fsSource = fsSourceVersioned.version + getFragmentShaderPrecision() + getBuiltinsAndAutomaticUniforms(fsSourceVersioned.source) + '\n#line 0\n' + fsSourceVersioned.source;
+        var vsSource =
+                vsSourceVersioned.version +
+                getBuiltinsAndAutomaticUniforms(vsSourceVersioned.source) +
+                '\n#line 0\n' +
+                vsSourceVersioned.source;
+        var fsSource =
+                fsSourceVersioned.version +
+                getFragmentShaderPrecision() +
+                getBuiltinsAndAutomaticUniforms(fsSourceVersioned.source) +
+                '\n#line 0\n' +
+                fsSourceVersioned.source;
+        var log;
 
         var vertexShader = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vertexShader, vsSource);
         gl.compileShader(vertexShader);
-        var vsLog = gl.getShaderInfoLog(vertexShader);
-
-        if (logShaderCompilation && vsLog && vsLog.length) {
-            console.log('[GL] Vertex shader compile log: ' + vsLog);
-        }
-
-        if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-            gl.deleteShader(vertexShader);
-            console.error('[GL] Vertex shader compile log: ' + vsLog);
-            throw new RuntimeError('Vertex shader failed to compile.  Compile log: ' + vsLog);
-        }
 
         var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
         gl.shaderSource(fragmentShader, fsSource);
         gl.compileShader(fragmentShader);
-        var fsLog = gl.getShaderInfoLog(fragmentShader);
-
-        if (logShaderCompilation && fsLog && fsLog.length) {
-            console.log('[GL] Fragment shader compile log: ' + fsLog);
-        }
-
-        if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
-            gl.deleteShader(vertexShader);
-            gl.deleteShader(fragmentShader);
-            console.error('[GL] Fragment shader compile log: ' + fsLog);
-            throw new RuntimeError('Fragment shader failed to compile.  Compile log: ' + fsLog);
-        }
 
         var program = gl.createProgram();
         gl.attachShader(program, vertexShader);
@@ -878,16 +865,48 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/FeatureDetection', 'Core/Ru
         }
 
         gl.linkProgram(program);
-        var linkLog = gl.getProgramInfoLog(program);
-
-        if (logShaderCompilation && linkLog && linkLog.length) {
-            console.log('[GL] Shader program link log: ' + linkLog);
-        }
 
         if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            // For performance, only check compile errors if there is a linker error.
+            if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+                log = gl.getShaderInfoLog(fragmentShader);
+                gl.deleteProgram(program);
+                console.error('[GL] Fragment shader compile log: ' + log);
+                throw new RuntimeError('Fragment shader failed to compile.  Compile log: ' + log);
+            }
+
+            if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+                log = gl.getShaderInfoLog(vertexShader);
+                gl.deleteProgram(program);
+                console.error('[GL] Vertex shader compile log: ' + log);
+                throw new RuntimeError('Vertex shader failed to compile.  Compile log: ' + log);
+            }
+
+            log = gl.getProgramInfoLog(program);
             gl.deleteProgram(program);
-            console.error('[GL] Shader program link log: ' + linkLog);
-            throw new RuntimeError('Program failed to link.  Link log: ' + linkLog);
+            console.error('[GL] Shader program link log: ' + log);
+            throw new RuntimeError('Program failed to link.  Link log: ' + log);
+        }
+
+        if (logShaderCompilation) {
+            log = gl.getShaderInfoLog(vertexShader);
+            if (defined(log) && (log.length > 0)) {
+                console.log('[GL] Vertex shader compile log: ' + log);
+            }
+        }
+
+        if (logShaderCompilation) {
+            log = gl.getShaderInfoLog(fragmentShader);
+            if (defined(log) && (log.length > 0)) {
+                console.log('[GL] Fragment shader compile log: ' + log);
+            }
+        }
+
+        if (logShaderCompilation) {
+            log = gl.getProgramInfoLog(program);
+            if (defined(log) && (log.length > 0)) {
+                console.log('[GL] Shader program link log: ' + log);
+            }
         }
 
         return program;

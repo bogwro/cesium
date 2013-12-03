@@ -61,14 +61,14 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
          * @type {Event}
          * @default Event()
          */
-        this.onTransitionStart = new Event();
+        this.transitionStart = new Event();
 
         /**
          * Gets the event fired at the completion of a transition.
          * @type {Event}
          * @default Event()
          */
-        this.onTransitionComplete = new Event();
+        this.transitionComplete = new Event();
 
         this._scene = scene;
         this._ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
@@ -161,7 +161,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
 
         this._previousMode = this._scene.mode;
         if (this._previousMode !== SceneMode.SCENE2D) {
-            this.onTransitionStart.raiseEvent(this, this._previousMode, SceneMode.SCENE2D, false);
+            this.transitionStart.raiseEvent(this, this._previousMode, SceneMode.SCENE2D, false);
             complete2DCallback(this);
         }
     };
@@ -179,7 +179,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
         this._previousMode = scene.mode;
 
         if (this._previousMode !== SceneMode.COLUMBUS_VIEW) {
-            this.onTransitionStart.raiseEvent(this, this._previousMode, SceneMode.COLUMBUS_VIEW, false);
+            this.transitionStart.raiseEvent(this, this._previousMode, SceneMode.COLUMBUS_VIEW, false);
             completeColumbusViewCallback(this);
         }
     };
@@ -197,7 +197,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
         this._previousMode = scene.mode;
 
         if (scene.mode !== SceneMode.SCENE3D) {
-            this.onTransitionStart.raiseEvent(this, this._previousMode, SceneMode.SCENE3D, false);
+            this.transitionStart.raiseEvent(this, this._previousMode, SceneMode.SCENE3D, false);
             complete3DCallback(this);
         }
     };
@@ -230,7 +230,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
         if (this._previousMode === SceneMode.SCENE2D || this._previousMode === SceneMode.MORPHING) {
             return;
         }
-        this.onTransitionStart.raiseEvent(this, this._previousMode, SceneMode.SCENE2D, true);
+        this.transitionStart.raiseEvent(this, this._previousMode, SceneMode.SCENE2D, true);
 
         updateFrustums(this);
         scene.mode = SceneMode.MORPHING;
@@ -258,7 +258,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
         if (this._previousMode === SceneMode.COLUMBUS_VIEW || this._previousMode === SceneMode.MORPHING) {
             return;
         }
-        this.onTransitionStart.raiseEvent(this, this._previousMode, SceneMode.COLUMBUS_VIEW, true);
+        this.transitionStart.raiseEvent(this, this._previousMode, SceneMode.COLUMBUS_VIEW, true);
 
         updateFrustums(this);
         scene.mode = SceneMode.MORPHING;
@@ -286,7 +286,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
         if (this._previousMode === SceneMode.SCENE3D || this._previousMode === SceneMode.MORPHING) {
             return;
         }
-        this.onTransitionStart.raiseEvent(this, this._previousMode, SceneMode.SCENE3D, true);
+        this.transitionStart.raiseEvent(this, this._previousMode, SceneMode.SCENE3D, true);
 
         updateFrustums(this);
         scene.mode = SceneMode.MORPHING;
@@ -748,7 +748,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
 
         var wasMorphing = defined(transitioner._completeMorph);
         transitioner._completeMorph = undefined;
-        transitioner.onTransitionComplete.raiseEvent(transitioner, transitioner._previousMode, SceneMode.SCENE3D, wasMorphing);
+        transitioner.transitionComplete.raiseEvent(transitioner, transitioner._previousMode, SceneMode.SCENE3D, wasMorphing);
     }
 
     function complete2DCallback(transitioner) {
@@ -770,7 +770,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
 
         var wasMorphing = defined(transitioner._completeMorph);
         transitioner._completeMorph = undefined;
-        transitioner.onTransitionComplete.raiseEvent(transitioner, transitioner._previousMode, SceneMode.SCENE2D, wasMorphing);
+        transitioner.transitionComplete.raiseEvent(transitioner, transitioner._previousMode, SceneMode.SCENE2D, wasMorphing);
     }
 
     function completeColumbusViewCallback(transitioner) {
@@ -796,7 +796,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
 
         var wasMorphing = defined(transitioner._completeMorph);
         transitioner._completeMorph = undefined;
-        transitioner.onTransitionComplete.raiseEvent(transitioner, transitioner._previousMode, SceneMode.COLUMBUS_VIEW, wasMorphing);
+        transitioner.transitionComplete.raiseEvent(transitioner, transitioner._previousMode, SceneMode.COLUMBUS_VIEW, wasMorphing);
     }
 
     return SceneTransitioner;

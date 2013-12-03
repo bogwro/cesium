@@ -53,7 +53,7 @@ define(['Core/Cartesian2', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
             } catch (e) {
                 viewer._useDefaultRenderLoop = false;
                 viewer._renderLoopRunning = false;
-                viewer._onRenderLoopError.raiseEvent(viewer, e);
+                viewer._renderLoopError.raiseEvent(viewer, e);
                 if (viewer._showRenderLoopErrors) {
                     /*global console*/
                     viewer.cesiumWidget.showErrorPanel('An error occurred while rendering.  Rendering has stopped.', e);
@@ -143,7 +143,7 @@ define(['Core/Cartesian2', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      * viewer.extend(Cesium.viewerDynamicObjectMixin);
      *
      * //Show a pop-up alert if we encounter an error when processing a dropped file
-     * viewer.onDropError.addEventListener(function(dropHandler, name, error) {
+     * viewer.dropError.addEventListener(function(dropHandler, name, error) {
      *     console.log(error);
      *     window.alert(error);
      * });
@@ -318,7 +318,7 @@ Either specify options.imageryProvider instead or set options.baseLayerPicker to
         this._useDefaultRenderLoop = undefined;
         this._renderLoopRunning = false;
         this._showRenderLoopErrors = defaultValue(options.showRenderLoopErrors, true);
-        this._onRenderLoopError = new Event();
+        this._renderLoopError = new Event();
 
         //Start the render loop if not explicitly disabled in options.
         this.useDefaultRenderLoop = defaultValue(options.useDefaultRenderLoop, true);
@@ -531,9 +531,9 @@ Either specify options.imageryProvider instead or set options.baseLayerPicker to
          * @memberof Viewer.prototype
          * @type {Event}
          */
-        onRenderLoopError : {
+        renderLoopError : {
             get : function() {
-                return this._onRenderLoopError;
+                return this._renderLoopError;
             }
         },
 

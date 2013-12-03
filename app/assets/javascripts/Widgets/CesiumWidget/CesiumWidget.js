@@ -51,7 +51,7 @@ define(['Core/buildModuleUrl', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Clock
             } catch (e) {
                 widget._useDefaultRenderLoop = false;
                 widget._renderLoopRunning = false;
-                widget._onRenderLoopError.raiseEvent(widget, e);
+                widget._renderLoopError.raiseEvent(widget, e);
                 if (widget._showRenderLoopErrors) {
                     widget.showErrorPanel('An error occurred while rendering.  Rendering has stopped.', e);
                     console.error(e);
@@ -212,7 +212,7 @@ define(['Core/buildModuleUrl', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Clock
             this._creditContainer = creditContainer;
             this._canRender = false;
             this._showRenderLoopErrors = defaultValue(options.showRenderLoopErrors, true);
-            this._onRenderLoopError = new Event();
+            this._renderLoopError = new Event();
 
             if (options.sceneMode) {
                 if (options.sceneMode === SceneMode.SCENE2D) {
@@ -339,7 +339,7 @@ define(['Core/buildModuleUrl', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Clock
          */
         onRenderLoopError : {
             get : function() {
-                return this._onRenderLoopError;
+                return this._renderLoopError;
             }
         },
 

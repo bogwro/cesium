@@ -1,9 +1,8 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/combine', 'Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Matrix4', 'Core/BoundingSphere', 'Core/PrimitiveType', 'Renderer/CullFace', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Scene/Material', 'Scene/SceneMode', 'Shaders/EllipsoidVS', 'Shaders/EllipsoidFS'], function(
+define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/combine', 'Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Matrix4', 'Core/BoundingSphere', 'Core/PrimitiveType', 'Renderer/CullFace', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Scene/Material', 'Scene/SceneMode', 'Shaders/EllipsoidVS', 'Shaders/EllipsoidFS'], function(
         defaultValue,
         BoxGeometry,
         Cartesian3,
-        Cartesian4,
         combine,
         defined,
         DeveloperError,

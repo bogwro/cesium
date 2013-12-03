@@ -124,7 +124,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartes
             positions[posIndex++] = position.z;
         }
         var indicesSize = positions.length/3 * 2;
-        var indices = IndexDatatype.createTypedArray(positions.length/3, indicesSize);
+        var indices = IndexDatatype.createTypedArray(positions.length / 3, indicesSize);
 
         var index = 0;
         for(var i = 0; i < (positions.length/3)-1; i++) {
@@ -207,7 +207,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartes
         }
 
         var indicesSize = positions.length/3 * 2 + 8;
-        var indices = IndexDatatype.createTypedArray(positions.length/3, indicesSize);
+        var indices = IndexDatatype.createTypedArray(positions.length / 3, indicesSize);
         var length = positions.length/6;
         var index = 0;
         for (var i = 0; i < length - 1; i++) {

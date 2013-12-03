@@ -91,9 +91,9 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Renderer/PixelDatatype'], f
 
         //Firefox bug: texSubImage2D has overloads and can't resolve our enums, so we use + to explicitly convert to a number.
         if (source.arrayBufferView) {
-            gl.texSubImage2D(this._targetFace, 0, xOffset, yOffset, width, height, +this._pixelFormat, +this._pixelDatatype, source.arrayBufferView);
+            gl.texSubImage2D(this._targetFace, 0, xOffset, yOffset, width, height, this._pixelFormat, +this._pixelDatatype, source.arrayBufferView);
         } else {
-            gl.texSubImage2D(this._targetFace, 0, xOffset, yOffset, +this._pixelFormat, +this._pixelDatatype, source);
+            gl.texSubImage2D(this._targetFace, 0, xOffset, yOffset, this._pixelFormat, +this._pixelDatatype, source);
         }
 
         gl.bindTexture(target, null);

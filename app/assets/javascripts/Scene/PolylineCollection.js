@@ -1,10 +1,9 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/EncodedCartesian3', 'Core/Matrix4', 'Core/Math', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Core/Intersect', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Scene/Material', 'Scene/SceneMode', 'Scene/Polyline', 'Shaders/PolylineCommon', 'Shaders/PolylineVS', 'Shaders/PolylineFS'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/EncodedCartesian3', 'Core/Matrix4', 'Core/Math', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Core/Intersect', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Scene/Material', 'Scene/SceneMode', 'Scene/Polyline', 'Shaders/PolylineCommon', 'Shaders/PolylineVS', 'Shaders/PolylineFS'], function(
         defaultValue,
         defined,
         DeveloperError,
         Color,
-        combine,
         destroyObject,
         Cartesian3,
         Cartesian4,
