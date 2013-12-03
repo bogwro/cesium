@@ -121,14 +121,14 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
 
         var indices = geometry.indices;
         if (defined(indices)) {
-            switch (geometry.primitiveType.value) {
-                case PrimitiveType.TRIANGLES.value:
+            switch (geometry.primitiveType) {
+                case PrimitiveType.TRIANGLES:
                     geometry.indices = trianglesToLines(indices);
                     break;
-                case PrimitiveType.TRIANGLE_STRIP.value:
+                case PrimitiveType.TRIANGLE_STRIP:
                     geometry.indices = triangleStripToLines(indices);
                     break;
-                case PrimitiveType.TRIANGLE_FAN.value:
+                case PrimitiveType.TRIANGLE_FAN:
                     geometry.indices = triangleFanToLines(indices);
                     break;
                 default:
@@ -396,7 +396,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
         }
 
         var indices = geometry.indices;
-        if ((geometry.primitiveType.value === PrimitiveType.TRIANGLES.value) && (defined(indices))) {
+        if ((geometry.primitiveType === PrimitiveType.TRIANGLES) && (defined(indices))) {
             var numIndices = indices.length;
             var maximumIndex = 0;
             for ( var j = 0; j < numIndices; j++) {
@@ -475,9 +475,9 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
         }
 
         if ((defined(geometry.indices)) &&
-            ((geometry.primitiveType.value !== PrimitiveType.TRIANGLES.value) &&
-             (geometry.primitiveType.value !== PrimitiveType.LINES.value) &&
-             (geometry.primitiveType.value !== PrimitiveType.POINTS.value))) {
+            ((geometry.primitiveType !== PrimitiveType.TRIANGLES) &&
+             (geometry.primitiveType !== PrimitiveType.LINES) &&
+             (geometry.primitiveType !== PrimitiveType.POINTS))) {
             throw new DeveloperError('geometry.primitiveType must equal to PrimitiveType.TRIANGLES, PrimitiveType.LINES, or PrimitiveType.POINTS.');
         }
 
@@ -497,11 +497,11 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
 
             var indicesPerPrimitive;
 
-            if (geometry.primitiveType.value === PrimitiveType.TRIANGLES.value) {
+            if (geometry.primitiveType === PrimitiveType.TRIANGLES) {
                 indicesPerPrimitive = 3;
-            } else if (geometry.primitiveType.value === PrimitiveType.LINES.value) {
+            } else if (geometry.primitiveType === PrimitiveType.LINES) {
                 indicesPerPrimitive = 2;
-            } else if (geometry.primitiveType.value === PrimitiveType.POINTS.value) {
+            } else if (geometry.primitiveType === PrimitiveType.POINTS) {
                 indicesPerPrimitive = 1;
             }
 
@@ -923,7 +923,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
                 throw new DeveloperError('All instance geometries must have an indices or not have one.');
             }
 
-            if (instances[i].geometry.primitiveType.value !== primitiveType.value) {
+            if (instances[i].geometry.primitiveType !== primitiveType) {
                 throw new DeveloperError('All instance geometries must have the same primitiveType.');
             }
         }
@@ -1063,7 +1063,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
             throw new DeveloperError('geometry.indices length must be greater than 0 and be a multiple of 3.');
         }
 
-        if (geometry.primitiveType.value !== PrimitiveType.TRIANGLES.value) {
+        if (geometry.primitiveType !== PrimitiveType.TRIANGLES) {
             throw new DeveloperError('geometry.primitiveType must be PrimitiveType.TRIANGLES.');
         }
 
@@ -1223,7 +1223,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
             throw new DeveloperError('geometry.indices length must be greater than 0 and be a multiple of 3.');
         }
 
-        if (geometry.primitiveType.value !== PrimitiveType.TRIANGLES.value) {
+        if (geometry.primitiveType !== PrimitiveType.TRIANGLES) {
             throw new DeveloperError('geometry.primitiveType must be PrimitiveType.TRIANGLES.');
         }
 
@@ -1471,18 +1471,18 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
     }
 
     function indexPrimitive(geometry) {
-        switch (geometry.primitiveType.value) {
-        case PrimitiveType.TRIANGLE_FAN.value:
+        switch (geometry.primitiveType) {
+        case PrimitiveType.TRIANGLE_FAN:
             return indexTriangleFan(geometry);
-        case PrimitiveType.TRIANGLE_STRIP.value:
+        case PrimitiveType.TRIANGLE_STRIP:
             return indexTriangleStrip(geometry);
-        case PrimitiveType.TRIANGLES.value:
+        case PrimitiveType.TRIANGLES:
             return indexTriangles(geometry);
-        case PrimitiveType.LINE_STRIP.value:
+        case PrimitiveType.LINE_STRIP:
             return indexLineStrip(geometry);
-        case PrimitiveType.LINE_LOOP.value:
+        case PrimitiveType.LINE_LOOP:
             return indexLineLoop(geometry);
-        case PrimitiveType.LINES.value:
+        case PrimitiveType.LINES:
             return indexLines(geometry);
         }
 
@@ -1895,9 +1895,9 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
         }
 
         indexPrimitive(geometry);
-        if (geometry.primitiveType.value === PrimitiveType.TRIANGLES.value) {
+        if (geometry.primitiveType === PrimitiveType.TRIANGLES) {
             wrapLongitudeTriangles(geometry);
-        } else if (geometry.primitiveType.value === PrimitiveType.LINES.value) {
+        } else if (geometry.primitiveType === PrimitiveType.LINES) {
             wrapLongitudeLines(geometry);
         }
 

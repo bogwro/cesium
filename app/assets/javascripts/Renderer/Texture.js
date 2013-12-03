@@ -108,7 +108,7 @@ define(['Core/Cartesian2', 'Core/defaultValue', 'Core/defined', 'Core/destroyObj
 
         //Firefox bug: texSubImage2D has overloads and can't resolve our enums, so we use + to explicitly convert to a number.
         if (source.arrayBufferView) {
-            gl.texSubImage2D(target, 0, xOffset, yOffset, width, height, +this._pixelFormat, +this._pixelDatatype, source.arrayBufferView);
+            gl.texSubImage2D(target, 0, xOffset, yOffset, width, height, this._pixelFormat, +this._pixelDatatype, source.arrayBufferView);
         } else {
             gl.texSubImage2D(target, 0, xOffset, yOffset, this._pixelFormat, this._pixelDatatype, source);
         }

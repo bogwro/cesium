@@ -82,7 +82,7 @@ define(['Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Renderer/P
         var width = defined(source) ? source.width : description.width;
         var height = defined(source) ? source.height : description.height;
         //coerce values to primitive numbers to make textureTypeKey smaller.
-        var pixelFormat = +(description.pixelFormat || PixelFormat.RGBA);
+        var pixelFormat = (description.pixelFormat || PixelFormat.RGBA);
         var pixelDatatype = +(description.pixelDatatype || PixelDatatype.UNSIGNED_BYTE);
         var preMultiplyAlpha = +(description.preMultiplyAlpha || pixelFormat === PixelFormat.RGB || pixelFormat === PixelFormat.LUMINANCE);
 

@@ -1,10 +1,9 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/combine', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/EncodedCartesian3', 'Core/Matrix4', 'Core/Math', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Core/Intersect', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Scene/Material', 'Scene/SceneMode', 'Scene/Polyline', 'Shaders/PolylineCommon', 'Shaders/PolylineVS', 'Shaders/PolylineFS'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color', 'Core/destroyObject', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/EncodedCartesian3', 'Core/Matrix4', 'Core/Math', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Core/Intersect', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Scene/Material', 'Scene/SceneMode', 'Scene/Polyline', 'Shaders/PolylineCommon', 'Shaders/PolylineVS', 'Shaders/PolylineFS'], function(
         defaultValue,
         defined,
         DeveloperError,
         Color,
-        combine,
         destroyObject,
         Cartesian3,
         Cartesian4,
@@ -474,7 +473,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
             commandLists.pickList.opaqueList = pickList;
             createCommandLists(this, context, frameState, pickList, modelMatrix, false, false);
 
-            var size = pickList.length;
             pickList = this._pickTranslucentCommands;
             commandLists.pickList.translucentList = pickList;
             createCommandLists(this, context, frameState, pickList, modelMatrix, false, true);
@@ -565,7 +563,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
 
                     var boundingVolume;
                     if (frameState.mode === SceneMode.SCENE3D) {
-                        boundingVolume = polyline._boundingVolume;
+                        boundingVolume = polyline._boundingVolumeWC;
                     } else if (frameState.mode === SceneMode.COLUMBUS_VIEW) {
                         boundingVolume = polyline._boundingVolume2D;
                     } else if (frameState.mode === SceneMode.SCENE2D) {
@@ -573,8 +571,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
                             boundingVolume = BoundingSphere.clone(polyline._boundingVolume2D, boundingSphereScratch2);
                             boundingVolume.center.x = 0.0;
                         }
-                    } else if (defined(polyline._boundingVolume) && defined(polyline._boundingVolume2D)) {
-                        boundingVolume = BoundingSphere.union(polyline._boundingVolume, polyline._boundingVolume2D, boundingSphereScratch2);
+                    } else if (defined(polyline._boundingVolumeWC) && defined(polyline._boundingVolume2D)) {
+                        boundingVolume = BoundingSphere.union(polyline._boundingVolumeWC, polyline._boundingVolume2D, boundingSphereScratch2);
                     }
 
                     if (cloneBoundingSphere) {

@@ -613,8 +613,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartes
      * @exception {DeveloperError} <code>options.extent.south</code> must be in the interval [<code>-Pi/2</code>, <code>Pi/2</code>].
      * @exception {DeveloperError} <code>options.extent.east</code> must be in the interval [<code>-Pi</code>, <code>Pi</code>].
      * @exception {DeveloperError} <code>options.extent.west</code> must be in the interval [<code>-Pi</code>, <code>Pi</code>].
-     * @exception {DeveloperError} <code>options.extent.north</code> must be greater than <code>extent.south</code>.
-     * @exception {DeveloperError} <code>options.extent.east</code> must be greater than <code>extent.west</code>.
+     * @exception {DeveloperError} <code>options.extent.north</code> must be greater than <code>options.extent.south</code>.
+     * @exception {DeveloperError} <code>options.extent.east</code> must be greater than <code>options.extent.west</code>.
      *
      * @see ExtentGeometry#createGeometry
      *
@@ -653,6 +653,13 @@ define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartes
         }
 
         extent.validate();
+        if (extent.east < extent.west) {
+            throw new DeveloperError('options.extent.east must be greater than options.extent.west');
+        }
+
+        if (extent.north < extent.south) {
+            throw new DeveloperError('options.extent.north must be greater than options.extent.south');
+        }
 
         this._extent = extent;
         this._granularity = granularity;

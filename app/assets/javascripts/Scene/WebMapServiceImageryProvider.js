@@ -1,10 +1,9 @@
 /*global define*/
-define(['Core/clone', 'Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Event', 'Core/Extent', 'Scene/Credit', 'Scene/ImageryProvider', 'Scene/GeographicTilingScheme'], function(
+define(['Core/clone', 'Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/DeveloperError', 'Core/Event', 'Core/Extent', 'Scene/Credit', 'Scene/ImageryProvider', 'Scene/GeographicTilingScheme'], function(
         clone,
         defaultValue,
         defined,
         freezeObject,
-        writeTextToCanvas,
         DeveloperError,
         Event,
         Extent,

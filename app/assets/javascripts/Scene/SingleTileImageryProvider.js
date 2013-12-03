@@ -1,9 +1,8 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/loadImage', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Event', 'Core/Extent', 'Scene/Credit', 'Scene/GeographicTilingScheme', 'Scene/TileProviderError', 'ThirdParty/when'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/loadImage', 'Core/DeveloperError', 'Core/Event', 'Core/Extent', 'Scene/Credit', 'Scene/GeographicTilingScheme', 'Scene/TileProviderError', 'ThirdParty/when'], function(
         defaultValue,
         defined,
         loadImage,
-        writeTextToCanvas,
         DeveloperError,
         Event,
         Extent,

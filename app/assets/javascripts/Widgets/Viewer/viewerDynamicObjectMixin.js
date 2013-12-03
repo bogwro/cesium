@@ -39,12 +39,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/define
         if (viewer.hasOwnProperty('trackedObject')) {
             throw new DeveloperError('trackedObject is already defined by another mixin.');
         }
-        if (viewer.hasOwnProperty('onObjectTracked')) {
-            throw new DeveloperError('onObjectTracked is already defined by another mixin.');
+        if (viewer.hasOwnProperty('objectTracked')) {
+            throw new DeveloperError('objectTracked is already defined by another mixin.');
         }
 
         var eventHelper = new EventHelper();
-        var onObjectTracked = new Event();
+        var objectTracked = new Event();
         var trackedObject;
         var dynamicObjectView;
 
@@ -138,7 +138,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/define
                     if (trackedObject !== value) {
                         trackedObject = value;
                         dynamicObjectView = defined(value) ? new DynamicObjectView(value, viewer.scene, viewer.centralBody.getEllipsoid()) : undefined;
-                        onObjectTracked.raiseEvent(viewer, value);
+                        objectTracked.raiseEvent(viewer, value);
                     }
                 }
             },
@@ -150,9 +150,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/define
              * @memberof viewerDynamicObjectMixin.prototype
              * @type {Event}
              */
-            onObjectTracked : {
+            objectTracked : {
                 get : function() {
-                    return onObjectTracked;
+                    return objectTracked;
                 }
             }
         });

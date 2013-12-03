@@ -1,5 +1,5 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/FeatureDetection', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/EllipsoidalOccluder', 'Core/Intersect', 'Core/Matrix4', 'Core/PrimitiveType', 'Core/Queue', 'Core/WebMercatorProjection', 'Renderer/DrawCommand', 'Scene/ImageryLayer', 'Scene/ImageryState', 'Scene/SceneMode', 'Scene/TerrainProvider', 'Scene/TileReplacementQueue', 'Scene/TileState', 'ThirdParty/when'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/FeatureDetection', 'Core/DeveloperError', 'Core/EllipsoidalOccluder', 'Core/Intersect', 'Core/Matrix4', 'Core/PrimitiveType', 'Core/Queue', 'Core/WebMercatorProjection', 'Renderer/DrawCommand', 'Scene/ImageryLayer', 'Scene/ImageryState', 'Scene/SceneMode', 'Scene/TerrainProvider', 'Scene/TileReplacementQueue', 'Scene/TileState', 'ThirdParty/when'], function(
         defaultValue,
         defined,
         destroyObject,
@@ -9,7 +9,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
         Cartesian4,
         FeatureDetection,
         DeveloperError,
-        Ellipsoid,
         EllipsoidalOccluder,
         Intersect,
         Matrix4,

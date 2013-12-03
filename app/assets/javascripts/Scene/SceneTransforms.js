@@ -1,7 +1,5 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Matrix4', 'Core/BoundingRectangle', 'Core/Math', 'Scene/SceneMode'],
-    function(
-        defaultValue,
+define(['Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Matrix4', 'Core/BoundingRectangle', 'Core/Math', 'Scene/SceneMode'], function(
         defined,
         DeveloperError,
         Cartographic,

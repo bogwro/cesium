@@ -1,5 +1,5 @@
 /*global define*/
-define(['Core/buildModuleUrl', 'Core/combine', 'Core/loadImage', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartographic', 'Core/ComponentDatatype', 'Core/Ellipsoid', 'Core/Extent', 'Core/FeatureDetection', 'Core/GeographicProjection', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/Intersect', 'Core/Math', 'Core/Matrix4', 'Core/Occluder', 'Core/PrimitiveType', 'Core/Transforms', 'Renderer/BufferUsage', 'Renderer/ClearCommand', 'Renderer/CommandLists', 'Renderer/DepthFunction', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Scene/CentralBodySurface', 'Scene/CentralBodySurfaceShaderSet', 'Scene/CreditDisplay', 'Scene/EllipsoidTerrainProvider', 'Scene/ImageryLayerCollection', 'Scene/Material', 'Scene/SceneMode', 'Scene/TerrainProvider', 'Scene/ViewportQuad', 'Shaders/CentralBodyFS', 'Shaders/CentralBodyFSDepth', 'Shaders/CentralBodyFSPole', 'Shaders/CentralBodyVS', 'Shaders/CentralBodyVSDepth', 'Shaders/CentralBodyVSPole', 'ThirdParty/when'], function(
+define(['Core/buildModuleUrl', 'Core/combine', 'Core/loadImage', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartographic', 'Core/ComponentDatatype', 'Core/Ellipsoid', 'Core/Extent', 'Core/FeatureDetection', 'Core/GeographicProjection', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/Intersect', 'Core/Math', 'Core/Matrix4', 'Core/Occluder', 'Core/PrimitiveType', 'Core/Transforms', 'Renderer/BufferUsage', 'Renderer/ClearCommand', 'Renderer/CommandLists', 'Renderer/DepthFunction', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Scene/CentralBodySurface', 'Scene/CentralBodySurfaceShaderSet', 'Scene/EllipsoidTerrainProvider', 'Scene/ImageryLayerCollection', 'Scene/SceneMode', 'Scene/TerrainProvider', 'Shaders/CentralBodyFS', 'Shaders/CentralBodyFSDepth', 'Shaders/CentralBodyFSPole', 'Shaders/CentralBodyVS', 'Shaders/CentralBodyVSDepth', 'Shaders/CentralBodyVSPole', 'ThirdParty/when'], function(
         buildModuleUrl,
         combine,
         loadImage,
@@ -32,13 +32,10 @@ define(['Core/buildModuleUrl', 'Core/combine', 'Core/loadImage', 'Core/defaultVa
         createShaderSource,
         CentralBodySurface,
         CentralBodySurfaceShaderSet,
-        CreditDisplay,
         EllipsoidTerrainProvider,
         ImageryLayerCollection,
-        Material,
         SceneMode,
         TerrainProvider,
-        ViewportQuad,
         CentralBodyFS,
         CentralBodyFSDepth,
         CentralBodyFSPole,

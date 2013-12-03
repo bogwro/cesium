@@ -1,21 +1,18 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/loadText', 'Core/Cartesian2', 'Core/DeveloperError', 'Core/RuntimeError', 'Core/Event', 'Core/Extent', 'Scene/DiscardMissingTileImagePolicy', 'Scene/ImageryProvider', 'Scene/TileProviderError', 'Scene/WebMercatorTilingScheme', 'Scene/GeographicTilingScheme', 'Scene/Credit', 'ThirdParty/when'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/loadText', 'Core/DeveloperError', 'Core/RuntimeError', 'Core/Event', 'Core/Extent', 'Scene/ImageryProvider', 'Scene/TileProviderError', 'Scene/WebMercatorTilingScheme', 'Scene/GeographicTilingScheme', 'Scene/Credit', 'ThirdParty/when'], function(
         defaultValue,
         defined,
         loadText,
-        Cartesian2,
         DeveloperError,
         RuntimeError,
         Event,
         Extent,
-        DiscardMissingTileImagePolicy,
         ImageryProvider,
         TileProviderError,
         WebMercatorTilingScheme,
         GeographicTilingScheme,
         Credit,
-        when
-        ) {
+        when) {
     "use strict";
 
     /**

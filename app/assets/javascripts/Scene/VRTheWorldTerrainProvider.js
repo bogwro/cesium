@@ -1,12 +1,11 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/loadImage', 'Core/loadXML', 'Core/getImagePixels', 'Core/throttleRequestByServer', 'Core/writeTextToCanvas', 'Core/DeveloperError', 'Core/Extent', 'Core/Math', 'Core/Ellipsoid', 'Core/Event', 'Scene/Credit', 'Scene/TerrainProvider', 'Scene/TileProviderError', 'Scene/GeographicTilingScheme', 'Scene/HeightmapTerrainData', 'ThirdParty/when'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/loadImage', 'Core/loadXML', 'Core/getImagePixels', 'Core/throttleRequestByServer', 'Core/DeveloperError', 'Core/Extent', 'Core/Math', 'Core/Ellipsoid', 'Core/Event', 'Scene/Credit', 'Scene/TerrainProvider', 'Scene/TileProviderError', 'Scene/GeographicTilingScheme', 'Scene/HeightmapTerrainData', 'ThirdParty/when'], function(
         defaultValue,
         defined,
         loadImage,
         loadXML,
         getImagePixels,
         throttleRequestByServer,
-        writeTextToCanvas,
         DeveloperError,
         Extent,
         CesiumMath,

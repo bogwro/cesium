@@ -1,10 +1,9 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Event', 'Core/writeTextToCanvas', 'Scene/ImageryProvider', 'Scene/WebMercatorTilingScheme', 'Scene/Credit'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Event', 'Scene/ImageryProvider', 'Scene/WebMercatorTilingScheme', 'Scene/Credit'], function(
         defaultValue,
         defined,
         DeveloperError,
         Event,
-        writeTextToCanvas,
         ImageryProvider,
         WebMercatorTilingScheme,
         Credit) {
