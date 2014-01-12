@@ -18,7 +18,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Boundi
      * @alias Polyline
      * @internalConstructor
      *
-     * @demo <a href="http://cesium.agi.com/Cesium/Apps/Sandcastle/index.html?src=Polylines.html">Cesium Sandcastle Polyline Demo</a>
+     * @demo <a href="http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Polylines.html">Cesium Sandcastle Polyline Demo</a>
      */
     var Polyline = function(options, polylineCollection) {
         options = defaultValue(options, EMPTY_OBJECT);

@@ -728,7 +728,6 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
     };
 
     var scratchCartesian3 = new Cartesian3();
-    var scratchCartesian4 = new Cartesian4();
 
     function transformPoint(matrix, attribute) {
         if (defined(attribute)) {
@@ -736,8 +735,8 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
             var length = values.length;
             for (var i = 0; i < length; i += 3) {
                 Cartesian3.unpack(values, i, scratchCartesian3);
-                Matrix4.multiplyByPoint(matrix, scratchCartesian3, scratchCartesian4);
-                Cartesian3.pack(scratchCartesian4, values, i);
+                Matrix4.multiplyByPoint(matrix, scratchCartesian3, scratchCartesian3);
+                Cartesian3.pack(scratchCartesian3, values, i);
             }
         }
     }

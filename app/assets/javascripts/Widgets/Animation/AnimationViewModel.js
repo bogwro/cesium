@@ -135,7 +135,6 @@ define(['Core/binarySearch', 'Core/ClockStep', 'Core/ClockRange', 'Core/defined'
         /**
          * Gets the string representation of the current time.  This property is observable.
          * @type {String}
-         * @default undefined
          */
         this.timeLabel = undefined;
         knockout.defineProperty(this, 'timeLabel', function() {
@@ -145,7 +144,6 @@ define(['Core/binarySearch', 'Core/ClockStep', 'Core/ClockRange', 'Core/defined'
         /**
          * Gets the string representation of the current date.  This property is observable.
          * @type {String}
-         * @default undefined
          */
         this.dateLabel = undefined;
         knockout.defineProperty(this, 'dateLabel', function() {
@@ -155,7 +153,6 @@ define(['Core/binarySearch', 'Core/ClockStep', 'Core/ClockRange', 'Core/defined'
         /**
          * Gets the string representation of the current multiplier.  This property is observable.
          * @type {String}
-         * @default undefined
          */
         this.multiplierLabel = undefined;
         knockout.defineProperty(this, 'multiplierLabel', function() {
@@ -178,7 +175,6 @@ define(['Core/binarySearch', 'Core/ClockStep', 'Core/ClockRange', 'Core/defined'
         /**
          * Gets or sets the current shuttle ring angle.  This property is observable.
          * @type {Number}
-         * @default undefined
          */
         this.shuttleRingAngle = undefined;
         knockout.defineProperty(this, 'shuttleRingAngle', {

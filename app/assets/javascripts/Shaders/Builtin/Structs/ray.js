@@ -2,10 +2,15 @@
     /*global define*/
     define(function() {
     "use strict";
-    return "struct czm_ray\n\
+    return "/**\n\
+ * DOC_TBA\n\
+ *\n\
+ * @name czm_ray\n\
+ * @glslStruct\n\
+ */\n\
+struct czm_ray\n\
 {\n\
-vec3 origin;\n\
-vec3 direction;\n\
-};\n\
-";
+    vec3 origin;\n\
+    vec3 direction;\n\
+};";
 });

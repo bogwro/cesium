@@ -58,6 +58,9 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', '
         return Cartesian3.add(origin, result, result);
     };
 
+    var scratchQ = new Cartesian3();
+    var scratchW = new Cartesian3();
+
     /**
      * Computes the intersection points of a ray with an ellipsoid.
      * @memberof IntersectionTests
@@ -79,8 +82,8 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Math', 'Core/Cartesian3', '
         }
 
         var inverseRadii = ellipsoid.getOneOverRadii();
-        var q = Cartesian3.multiplyComponents(inverseRadii, ray.origin);
-        var w = Cartesian3.multiplyComponents(inverseRadii, ray.direction);
+        var q = Cartesian3.multiplyComponents(inverseRadii, ray.origin, scratchQ);
+        var w = Cartesian3.multiplyComponents(inverseRadii, ray.direction, scratchW);
 
         var q2 = Cartesian3.magnitudeSquared(q);
         var qw = Cartesian3.dot(q, w);

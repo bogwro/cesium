@@ -1,5 +1,5 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Core/EventHelper', 'DynamicScene/DynamicBillboardVisualizer', 'DynamicScene/DynamicEllipsoidVisualizer', 'DynamicScene/DynamicConeVisualizerUsingCustomSensor', 'DynamicScene/DynamicLabelVisualizer', 'DynamicScene/DynamicPathVisualizer', 'DynamicScene/DynamicPointVisualizer', 'DynamicScene/DynamicPolygonVisualizer', 'DynamicScene/DynamicPolylineVisualizer', 'DynamicScene/DynamicPyramidVisualizer', 'DynamicScene/VisualizerCollection'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Core/EventHelper', 'DynamicScene/DynamicBillboardVisualizer', 'DynamicScene/DynamicEllipsoidVisualizer', 'DynamicScene/DynamicConeVisualizerUsingCustomSensor', 'DynamicScene/DynamicLabelVisualizer', 'DynamicScene/DynamicPathVisualizer', 'DynamicScene/DynamicPointVisualizer', 'DynamicScene/DynamicPolygonVisualizer', 'DynamicScene/DynamicPolylineVisualizer', 'DynamicScene/DynamicPyramidVisualizer', 'DynamicScene/DynamicVectorVisualizer', 'DynamicScene/VisualizerCollection'], function(
         defaultValue,
         defined,
         destroyObject,
@@ -14,6 +14,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
         DynamicPolygonVisualizer,
         DynamicPolylineVisualizer,
         DynamicPyramidVisualizer,
+        DynamicVectorVisualizer,
         VisualizerCollection) {
     "use strict";
 
@@ -25,7 +26,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
                                   DynamicPolygonVisualizer,
                                   DynamicPolylineVisualizer,
                                   DynamicPyramidVisualizer,
-                                  DynamicPathVisualizer];
+                                  DynamicPathVisualizer,
+                                  DynamicVectorVisualizer];
 
     /**
      * Visualizes a collection of {@link DataSource} instances.

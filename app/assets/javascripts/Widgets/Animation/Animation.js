@@ -1,14 +1,12 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Color', 'Widgets/getElement', 'Widgets/subscribeAndEvaluate', 'ThirdParty/knockout'], function(
-        defaultValue,
+define(['Core/defined', 'Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Color', 'Widgets/getElement', 'Widgets/subscribeAndEvaluate'], function(
         defined,
         defineProperties,
         destroyObject,
         DeveloperError,
         Color,
         getElement,
-        subscribeAndEvaluate,
-        knockout) {
+        subscribeAndEvaluate) {
     "use strict";
 
     var svgNS = "http://www.w3.org/2000/svg";

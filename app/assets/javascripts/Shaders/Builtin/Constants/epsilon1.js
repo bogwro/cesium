@@ -2,6 +2,11 @@
     /*global define*/
     define(function() {
     "use strict";
-    return "const float czm_epsilon1 = 0.1;\n\
-";
+    return "/**\n\
+ * 0.1\n\
+ *\n\
+ * @name czm_epsilon1\n\
+ * @glslConstant\n\
+ */\n\
+const float czm_epsilon1 = 0.1;";
 });

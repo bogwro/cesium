@@ -65,6 +65,9 @@ define(['Core/defined', 'Core/destroyObject'], function(
 
         if (this._shaders[keyword]) {
             cachedShader = this._shaders[keyword];
+
+            // No longer want to release this if it was previously released.
+            delete this._shadersToRelease[keyword];
         } else {
             var sp = this._context.createShaderProgram(vertexShaderSource, fragmentShaderSource, attributeLocations);
 
@@ -93,13 +96,9 @@ define(['Core/defined', 'Core/destroyObject'], function(
 
         for ( var keyword in shadersToRelease) {
             if (shadersToRelease.hasOwnProperty(keyword)) {
-                // Check the count again here because the shader may have been requested
-                // after it was released, in which case, we are avoiding thrashing the cache.
                 var cachedShader = shadersToRelease[keyword];
-                if (cachedShader.count === 0) {
-                    delete this._shaders[cachedShader.keyword];
-                    cachedShader.shaderProgram.destroy();
-                }
+                delete this._shaders[cachedShader.keyword];
+                cachedShader.shaderProgram.destroy();
             }
         }
 

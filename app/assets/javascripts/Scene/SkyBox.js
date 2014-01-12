@@ -88,8 +88,8 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
             return undefined;
         }
 
-        // The sky box is only rendered during the color pass; it is not pickable, it doesn't cast shadows, etc.
-        if (!frameState.passes.color) {
+        // The sky box is only rendered during the render pass; it is not pickable, it doesn't cast shadows, etc.
+        if (!frameState.passes.render) {
             return undefined;
         }
 

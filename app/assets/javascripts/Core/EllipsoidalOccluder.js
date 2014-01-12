@@ -11,7 +11,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * Determine whether or not other objects are visible or hidden behind the visible horizon defined by
      * an {@link Ellipsoid} and a camera position.  The ellipsoid is assumed to be located at the
      * origin of the coordinate system.  This class uses the algorithm described in the
-     * <a href="http://cesium.agi.com/2013/04/25/Horizon-culling/">Horizon Culling</a> blog post.
+     * <a href="http://cesiumjs.org/2013/04/25/Horizon-culling/">Horizon Culling</a> blog post.
      *
      * @alias EllipsoidalOccluder
      *
@@ -65,7 +65,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * @param {Cartesian3} cameraPosition The new position of the camera.
      */
     EllipsoidalOccluder.prototype.setCameraPosition = function(cameraPosition) {
-        // See http://cesium.agi.com/2013/04/25/Horizon-culling/
+        // See http://cesiumjs.org/2013/04/25/Horizon-culling/
         var ellipsoid = this._ellipsoid;
         var cv = ellipsoid.transformPositionToScaledSpace(cameraPosition, this._cameraPositionInScaledSpace);
         var vhMagnitudeSquared = Cartesian3.magnitudeSquared(cv) - 1.0;
@@ -130,7 +130,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * occluder.isScaledSpacePointVisible(scaledSpacePoint); //returns true
      */
     EllipsoidalOccluder.prototype.isScaledSpacePointVisible = function(occludeeScaledSpacePosition) {
-        // See http://cesium.agi.com/2013/04/25/Horizon-culling/
+        // See http://cesiumjs.org/2013/04/25/Horizon-culling/
         var cv = this._cameraPositionInScaledSpace;
         var vhMagnitudeSquared = this._distanceToLimbInScaledSpaceSquared;
         var vt = Cartesian3.subtract(occludeeScaledSpacePosition, cv, scratchCartesian);

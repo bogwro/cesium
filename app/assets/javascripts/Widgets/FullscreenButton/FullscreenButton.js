@@ -1,12 +1,10 @@
 /*global define*/
-define(['Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/destroyObject', 'Widgets/SvgPath/SvgPath', 'Widgets/getElement', 'Widgets/subscribeAndEvaluate', 'Widgets/FullscreenButton/FullscreenButtonViewModel', 'ThirdParty/knockout'], function(
+define(['Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/destroyObject', 'Widgets/getElement', 'Widgets/FullscreenButton/FullscreenButtonViewModel', 'ThirdParty/knockout'], function(
         defined,
         defineProperties,
         DeveloperError,
         destroyObject,
-        SvgPath,
         getElement,
-        subscribeAndEvaluate,
         FullscreenButtonViewModel,
         knockout) {
     "use strict";
@@ -35,25 +33,27 @@ define(['Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/de
 
         container = getElement(container);
 
-        this._container = container;
-        this._viewModel = new FullscreenButtonViewModel(fullscreenElement);
+        var viewModel = new FullscreenButtonViewModel(fullscreenElement);
 
-        this._element = document.createElement('button');
-        this._element.type = 'button';
-        this._element.className = 'cesium-widget-button cesium-fullscreenButton';
-        this._element.setAttribute('data-bind', '\
+        viewModel._exitFullScreenPath = exitFullScreenPath;
+        viewModel._enterFullScreenPath = enterFullScreenPath;
+
+        var element = document.createElement('button');
+        element.type = 'button';
+        element.className = 'cesium-button cesium-fullscreenButton';
+        element.setAttribute('data-bind', '\
 attr: { title: tooltip },\
 click: command,\
-enable: isFullscreenEnabled');
-        this._svgPath = new SvgPath(this._element, 128, 128, enterFullScreenPath);
-        container.appendChild(this._element);
+enable: isFullscreenEnabled,\
+cesiumSvgPath: { path: isFullscreen ? _exitFullScreenPath : _enterFullScreenPath, width: 128, height: 128 }');
 
-        knockout.applyBindings(this._viewModel, this._element);
+        container.appendChild(element);
 
-        var that = this;
-        this._subscription = subscribeAndEvaluate(this._viewModel, 'isFullscreen', function(isFullscreen) {
-            that._svgPath.path = isFullscreen ? exitFullScreenPath : enterFullScreenPath;
-        });
+        knockout.applyBindings(viewModel, element);
+
+        this._container = container;
+        this._viewModel = viewModel;
+        this._element = element;
     };
 
     defineProperties(FullscreenButton.prototype, {
@@ -96,11 +96,11 @@ enable: isFullscreenEnabled');
      * @memberof FullscreenButton
      */
     FullscreenButton.prototype.destroy = function() {
-        this._subscription.dispose();
-        var container = this._container;
-        knockout.cleanNode(this._element);
         this._viewModel.destroy();
-        container.removeChild(this._element);
+
+        knockout.cleanNode(this._element);
+        this._container.removeChild(this._element);
+
         return destroyObject(this);
     };
 

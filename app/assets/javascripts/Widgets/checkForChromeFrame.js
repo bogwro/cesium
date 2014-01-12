@@ -9,7 +9,7 @@ define(['Core/FeatureDetection', 'Widgets/getElement', 'ThirdParty/when'], funct
         container = getElement(container);
 
         var overlay = document.createElement('div');
-        overlay.className = 'cesium-widget-chromeFrameOverlay';
+        overlay.className = 'cesium-chromeFrameOverlay';
 
         var content = document.createElement('div');
         overlay.appendChild(content);
