@@ -54,7 +54,6 @@ define(['Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Widgets
         /**
          * Gets the currently selected item name.  This property is observable.
          * @type {String}
-         * @default undefined
          */
         this.selectedName = undefined;
         knockout.defineProperty(this, 'selectedName', function() {
@@ -65,7 +64,6 @@ define(['Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Widgets
         /**
          * Gets the image url of the currently selected item.  This property is observable.
          * @type {String}
-         * @default undefined
          */
         this.selectedIconUrl = undefined;
         knockout.defineProperty(this, 'selectedIconUrl', function() {

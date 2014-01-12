@@ -1,6 +1,5 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/defineProperties', 'Core/Event', 'Core/EventHelper', 'Core/ScreenSpaceEventType', 'Core/wrapFunction', 'Scene/SceneMode', 'DynamicScene/DynamicObjectView'], function(
-        defaultValue,
+define(['Core/defined', 'Core/DeveloperError', 'Core/defineProperties', 'Core/Event', 'Core/EventHelper', 'Core/ScreenSpaceEventType', 'Core/wrapFunction', 'Scene/SceneMode', 'DynamicScene/DynamicObjectView'], function(
         defined,
         DeveloperError,
         defineProperties,
@@ -71,6 +70,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/define
         //clear the trackedObject when it is clicked.
         if (defined(viewer.homeButton)) {
             eventHelper.add(viewer.homeButton.viewModel.command.beforeExecute, clearTrackedObject);
+        }
+
+        //Subscribe to the geocoder search if it exists, so that we can
+        //clear the trackedObject when it is clicked.
+        if (defined(viewer.geocoder)) {
+            eventHelper.add(viewer.geocoder.viewModel.search.beforeExecute, clearTrackedObject);
         }
 
         //We need to subscribe to the data sources and collections so that we can clear the

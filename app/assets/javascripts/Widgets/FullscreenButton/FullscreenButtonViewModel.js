@@ -26,7 +26,6 @@ define(['Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Cor
          * Gets whether or not fullscreen mode is active.  This property is observable.
          *
          * @type {Boolean}
-         * @default undefined
          */
         this.isFullscreen = undefined;
         knockout.defineProperty(this, 'isFullscreen', {
@@ -39,7 +38,6 @@ define(['Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Cor
          * Gets or sets whether or not fullscreen functionality should be enabled.  This property is observable.
          *
          * @type {Boolean}
-         * @default undefined
          * @see Fullscreen.isFullscreenEnabled
          */
         this.isFullscreenEnabled = undefined;
@@ -53,10 +51,9 @@ define(['Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Cor
         });
 
         /**
-         * Gets or sets the tooltip.  This property is observable.
+         * Gets the tooltip.  This property is observable.
          *
          * @type {String}
-         * @default undefined
          */
         this.tooltip = undefined;
         knockout.defineProperty(this, 'tooltip', function() {

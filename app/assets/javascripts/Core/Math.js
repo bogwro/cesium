@@ -481,9 +481,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * @exception {DeveloperError} A number greater than or equal to 0 is required.
      */
     CesiumMath.factorial = function(n) {
+        //>>includeStart('debug', pragmas.debug);
         if (typeof n !== 'number' || n < 0) {
             throw new DeveloperError('A number greater than or equal to 0 is required.');
         }
+        //>>includeEnd('debug');
 
         var length = factorials.length;
         if (n >= length) {
@@ -515,9 +517,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
     CesiumMath.incrementWrap = function(n, maximumValue, minimumValue) {
         minimumValue = defaultValue(minimumValue, 0.0);
 
+        //>>includeStart('debug', pragmas.debug);
         if (maximumValue <= minimumValue) {
             throw new DeveloperError('Maximum value must be greater than minimum value.');
         }
+        //>>includeEnd('debug');
 
         ++n;
         if (n > maximumValue) {
@@ -542,9 +546,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * var f = CesiumMath.isPowerOfTwo(20); // false
      */
     CesiumMath.isPowerOfTwo = function(n) {
+        //>>includeStart('debug', pragmas.debug);
         if (typeof n !== 'number' || n < 0) {
             throw new DeveloperError('A number greater than or equal to 0 is required.');
         }
+        //>>includeEnd('debug');
 
         return (n !== 0) && ((n & (n - 1)) === 0);
     };
@@ -565,9 +571,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * var m = CesiumMath.nextPowerOfTwo(32); // 32
      */
     CesiumMath.nextPowerOfTwo = function(n) {
+        //>>includeStart('debug', pragmas.debug);
         if (typeof n !== 'number' || n < 0) {
             throw new DeveloperError('A number greater than or equal to 0 is required.');
         }
+        //>>includeEnd('debug');
 
         // From http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
         --n;
@@ -608,9 +616,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * @exception {DeveloperError} seed is required.
      */
     CesiumMath.setRandomNumberSeed = function(seed) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(seed)) {
             throw new DeveloperError('seed is required.');
         }
+        //>>includeEnd('debug');
+
         randomNumberGenerator = new MersenneTwister(seed);
     };
 

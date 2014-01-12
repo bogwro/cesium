@@ -1,5 +1,5 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/combine', 'Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Matrix4', 'Core/BoundingSphere', 'Core/PrimitiveType', 'Renderer/CullFace', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Scene/Material', 'Scene/SceneMode', 'Shaders/EllipsoidVS', 'Shaders/EllipsoidFS'], function(
+define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/combine', 'Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Matrix4', 'Core/BoundingSphere', 'Core/PrimitiveType', 'Renderer/CullFace', 'Renderer/BlendingState', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Renderer/Pass', 'Scene/Material', 'Scene/SceneMode', 'Shaders/EllipsoidVS', 'Shaders/EllipsoidFS'], function(
         defaultValue,
         BoxGeometry,
         Cartesian3,
@@ -13,9 +13,9 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/combin
         CullFace,
         BlendingState,
         BufferUsage,
-        CommandLists,
         DrawCommand,
         createShaderSource,
+        Pass,
         Material,
         SceneMode,
         EllipsoidVS,
@@ -60,7 +60,7 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/combin
      * e.radii = new Cartesian3(100000.0, 100000.0, 200000.0);
      * primitives.add(e);
      *
-     * @demo <a href="http://cesium.agi.com/Cesium/Apps/Sandcastle/index.html?src=Volumes.html">Cesium Sandcastle Volumes Demo</a>
+     * @demo <a href="http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Volumes.html">Cesium Sandcastle Volumes Demo</a>
      */
     var EllipsoidPrimitive = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
@@ -197,7 +197,6 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/combin
         this._colorCommand.owner = this;
         this._pickCommand = new DrawCommand();
         this._pickCommand.owner = this;
-        this._commandLists = new CommandLists();
 
         var that = this;
         this._uniforms = {
@@ -311,9 +310,6 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/combin
             BoundingSphere.transform(this._boundingSphere, this._computedModelMatrix, this._boundingSphere);
         }
 
-        var ellipsoidCommandLists = this._commandLists;
-        ellipsoidCommandLists.removeAll();
-
         var materialChanged = this._material !== this.material;
         this._material = this.material;
         this._material.update(context);
@@ -346,16 +342,13 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/combin
 
         var passes = frameState.passes;
 
-        if (passes.color) {
+        if (passes.render) {
             colorCommand.boundingVolume = this._boundingSphere;
             colorCommand.debugShowBoundingVolume = this.debugShowBoundingVolume;
             colorCommand.modelMatrix = this._computedModelMatrix;
+            colorCommand.pass = translucent ? Pass.TRANSLUCENT : Pass.OPAQUE;
 
-            if (translucent) {
-                ellipsoidCommandLists.translucentList.push(colorCommand);
-            } else {
-                ellipsoidCommandLists.opaqueList.push(colorCommand);
-            }
+            commandList.push(colorCommand);
         }
 
         if (passes.pick) {
@@ -394,15 +387,10 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/combin
 
             pickCommand.boundingVolume = this._boundingSphere;
             pickCommand.modelMatrix = this._computedModelMatrix;
+            pickCommand.pass = translucent ? Pass.TRANSLUCENT : Pass.OPAQUE;
 
-            if (translucent) {
-                ellipsoidCommandLists.pickList.translucentList.push(pickCommand);
-            } else {
-                ellipsoidCommandLists.pickList.opaqueList.push(pickCommand);
-            }
+            commandList.push(pickCommand);
         }
-
-        commandList.push(ellipsoidCommandLists);
     };
 
     /**

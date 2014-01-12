@@ -19,7 +19,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartes
      */
     var SceneTransforms = {};
 
-    var actualPosition = new Cartesian3();
+    var actualPosition = new Cartesian4(0, 0, 0, 1);
     var positionCC = new Cartesian4();
 
     /**
@@ -66,7 +66,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartes
 
         // View-projection matrix to transform from world coordinates to clip coordinates
         var viewProjection = scene.getUniformState().getViewProjection();
-        Matrix4.multiplyByPoint(viewProjection, actualPosition, positionCC);
+        Matrix4.multiplyByVector(viewProjection, actualPosition, positionCC);
 
         return SceneTransforms.clipToWindowCoordinates(scene.getContext(), positionCC, result);
     };
@@ -109,13 +109,12 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartes
         SceneTransforms.computeActualWgs84Position(scene.getFrameState(), position, actualPosition);
 
         if (!defined(actualPosition)) {
-            result = undefined;
             return undefined;
         }
 
         // View-projection matrix to transform from world coordinates to clip coordinates
         var viewProjection = scene.getUniformState().getViewProjection();
-        Matrix4.multiplyByPoint(viewProjection, actualPosition, positionCC);
+        Matrix4.multiplyByVector(viewProjection, Cartesian4.fromElements(actualPosition.x, actualPosition.y, actualPosition.z, 1, positionCC), positionCC);
 
         return SceneTransforms.clipToDrawingBufferCoordinates(scene.getContext(), positionCC, result);
     };
@@ -160,7 +159,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartes
     };
 
     var positionNDC = new Cartesian3();
-    var positionWC = new Cartesian4();
+    var positionWC = new Cartesian3();
     var viewport = new BoundingRectangle();
     var viewportTransform = new Matrix4();
 
@@ -181,7 +180,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartes
         // Viewport transform to transform from clip coordinates to window coordinates
         Matrix4.multiplyByPoint(viewportTransform, positionNDC, positionWC);
 
-        return Cartesian2.fromCartesian4(positionWC, result);
+        return Cartesian2.fromCartesian3(positionWC, result);
     };
 
     /**
@@ -199,7 +198,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartes
         // Viewport transform to transform from clip coordinates to drawing buffer coordinates
         Matrix4.multiplyByPoint(viewportTransform, positionNDC, positionWC);
 
-        return Cartesian2.fromCartesian4(positionWC, result);
+        return Cartesian2.fromCartesian3(positionWC, result);
     };
 
     /**

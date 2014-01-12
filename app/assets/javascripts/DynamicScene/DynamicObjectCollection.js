@@ -128,13 +128,13 @@ define(['Core/createGuid', 'Core/defined', 'Core/defineProperties', 'Core/Event'
             var object = dynamicObjects[i];
             var availability = object.availability;
             if (defined(availability)) {
-                var start = availability.start;
-                var stop = availability.stop;
+                var start = availability.getStart();
+                var stop = availability.getStop();
                 if (start.lessThan(startTime) && !start.equals(Iso8601.MINIMUM_VALUE)) {
-                    startTime = object.availability.start;
+                    startTime = start;
                 }
                 if (stop.greaterThan(stopTime) && !stop.equals(Iso8601.MAXIMUM_VALUE)) {
-                    stopTime = object.availability.stop;
+                    stopTime = stop;
                 }
             }
         }

@@ -325,6 +325,11 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Color
         if (defined(property)) {
             label.setTranslucencyByDistance(property.getValue(time));
         }
+
+        property = dynamicLabel._pixelOffsetScaleByDistance;
+        if (defined(property)) {
+            label.setPixelOffsetScaleByDistance(property.getValue(time));
+        }
     }
 
     DynamicLabelVisualizer.prototype._onObjectsRemoved = function(dynamicObjectCollection, added, dynamicObjects) {

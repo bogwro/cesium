@@ -32,11 +32,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math',
      * var occluder = new Occluder(occluderBoundingSphere, cameraPosition);
      */
     var Occluder = function(occluderBoundingSphere, cameraPosition) {
-        if (!occluderBoundingSphere) {
+        if (!defined(occluderBoundingSphere)) {
             throw new DeveloperError('occluderBoundingSphere is required.');
         }
 
-        if (!cameraPosition) {
+        if (!defined(cameraPosition)) {
             throw new DeveloperError('camera position is required.');
         }
 
@@ -50,6 +50,38 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math',
 
         // setCameraPosition fills in the above values
         this.setCameraPosition(cameraPosition);
+    };
+
+    /**
+     * Creates an occluder from a bounding sphere and the camera position.
+     * @memberof Occluder
+     *
+     * @param {BoundingSphere} occluderBoundingSphere The bounding sphere surrounding the occluder.
+     * @param {Cartesian3} cameraPosition The coordinate of the viewer/camera.
+     * @param {Occluder} [result] The object onto which to store the result.
+     * @returns {Occluder} The occluder derived from an object's position and radius, as well as the camera position.
+     *
+     * @exception {DeveloperError} <code>occluderBoundingSphere</code> is required.
+     * @exception {DeveloperError} <code>cameraPosition</code> is required.
+     */
+    Occluder.fromBoundingSphere = function(occluderBoundingSphere, cameraPosition, result) {
+        if (!defined(occluderBoundingSphere)) {
+            throw new DeveloperError('occluderBoundingSphere is required.');
+        }
+
+        if (!defined(cameraPosition)) {
+            throw new DeveloperError('camera position is required.');
+        }
+
+        if (!defined(result)) {
+            return new Occluder(occluderBoundingSphere, cameraPosition);
+        }
+
+        Cartesian3.clone(occluderBoundingSphere.center, result._occluderPosition);
+        result._occluderRadius = occluderBoundingSphere.radius;
+        result.setCameraPosition(cameraPosition);
+
+        return result;
     };
 
     /**
@@ -72,15 +104,24 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math',
         return this._occluderRadius;
     };
 
+    var scratchCartesian3 = new Cartesian3();
+
     /**
      * Sets the position of the camera.
+     * @memberof Occluder
      *
      * @param {Cartesian3} cameraPosition The new position of the camera.
+     *
+     * @exception {DeveloperError} cameraPosition is required.
      */
     Occluder.prototype.setCameraPosition = function(cameraPosition) {
-        cameraPosition = Cartesian3.clone(cameraPosition);
+        if (!defined(cameraPosition)) {
+            throw new DeveloperError('cameraPosition is required.');
+        }
 
-        var cameraToOccluderVec = Cartesian3.subtract(this._occluderPosition, cameraPosition);
+        cameraPosition = Cartesian3.clone(cameraPosition, this._cameraPosition);
+
+        var cameraToOccluderVec = Cartesian3.subtract(this._occluderPosition, cameraPosition, scratchCartesian3);
         var invCameraToOccluderDistance = Cartesian3.magnitudeSquared(cameraToOccluderVec);
         var occluderRadiusSqrd = this._occluderRadius * this._occluderRadius;
 
@@ -90,9 +131,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math',
         if (invCameraToOccluderDistance > occluderRadiusSqrd) {
             horizonDistance = Math.sqrt(invCameraToOccluderDistance - occluderRadiusSqrd);
             invCameraToOccluderDistance = 1.0 / Math.sqrt(invCameraToOccluderDistance);
-            horizonPlaneNormal = Cartesian3.multiplyByScalar(cameraToOccluderVec, invCameraToOccluderDistance);
+            horizonPlaneNormal = Cartesian3.multiplyByScalar(cameraToOccluderVec, invCameraToOccluderDistance, scratchCartesian3);
             var nearPlaneDistance = horizonDistance * horizonDistance * invCameraToOccluderDistance;
-            horizonPlanePosition = Cartesian3.add(cameraPosition, Cartesian3.multiplyByScalar(horizonPlaneNormal, nearPlaneDistance));
+            horizonPlanePosition = Cartesian3.add(cameraPosition, Cartesian3.multiplyByScalar(horizonPlaneNormal, nearPlaneDistance, scratchCartesian3), scratchCartesian3);
         } else {
             horizonDistance = Number.MAX_VALUE;
         }
@@ -137,6 +178,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math',
         return false;
     };
 
+    var occludeePositionScratch = new Cartesian3();
+
     /**
     * Determines whether or not a sphere, the <code>occludee</code>, is hidden from view by the occluder.
     *
@@ -156,7 +199,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math',
     * @see Occluder#getVisibility
     */
     Occluder.prototype.isBoundingSphereVisible = function(occludee) {
-        var occludeePosition = Cartesian3.clone(occludee.center);
+        var occludeePosition = Cartesian3.clone(occludee.center, occludeePositionScratch);
         var occludeeRadius = occludee.radius;
 
         if (this._horizonDistance !== Number.MAX_VALUE) {
@@ -175,7 +218,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math',
             // Prevent against the case where the occludee radius is larger than the occluder's; since this is
             // an uncommon case, the following code should rarely execute.
             if (temp > 0.0) {
-                tempVec = Cartesian3.subtract(occludeePosition, this._cameraPosition);
+                tempVec = Cartesian3.subtract(occludeePosition, this._cameraPosition, tempVec);
                 var tempVecMagnitudeSquared = Cartesian3.magnitudeSquared(tempVec);
                 var occluderRadiusSquared = this._occluderRadius * this._occluderRadius;
                 var occludeeRadiusSquared = occludeeRadius * occludeeRadius;
@@ -200,7 +243,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math',
      *
      * @memberof Occluder
      *
-     * @param {BoundingSphere} occludeeBS
+     * @param {BoundingSphere} occludeeBS The bounding sphere of the occludee.
+     *
+     * @exception {DeveloperError} occludeeBS is required.
      *
      * @returns {Enumeration} Visibility.NONE if the occludee is not visible,
      *                       Visibility.PARTIAL if the occludee is partially visible, or
@@ -215,6 +260,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math',
      * @see Occluder#isVisible
      */
     Occluder.prototype.getVisibility = function(occludeeBS) {
+        if (!defined(occludeeBS)) {
+            throw new DeveloperError('occludeeBS is required.');
+        }
+
         // If the occludee radius is larger than the occluders, this will return that
         // the entire ocludee is visible, even though that may not be the case, though this should
         // not occur too often.
@@ -294,11 +343,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Math',
      */
     Occluder.getOccludeePoint = function(occluderBoundingSphere, occludeePosition, positions) {
         // Validate input data
-        if (!occluderBoundingSphere) {
+        if (!defined(occluderBoundingSphere)) {
             throw new DeveloperError('occluderBoundingSphere is required.');
         }
 
-        if (!positions) {
+        if (!defined(positions)) {
             throw new DeveloperError('positions is required.');
         }
 

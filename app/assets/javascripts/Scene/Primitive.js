@@ -1,5 +1,5 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Matrix4', 'Core/BoundingSphere', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/GeometryInstance', 'Core/GeometryInstanceAttribute', 'Core/ComponentDatatype', 'Core/TaskProcessor', 'Core/GeographicProjection', 'Core/clone', 'Renderer/BufferUsage', 'Renderer/VertexLayout', 'Renderer/CommandLists', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Renderer/CullFace', 'Scene/PrimitivePipeline', 'Scene/PrimitiveState', 'Scene/SceneMode', 'ThirdParty/when'], function(
+define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Matrix4', 'Core/BoundingSphere', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/GeometryInstance', 'Core/GeometryInstanceAttribute', 'Core/ComponentDatatype', 'Core/TaskProcessor', 'Core/GeographicProjection', 'Core/clone', 'Renderer/BufferUsage', 'Renderer/VertexLayout', 'Renderer/DrawCommand', 'Renderer/createShaderSource', 'Renderer/CullFace', 'Renderer/Pass', 'Scene/PrimitivePipeline', 'Scene/PrimitiveState', 'Scene/SceneMode', 'ThirdParty/when'], function(
         defaultValue,
         defined,
         defineProperties,
@@ -18,10 +18,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
         clone,
         BufferUsage,
         VertexLayout,
-        CommandLists,
         DrawCommand,
         createShaderSource,
         CullFace,
+        Pass,
         PrimitivePipeline,
         PrimitiveState,
         SceneMode,
@@ -268,7 +268,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
          * @default false
          */
         this.debugShowBoundingVolume = defaultValue(options.debugShowBoundingVolume, false);
-        this._debugShowBoundingVolume = false;
 
         this._translucent = undefined;
 
@@ -299,16 +298,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
         this._pickSP = undefined;
         this._pickIds = [];
 
-        this._commandLists = new CommandLists();
-
-        this._colorCommands = this._commandLists.opaqueList;
-        this._pickCommands = this._commandLists.pickList;
-
-        this._commandLists.opaqueList = EMPTY_ARRAY;
-        this._commandLists.translucentList = EMPTY_ARRAY;
-        this._commandLists.pickList.opaqueList = EMPTY_ARRAY;
-        this._commandLists.pickList.translucentList = EMPTY_ARRAY;
-        this._commandLists.overlayList = EMPTY_ARRAY;
+        this._colorCommands = [];
+        this._pickCommands = [];
     };
 
     function cloneAttribute(attribute) {
@@ -506,7 +497,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
             (defined(this.geometryInstances) && Array.isArray(this.geometryInstances) && this.geometryInstances.length === 0) ||
             (!defined(this.appearance)) ||
             (frameState.mode !== SceneMode.SCENE3D && this.allow3DOnly) ||
-            (!frameState.passes.color && !frameState.passes.pick)) {
+            (!frameState.passes.render && !frameState.passes.pick)) {
             return;
         }
 
@@ -796,6 +787,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
 
         if (createRS || createSP) {
             var uniforms = (defined(material)) ? material._uniforms : undefined;
+            var pass = translucent ? Pass.TRANSLUCENT : Pass.OPAQUE;
 
             colorCommands.length = this._va.length * (twoPasses ? 2 : 1);
             pickCommands.length = this._va.length;
@@ -815,6 +807,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
                     colorCommand.renderState = this._backFaceRS;
                     colorCommand.shaderProgram = this._sp;
                     colorCommand.uniformMap = uniforms;
+                    colorCommand.pass = pass;
 
                     ++i;
                 }
@@ -829,6 +822,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
                 colorCommand.renderState = this._frontFaceRS;
                 colorCommand.shaderProgram = this._sp;
                 colorCommand.uniformMap = uniforms;
+                colorCommand.pass = pass;
 
                 pickCommand = pickCommands[m];
                 if (!defined(pickCommand)) {
@@ -840,6 +834,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
                 pickCommand.renderState = this._pickRS;
                 pickCommand.shaderProgram = this._pickSP;
                 pickCommand.uniformMap = uniforms;
+                pickCommand.pass = pass;
                 ++m;
 
                 ++vaIndex;
@@ -899,35 +894,27 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
             boundingSphere = BoundingSphere.union(this._boundingSphereWC, this._boundingSphereCV);
         }
 
-        // modelMatrix can change from frame to frame
-        length = colorCommands.length;
-        for (i = 0; i < length; ++i) {
-            colorCommands[i].modelMatrix = this.modelMatrix;
-            colorCommands[i].boundingVolume = boundingSphere;
-        }
-
-        length = pickCommands.length;
-        for (i = 0; i < length; ++i) {
-            pickCommands[i].modelMatrix = this.modelMatrix;
-            pickCommands[i].boundingVolume = boundingSphere;
-        }
-
-        if (this._debugShowBoundingVolume !== this.debugShowBoundingVolume) {
-            this._debugShowBoundingVolume = this.debugShowBoundingVolume;
-
+        var passes = frameState.passes;
+        if (passes.render) {
             length = colorCommands.length;
             for (i = 0; i < length; ++i) {
+                colorCommands[i].modelMatrix = this.modelMatrix;
+                colorCommands[i].boundingVolume = boundingSphere;
                 colorCommands[i].debugShowBoundingVolume = this.debugShowBoundingVolume;
+
+                commandList.push(colorCommands[i]);
             }
         }
 
-        var pass = frameState.passes;
-        this._commandLists.opaqueList = (pass.color && !translucent) ? colorCommands : EMPTY_ARRAY;
-        this._commandLists.translucentList = (pass.color && translucent) ? colorCommands : EMPTY_ARRAY;
-        this._commandLists.pickList.opaqueList = (pass.pick && !translucent) ? pickCommands : EMPTY_ARRAY;
-        this._commandLists.pickList.translucentList = (pass.pick && translucent) ? pickCommands : EMPTY_ARRAY;
+        if (passes.pick) {
+            length = pickCommands.length;
+            for (i = 0; i < length; ++i) {
+                pickCommands[i].modelMatrix = this.modelMatrix;
+                pickCommands[i].boundingVolume = boundingSphere;
 
-        commandList.push(this._commandLists);
+                commandList.push(pickCommands[i]);
+            }
+        }
     };
 
     function createGetFunction(name, perInstanceAttributes) {

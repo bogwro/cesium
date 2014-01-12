@@ -86,11 +86,13 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
     };
 
     function update(frustum) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(frustum.right) || !defined(frustum.left) ||
             !defined(frustum.top) || !defined(frustum.bottom) ||
             !defined(frustum.near) || !defined(frustum.far)) {
             throw new DeveloperError('right, left, top, bottom, near, or far parameters are not set.');
         }
+        //>>includeEnd('debug');
 
         var t = frustum.top;
         var b = frustum.bottom;
@@ -103,9 +105,11 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
             l !== frustum._left || r !== frustum._right ||
             n !== frustum._near || f !== frustum._far) {
 
+            //>>includeStart('debug', pragmas.debug);
             if (frustum.near <= 0 || frustum.near > frustum.far) {
                 throw new DeveloperError('near must be greater than zero and less than far.');
             }
+            //>>includeEnd('debug');
 
             frustum._left = l;
             frustum._right = r;
@@ -113,8 +117,8 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
             frustum._bottom = b;
             frustum._near = n;
             frustum._far = f;
-            frustum._perspectiveMatrix = Matrix4.computePerspectiveOffCenter(l, r, b, t, n, f);
-            frustum._infinitePerspective = Matrix4.computeInfinitePerspectiveOffCenter(l, r, b, t, n);
+            frustum._perspectiveMatrix = Matrix4.computePerspectiveOffCenter(l, r, b, t, n, f, frustum._perspectiveMatrix);
+            frustum._infinitePerspective = Matrix4.computeInfinitePerspectiveOffCenter(l, r, b, t, n, frustum._infinitePerspective);
         }
     }
 
@@ -173,6 +177,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
      * var intersect = cullingVolume.getVisibility(boundingVolume);
      */
     PerspectiveOffCenterFrustum.prototype.computeCullingVolume = function(position, direction, up) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(position)) {
             throw new DeveloperError('position is required.');
         }
@@ -184,6 +189,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
         if (!defined(up)) {
             throw new DeveloperError('up is required.');
         }
+        //>>includeEnd('debug');
 
         var planes = this._cullingVolume.planes;
 
@@ -302,12 +308,12 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
      *
      * @param {Cartesian2} drawingBufferDimensions A {@link Cartesian2} with width and height in the x and y properties, respectively.
      * @param {Number} [distance=near plane distance] The distance to the near plane in meters.
+     * @param {Cartesian2} [result] The object onto which to store the result.
+     * @returns {Cartesian2} The modified result parameter or a new instance of {@link Cartesian2} with the pixel's width and height in the x and y properties, respectively.
      *
      * @exception {DeveloperError} drawingBufferDimensions is required.
      * @exception {DeveloperError} drawingBufferDimensions.x must be greater than zero.
      * @exception {DeveloperError} drawingBufferDimensions.y must be greater than zero.
-     *
-     * @returns {Cartesian2} A {@link Cartesian2} with the pixel's width and height in the x and y properties, respectively.
      *
      * @example
      * // Example 1
@@ -324,16 +330,19 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
      * var distance = Cartesian3.magnitude(toCenterProj);
      * var pixelSize = camera.frustum.getPixelSize(new Cartesian2(canvas.clientWidth, canvas.clientHeight), distance);
      */
-    PerspectiveOffCenterFrustum.prototype.getPixelSize = function(drawingBufferDimensions, distance) {
+    PerspectiveOffCenterFrustum.prototype.getPixelSize = function(drawingBufferDimensions, distance, result) {
         update(this);
 
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(drawingBufferDimensions)) {
             throw new DeveloperError('drawingBufferDimensions is required.');
         }
+        //>>includeEnd('debug');
 
         var width = drawingBufferDimensions.x;
         var height = drawingBufferDimensions.y;
 
+        //>>includeStart('debug', pragmas.debug);
         if (width <= 0) {
             throw new DeveloperError('drawingBufferDimensions.x must be greater than zero.');
         }
@@ -341,6 +350,7 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
         if (height <= 0) {
             throw new DeveloperError('drawingBufferDimensions.y must be greater than zero.');
         }
+        //>>includeEnd('debug');
 
         distance = defaultValue(distance, this.near);
 
@@ -350,25 +360,43 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
         tanTheta = this.right * inverseNear;
         var pixelWidth = 2.0 * distance * tanTheta / width;
 
-        return new Cartesian2(pixelWidth, pixelHeight);
+        if (!defined(result)) {
+            return new Cartesian2(pixelWidth, pixelHeight);
+        }
+
+        result.x = pixelWidth;
+        result.y = pixelHeight;
+        return result;
     };
 
     /**
      * Returns a duplicate of a PerspectiveOffCenterFrustum instance.
-     *
      * @memberof PerspectiveOffCenterFrustum
      *
-     * @returns {PerspectiveOffCenterFrustum} A new copy of the PerspectiveOffCenterFrustum instance.
+     * @param {PerspectiveOffCenterFrustum} [result] The object onto which to store the result.
+     * @returns {PerspectiveOffCenterFrustum} The modified result parameter or a new PerspectiveFrustum instance if one was not provided.
      */
-    PerspectiveOffCenterFrustum.prototype.clone = function() {
-        var frustum = new PerspectiveOffCenterFrustum();
-        frustum.right = this.right;
-        frustum.left = this.left;
-        frustum.top = this.top;
-        frustum.bottom = this.bottom;
-        frustum.near = this.near;
-        frustum.far = this.far;
-        return frustum;
+    PerspectiveOffCenterFrustum.prototype.clone = function(result) {
+        if (!defined(result)) {
+            result = new PerspectiveOffCenterFrustum();
+        }
+
+        result.right = this.right;
+        result.left = this.left;
+        result.top = this.top;
+        result.bottom = this.bottom;
+        result.near = this.near;
+        result.far = this.far;
+
+        // force update of clone to compute matrices
+        result._left = undefined;
+        result._right = undefined;
+        result._top = undefined;
+        result._bottom = undefined;
+        result._near = undefined;
+        result._far = undefined;
+
+        return result;
     };
 
     /**

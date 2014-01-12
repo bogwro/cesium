@@ -28,7 +28,7 @@ define(['Core/DeveloperError', 'Core/defined', 'ThirdParty/when'], function(
      * @example
      * // Query the terrain height of two Cartographic positions
      * var terrainProvider = new CesiumTerrainProvider({
-     *     url : 'http://cesium.agi.com/smallterrain'
+     *     url : 'http://cesiumjs.org/smallterrain'
      * });
      * var positions = [
      *     Cartographic.fromDegrees(86.925145, 27.988257),

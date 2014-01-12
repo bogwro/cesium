@@ -1,7 +1,6 @@
 /*global define,console*/
-define(['Core/buildModuleUrl', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Clock', 'Core/DefaultProxy', 'Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/Event', 'Core/FeatureDetection', 'Core/requestAnimationFrame', 'Core/ScreenSpaceEventHandler', 'Scene/BingMapsImageryProvider', 'Scene/CentralBody', 'Scene/Credit', 'Scene/Moon', 'Scene/Scene', 'Scene/SceneMode', 'Scene/SceneTransitioner', 'Scene/SkyAtmosphere', 'Scene/SkyBox', 'Scene/Sun', 'Widgets/getElement'], function(
+define(['Core/buildModuleUrl', 'Core/Cartesian3', 'Core/Clock', 'Core/DefaultProxy', 'Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/Event', 'Core/FeatureDetection', 'Core/requestAnimationFrame', 'Core/ScreenSpaceEventHandler', 'Scene/BingMapsImageryProvider', 'Scene/CentralBody', 'Scene/Credit', 'Scene/Moon', 'Scene/Scene', 'Scene/SceneMode', 'Scene/SceneTransitioner', 'Scene/SkyAtmosphere', 'Scene/SkyBox', 'Scene/Sun', 'Widgets/getElement'], function(
         buildModuleUrl,
-        Cartesian2,
         Cartesian3,
         Clock,
         DefaultProxy,
@@ -79,7 +78,7 @@ define(['Core/buildModuleUrl', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Clock
      * @param {SceneMode} [options.sceneMode=SceneMode.SCENE3D] The initial scene mode.
      * @param {Boolean} [options.useDefaultRenderLoop=true] True if this widget should control the render loop, false otherwise.
      * @param {Boolean} [options.showRenderLoopErrors=true] If true, this widget will automatically display an HTML panel to the user containing the error, if a render loop error occurs.
-     * @param {Object} [options.contextOptions=undefined] Properties corresponding to <a href='http://www.khronos.org/registry/webgl/specs/latest/#5.2'>WebGLContextAttributes</a> used to create the WebGL context.  This object will be passed to the {@link Scene} constructor.
+     * @param {Object} [options.contextOptions=undefined] Context and WebGL creation properties corresponding to {@link Context#options}.
      *
      * @exception {DeveloperError} container is required.
      * @exception {DeveloperError} Element with id "container" does not exist in the document.
@@ -95,7 +94,7 @@ define(['Core/buildModuleUrl', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Clock
      * var widget = new Cesium.CesiumWidget('cesiumContainer', {
      *     imageryProvider : new Cesium.OpenStreetMapImageryProvider(),
      *     terrainProvider : new Cesium.CesiumTerrainProvider({
-     *         url : 'http://cesium.agi.com/smallterrain',
+     *         url : 'http://cesiumjs.org/smallterrain',
      *         credit : 'Terrain data courtesy Analytical Graphics, Inc.'
      *     }),
      *     // Use high-res stars downloaded from https://github.com/AnalyticalGraphicsInc/cesium-assets
@@ -152,7 +151,7 @@ define(['Core/buildModuleUrl', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Clock
             var ellipsoid = Ellipsoid.WGS84;
             var creditDisplay = scene.getFrameState().creditDisplay;
 
-            var cesiumCredit = new Credit('Cesium', cesiumLogoData, 'http://cesium.agi.com/');
+            var cesiumCredit = new Credit('Cesium', cesiumLogoData, 'http://cesiumjs.org/');
             creditDisplay.addDefaultCredit(cesiumCredit);
 
             var centralBody = new CentralBody(ellipsoid);
@@ -184,7 +183,7 @@ define(['Core/buildModuleUrl', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Clock
                     url : 'http://dev.virtualearth.net',
                     // Some versions of Safari support WebGL, but don't correctly implement
                     // cross-origin image loading, so we need to load Bing imagery using a proxy.
-                    proxy : FeatureDetection.supportsCrossOriginImagery() ? undefined : new DefaultProxy('http://cesium.agi.com/proxy/')
+                    proxy: FeatureDetection.supportsCrossOriginImagery() ? undefined : new DefaultProxy('http://cesiumjs.org/proxy/')
                 });
             }
 
@@ -394,22 +393,35 @@ define(['Core/buildModuleUrl', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Clock
         errorHeader.textContent = title;
         content.appendChild(errorHeader);
 
+        var resizeCallback;
         if (defined(error)) {
+            var errorPanelScroller = document.createElement('div');
+            errorPanelScroller.className = 'cesium-widget-errorPanel-scroll';
+            content.appendChild(errorPanelScroller);
+            resizeCallback = function() {
+                errorPanelScroller.style.maxHeight = Math.max(Math.round(element.clientHeight * 0.9 - 100), 30) + 'px';
+            };
+            resizeCallback();
+            window.addEventListener('resize', resizeCallback, false);
+
             var errorMessage = document.createElement('div');
             errorMessage.className = 'cesium-widget-errorPanel-message';
             errorMessage.textContent = error;
-            content.appendChild(errorMessage);
+            errorPanelScroller.appendChild(errorMessage);
         }
 
         var buttonPanel = document.createElement('div');
         buttonPanel.className = 'cesium-widget-errorPanel-buttonPanel';
         content.appendChild(buttonPanel);
 
-        var okButton = document.createElement('span');
-        okButton.className = 'cesium-widget-button';
+        var okButton = document.createElement('button');
+        okButton.type = 'button';
+        okButton.className = 'cesium-button';
         okButton.textContent = 'OK';
-        okButton.tabIndex = 100;
         okButton.onclick = function() {
+            if (defined(resizeCallback)) {
+                window.removeEventListener('resize', resizeCallback, false);
+            }
             element.removeChild(overlay);
         };
 

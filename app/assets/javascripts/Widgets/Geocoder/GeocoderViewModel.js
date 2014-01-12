@@ -1,5 +1,5 @@
 /*global define*/
-define(['Core/BingMapsApi', 'Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/Extent', 'Core/jsonp', 'Scene/CameraFlightPath', 'Scene/SceneMode', 'Widgets/createCommand', 'ThirdParty/knockout', 'ThirdParty/when'], function(
+define(['Core/BingMapsApi', 'Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/Extent', 'Core/jsonp', 'Core/Matrix3', 'Core/Matrix4', 'Scene/CameraFlightPath', 'Scene/SceneMode', 'Widgets/createCommand', 'ThirdParty/knockout', 'ThirdParty/when'], function(
         BingMapsApi,
         Cartesian3,
         defaultValue,
@@ -9,6 +9,8 @@ define(['Core/BingMapsApi', 'Core/Cartesian3', 'Core/defaultValue', 'Core/define
         Ellipsoid,
         Extent,
         jsonp,
+        Matrix3,
+        Matrix4,
         CameraFlightPath,
         SceneMode,
         createCommand,
@@ -68,7 +70,6 @@ define(['Core/BingMapsApi', 'Core/Cartesian3', 'Core/defaultValue', 'Core/define
          * Gets a value indicating whether a search is currently in progress.  This property is observable.
          *
          * @type {Boolean}
-         * @default false
          */
         this.isSearchInProgress = undefined;
         knockout.defineProperty(this, 'isSearchInProgress', {
@@ -79,7 +80,6 @@ define(['Core/BingMapsApi', 'Core/Cartesian3', 'Core/defaultValue', 'Core/define
 
         /**
          * Gets or sets the text to search for.
-         * @memberof GeocoderViewModel.prototype
          *
          * @type {String}
          */
@@ -102,7 +102,6 @@ define(['Core/BingMapsApi', 'Core/Cartesian3', 'Core/defaultValue', 'Core/define
         /**
          * Gets or sets the the duration of the camera flight in milliseconds.
          * A value of zero causes the camera to instantly switch to the geocoding location.
-         * @memberof GeocoderViewModel.prototype
          *
          * @type {Number}
          * @default 1500
@@ -251,6 +250,20 @@ define(['Core/BingMapsApi', 'Core/Cartesian3', 'Core/defaultValue', 'Core/define
                 up : up,
                 direction : direction
             };
+
+            var camera = viewModel._scene.getCamera();
+            if (!Matrix4.equals(camera.transform, Matrix4.IDENTITY)) {
+                var transform = Matrix4.inverseTransformation(camera.transform);
+                Matrix4.multiplyByPoint(camera.transform, camera.position, camera.position);
+
+                var rotation = Matrix4.getRotation(camera.transform);
+                Matrix3.multiplyByVector(rotation, camera.direction, camera.direction);
+                Matrix3.multiplyByVector(rotation, camera.up, camera.up);
+                Cartesian3.cross(camera.direction, camera.up, camera.right);
+
+                camera.transform = Matrix4.IDENTITY;
+                viewModel._scene.getScreenSpaceCameraController().setEllipsoid(viewModel._ellipsoid);
+            }
 
             var flight = CameraFlightPath.createAnimation(viewModel._scene, description);
             viewModel._scene.getAnimations().add(flight);

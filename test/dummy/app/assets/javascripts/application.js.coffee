@@ -1,31 +1,12 @@
 require [
   'jquery'
   'Cesium'
-  'app'
-], ($, Cesium, App) ->
+], ($, Cesium) ->
 
   $ ->
 
-    app = new App()
-
     canvas = $('#globe')[0]
     @scene = new Cesium.Scene canvas
-
-    console.log
-      scene: @scene
-      app: app
-
-#    @scene.skyAtmosphere = new Cesium.SkyAtmosphere
-
-#    skyBoxBaseUrl = '/assets/Assets/Textures/SkyBox/tycho2t3_80'
-#    @scene.skyBox = new Cesium.SkyBox
-#      positiveX: skyBoxBaseUrl + '_px.jpg'
-#      negativeX: skyBoxBaseUrl + '_mx.jpg'
-#      positiveY: skyBoxBaseUrl + '_py.jpg'
-#      negativeY: skyBoxBaseUrl + '_my.jpg'
-#      positiveZ: skyBoxBaseUrl + '_pz.jpg'
-#      negativeZ: skyBoxBaseUrl + '_mz.jpg'
-
 
     primitives = @scene.getPrimitives()
 
