@@ -2,6 +2,8 @@
 
 WebGL Virtual Globe and Map Engine
 
+{<img src="https://badge.fury.io/rb/cesium.png" alt="Gem Version" />}[http://badge.fury.io/rb/cesium]
+
 = Requirements
 
 In Gemfile file add line:
