@@ -24,10 +24,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
      * @exception {DeveloperError} options.values is required.
      *
      * @example
-     * var geometry = new Geometry({
+     * var geometry = new Cesium.Geometry({
      *   attributes : {
-     *     position : new GeometryAttribute({
-     *       componentDatatype : ComponentDatatype.FLOAT,
+     *     position : new Cesium.GeometryAttribute({
+     *       componentDatatype : Cesium.ComponentDatatype.FLOAT,
      *       componentsPerAttribute : 3,
      *       values : [
      *         0.0, 0.0, 0.0,
@@ -36,7 +36,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
      *       ]
      *     })
      *   },
-     *   primitiveType : PrimitiveType.LINE_LOOP
+     *   primitiveType : Cesium.PrimitiveType.LINE_LOOP
      * });
      *
      * @see Geometry
@@ -44,25 +44,24 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
     var GeometryAttribute = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
 
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(options.componentDatatype)) {
             throw new DeveloperError('options.componentDatatype is required.');
         }
-
         if (!defined(options.componentsPerAttribute)) {
             throw new DeveloperError('options.componentsPerAttribute is required.');
         }
-
         if (options.componentsPerAttribute < 1 || options.componentsPerAttribute > 4) {
             throw new DeveloperError('options.componentsPerAttribute must be between 1 and 4.');
         }
-
         if (!defined(options.values)) {
             throw new DeveloperError('options.values is required.');
         }
+        //>>includeEnd('debug');
 
         /**
          * The datatype of each component in the attribute, e.g., individual elements in
-         * {@see GeometryAttribute#values}.
+         * {@link GeometryAttribute#values}.
          *
          * @type ComponentDatatype
          *
@@ -80,7 +79,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
          * @default undefined
          *
          * @example
-         * attribute.componentDatatype : ComponentDatatype.FLOAT,
+         * attribute.componentDatatype : Cesium.ComponentDatatype.FLOAT,
          * attribute.componentsPerAttribute : 3,
          * attribute.values = new Float32Array([
          *   0.0, 0.0, 0.0,
@@ -95,7 +94,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
          * indicate that the components should be mapped to the range [0, 1] (unsigned)
          * or [-1, 1] (signed) when they are accessed as floating-point for rendering.
          * <p>
-         * This is commonly used when storing colors using {@ ComponentDatatype.UNSIGNED_BYTE}.
+         * This is commonly used when storing colors using {@link ComponentDatatype.UNSIGNED_BYTE}.
          * </p>
          *
          * @type Boolean
@@ -103,14 +102,14 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
          * @default false
          *
          * @example
-         * attribute.componentDatatype : ComponentDatatype.UNSIGNED_BYTE,
+         * attribute.componentDatatype : Cesium.ComponentDatatype.UNSIGNED_BYTE,
          * attribute.componentsPerAttribute : 4,
          * attribute.normalize = true;
          * attribute.values = new Uint8Array([
-         *   Color.floatToByte(color.red)
-         *   Color.floatToByte(color.green)
-         *   Color.floatToByte(color.blue)
-         *   Color.floatToByte(color.alpha)
+         *   Cesium.Color.floatToByte(color.red)
+         *   Cesium.Color.floatToByte(color.green)
+         *   Cesium.Color.floatToByte(color.blue)
+         *   Cesium.Color.floatToByte(color.alpha)
          * ]);
          */
         this.normalize = defaultValue(options.normalize, false);
@@ -125,7 +124,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
          * @default undefined
          *
          * @example
-         * attribute.componentDatatype : ComponentDatatype.FLOAT,
+         * attribute.componentDatatype : Cesium.ComponentDatatype.FLOAT,
          * attribute.componentsPerAttribute : 3,
          * attribute.values = new Float32Array([
          *   0.0, 0.0, 0.0,

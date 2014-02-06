@@ -319,11 +319,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * // Compute the bounding sphere from 3 positions, each specified relative to a center.
      * // In addition to the X, Y, and Z coordinates, the points array contains two additional
      * // elements per point which are ignored for the purpose of computing the bounding sphere.
-     * var center = new Cartesian3(1.0, 2.0, 3.0);
+     * var center = new Cesium.Cartesian3(1.0, 2.0, 3.0);
      * var points = [1.0, 2.0, 3.0, 0.1, 0.2,
      *               4.0, 5.0, 6.0, 0.1, 0.2,
      *               7.0, 8.0, 9.0, 0.1, 0.2];
-     * var sphere = BoundingSphere.fromVertices(points, center, 5);
+     * var sphere = Cesium.BoundingSphere.fromVertices(points, center, 5);
      */
     BoundingSphere.fromVertices = function(positions, center, stride, result) {
         if (!defined(result)) {
@@ -493,7 +493,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      *
      * @example
      * // Create a bounding sphere around the unit cube
-     * var sphere = BoundingSphere.fromCornerPoints(new Cartesian3(-0.5, -0.5, -0.5), new Cartesian3(0.5, 0.5, 0.5));
+     * var sphere = Cesium.BoundingSphere.fromCornerPoints(new Cesium.Cartesian3(-0.5, -0.5, -0.5), new Cesium.Cartesian3(0.5, 0.5, 0.5));
      */
     BoundingSphere.fromCornerPoints = function(corner, oppositeCorner, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -526,7 +526,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * @exception {DeveloperError} ellipsoid is required.
      *
      * @example
-     * var boundingSphere = BoundingSphere.fromEllipsoid(ellipsoid);
+     * var boundingSphere = Cesium.BoundingSphere.fromEllipsoid(ellipsoid);
      */
     BoundingSphere.fromEllipsoid = function(ellipsoid, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -736,9 +736,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * @exception {DeveloperError} transform is required.
      *
      * @example
-     * var modelMatrix = Transforms.eastNorthUpToFixedFrame(positionOnEllipsoid);
-     * var boundingSphere = new BoundingSphere();
-     * var newBoundingSphere = BoundingSphere.transformWithoutScale(boundingSphere, modelMatrix);
+     * var modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(positionOnEllipsoid);
+     * var boundingSphere = new Cesium.BoundingSphere();
+     * var newBoundingSphere = Cesium.BoundingSphere.transformWithoutScale(boundingSphere, modelMatrix);
      */
     BoundingSphere.transformWithoutScale = function(sphere, transform, result) {
         //>>includeStart('debug', pragmas.debug);

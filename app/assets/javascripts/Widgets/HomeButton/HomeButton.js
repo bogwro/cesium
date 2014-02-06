@@ -24,9 +24,11 @@ define(['Core/defined', 'Core/defineProperties', 'Core/destroyObject', 'Core/Dev
      * @exception {DeveloperError} scene is required.
      */
     var HomeButton = function(container, scene, transitioner, ellipsoid, flightDuration) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(container)) {
             throw new DeveloperError('container is required.');
         }
+        //>>includeEnd('debug');
 
         container = getElement(container);
 

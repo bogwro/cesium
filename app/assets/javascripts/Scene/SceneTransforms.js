@@ -21,6 +21,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartes
 
     var actualPosition = new Cartesian4(0, 0, 0, 1);
     var positionCC = new Cartesian4();
+    var viewProjectionScratch;
 
     /**
      * Transforms a position in WGS84 coordinates to window coordinates.  This is commonly used to place an
@@ -41,20 +42,21 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartes
      * // Output the window position of longitude/latitude (0, 0) every time the mouse moves.
      * var scene = widget.scene;
      * var ellipsoid = widget.centralBody.getEllipsoid();
-     * var position = ellipsoid.cartographicToCartesian(new Cartographic(0.0, 0.0));
+     * var position = ellipsoid.cartographicToCartesian(new Cesium.Cartographic(0.0, 0.0));
      * var handler = new Cesium.ScreenSpaceEventHandler(scene.getCanvas());
      * handler.setInputAction(function(movement) {
      *     console.log(Cesium.SceneTransforms.wgs84ToWindowCoordinates(scene, position));
      * }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
      */
     SceneTransforms.wgs84ToWindowCoordinates = function(scene, position, result) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(scene)) {
             throw new DeveloperError('scene is required.');
         }
-
         if (!defined(position)) {
             throw new DeveloperError('position is required.');
         }
+        //>>includeEnd('debug');
 
         // Transform for 3D, 2D, or Columbus view
         SceneTransforms.computeActualWgs84Position(scene.getFrameState(), position, actualPosition);
@@ -65,8 +67,9 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartes
         }
 
         // View-projection matrix to transform from world coordinates to clip coordinates
-        var viewProjection = scene.getUniformState().getViewProjection();
-        Matrix4.multiplyByVector(viewProjection, actualPosition, positionCC);
+        var camera = scene.getCamera();
+        viewProjectionScratch = Matrix4.multiply(camera.frustum.projectionMatrix, camera.viewMatrix, viewProjectionScratch);
+        Matrix4.multiplyByVector(viewProjectionScratch, actualPosition, positionCC);
 
         return SceneTransforms.clipToWindowCoordinates(scene.getContext(), positionCC, result);
     };
@@ -90,13 +93,14 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartes
      * // Output the window position of longitude/latitude (0, 0) every time the mouse moves.
      * var scene = widget.scene;
      * var ellipsoid = widget.centralBody.getEllipsoid();
-     * var position = ellipsoid.cartographicToCartesian(new Cartographic(0.0, 0.0));
+     * var position = ellipsoid.cartographicToCartesian(new Cesium.Cartographic(0.0, 0.0));
      * var handler = new Cesium.ScreenSpaceEventHandler(scene.getCanvas());
      * handler.setInputAction(function(movement) {
      *     console.log(Cesium.SceneTransforms.wgs84ToWindowCoordinates(scene, position));
      * }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
      */
     SceneTransforms.wgs84ToDrawingBufferCoordinates = function(scene, position, result) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(scene)) {
             throw new DeveloperError('scene is required.');
         }
@@ -104,6 +108,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartographic', 'Core/Cartes
         if (!defined(position)) {
             throw new DeveloperError('position is required.');
         }
+        //>>includeEnd('debug');
 
         // Transform for 3D, 2D, or Columbus view
         SceneTransforms.computeActualWgs84Position(scene.getFrameState(), position, actualPosition);

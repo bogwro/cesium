@@ -95,12 +95,14 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/defineProp
      * @exception {DeveloperError} referenceFrame is required.
      */
     SampledPositionProperty.prototype.getValueInReferenceFrame = function(time, referenceFrame, result) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(time)) {
             throw new DeveloperError('time is required.');
         }
         if (!defined(referenceFrame)) {
             throw new DeveloperError('referenceFrame is required.');
         }
+        //>>includeEnd('debug');
 
         result = this._property.getValue(time, result);
         if (defined(result)) {

@@ -24,9 +24,12 @@ define(['Core/Event', 'Core/defined', 'Core/DeveloperError', 'Core/loadImage'], 
      * @see TextureAtlas
      */
     var TextureAtlasBuilder  = function(textureAtlas) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(textureAtlas)) {
             throw new DeveloperError('textureAtlas is required.');
         }
+        //>>includeEnd('debug');
+
         this.textureAtlas = textureAtlas;
         this._idHash = {};
     };
@@ -46,13 +49,14 @@ define(['Core/Event', 'Core/defined', 'Core/DeveloperError', 'Core/loadImage'], 
      * @exception {DeveloperError} textureAvailableCallback is required.
      */
     TextureAtlasBuilder.prototype.addTextureFromUrl = function(url, textureAvailableCallback) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(url)) {
             throw new DeveloperError('url is required.');
         }
-
         if (!defined(textureAvailableCallback)) {
             throw new DeveloperError('textureAvailableCallback is required.');
         }
+        //>>includeEnd('debug');
 
         this.addTextureFromFunction(url, function(id, callback) {
             loadImage(id).then(callback);
@@ -86,17 +90,17 @@ define(['Core/Event', 'Core/defined', 'Core/DeveloperError', 'Core/loadImage'], 
      * @exception {DeveloperError} textureAvailableCallback is required.
      */
     TextureAtlasBuilder.prototype.addTextureFromFunction = function(id, getImageCallback, textureAvailableCallback) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(id)) {
             throw new DeveloperError('id is required.');
         }
-
         if (!defined(getImageCallback)) {
             throw new DeveloperError('getImageCallback is required.');
         }
-
         if (!defined(textureAvailableCallback)) {
             throw new DeveloperError('textureAvailableCallback is required.');
         }
+        //>>includeEnd('debug');
 
         var sourceHolder = this._idHash[id];
         if (defined(sourceHolder)) {

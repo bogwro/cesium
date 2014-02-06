@@ -26,16 +26,18 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      *
      * @example
      * // load a data asynchronously
-     * jsonp('some/webservice').then(function(data) {
+     * Cesium.jsonp('some/webservice').then(function(data) {
      *     // use the loaded data
      * }, function() {
      *     // an error occurred
      * });
      */
     var jsonp = function(url, options) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(url)) {
             throw new DeveloperError('url is required.');
         }
+        //>>includeEnd('debug');
 
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
 

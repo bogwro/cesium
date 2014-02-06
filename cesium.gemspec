@@ -23,4 +23,9 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'rails', '~> 3.2.14'
   s.add_development_dependency 'sqlite3'
+  s.add_development_dependency 'thin'
+  s.add_development_dependency 'quiet_assets'
+  s.add_development_dependency 'better_errors'
+  s.add_development_dependency 'binding_of_caller'
+  s.add_development_dependency 'meta_request'
 end

@@ -29,16 +29,17 @@ define(['Core/Cartesian3', 'Core/defined', 'Core/DeveloperError'], function(
      *
      * @example
      * // The plane x=0
-     * var plane = new Plane(Cartesian3.UNIT_X, 0.0);
+     * var plane = new Cesium.Plane(Cesium.Cartesian3.UNIT_X, 0.0);
      */
     var Plane = function(normal, distance) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(normal))  {
             throw new DeveloperError('normal is required.');
         }
-
         if (!defined(distance)) {
             throw new DeveloperError('distance is required.');
         }
+        //>>includeEnd('debug');
 
         /**
          * The plane's normal.
@@ -72,18 +73,19 @@ define(['Core/Cartesian3', 'Core/defined', 'Core/DeveloperError'], function(
      * @exception {DeveloperError} normal is required.
      *
      * @example
-     * var point = ellipsoid.cartographicToCartesian(Cartographic.fromDegrees(-72.0, 40.0));
+     * var point = ellipsoid.cartographicToCartesian(Cesium.Cartographic.fromDegrees(-72.0, 40.0));
      * var normal = ellipsoid.geodeticSurfaceNormal(point);
-     * var tangentPlane = Plane.fromPointNormal(point, normal);
+     * var tangentPlane = Cesium.Plane.fromPointNormal(point, normal);
      */
     Plane.fromPointNormal = function(point, normal, result) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(point)) {
             throw new DeveloperError('point is required.');
         }
-
         if (!defined(normal)) {
             throw new DeveloperError('normal is required.');
         }
+        //>>includeEnd('debug');
 
         var distance = -Cartesian3.dot(normal, point);
 
@@ -112,13 +114,14 @@ define(['Core/Cartesian3', 'Core/defined', 'Core/DeveloperError'], function(
      * @exception {DeveloperError} point is required.
      */
     Plane.getPointDistance = function(plane, point) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(plane)) {
             throw new DeveloperError('plane is required.');
         }
-
         if (!defined(point)) {
             throw new DeveloperError('point is required.');
         }
+        //>>includeEnd('debug');
 
         return Cartesian3.dot(plane.normal, point) + plane.distance;
     };

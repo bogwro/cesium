@@ -37,7 +37,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
     var POSITION_SIZE_INDEX = Polyline.POSITION_SIZE_INDEX;
     var NUMBER_OF_PROPERTIES = Polyline.NUMBER_OF_PROPERTIES;
 
-    var attributeIndices = {
+    var attributeLocations = {
         texCoordExpandWidthAndShow : 0,
         position3DHigh : 1,
         position3DLow : 2,
@@ -84,20 +84,20 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
      *
      * @example
      * // Create a polyline collection with two polylines
-     * var polylines = new PolylineCollection(undefined);
+     * var polylines = new Cesium.PolylineCollection(undefined);
      * polylines.add({positions:ellipsoid.cartographicDegreesToCartesians([
-     *     new Cartographic2(-75.10, 39.57),
-     *     new Cartographic2(-77.02, 38.53),
-     *     new Cartographic2(-80.50, 35.14),
-     *     new Cartographic2(-80.12, 25.46)]),
+     *     new Cesium.Cartographic2(-75.10, 39.57),
+     *     new Cesium.Cartographic2(-77.02, 38.53),
+     *     new Cesium.Cartographic2(-80.50, 35.14),
+     *     new Cesium.Cartographic2(-80.12, 25.46)]),
      *     width:2
      *     });
      *
      * polylines.add({positions:ellipsoid.cartographicDegreesToCartesians([
-     *     new Cartographic2(-73.10, 37.57),
-     *     new Cartographic2(-75.02, 36.53),
-     *     new Cartographic2(-78.50, 33.14),
-     *     new Cartographic2(-78.12, 23.46)]),
+     *     new Cesium.Cartographic2(-73.10, 37.57),
+     *     new Cesium.Cartographic2(-75.02, 36.53),
+     *     new Cesium.Cartographic2(-78.50, 33.14),
+     *     new Cesium.Cartographic2(-78.12, 23.46)]),
      *     width:4
      * });
      *
@@ -125,7 +125,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
         /**
          * This property is for debugging only; it is not for production use nor is it optimized.
          * <p>
-         * Draws the bounding sphere for each {@see DrawCommand} in the primitive.
+         * Draws the bounding sphere for each {@link DrawCommand} in the primitive.
          * </p>
          *
          * @type {Boolean}
@@ -188,8 +188,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
      * var p = polylines.add({
      *   show : true,
      *   positions : ellipsoid.cartographicDegreesToCartesians([
-     *     new Cartographic2(-75.10, 39.57),
-     *     new Cartographic2(-77.02, 38.53)]),
+     *     new Cesium.Cartographic2(-75.10, 39.57),
+     *     new Cesium.Cartographic2(-77.02, 38.53)]),
      *     width : 1
      * });
      *
@@ -320,9 +320,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
      * }
      */
     PolylineCollection.prototype.get = function(index) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(index)) {
             throw new DeveloperError('index is required.');
         }
+        //>>includeEnd('debug');
 
         removePolylines(this);
         return this._polylines[index];
@@ -770,85 +772,85 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
                     var vertexTexCoordExpandWidthAndShowBufferOffset = k * (texCoordExpandWidthAndShowSizeInBytes * CesiumMath.SIXTY_FOUR_KILOBYTES) - vbo * texCoordExpandWidthAndShowSizeInBytes;
 
                     var attributes = [{
-                        index : attributeIndices.position3DHigh,
+                        index : attributeLocations.position3DHigh,
                         componentsPerAttribute : 3,
                         componentDatatype : ComponentDatatype.FLOAT,
                         offsetInBytes : positionHighOffset,
                         strideInBytes : 6 * positionSizeInBytes
                     }, {
-                        index : attributeIndices.position3DLow,
+                        index : attributeLocations.position3DLow,
                         componentsPerAttribute : 3,
                         componentDatatype : ComponentDatatype.FLOAT,
                         offsetInBytes : positionLowOffset,
                         strideInBytes : 6 * positionSizeInBytes
                     }, {
-                        index : attributeIndices.position2DHigh,
+                        index : attributeLocations.position2DHigh,
                         componentsPerAttribute : 3,
                         componentDatatype : ComponentDatatype.FLOAT,
                         offsetInBytes : positionHighOffset,
                         strideInBytes : 6 * positionSizeInBytes
                     }, {
-                        index : attributeIndices.position2DLow,
+                        index : attributeLocations.position2DLow,
                         componentsPerAttribute : 3,
                         componentDatatype : ComponentDatatype.FLOAT,
                         offsetInBytes : positionLowOffset,
                         strideInBytes : 6 * positionSizeInBytes
                     }, {
-                        index : attributeIndices.prevPosition3DHigh,
+                        index : attributeLocations.prevPosition3DHigh,
                         componentsPerAttribute : 3,
                         componentDatatype : ComponentDatatype.FLOAT,
                         offsetInBytes : prevPositionHighOffset,
                         strideInBytes : 6 * positionSizeInBytes
                     }, {
-                        index : attributeIndices.prevPosition3DLow,
+                        index : attributeLocations.prevPosition3DLow,
                         componentsPerAttribute : 3,
                         componentDatatype : ComponentDatatype.FLOAT,
                         offsetInBytes : prevPositionLowOffset,
                         strideInBytes : 6 * positionSizeInBytes
                     }, {
-                        index : attributeIndices.prevPosition2DHigh,
+                        index : attributeLocations.prevPosition2DHigh,
                         componentsPerAttribute : 3,
                         componentDatatype : ComponentDatatype.FLOAT,
                         offsetInBytes : prevPositionHighOffset,
                         strideInBytes : 6 * positionSizeInBytes
                     }, {
-                        index : attributeIndices.prevPosition2DLow,
+                        index : attributeLocations.prevPosition2DLow,
                         componentsPerAttribute : 3,
                         componentDatatype : ComponentDatatype.FLOAT,
                         offsetInBytes : prevPositionLowOffset,
                         strideInBytes : 6 * positionSizeInBytes
                     }, {
-                        index : attributeIndices.nextPosition3DHigh,
+                        index : attributeLocations.nextPosition3DHigh,
                         componentsPerAttribute : 3,
                         componentDatatype : ComponentDatatype.FLOAT,
                         offsetInBytes : nextPositionHighOffset,
                         strideInBytes : 6 * positionSizeInBytes
                     }, {
-                        index : attributeIndices.nextPosition3DLow,
+                        index : attributeLocations.nextPosition3DLow,
                         componentsPerAttribute : 3,
                         componentDatatype : ComponentDatatype.FLOAT,
                         offsetInBytes : nextPositionLowOffset,
                         strideInBytes : 6 * positionSizeInBytes
                     }, {
-                        index : attributeIndices.nextPosition2DHigh,
+                        index : attributeLocations.nextPosition2DHigh,
                         componentsPerAttribute : 3,
                         componentDatatype : ComponentDatatype.FLOAT,
                         offsetInBytes : nextPositionHighOffset,
                         strideInBytes : 6 * positionSizeInBytes
                     }, {
-                        index : attributeIndices.nextPosition2DLow,
+                        index : attributeLocations.nextPosition2DLow,
                         componentsPerAttribute : 3,
                         componentDatatype : ComponentDatatype.FLOAT,
                         offsetInBytes : nextPositionLowOffset,
                         strideInBytes : 6 * positionSizeInBytes
                     }, {
-                        index : attributeIndices.texCoordExpandWidthAndShow,
+                        index : attributeLocations.texCoordExpandWidthAndShow,
                         componentsPerAttribute : 4,
                         componentDatatype : ComponentDatatype.FLOAT,
                         vertexBuffer : collection._texCoordExpandWidthAndShowBuffer,
                         offsetInBytes : vertexTexCoordExpandWidthAndShowBufferOffset
                     }, {
-                        index : attributeIndices.pickColor,
+                        index : attributeLocations.pickColor,
                         componentsPerAttribute : 4,
                         componentDatatype : ComponentDatatype.UNSIGNED_BYTE,
                         vertexBuffer : collection._pickColorBuffer,
@@ -1042,8 +1044,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
         var vsSource = createShaderSource({ sources : [PolylineCommon, PolylineVS] });
         var fsSource = createShaderSource({ sources : [this.material.shaderSource, PolylineFS] });
         var fsPick = createShaderSource({ sources : [fsSource], pickColorQualifier : 'varying' });
-        this.shaderProgram = context.getShaderCache().getShaderProgram(vsSource, fsSource, attributeIndices);
-        this.pickShaderProgram = context.getShaderCache().getShaderProgram(vsSource, fsPick, attributeIndices);
+        this.shaderProgram = context.getShaderCache().getShaderProgram(vsSource, fsSource, attributeLocations);
+        this.pickShaderProgram = context.getShaderCache().getShaderProgram(vsSource, fsPick, attributeLocations);
     };
 
     function intersectsIDL(polyline) {

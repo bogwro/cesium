@@ -16,7 +16,7 @@ define(['Core/defaultValue', 'Core/freezeObject'], function(
      *
      * @example
      * // Create a vertex format with position and 2D texture coordinate attributes.
-     * var format = new VertexFormat({
+     * var format = new Cesium.VertexFormat({
      *   position : true,
      *   st : true
      * });

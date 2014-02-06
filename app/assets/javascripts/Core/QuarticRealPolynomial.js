@@ -32,6 +32,7 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/Qu
      * @exception {DeveloperError} e is a required number.
      */
     QuarticRealPolynomial.discriminant = function(a, b, c, d, e) {
+        //>>includeStart('debug', pragmas.debug);
         if (typeof a !== 'number') {
             throw new DeveloperError('a is a required number.');
         }
@@ -47,6 +48,7 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/Qu
         if (typeof e !== 'number') {
             throw new DeveloperError('e is a required number.');
         }
+        //>>includeEnd('debug');
 
         var a2 = a * a;
         var a3 = a2 * a;
@@ -263,6 +265,7 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/Qu
      * @exception {DeveloperError} e is a required number.
      */
     QuarticRealPolynomial.realRoots = function(a, b, c, d, e) {
+        //>>includeStart('debug', pragmas.debug);
         if (typeof a !== 'number') {
             throw new DeveloperError('a is a required number.');
         }
@@ -278,6 +281,7 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/Qu
         if (typeof e !== 'number') {
             throw new DeveloperError('e is a required number.');
         }
+        //>>includeEnd('debug');
 
         if (Math.abs(a) < CesiumMath.EPSILON15) {
             return CubicRealPolynomial.realRoots(b, c, d, e);

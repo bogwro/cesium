@@ -32,7 +32,7 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
      * @param {Boolean} [options.show=true] Determines if this primitive will be shown.
      *
      * @example
-     * scene.skyBox = new SkyBox({
+     * scene.skyBox = new Cesium.SkyBox({
      *   sources : {
      *     positiveX : 'skybox_px.png',
      *     negativeX : 'skybox_nx.png',
@@ -97,6 +97,7 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
             this._sources = this.sources;
             var sources = this.sources;
 
+            //>>includeStart('debug', pragmas.debug);
             if ((!defined(sources.positiveX)) ||
                 (!defined(sources.negativeX)) ||
                 (!defined(sources.positiveY)) ||
@@ -113,6 +114,7 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
                 (typeof sources.positiveX !== typeof sources.negativeZ)) {
                 throw new DeveloperError('sources properties must all be the same type.');
             }
+            //>>includeEnd('debug');
 
             if (typeof sources.positiveX === 'string') {
                 // Given urls for cube-map images.  Load them.
@@ -143,16 +145,16 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
                 dimensions : new Cartesian3(2.0, 2.0, 2.0),
                 vertexFormat : VertexFormat.POSITION_ONLY
             }));
-            var attributeIndices = GeometryPipeline.createAttributeIndices(geometry);
+            var attributeLocations = GeometryPipeline.createAttributeLocations(geometry);
 
             command.primitiveType = PrimitiveType.TRIANGLES;
             command.modelMatrix = Matrix4.clone(Matrix4.IDENTITY);
             command.vertexArray = context.createVertexArrayFromGeometry({
                 geometry: geometry,
-                attributeIndices: attributeIndices,
+                attributeLocations: attributeLocations,
                 bufferUsage: BufferUsage.STATIC_DRAW
             });
-            command.shaderProgram = context.getShaderCache().getShaderProgram(SkyBoxVS, SkyBoxFS, attributeIndices);
+            command.shaderProgram = context.getShaderCache().getShaderProgram(SkyBoxVS, SkyBoxFS, attributeLocations);
             command.renderState = context.createRenderState({
                 blending : BlendingState.ALPHA_BLEND
             });

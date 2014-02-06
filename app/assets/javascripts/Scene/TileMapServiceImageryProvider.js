@@ -49,7 +49,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
      *
      * @example
      * // TileMapService tile provider
-     * var tms = new TileMapServiceImageryProvider({
+     * var tms = new Cesium.TileMapServiceImageryProvider({
      *    url : '../images/cesium_maptiler/Cesium_Logo_Color',
      *    fileExtension: 'png',
      *    maximumLevel: 4,
@@ -63,9 +63,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
     var TileMapServiceImageryProvider = function TileMapServiceImageryProvider(description) {
         description = defaultValue(description, {});
 
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(description.url)) {
             throw new DeveloperError('description.url is required.');
         }
+        //>>includeEnd('debug');
 
         var url = description.url;
 
@@ -75,10 +77,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
 
         this._url = url;
         this._ready = false;
-
         this._proxy = description.proxy;
         this._tileDiscardPolicy = description.tileDiscardPolicy;
-
         this._errorEvent = new Event();
 
         var credit = description.credit;
@@ -91,19 +91,41 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
 
         // Try to load remaining parameters from XML
         loadXML(url + 'tilemapresource.xml').then(function(xml) {
+            var tileFormatRegex = /tileformat/i;
+            var tileSetRegex = /tileset/i;
+            var tileSetsRegex = /tilesets/i;
+            var bboxRegex = /boundingbox/i;
+            var format, bbox, tilesets;
+            var tilesetsList = []; //list of TileSets
             // Allowing description properties to override XML values
-            var format = xml.getElementsByTagName('TileFormat')[0];
+            var nodeList = xml.childNodes[0].childNodes;
+            // Iterate XML Document nodes for properties
+            for (var i = 0; i < nodeList.length; i++){
+                if (tileFormatRegex.test(nodeList.item(i).nodeName)){
+                    format = nodeList.item(i);
+                } else if (tileSetsRegex.test(nodeList.item(i).nodeName)){
+                    tilesets = nodeList.item(i); // Node list of TileSets
+                    var tileSetNodes = nodeList.item(i).childNodes;
+                    // Iterate the nodes to find all TileSets
+                    for(var j = 0; j < tileSetNodes.length; j++){
+                        if (tileSetRegex.test(tileSetNodes.item(j).nodeName)){
+                            // Add them to tilesets list
+                            tilesetsList.push(tileSetNodes.item(j));
+                        }
+                    }
+                } else if (bboxRegex.test(nodeList.item(i).nodeName)){
+                    bbox = nodeList.item(i);
+                }
+            }
             that._fileExtension = defaultValue(description.fileExtension, format.getAttribute('extension'));
             that._tileWidth = defaultValue(description.tileWidth, parseInt(format.getAttribute('width'), 10));
             that._tileHeight = defaultValue(description.tileHeight, parseInt(format.getAttribute('height'), 10));
-            var tilesets = xml.getElementsByTagName('TileSet');
-            that._minimumLevel = defaultValue(description.minimumLevel, parseInt(tilesets[0].getAttribute('order'), 10));
-            that._maximumLevel = defaultValue(description.maximumLevel, parseInt(tilesets[tilesets.length - 1].getAttribute('order'), 10));
+            that._minimumLevel = defaultValue(description.minimumLevel, parseInt(tilesetsList[0].getAttribute('order'), 10));
+            that._maximumLevel = defaultValue(description.maximumLevel, parseInt(tilesetsList[tilesetsList.length - 1].getAttribute('order'), 10));
 
             // extent handling
             that._extent = description.extent;
             if (!defined(that._extent)) {
-                var bbox = xml.getElementsByTagName('BoundingBox')[0];
                 var sw = Cartographic.fromDegrees(parseFloat(bbox.getAttribute('miny')), parseFloat(bbox.getAttribute('minx')));
                 var ne = Cartographic.fromDegrees(parseFloat(bbox.getAttribute('maxy')), parseFloat(bbox.getAttribute('maxx')));
                 that._extent = new Extent(sw.longitude, sw.latitude, ne.longitude, ne.latitude);
@@ -114,7 +136,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
             // tiling scheme handling
             var tilingScheme = description.tilingScheme;
             if (!defined(tilingScheme)) {
-                var tilingSchemeName = xml.getElementsByTagName('TileSets')[0].getAttribute('profile');
+                var tilingSchemeName = tilesets.getAttribute('profile');
                 tilingScheme = tilingSchemeName === 'geodetic' ? new GeographicTilingScheme() : new WebMercatorTilingScheme();
             }
 
@@ -203,9 +225,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
      * @returns {Number} The width.
      */
     TileMapServiceImageryProvider.prototype.getTileWidth = function() {
+        //>>includeStart('debug', pragmas.debug);
         if (!this._ready) {
             throw new DeveloperError('getTileWidth must not be called before the imagery provider is ready.');
         }
+        //>>includeEnd('debug');
+
         return this._tileWidth;
     };
 
@@ -218,9 +243,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
      * @returns {Number} The height.
      */
     TileMapServiceImageryProvider.prototype.getTileHeight = function() {
+        //>>includeStart('debug', pragmas.debug);
         if (!this._ready) {
             throw new DeveloperError('getTileHeight must not be called before the imagery provider is ready.');
         }
+        //>>includeEnd('debug');
+
         return this._tileHeight;
     };
 
@@ -233,9 +261,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
      * @returns {Number} The minimum level.
      */
     TileMapServiceImageryProvider.prototype.getMinimumLevel = function() {
+        //>>includeStart('debug', pragmas.debug);
         if (!this._ready) {
             throw new DeveloperError('getMinimumLevel must not be called before the imagery provider is ready.');
         }
+        //>>includeEnd('debug');
+
         return this._minimumLevel;
     };
 
@@ -248,9 +279,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
      * @returns {Number} The maximum level.
      */
     TileMapServiceImageryProvider.prototype.getMaximumLevel = function() {
+        //>>includeStart('debug', pragmas.debug);
         if (!this._ready) {
             throw new DeveloperError('getMaximumLevel must not be called before the imagery provider is ready.');
         }
+        //>>includeEnd('debug');
+
         return this._maximumLevel;
     };
 
@@ -265,9 +299,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
      * @see GeographicTilingScheme
      */
     TileMapServiceImageryProvider.prototype.getTilingScheme = function() {
+        //>>includeStart('debug', pragmas.debug);
         if (!this._ready) {
             throw new DeveloperError('getTilingScheme must not be called before the imagery provider is ready.');
         }
+        //>>includeEnd('debug');
+
         return this._tilingScheme;
     };
 
@@ -280,9 +317,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
      * @returns {Extent} The extent.
      */
     TileMapServiceImageryProvider.prototype.getExtent = function() {
+        //>>includeStart('debug', pragmas.debug);
         if (!this._ready) {
             throw new DeveloperError('getExtent must not be called before the imagery provider is ready.');
         }
+        //>>includeEnd('debug');
+
         return this._extent;
     };
 
@@ -300,9 +340,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
      * @see NeverTileDiscardPolicy
      */
     TileMapServiceImageryProvider.prototype.getTileDiscardPolicy = function() {
+        //>>includeStart('debug', pragmas.debug);
         if (!this._ready) {
             throw new DeveloperError('getTileDiscardPolicy must not be called before the imagery provider is ready.');
         }
+        //>>includeEnd('debug');
+
         return this._tileDiscardPolicy;
     };
 
@@ -346,9 +389,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartographic', 'Core/Develope
      *          Image or a Canvas DOM object.
      */
     TileMapServiceImageryProvider.prototype.requestImage = function(x, y, level) {
+        //>>includeStart('debug', pragmas.debug);
         if (!this._ready) {
             throw new DeveloperError('requestImage must not be called before the imagery provider is ready.');
         }
+        //>>includeEnd('debug');
+
         var url = buildImageUrl(this, x, y, level);
         return ImageryProvider.loadImage(this, url);
     };

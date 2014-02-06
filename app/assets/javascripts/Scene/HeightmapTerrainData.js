@@ -65,8 +65,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Height
      * var heightBuffer = new Uint16Array(buffer, 0, that._heightmapWidth * that._heightmapWidth);
      * var childTileMask = new Uint8Array(buffer, heightBuffer.byteLength, 1)[0];
      * var waterMask = new Uint8Array(buffer, heightBuffer.byteLength + 1, buffer.byteLength - heightBuffer.byteLength - 1);
-     * var structure = HeightmapTessellator.DEFAULT_STRUCTURE;
-     * var terrainData = new HeightmapTerrainData({
+     * var structure = Cesium.HeightmapTessellator.DEFAULT_STRUCTURE;
+     * var terrainData = new Cesium.HeightmapTerrainData({
      *   buffer : heightBuffer,
      *   width : 65,
      *   height : 65,
@@ -76,6 +76,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Height
      * });
      */
     var HeightmapTerrainData = function HeightmapTerrainData(description) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(description) || !defined(description.buffer)) {
             throw new DeveloperError('description.buffer is required.');
         }
@@ -85,6 +86,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Height
         if (!defined(description.height)) {
             throw new DeveloperError('description.height is required.');
         }
+        //>>includeEnd('debug');
 
         this._buffer = description.buffer;
         this._width = description.width;
@@ -125,6 +127,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Height
      *          be retried later.
      */
     HeightmapTerrainData.prototype.createMesh = function(tilingScheme, x, y, level) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(tilingScheme)) {
             throw new DeveloperError('tilingScheme is required.');
         }
@@ -137,6 +140,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Height
         if (!defined(level)) {
             throw new DeveloperError('level is required.');
         }
+        //>>includeEnd('debug');
 
         var ellipsoid = tilingScheme.getEllipsoid();
         var nativeExtent = tilingScheme.tileXYToNativeExtent(x, y, level);
@@ -232,6 +236,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Height
      *          deferred.
      */
     HeightmapTerrainData.prototype.upsample = function(tilingScheme, thisX, thisY, thisLevel, descendantX, descendantY, descendantLevel) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(tilingScheme)) {
             throw new DeveloperError('tilingScheme is required.');
         }
@@ -253,11 +258,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Height
         if (!defined(descendantLevel)) {
             throw new DeveloperError('descendantLevel is required.');
         }
-
         var levelDifference = descendantLevel - thisLevel;
         if (levelDifference > 1) {
             throw new DeveloperError('Upsampling through more than one level at a time is not currently supported.');
         }
+        //>>includeEnd('debug');
 
         var result;
 
@@ -289,6 +294,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Height
      * @returns {Boolean} True if the child tile is available; otherwise, false.
      */
     HeightmapTerrainData.prototype.isChildAvailable = function(thisX, thisY, childX, childY) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(thisX)) {
             throw new DeveloperError('thisX is required.');
         }
@@ -301,6 +307,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Height
         if (!defined(childY)) {
             throw new DeveloperError('childY is required.');
         }
+        //>>includeEnd('debug');
 
         var bitNumber = 2; // northwest child
         if (childX !== thisX * 2) {

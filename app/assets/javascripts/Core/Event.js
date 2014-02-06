@@ -18,7 +18,7 @@ define(['Core/DeveloperError'], function(
      * }
      *
      * var myObjectInstance = new MyObject();
-     * var evt = new Event();
+     * var evt = new Cesium.Event();
      * evt.addEventListener(MyObject.prototype.myListener, myObjectInstance);
      * evt.raiseEvent('1', '2');
      * evt.removeEventListener(MyObject.prototype.myListener);
@@ -57,9 +57,11 @@ define(['Core/DeveloperError'], function(
      * @exception {DeveloperError} listener is required and must be a function.
      */
     Event.prototype.addEventListener = function(listener, scope) {
+        //>>includeStart('debug', pragmas.debug);
         if (typeof listener !== 'function') {
             throw new DeveloperError('listener is required and must be a function.');
         }
+        //>>includeEnd('debug');
 
         this._listeners.push(listener);
         this._scopes.push(scope);
@@ -84,24 +86,28 @@ define(['Core/DeveloperError'], function(
      * @exception {DeveloperError} listener is not subscribed.
      */
     Event.prototype.removeEventListener = function(listener, scope) {
+        //>>includeStart('debug', pragmas.debug);
         if (typeof listener !== 'function') {
             throw new DeveloperError('listener is required and must be a function.');
         }
+        //>>includeEnd('debug');
 
         var thisListeners = this._listeners;
         var thisScopes = this._scopes;
 
         var index = -1;
-        for ( var i = 0; i < thisListeners.length; i++) {
+        for (var i = 0; i < thisListeners.length; i++) {
             if (thisListeners[i] === listener && thisScopes[i] === scope) {
                 index = i;
                 break;
             }
         }
 
+        //>>includeStart('debug', pragmas.debug);
         if (index === -1) {
             throw new DeveloperError('listener is not subscribed.');
         }
+        //>>includeEnd('debug');
 
         thisListeners.splice(index, 1);
         this._scopes.splice(index, 1);

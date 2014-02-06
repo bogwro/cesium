@@ -37,12 +37,14 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
      * @private
      */
     var CentralBodySurface = function(options) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(options.terrainProvider)) {
             throw new DeveloperError('options.terrainProvider is required.');
         }
         if (!defined(options.imageryLayerCollection)) {
             throw new DeveloperError('options.imageryLayerCollection is required.');
         }
+        //>>includeEnd('debug');
 
         this._terrainProvider = options.terrainProvider;
         this._imageryLayerCollection = options.imageryLayerCollection;
@@ -113,9 +115,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Boundin
             return;
         }
 
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(terrainProvider)) {
             throw new DeveloperError('terrainProvider is required.');
         }
+        //>>includeEnd('debug');
 
         this._terrainProvider = terrainProvider;
 

@@ -39,6 +39,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/define
      * });
      */
     var viewerDragDropMixin = function(viewer, options) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(viewer)) {
             throw new DeveloperError('viewer is required.');
         }
@@ -54,6 +55,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/define
         if (viewer.hasOwnProperty('clearOnDrop')) {
             throw new DeveloperError('clearOnDrop is already defined by another mixin.');
         }
+        //>>includeEnd('debug');
 
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
 
@@ -78,9 +80,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/define
                     return dropTarget;
                 },
                 set : function(value) {
+                    //>>includeStart('debug', pragmas.debug);
                     if (!defined(value)) {
                         throw new DeveloperError('value is required.');
                     }
+                    //>>includeEnd('debug');
+
                     unsubscribe(dropTarget, handleDrop);
                     dropTarget = value;
                     subscribe(dropTarget, handleDrop);

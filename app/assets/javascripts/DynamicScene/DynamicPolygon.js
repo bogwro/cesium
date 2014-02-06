@@ -72,9 +72,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
      * @exception {DeveloperError} source is required.
      */
     DynamicPolygon.prototype.merge = function(source) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(source)) {
             throw new DeveloperError('source is required.');
         }
+        //>>includeEnd('debug');
+
         this.show = defaultValue(this.show, source.show);
         this.material = defaultValue(this.material, source.material);
     };

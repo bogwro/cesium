@@ -111,9 +111,11 @@ define(['Core/buildModuleUrl', 'Core/Cartesian3', 'Core/Clock', 'Core/DefaultPro
      * });
      */
     var CesiumWidget = function(container, options) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(container)) {
             throw new DeveloperError('container is required.');
         }
+        //>>includeEnd('debug');
 
         container = getElement(container);
 

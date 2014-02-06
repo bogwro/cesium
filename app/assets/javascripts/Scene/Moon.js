@@ -26,7 +26,7 @@ define(['Core/buildModuleUrl', 'Core/Cartesian3', 'Core/defaultValue', 'Core/def
      * @param {Boolean} [options.onlySunLighting=true] Use the sun as the only light source.
      *
      * @example
-     * scene.moon = new Moon();
+     * scene.moon = new Cesium.Moon();
      */
     var Moon = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);

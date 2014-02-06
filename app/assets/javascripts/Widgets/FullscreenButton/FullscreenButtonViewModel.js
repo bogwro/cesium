@@ -93,9 +93,12 @@ define(['Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Cor
                 return this._fullscreenElement;
             },
             set : function(value) {
+                //>>includeStart('debug', pragmas.debug);
                 if (!(value instanceof Element)) {
                     throw new DeveloperError('value must be a valid Element.');
                 }
+                //>>includeEnd('debug');
+
                 this._fullscreenElement = value;
             }
         },

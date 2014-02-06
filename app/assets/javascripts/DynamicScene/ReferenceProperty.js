@@ -34,6 +34,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
      * @exception {DeveloperError} targetPropertyName is required.
      */
     var ReferenceProperty = function(dynamicObjectCollection, targetObjectId, targetPropertyName) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(dynamicObjectCollection)) {
             throw new DeveloperError('dynamicObjectCollection is required.');
         }
@@ -43,6 +44,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
         if (!defined(targetPropertyName)) {
             throw new DeveloperError('targetPropertyName is required.');
         }
+        //>>includeEnd('debug');
 
         this._targetProperty = undefined;
         this._dynamicObjectCollection = dynamicObjectCollection;
@@ -66,18 +68,22 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
      * @exception {DeveloperError} referenceString must contain a single period delineating the target object ID and property name.
      */
     ReferenceProperty.fromString = function(dynamicObjectCollection, referenceString) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(dynamicObjectCollection)) {
             throw new DeveloperError('dynamicObjectCollection is required.');
         }
-
         if (!defined(referenceString)) {
             throw new DeveloperError('referenceString is required.');
         }
+        //>>includeEnd('debug');
 
         var parts = referenceString.split('.');
+
+        //>>includeStart('debug', pragmas.debug);
         if (parts.length !== 2) {
             throw new DeveloperError('referenceString must contain a single . delineating the target object ID and property name.');
         }
+        //>>includeEnd('debug');
 
         return new ReferenceProperty(dynamicObjectCollection, parts[0], parts[1]);
     };
@@ -94,9 +100,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
      * @exception {DeveloperError} time is required.
      */
     ReferenceProperty.prototype.getValue = function(time, result) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(time)) {
             throw new DeveloperError('time is required.');
         }
+        //>>includeEnd('debug');
 
         var targetProperty = resolve(this);
         return defined(targetProperty) && this._targetObject.isAvailable(time) ? targetProperty.getValue(time, result) : undefined;

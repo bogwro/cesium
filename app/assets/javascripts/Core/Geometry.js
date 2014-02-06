@@ -38,17 +38,17 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Boundi
      *   0.0, 7500000.0, 0.0
      * ]);
      *
-     * var geometry = new Geometry({
+     * var geometry = new Cesium.Geometry({
      *   attributes : {
-     *     position : new GeometryAttribute({
-     *       componentDatatype : ComponentDatatype.DOUBLE,
+     *     position : new Cesium.GeometryAttribute({
+     *       componentDatatype : Cesium.ComponentDatatype.DOUBLE,
      *       componentsPerAttribute : 3,
      *       values : positions
      *     })
      *   },
      *   indices : new Uint16Array([0, 1, 1, 2, 2, 0]),
-     *   primitiveType : PrimitiveType.LINES,
-     *   boundingSphere : BoundingSphere.fromVertices(positions)
+     *   primitiveType : Cesium.PrimitiveType.LINES,
+     *   boundingSphere : Cesium.BoundingSphere.fromVertices(positions)
      * });
      *
      * @demo <a href="http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Geometry%20and%20Appearances.html">Geometry and Appearances Demo</a>
@@ -65,13 +65,14 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Boundi
     var Geometry = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
 
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(options.attributes)) {
             throw new DeveloperError('options.attributes is required.');
         }
-
         if (!defined(options.primitiveType)) {
             throw new DeveloperError('options.primitiveType is required.');
         }
+        //>>includeEnd('debug');
 
         /**
          * Attributes, which make up the geometry's vertices.  Each property in this object corresponds to a
@@ -111,8 +112,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Boundi
          * @default undefined
          *
          * @example
-         * geometry.attributes.position = new GeometryAttribute({
-         *   componentDatatype : ComponentDatatype.FLOAT,
+         * geometry.attributes.position = new Cesium.GeometryAttribute({
+         *   componentDatatype : Cesium.ComponentDatatype.FLOAT,
          *   componentsPerAttribute : 3,
          *   values : new Float32Array()
          * });
@@ -166,12 +167,14 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Boundi
      * @exception {DeveloperError} geometries is required.
      *
      * @example
-     * var numVertices = Geometry.computeNumberOfVertices(geometry);
+     * var numVertices = Cesium.Geometry.computeNumberOfVertices(geometry);
      */
     Geometry.computeNumberOfVertices = function(geometry) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(geometry)) {
             throw new DeveloperError('geometry is required.');
         }
+        //>>includeEnd('debug');
 
         var numberOfVertices = -1;
         for ( var property in geometry.attributes) {

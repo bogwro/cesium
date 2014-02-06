@@ -25,10 +25,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Color'
      *                   blank, returns undefined.
      */
     var writeTextToCanvas = function(text, description) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(text)) {
             throw new DeveloperError('text is required.');
         }
-
+        //>>includeEnd('debug');
         if (text === '') {
             return undefined;
         }

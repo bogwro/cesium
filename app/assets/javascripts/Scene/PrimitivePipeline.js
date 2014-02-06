@@ -156,11 +156,14 @@ define(['Core/defined', 'Core/defaultValue', 'Core/Color', 'Core/ComponentDataty
         var i;
         var length = instances.length;
         var primitiveType = instances[0].geometry.primitiveType;
+
+        //>>includeStart('debug', pragmas.debug);
         for (i = 1; i < length; ++i) {
             if (instances[i].geometry.primitiveType !== primitiveType) {
                 throw new DeveloperError('All instance geometries must have the same primitiveType.');
             }
         }
+        //>>includeEnd('debug');
 
         // Unify to world coordinates before combining.
         transformToWorldCoordinates(instances, modelMatrix, allow3DOnly);
@@ -225,7 +228,7 @@ define(['Core/defined', 'Core/defaultValue', 'Core/Color', 'Core/ComponentDataty
         return [geometry];
     }
 
-    function createPerInstanceVAAttributes(geometry, attributeIndices, names) {
+    function createPerInstanceVAAttributes(geometry, attributeLocations, names) {
         var vaAttributes = [];
         var attributes = geometry.attributes;
 
@@ -241,7 +244,7 @@ define(['Core/defined', 'Core/defaultValue', 'Core/Color', 'Core/ComponentDataty
 
             var typedArray = ComponentDatatype.createTypedArray(componentDatatype, attribute.values);
             vaAttributes.push({
-                index : attributeIndices[name],
+                index : attributeLocations[name],
                 componentDatatype : componentDatatype,
                 componentsPerAttribute : attribute.componentsPerAttribute,
                 normalize : attribute.normalize,
@@ -254,7 +257,7 @@ define(['Core/defined', 'Core/defaultValue', 'Core/Color', 'Core/ComponentDataty
         return vaAttributes;
     }
 
-    function computePerInstanceAttributeIndices(instances, vertexArrays, attributeIndices) {
+    function computePerInstanceAttributeLocations(instances, vertexArrays, attributeLocations) {
         var indices = [];
 
         var names = getCommonPerInstanceAttributeNames(instances);
@@ -269,7 +272,7 @@ define(['Core/defined', 'Core/defaultValue', 'Core/Color', 'Core/ComponentDataty
             var namesLength = names.length;
             for (var j = 0; j < namesLength; ++j) {
                 var name = names[j];
-                var index = attributeIndices[name];
+                var index = attributeLocations[name];
 
                 var tempVertexCount = numberOfVertices;
                 while (tempVertexCount > 0) {
@@ -349,7 +352,7 @@ define(['Core/defined', 'Core/defaultValue', 'Core/Color', 'Core/ComponentDataty
             modelMatrix : Matrix4.clone(parameters.modelMatrix)
         };
         var geometries = geometryPipeline(clonedParameters);
-        var attributeIndices = GeometryPipeline.createAttributeIndices(geometries[0]);
+        var attributeLocations = GeometryPipeline.createAttributeLocations(geometries[0]);
 
         var instances = clonedParameters.instances;
         var perInstanceAttributeNames = getCommonPerInstanceAttributeNames(instances);
@@ -358,17 +361,17 @@ define(['Core/defined', 'Core/defaultValue', 'Core/Color', 'Core/ComponentDataty
         var length = geometries.length;
         for (var i = 0; i < length; ++i) {
             var geometry = geometries[i];
-            perInstanceAttributes.push(createPerInstanceVAAttributes(geometry, attributeIndices, perInstanceAttributeNames));
+            perInstanceAttributes.push(createPerInstanceVAAttributes(geometry, attributeLocations, perInstanceAttributeNames));
         }
 
-        var indices = computePerInstanceAttributeIndices(instances, perInstanceAttributes, attributeIndices);
+        var indices = computePerInstanceAttributeLocations(instances, perInstanceAttributes, attributeLocations);
 
         return {
             geometries : geometries,
             modelMatrix : clonedParameters.modelMatrix,
-            attributeIndices : attributeIndices,
+            attributeLocations : attributeLocations,
             vaAttributes : perInstanceAttributes,
-            vaAttributeIndices : indices
+            vaAttributeLocations : indices
         };
     };
 

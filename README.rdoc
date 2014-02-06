@@ -2,8 +2,7 @@
 
 WebGL Virtual Globe and Map Engine
 
-<b>Check WIKI[https://github.com/bogwro/cesium/wiki] for Step by Step through Rails Example Application</b>
-
+{<img src="https://badge.fury.io/rb/cesium.png" alt="Gem Version" />}[http://badge.fury.io/rb/cesium]
 
 = Requirements
 
@@ -22,8 +21,7 @@ and you understand the concept of RequireJS:
 
 Now you are ready to use this gem :-)
 
-= Examples 
-Check WIKI[https://github.com/bogwro/cesium/wiki]
+= Examples
 
 == Example 1:
 For the convenience there is prepared route that will show you the globe.

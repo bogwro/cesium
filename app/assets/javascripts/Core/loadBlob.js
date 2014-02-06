@@ -21,7 +21,7 @@ define(['Core/loadWithXhr'], function(
      *
      * @example
      * // load a single URL asynchronously
-     * loadBlob('some/url').then(function(blob) {
+     * Cesium.loadBlob('some/url').then(function(blob) {
      *     // use the data
      * }, function() {
      *     // an error occurred

@@ -40,7 +40,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/loadImage', 'Core/loadXML', '
      * @see TerrainProvider
      *
      * @example
-     * var terrainProvider = new VRTheWorldTerrainProvider({
+     * var terrainProvider = new Cesium.VRTheWorldTerrainProvider({
      *   url : 'http://www.vr-theworld.com/vr-theworld/tiles1.0.0/73/'
      * });
      * centralBody.terrainProvider = terrainProvider;

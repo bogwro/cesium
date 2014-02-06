@@ -125,9 +125,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
      * @exception {DeveloperError} source is required.
      */
     DynamicPath.prototype.merge = function(source) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(source)) {
             throw new DeveloperError('source is required.');
         }
+        //>>includeEnd('debug');
+
         this.color = defaultValue(this.color, source.color);
         this.width = defaultValue(this.width, source.width);
         this.resolution = defaultValue(this.resolution, source.resolution);

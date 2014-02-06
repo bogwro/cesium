@@ -28,7 +28,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/ComponentDatatype', 'Render
      *
      * @memberof TerrainProvider
      */
-    TerrainProvider.attributeIndices = {
+    TerrainProvider.attributeLocations = {
         position3DAndHeight : 0,
         textureCoordinates : 1
     };
@@ -107,14 +107,14 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/ComponentDatatype', 'Render
         }
 
         var attributes = [{
-            index : TerrainProvider.attributeIndices.position3DAndHeight,
+            index : TerrainProvider.attributeLocations.position3DAndHeight,
             vertexBuffer : buffer,
             componentDatatype : datatype,
             componentsPerAttribute : position3DAndHeightLength,
             offsetInBytes : 0,
             strideInBytes : stride
         }, {
-            index : TerrainProvider.attributeIndices.textureCoordinates,
+            index : TerrainProvider.attributeLocations.textureCoordinates,
             vertexBuffer : buffer,
             componentDatatype : datatype,
             componentsPerAttribute : 2,

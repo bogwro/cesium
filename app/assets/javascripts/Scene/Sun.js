@@ -93,7 +93,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Carte
         }
     });
 
-    var viewportAttributeIndices = {
+    var viewportAttributeLocations = {
         position : 0,
         textureCoordinates : 1
     };
@@ -135,7 +135,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Carte
 
         vertexArray = context.createVertexArrayFromGeometry({
             geometry : geometry,
-            attributeIndices : viewportAttributeIndices,
+            attributeLocations : viewportAttributeLocations,
             bufferUsage : BufferUsage.STATIC_DRAW
         });
 
@@ -187,7 +187,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Carte
             });
 
             var fbo = context.createFramebuffer({
-                colorTexture : this._texture
+                colorTextures : [this._texture]
             });
             fbo.destroyAttachments = false;
 
@@ -199,7 +199,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Carte
             drawCommand.owner = this;
             drawCommand.primitiveType = PrimitiveType.TRIANGLE_FAN;
             drawCommand.vertexArray = getVertexArray(context);
-            drawCommand.shaderProgram = context.getShaderCache().getShaderProgram(ViewportQuadVS, SunTextureFS, viewportAttributeIndices);
+            drawCommand.shaderProgram = context.getShaderCache().getShaderProgram(ViewportQuadVS, SunTextureFS, viewportAttributeLocations);
             drawCommand.framebuffer = fbo;
             drawCommand.renderState = context.createRenderState({
                 viewport : new BoundingRectangle(0.0, 0.0, size, size)
@@ -228,7 +228,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Carte
         var command = this._command;
 
         if (!defined(command.vertexArray)) {
-            var attributeIndices = {
+            var attributeLocations = {
                 direction : 0
             };
 
@@ -247,7 +247,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Carte
 
             var vertexBuffer = context.createVertexBuffer(directions, BufferUsage.STATIC_DRAW);
             var attributes = [{
-                index : attributeIndices.direction,
+                index : attributeLocations.direction,
                 vertexBuffer : vertexBuffer,
                 componentsPerAttribute : 2,
                 normalize : true,
@@ -256,7 +256,7 @@ define(['Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Carte
             command.vertexArray = context.createVertexArray(attributes);
             command.primitiveType = PrimitiveType.TRIANGLE_FAN;
 
-            command.shaderProgram = context.getShaderCache().getShaderProgram(SunVS, SunFS, attributeIndices);
+            command.shaderProgram = context.getShaderCache().getShaderProgram(SunVS, SunFS, attributeLocations);
             command.renderState = context.createRenderState({
                 blending : BlendingState.ALPHA_BLEND
             });

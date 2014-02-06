@@ -16,18 +16,18 @@ define(['Core/createGuid', 'Core/defined', 'Core/destroyObject', 'Core/Developer
      *
      * @example
      * // Example 1. Add primitives to a composite.
-     * var primitives = new CompositePrimitive();
-     * primitives.setCentralBody(new CentralBody());
+     * var primitives = new Cesium.CompositePrimitive();
+     * primitives.setCentralBody(new Cesium.CentralBody());
      * primitives.add(billboards);
      * primitives.add(labels);
      *
      * //////////////////////////////////////////////////////////////////
      *
      * // Example 2. Create composites of composites.
-     * var children = new CompositePrimitive();
+     * var children = new Cesium.CompositePrimitive();
      * children.add(billboards);
      *
-     * var parent = new CompositePrimitive();
+     * var parent = new Cesium.CompositePrimitive();
      * parent.add(children);    // Add composite
      * parent.add(labels);      // Add regular primitive
      */
@@ -48,7 +48,7 @@ define(['Core/createGuid', 'Core/defined', 'Core/destroyObject', 'Core/Developer
          *
          * @example
          * // Example 1. Primitives are destroyed by default.
-         * var primitives = new CompositePrimitive();
+         * var primitives = new Cesium.CompositePrimitive();
          * primitives.add(labels);
          * primitives = primitives.destroy();
          * var b = labels.isDestroyed(); // true
@@ -56,7 +56,7 @@ define(['Core/createGuid', 'Core/defined', 'Core/destroyObject', 'Core/Developer
          * //////////////////////////////////////////////////////////////////
          *
          * // Example 2. Do not destroy primitives in a composite.
-         * var primitives = new CompositePrimitive();
+         * var primitives = new Cesium.CompositePrimitive();
          * primitives.destroyPrimitives = false;
          * primitives.add(labels);
          * primitives = primitives.destroy();
@@ -98,8 +98,8 @@ define(['Core/createGuid', 'Core/defined', 'Core/destroyObject', 'Core/Developer
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *
      * @example
-     * var primitives = new CompositePrimitive();
-     * primitives.setCentralBody(new CentralBody());
+     * var primitives = new Cesium.CompositePrimitive();
+     * primitives.setCentralBody(new Cesium.CentralBody());
      */
     CompositePrimitive.prototype.setCentralBody = function(centralBody) {
         this._centralBody = this.destroyPrimitives && this._centralBody && this._centralBody.destroy();
@@ -126,9 +126,11 @@ define(['Core/createGuid', 'Core/defined', 'Core/destroyObject', 'Core/Developer
      * primitives.add(labels);
      */
     CompositePrimitive.prototype.add = function(primitive) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(primitive)) {
             throw new DeveloperError('primitive is required.');
         }
+        //>>includeEnd('debug');
 
         var external = (primitive._external = primitive._external || {});
         var composites = (external._composites = external._composites || {});
@@ -225,9 +227,11 @@ define(['Core/createGuid', 'Core/defined', 'Core/destroyObject', 'Core/Developer
     };
 
     function getPrimitiveIndex(compositePrimitive, primitive) {
+        //>>includeStart('debug', pragmas.debug);
         if (!compositePrimitive.contains(primitive)) {
             throw new DeveloperError('primitive is not in this composite.');
         }
+        //>>includeEnd('debug');
 
         return compositePrimitive._primitives.indexOf(primitive);
     }
@@ -358,9 +362,11 @@ define(['Core/createGuid', 'Core/defined', 'Core/destroyObject', 'Core/Developer
      * }
      */
     CompositePrimitive.prototype.get = function(index) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(index)) {
             throw new DeveloperError('index is required.');
         }
+        //>>includeEnd('debug');
 
         return this._primitives[index];
     };
