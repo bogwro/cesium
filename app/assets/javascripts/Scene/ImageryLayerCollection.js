@@ -70,24 +70,29 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/destro
      * @exception {DeveloperError} index, if supplied, must be greater than or equal to zero and less than or equal to the number of the layers.
      */
     ImageryLayerCollection.prototype.add = function(layer, index) {
+        var hasIndex = defined(index);
+
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(layer)) {
             throw new DeveloperError('layer is required.');
         }
-
-        if (!defined(index)) {
-            index = this._layers.length;
-            this._layers.push(layer);
-        } else {
+        if (hasIndex) {
             if (index < 0) {
                 throw new DeveloperError('index must be greater than or equal to zero.');
             } else if (index > this._layers.length) {
                 throw new DeveloperError('index must be less than or equal to the number of layers.');
             }
+        }
+        //>>includeEnd('debug');
+
+        if (!hasIndex) {
+            index = this._layers.length;
+            this._layers.push(layer);
+        } else {
             this._layers.splice(index, 0, layer);
         }
 
         this._update();
-
         this.layerAdded.raiseEvent(layer, index);
     };
 
@@ -105,9 +110,11 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/destro
      * @exception {DeveloperError} imageryProvider is required.
      */
     ImageryLayerCollection.prototype.addImageryProvider = function(imageryProvider, index) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(imageryProvider)) {
             throw new DeveloperError('imageryProvider is required.');
         }
+        //>>includeEnd('debug');
 
         var layer = new ImageryLayer(imageryProvider);
         this.add(layer, index);
@@ -206,9 +213,11 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/destro
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      */
     ImageryLayerCollection.prototype.get = function(index) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(index)) {
             throw new DeveloperError('index is required.', 'index');
         }
+        //>>includeEnd('debug');
 
         return this._layers[index];
     };
@@ -225,14 +234,19 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/destro
     };
 
     function getLayerIndex(layers, layer) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(layer)) {
             throw new DeveloperError('layer is required.');
         }
+        //>>includeEnd('debug');
 
         var index = layers.indexOf(layer);
+
+        //>>includeStart('debug', pragmas.debug);
         if (index === -1) {
             throw new DeveloperError('layer is not in this collection.');
         }
+        //>>includeEnd('debug');
 
         return index;
     }

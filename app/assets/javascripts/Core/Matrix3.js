@@ -94,11 +94,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      * // [1.0, 2.0, 3.0]
      *
      * var v = [1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0];
-     * var m = Matrix3.fromArray(v);
+     * var m = Cesium.Matrix3.fromArray(v);
      *
      * // Create same Matrix3 with using an offset into an array
      * var v2 = [0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 3.0, 3.0, 3.0];
-     * var m2 = Matrix3.fromArray(v2, 2);
+     * var m2 = Cesium.Matrix3.fromArray(v2, 2);
      */
     Matrix3.fromArray = function(array, startingIndex, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -252,7 +252,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      * //   [7.0, 0.0, 0.0]
      * //   [0.0, 8.0, 0.0]
      * //   [0.0, 0.0, 9.0]
-     * var m = Matrix3.fromScale(new Cartesian3(7.0, 8.0, 9.0));
+     * var m = Cesium.Matrix3.fromScale(new Cesium.Cartesian3(7.0, 8.0, 9.0));
      */
     Matrix3.fromScale = function(scale, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -295,7 +295,7 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      * //   [2.0, 0.0, 0.0]
      * //   [0.0, 2.0, 0.0]
      * //   [0.0, 0.0, 2.0]
-     * var m = Matrix3.fromUniformScale(2.0);
+     * var m = Cesium.Matrix3.fromUniformScale(2.0);
      */
     Matrix3.fromUniformScale = function(scale, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -335,9 +335,9 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      *
      * @example
      * // Rotate a point 45 degrees counterclockwise around the x-axis.
-     * var p = new Cartesian3(5, 6, 7);
-     * var m = Matrix3.fromRotationX(CesiumMath.toRadians(45.0));
-     * var rotated = Matrix3.multiplyByVector(m, p);
+     * var p = new Cesium.Cartesian3(5, 6, 7);
+     * var m = Cesium.Matrix3.fromRotationX(Cesium.Math.toRadians(45.0));
+     * var rotated = Cesium.Matrix3.multiplyByVector(m, p);
      */
     Matrix3.fromRotationX = function(angle, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -381,9 +381,9 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      *
      * @example
      * // Rotate a point 45 degrees counterclockwise around the y-axis.
-     * var p = new Cartesian3(5, 6, 7);
-     * var m = Matrix3.fromRotationY(CesiumMath.toRadians(45.0));
-     * var rotated = Matrix3.multiplyByVector(m, p);
+     * var p = new Cesium.Cartesian3(5, 6, 7);
+     * var m = Cesium.Matrix3.fromRotationY(Cesium.Math.toRadians(45.0));
+     * var rotated = Cesium.Matrix3.multiplyByVector(m, p);
      */
     Matrix3.fromRotationY = function(angle, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -427,9 +427,9 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      *
      * @example
      * // Rotate a point 45 degrees counterclockwise around the z-axis.
-     * var p = new Cartesian3(5, 6, 7);
-     * var m = Matrix3.fromRotationZ(CesiumMath.toRadians(45.0));
-     * var rotated = Matrix3.multiplyByVector(m, p);
+     * var p = new Cesium.Cartesian3(5, 6, 7);
+     * var m = Cesium.Matrix3.fromRotationZ(Cesium.Math.toRadians(45.0));
+     * var rotated = Cesium.Matrix3.multiplyByVector(m, p);
      */
     Matrix3.fromRotationZ = function(angle, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -506,8 +506,8 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      * @exception {DeveloperError} column is required and must be 0, 1, or 2.
      *
      * @example
-     * var myMatrix = new Matrix3();
-     * var column1Row0Index = Matrix3.getElementIndex(1, 0);
+     * var myMatrix = new Cesium.Matrix3();
+     * var column1Row0Index = Cesium.Matrix3.getElementIndex(1, 0);
      * var column1Row0 = myMatrix[column1Row0Index]
      * myMatrix[column1Row0Index] = 10.0;
      */
@@ -984,18 +984,18 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      * @example
      * var a = //... symetric matrix
      * var result = {
-     *     unitary : new Matrix3(),
-     *     diagonal : new Matrix3()
+     *     unitary : new Cesium.Matrix3(),
+     *     diagonal : new Cesium.Matrix3()
      * };
-     * Matrix3.getEigenDecomposition(a, result);
+     * Cesium.Matrix3.getEigenDecomposition(a, result);
      *
-     * var unitaryTranspose = Matrix3.transpose(result.unitary);
-     * var b = Matrix.multiply(result.unitary, result.diagonal);
-     * Matrix3.multiply(b, unitaryTranspose, b); // b is now equal to a
+     * var unitaryTranspose = Cesium.Matrix3.transpose(result.unitary);
+     * var b = Cesium.Matrix3.multiply(result.unitary, result.diagonal);
+     * Cesium.Matrix3.multiply(b, unitaryTranspose, b); // b is now equal to a
      *
-     * var lambda = Matrix3.getColumn(result.diagonal, 0).x;  // first eigenvalue
-     * var v = Matrix3.getColumn(result.unitary, 0);          // first eigenvector
-     * var c = Cartesian3.multiplyByScalar(v, lambda);        // equal to Matrix3.multiplyByVector(a, v)
+     * var lambda = Cesium.Matrix3.getColumn(result.diagonal, 0).x;  // first eigenvalue
+     * var v = Cesium.Matrix3.getColumn(result.unitary, 0);          // first eigenvector
+     * var c = Cesium.Cartesian3.multiplyByScalar(v, lambda);        // equal to Cesium.Matrix3.multiplyByVector(a, v)
      */
     Matrix3.getEigenDecomposition = function(matrix, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -1083,9 +1083,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      * @exception {DeveloperError} matrix is required.
      */
     Matrix3.determinant = function(matrix) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(matrix)) {
             throw new DeveloperError('matrix is required');
         }
+        //>>includeEnd('debug');
 
         var m11 = matrix[0];
         var m21 = matrix[3];
@@ -1112,9 +1114,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      * @exception {DeveloperError} matrix is not invertible.
      */
     Matrix3.inverse = function(matrix, result) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(matrix)) {
             throw new DeveloperError('matrix is required');
         }
+        //>>includeEnd('debug');
 
         var m11 = matrix[0];
         var m21 = matrix[1];

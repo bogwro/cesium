@@ -1,6 +1,6 @@
 //This file is automatically rebuilt by the Cesium build process.
 /*global define*/
-define(['Shaders/Builtin/Constants/degreesPerRadian', 'Shaders/Builtin/Constants/epsilon1', 'Shaders/Builtin/Constants/epsilon2', 'Shaders/Builtin/Constants/epsilon3', 'Shaders/Builtin/Constants/epsilon4', 'Shaders/Builtin/Constants/epsilon5', 'Shaders/Builtin/Constants/epsilon6', 'Shaders/Builtin/Constants/epsilon7', 'Shaders/Builtin/Constants/infinity', 'Shaders/Builtin/Constants/oneOverPi', 'Shaders/Builtin/Constants/oneOverTwoPi', 'Shaders/Builtin/Constants/pi', 'Shaders/Builtin/Constants/piOverFour', 'Shaders/Builtin/Constants/piOverSix', 'Shaders/Builtin/Constants/piOverThree', 'Shaders/Builtin/Constants/piOverTwo', 'Shaders/Builtin/Constants/radiansPerDegree', 'Shaders/Builtin/Constants/sceneMode2D', 'Shaders/Builtin/Constants/sceneMode3D', 'Shaders/Builtin/Constants/sceneModeColumbusView', 'Shaders/Builtin/Constants/sceneModeMorphing', 'Shaders/Builtin/Constants/solarRadius', 'Shaders/Builtin/Constants/threePiOver2', 'Shaders/Builtin/Constants/twoPi', 'Shaders/Builtin/Constants/webMercatorMaxLatitude', 'Shaders/Builtin/Structs/ellipsoid', 'Shaders/Builtin/Structs/material', 'Shaders/Builtin/Structs/materialInput', 'Shaders/Builtin/Structs/ray', 'Shaders/Builtin/Structs/raySegment', 'Shaders/Builtin/Functions/RGBToXYZ', 'Shaders/Builtin/Functions/XYZToRGB', 'Shaders/Builtin/Functions/antialias', 'Shaders/Builtin/Functions/cellular', 'Shaders/Builtin/Functions/columbusViewMorph', 'Shaders/Builtin/Functions/computePosition', 'Shaders/Builtin/Functions/eastNorthUpToEyeCoordinates', 'Shaders/Builtin/Functions/ellipsoidContainsPoint', 'Shaders/Builtin/Functions/ellipsoidNew', 'Shaders/Builtin/Functions/ellipsoidWgs84TextureCoordinates', 'Shaders/Builtin/Functions/equalsEpsilon', 'Shaders/Builtin/Functions/eyeOffset', 'Shaders/Builtin/Functions/eyeToWindowCoordinates', 'Shaders/Builtin/Functions/geodeticSurfaceNormal', 'Shaders/Builtin/Functions/getDefaultMaterial', 'Shaders/Builtin/Functions/getLambertDiffuse', 'Shaders/Builtin/Functions/getSpecular', 'Shaders/Builtin/Functions/getWaterNoise', 'Shaders/Builtin/Functions/getWgs84EllipsoidEC', 'Shaders/Builtin/Functions/hue', 'Shaders/Builtin/Functions/isEmpty', 'Shaders/Builtin/Functions/isFull', 'Shaders/Builtin/Functions/latitudeToWebMercatorFraction', 'Shaders/Builtin/Functions/luminance', 'Shaders/Builtin/Functions/modelToWindowCoordinates', 'Shaders/Builtin/Functions/multiplyWithColorBalance', 'Shaders/Builtin/Functions/phong', 'Shaders/Builtin/Functions/pointAlongRay', 'Shaders/Builtin/Functions/rayEllipsoidIntersectionInterval', 'Shaders/Builtin/Functions/saturation', 'Shaders/Builtin/Functions/snoise', 'Shaders/Builtin/Functions/tangentToEyeSpaceMatrix', 'Shaders/Builtin/Functions/translateRelativeToEye', 'Shaders/Builtin/Functions/transpose', 'Shaders/Builtin/Functions/windowToEyeCoordinates'], function(
+define(['Shaders/Builtin/Constants/degreesPerRadian', 'Shaders/Builtin/Constants/epsilon1', 'Shaders/Builtin/Constants/epsilon2', 'Shaders/Builtin/Constants/epsilon3', 'Shaders/Builtin/Constants/epsilon4', 'Shaders/Builtin/Constants/epsilon5', 'Shaders/Builtin/Constants/epsilon6', 'Shaders/Builtin/Constants/epsilon7', 'Shaders/Builtin/Constants/infinity', 'Shaders/Builtin/Constants/oneOverPi', 'Shaders/Builtin/Constants/oneOverTwoPi', 'Shaders/Builtin/Constants/pi', 'Shaders/Builtin/Constants/piOverFour', 'Shaders/Builtin/Constants/piOverSix', 'Shaders/Builtin/Constants/piOverThree', 'Shaders/Builtin/Constants/piOverTwo', 'Shaders/Builtin/Constants/radiansPerDegree', 'Shaders/Builtin/Constants/sceneMode2D', 'Shaders/Builtin/Constants/sceneMode3D', 'Shaders/Builtin/Constants/sceneModeColumbusView', 'Shaders/Builtin/Constants/sceneModeMorphing', 'Shaders/Builtin/Constants/solarRadius', 'Shaders/Builtin/Constants/threePiOver2', 'Shaders/Builtin/Constants/twoPi', 'Shaders/Builtin/Constants/webMercatorMaxLatitude', 'Shaders/Builtin/Structs/ellipsoid', 'Shaders/Builtin/Structs/material', 'Shaders/Builtin/Structs/materialInput', 'Shaders/Builtin/Structs/ray', 'Shaders/Builtin/Structs/raySegment', 'Shaders/Builtin/Functions/RGBToXYZ', 'Shaders/Builtin/Functions/XYZToRGB', 'Shaders/Builtin/Functions/antialias', 'Shaders/Builtin/Functions/columbusViewMorph', 'Shaders/Builtin/Functions/computePosition', 'Shaders/Builtin/Functions/eastNorthUpToEyeCoordinates', 'Shaders/Builtin/Functions/ellipsoidContainsPoint', 'Shaders/Builtin/Functions/ellipsoidNew', 'Shaders/Builtin/Functions/ellipsoidWgs84TextureCoordinates', 'Shaders/Builtin/Functions/equalsEpsilon', 'Shaders/Builtin/Functions/eyeOffset', 'Shaders/Builtin/Functions/eyeToWindowCoordinates', 'Shaders/Builtin/Functions/geodeticSurfaceNormal', 'Shaders/Builtin/Functions/getDefaultMaterial', 'Shaders/Builtin/Functions/getLambertDiffuse', 'Shaders/Builtin/Functions/getSpecular', 'Shaders/Builtin/Functions/getWaterNoise', 'Shaders/Builtin/Functions/getWgs84EllipsoidEC', 'Shaders/Builtin/Functions/hue', 'Shaders/Builtin/Functions/isEmpty', 'Shaders/Builtin/Functions/isFull', 'Shaders/Builtin/Functions/latitudeToWebMercatorFraction', 'Shaders/Builtin/Functions/luminance', 'Shaders/Builtin/Functions/modelToWindowCoordinates', 'Shaders/Builtin/Functions/multiplyWithColorBalance', 'Shaders/Builtin/Functions/phong', 'Shaders/Builtin/Functions/pointAlongRay', 'Shaders/Builtin/Functions/rayEllipsoidIntersectionInterval', 'Shaders/Builtin/Functions/saturation', 'Shaders/Builtin/Functions/tangentToEyeSpaceMatrix', 'Shaders/Builtin/Functions/translateRelativeToEye', 'Shaders/Builtin/Functions/transpose', 'Shaders/Builtin/Functions/windowToEyeCoordinates'], function(
         czm_degreesPerRadian,
         czm_epsilon1,
         czm_epsilon2,
@@ -34,7 +34,6 @@ define(['Shaders/Builtin/Constants/degreesPerRadian', 'Shaders/Builtin/Constants
         czm_RGBToXYZ,
         czm_XYZToRGB,
         czm_antialias,
-        czm_cellular,
         czm_columbusViewMorph,
         czm_computePosition,
         czm_eastNorthUpToEyeCoordinates,
@@ -61,7 +60,6 @@ define(['Shaders/Builtin/Constants/degreesPerRadian', 'Shaders/Builtin/Constants
         czm_pointAlongRay,
         czm_rayEllipsoidIntersectionInterval,
         czm_saturation,
-        czm_snoise,
         czm_tangentToEyeSpaceMatrix,
         czm_translateRelativeToEye,
         czm_transpose,
@@ -101,7 +99,6 @@ define(['Shaders/Builtin/Constants/degreesPerRadian', 'Shaders/Builtin/Constants
         czm_RGBToXYZ : czm_RGBToXYZ,
         czm_XYZToRGB : czm_XYZToRGB,
         czm_antialias : czm_antialias,
-        czm_cellular : czm_cellular,
         czm_columbusViewMorph : czm_columbusViewMorph,
         czm_computePosition : czm_computePosition,
         czm_eastNorthUpToEyeCoordinates : czm_eastNorthUpToEyeCoordinates,
@@ -128,7 +125,6 @@ define(['Shaders/Builtin/Constants/degreesPerRadian', 'Shaders/Builtin/Constants
         czm_pointAlongRay : czm_pointAlongRay,
         czm_rayEllipsoidIntersectionInterval : czm_rayEllipsoidIntersectionInterval,
         czm_saturation : czm_saturation,
-        czm_snoise : czm_snoise,
         czm_tangentToEyeSpaceMatrix : czm_tangentToEyeSpaceMatrix,
         czm_translateRelativeToEye : czm_translateRelativeToEye,
         czm_transpose : czm_transpose,

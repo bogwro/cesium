@@ -389,9 +389,12 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
      *
      */
     var DynamicPathVisualizer = function(scene, dynamicObjectCollection) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(scene)) {
             throw new DeveloperError('scene is required.');
         }
+        //>>includeEnd('debug');
+
         this._scene = scene;
         this._updaters = {};
         this._dynamicObjectCollection = undefined;
@@ -444,9 +447,11 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
      * @exception {DeveloperError} time is required.
      */
     DynamicPathVisualizer.prototype.update = function(time) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(time)) {
             throw new DeveloperError('time is requied.');
         }
+        //>>includeEnd('debug');
 
         if (defined(this._dynamicObjectCollection)) {
             var updaters = this._updaters;
@@ -558,7 +563,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Carte
      * visualizer = visualizer && visualizer.destroy();
      */
     DynamicPathVisualizer.prototype.destroy = function() {
-        this.removeAllPrimitives();
+        this.setDynamicObjectCollection(undefined);
         return destroyObject(this);
     };
 

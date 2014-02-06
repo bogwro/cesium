@@ -623,11 +623,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * @see CorridorGeometry#createGeometry
      *
      * @example
-     * var corridor = new CorridorGeometry({
-     *   vertexFormat : VertexFormat.POSITION_ONLY,
+     * var corridor = new Cesium.CorridorGeometry({
+     *   vertexFormat : Cesium.VertexFormat.POSITION_ONLY,
      *   positions : ellipsoid.cartographicArrayToCartesianArray([
-     *         Cartographic.fromDegrees(-72.0, 40.0),
-     *         Cartographic.fromDegrees(-70.0, 35.0)
+     *         Cesium.Cartographic.fromDegrees(-72.0, 40.0),
+     *         Cesium.Cartographic.fromDegrees(-70.0, 35.0)
      *     ]),
      *   width : 100000
      * });
@@ -635,13 +635,16 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
     var CorridorGeometry = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
         var positions = options.positions;
+        var width = options.width;
+
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(positions)) {
             throw new DeveloperError('options.positions is required.');
         }
-        var width = options.width;
         if (!defined(width)) {
             throw new DeveloperError('options.width is required.');
         }
+        //>>includeEnd('debug');
 
         this._positions = positions;
         this._width = width;
@@ -670,9 +673,13 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
         var extrudedHeight = corridorGeometry._extrudedHeight;
         var extrude = (height !== extrudedHeight);
         var cleanPositions = PolylinePipeline.removeDuplicates(positions);
+
+        //>>includeStart('debug', pragmas.debug);
         if (cleanPositions.length < 2) {
             throw new DeveloperError('Count of unique positions must be greater than 1.');
         }
+        //>>includeEnd('debug');
+
         var ellipsoid = corridorGeometry._ellipsoid;
         var vertexFormat = corridorGeometry._vertexFormat;
         var params = {

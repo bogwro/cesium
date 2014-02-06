@@ -19,14 +19,16 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
      * @exports createCommand
      *
      * @param {Function} func The function to execute.
-     * @param {Boolean|Observable} [canExecute=true] A boolean, or observable, indicating whether the function can currently be executed.
+     * @param {Boolean} [canExecute=true] A boolean indicating whether the function can currently be executed.
      *
      * @exception {DeveloperError} func is required.
      */
     var createCommand = function(func, canExecute) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(func)) {
             throw new DeveloperError('func is required.');
         }
+        //>>includeEnd('debug');
 
         canExecute = defaultValue(canExecute, true);
 
@@ -34,9 +36,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
         var afterExecute = new Event();
 
         function command() {
+            //>>includeStart('debug', pragmas.debug);
             if (!command.canExecute) {
                 throw new DeveloperError('Cannot execute command, canExecute is false.');
             }
+            //>>includeEnd('debug');
 
             var commandInfo = {
                 args : arguments,

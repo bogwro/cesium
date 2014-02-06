@@ -34,9 +34,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
      * @see SceneMode
      */
     var SceneTransitioner = function(scene, ellipsoid) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(scene)) {
             throw new DeveloperError('scene is required.');
         }
+        //>>includeEnd('debug');
 
         /**
          * Gets or sets the amount of time, in milliseconds, for
@@ -209,9 +211,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
      * @exception {DeveloperError} completeMorph can only be called during a transition.
      */
     SceneTransitioner.prototype.completeMorph = function() {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(this._completeMorph)) {
             throw new DeveloperError('completeMorph can only be called while morphing');
         }
+        //>>includeEnd('debug');
+
         this._completeMorph();
     };
 
@@ -673,6 +678,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
                 camera.position = endPos;
                 camera.direction = endDir;
                 camera.up = endUp;
+                camera.right = Cartesian3.cross(endDir, endUp, camera.right);
             }
         });
         transitioner._currentAnimations.push(animation);
@@ -747,6 +753,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
             camera.position = Cartesian3.clone(transitioner._camera3D.position);
             camera.direction = Cartesian3.clone(transitioner._camera3D.direction);
             camera.up = Cartesian3.clone(transitioner._camera3D.up);
+            camera.right = Cartesian3.cross(camera.direction, camera.up, camera.right);
         }
 
         var wasMorphing = defined(transitioner._completeMorph);
@@ -770,6 +777,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
         camera.position = Cartesian3.clone(transitioner._camera2D.position);
         camera.direction = Cartesian3.clone(transitioner._camera2D.direction);
         camera.up = Cartesian3.clone(transitioner._camera2D.up);
+        camera.right = Cartesian3.cross(camera.direction, camera.up, camera.right);
 
         var wasMorphing = defined(transitioner._completeMorph);
         transitioner._completeMorph = undefined;
@@ -794,7 +802,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
             camera.position = Cartesian3.clone(transitioner._cameraCV.position);
             camera.direction = Cartesian3.clone(transitioner._cameraCV.direction);
             camera.up = Cartesian3.clone(transitioner._cameraCV.up);
-            camera.right = Cartesian3.cross(camera.direction, camera.up);
+            camera.right = Cartesian3.cross(camera.direction, camera.up, camera.right);
         }
 
         var wasMorphing = defined(transitioner._completeMorph);

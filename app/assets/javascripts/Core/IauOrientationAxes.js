@@ -1,8 +1,7 @@
 /*global define*/
-define(['Core/Cartesian3', 'Core/defined', 'Core/DeveloperError', 'Core/Iau2000Orientation', 'Core/JulianDate', 'Core/Math', 'Core/Matrix3', 'Core/Quaternion'], function(
+define(['Core/Cartesian3', 'Core/defined', 'Core/Iau2000Orientation', 'Core/JulianDate', 'Core/Math', 'Core/Matrix3', 'Core/Quaternion'], function(
         Cartesian3,
         defined,
-        DeveloperError,
         Iau2000Orientation,
         JulianDate,
         CesiumMath,

@@ -105,7 +105,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/Develope
      * @returns {Color} A new color instance.
      *
      * @example
-     * var color = Color.fromRgba(0x67ADDFFF);
+     * var color = Cesium.Color.fromRgba(0x67ADDFFF);
      *
      * @see Color#toRgba
      */
@@ -183,17 +183,17 @@ define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/Develope
      *
      * @example
      * //Create a completely random color
-     * var color = Color.fromRandom();
+     * var color = Cesium.Color.fromRandom();
      *
      * //Create a random shade of yellow.
-     * var color = Color.fromRandom({
+     * var color = Cesium.Color.fromRandom({
      *     red : 1.0,
      *     green : 1.0,
      *     alpha : 1.0
      * });
      *
      * //Create a random bright color.
-     * var color = Color.fromRandom({
+     * var color = Cesium.Color.fromRandom({
      *     minimumRed : 0.75,
      *     minimumGreen : 0.75,
      *     minimumBlue : 0.75,
@@ -208,9 +208,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/Develope
             var minimumRed = defaultValue(options.minimumRed, 0);
             var maximumRed = defaultValue(options.maximumRed, 1.0);
 
+            //>>includeStart('debug', pragmas.debug);
             if (minimumRed > maximumRed) {
                 throw new DeveloperError("minimumRed must be less than or equal to maximumRed");
             }
+            //>>includeEnd('debug');
+
             red = minimumRed + (CesiumMath.nextRandomNumber() * (maximumRed - minimumRed));
         }
 
@@ -219,9 +222,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/Develope
             var minimumGreen = defaultValue(options.minimumGreen, 0);
             var maximumGreen = defaultValue(options.maximumGreen, 1.0);
 
+            //>>includeStart('debug', pragmas.debug);
             if (minimumGreen > maximumGreen) {
                 throw new DeveloperError("minimumGreen must be less than or equal to maximumGreen");
             }
+            //>>includeEnd('debug');
+
             green = minimumGreen + (CesiumMath.nextRandomNumber() * (maximumGreen - minimumGreen));
         }
 
@@ -230,9 +236,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/Develope
             var minimumBlue = defaultValue(options.minimumBlue, 0);
             var maximumBlue = defaultValue(options.maximumBlue, 1.0);
 
+            //>>includeStart('debug', pragmas.debug);
             if (minimumBlue > maximumBlue) {
                 throw new DeveloperError("minimumBlue must be less than or equal to maximumBlue");
             }
+            //>>includeEnd('debug');
+
             blue = minimumBlue + (CesiumMath.nextRandomNumber() * (maximumBlue - minimumBlue));
         }
 
@@ -241,9 +250,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/Develope
             var minimumAlpha = defaultValue(options.minimumAlpha, 0);
             var maximumAlpha = defaultValue(options.maximumAlpha, 1.0);
 
+            //>>includeStart('debug', pragmas.debug);
             if (minimumAlpha > maximumAlpha) {
                 throw new DeveloperError("minimumAlpha must be less than or equal to maximumAlpha");
             }
+            //>>includeEnd('debug');
+
             alpha = minimumAlpha + (CesiumMath.nextRandomNumber() * (maximumAlpha - minimumAlpha));
         }
 
@@ -277,15 +289,17 @@ define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/Develope
      * @exception {DeveloperError} color is required.
      *
      * @example
-     * var cesiumBlue = Color.fromCssColorString('#67ADDF');
-     * var green = Color.fromCssColorString('green');
+     * var cesiumBlue = Cesium.Color.fromCssColorString('#67ADDF');
+     * var green = Cesium.Color.fromCssColorString('green');
      *
      * @see <a href="http://www.w3.org/TR/css3-color">CSS color values</a>
      */
     Color.fromCssColorString = function(color) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(color)) {
             throw new DeveloperError('color is required');
         }
+        //>>includeEnd('debug');
 
         var namedColor = Color[color.toUpperCase()];
         if (defined(namedColor)) {
@@ -343,16 +357,16 @@ define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/Develope
      * @exception {DeveloperError} array is required.
      */
     Color.pack = function(value, array, startingIndex) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(value)) {
             throw new DeveloperError('value is required');
         }
-
         if (!defined(array)) {
             throw new DeveloperError('array is required');
         }
+        //>>includeEnd('debug');
 
         startingIndex = defaultValue(startingIndex, 0);
-
         array[startingIndex++] = value.red;
         array[startingIndex++] = value.green;
         array[startingIndex++] = value.blue;
@@ -370,12 +384,13 @@ define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/Develope
      * @exception {DeveloperError} array is required.
      */
     Color.unpack = function(array, startingIndex, result) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(array)) {
             throw new DeveloperError('array is required');
         }
+        //>>includeEnd('debug');
 
         startingIndex = defaultValue(startingIndex, 0);
-
         if (!defined(result)) {
             result = new Color();
         }
@@ -549,7 +564,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/Develope
      * @returns {Number} A single numeric unsigned 32-bit RGBA value.
      *
      * @example
-     * var rgba = Color.BLUE.toRgba();
+     * var rgba = Cesium.Color.BLUE.toRgba();
      *
      * @see Color.fromRgba
      */

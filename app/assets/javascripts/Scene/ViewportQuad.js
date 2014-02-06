@@ -29,8 +29,8 @@ define(['Core/Color', 'Core/destroyObject', 'Core/defined', 'Core/DeveloperError
      * @param {Material} [material] The {@link Material} defining the surface appearance of the viewport quad.
      *
      * @example
-     * var viewportQuad = new ViewportQuad(new BoundingRectangle(0, 0, 80, 40));
-     * viewportQuad.material.uniforms.color = new Color(1.0, 0.0, 0.0, 1.0);
+     * var viewportQuad = new Cesium.ViewportQuad(new Cesium.BoundingRectangle(0, 0, 80, 40));
+     * viewportQuad.material.uniforms.color = new Cesium.Color(1.0, 0.0, 0.0, 1.0);
      */
     var ViewportQuad = function(rectangle, material) {
 
@@ -58,7 +58,7 @@ define(['Core/Color', 'Core/destroyObject', 'Core/defined', 'Core/DeveloperError
          * @type {BoundingRectangle}
          *
          * @example
-         * viewportQuad.rectangle = new BoundingRectangle(0, 0, 80, 40);
+         * viewportQuad.rectangle = new Cesium.BoundingRectangle(0, 0, 80, 40);
          */
         this.rectangle = BoundingRectangle.clone(rectangle);
 
@@ -78,10 +78,10 @@ define(['Core/Color', 'Core/destroyObject', 'Core/defined', 'Core/DeveloperError
          *
          * @example
          * // 1. Change the color of the default material to yellow
-         * viewportQuad.material.uniforms.color = new Color(1.0, 1.0, 0.0, 1.0);
+         * viewportQuad.material.uniforms.color = new Cesium.Color(1.0, 1.0, 0.0, 1.0);
          *
          * // 2. Change material to horizontal stripes
-         * viewportQuad.material = Material.fromType(Material.StripeType);
+         * viewportQuad.material = Cesium.Material.fromType(Material.StripeType);
          *
          * @see <a href='https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric'>Fabric</a>
          */
@@ -89,7 +89,7 @@ define(['Core/Color', 'Core/destroyObject', 'Core/defined', 'Core/DeveloperError
         this._material = undefined;
     };
 
-    var attributeIndices = {
+    var attributeLocations = {
         position : 0,
         textureCoordinates : 1
     };
@@ -131,7 +131,7 @@ define(['Core/Color', 'Core/destroyObject', 'Core/defined', 'Core/DeveloperError
 
         vertexArray = context.createVertexArrayFromGeometry({
             geometry : geometry,
-            attributeIndices : attributeIndices,
+            attributeLocations : attributeLocations,
             bufferUsage : BufferUsage.STATIC_DRAW
         });
 
@@ -148,18 +148,18 @@ define(['Core/Color', 'Core/destroyObject', 'Core/defined', 'Core/DeveloperError
      * @exception {DeveloperError} this.rectangle must be defined.
      */
     ViewportQuad.prototype.update = function(context, frameState, commandList) {
-        if (!this.show)
-        {
+        if (!this.show) {
             return;
         }
 
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(this.material)) {
             throw new DeveloperError('this.material must be defined.');
         }
-
         if (!defined(this.rectangle)) {
             throw new DeveloperError('this.rectangle must be defined.');
         }
+        //>>includeEnd('debug');
 
         if (!defined(this._va)) {
             this._va = getVertexArray(context);
@@ -182,7 +182,7 @@ define(['Core/Color', 'Core/destroyObject', 'Core/defined', 'Core/DeveloperError
 
                 var fsSource = createShaderSource({ sources : [this._material.shaderSource, ViewportQuadFS] });
                 this._overlayCommand.shaderProgram = context.getShaderCache().replaceShaderProgram(
-                    this._overlayCommand.shaderProgram, ViewportQuadVS, fsSource, attributeIndices);
+                    this._overlayCommand.shaderProgram, ViewportQuadVS, fsSource, attributeLocations);
             }
 
             this._material.update(context);

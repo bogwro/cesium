@@ -26,14 +26,16 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      *
      * @example
      * // Construct an ellipsoidal occluder with radii 1.0, 1.1, and 0.9.
-     * var cameraPosition = new Cartesian3(5.0, 6.0, 7.0);
-     * var occluderEllipsoid = new Ellipsoid(1.0, 1.1, 0.9);
-     * var occluder = new EllipsoidalOccluder(occluderEllipsoid, cameraPosition);
+     * var cameraPosition = new Cesium.Cartesian3(5.0, 6.0, 7.0);
+     * var occluderEllipsoid = new Cesium.Ellipsoid(1.0, 1.1, 0.9);
+     * var occluder = new Cesium.EllipsoidalOccluder(occluderEllipsoid, cameraPosition);
      */
     var EllipsoidalOccluder = function(ellipsoid, cameraPosition) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(ellipsoid)) {
             throw new DeveloperError('ellipsoid is required.');
         }
+        //>>includeEnd('debug');
 
         this._ellipsoid = ellipsoid;
         this._cameraPosition = new Cartesian3();
@@ -98,10 +100,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * @returns {boolean} <code>true</code> if the occludee is visible; otherwise <code>false</code>.
      *
      * @example
-     * var cameraPosition = new Cartesian3(0, 0, 2.5);
-     * var ellipsoid = new Ellipsoid(1.0, 1.1, 0.9);
-     * var occluder = new EllipsoidalOccluder(ellipsoid, cameraPosition);
-     * var point = new Cartesian3(0, -3, -3);
+     * var cameraPosition = new Cesium.Cartesian3(0, 0, 2.5);
+     * var ellipsoid = new Cesium.Ellipsoid(1.0, 1.1, 0.9);
+     * var occluder = new Cesium.EllipsoidalOccluder(ellipsoid, cameraPosition);
+     * var point = new Cesium.Cartesian3(0, -3, -3);
      * occluder.isPointVisible(point); //returns true
      */
     EllipsoidalOccluder.prototype.isPointVisible = function(occludee) {
@@ -122,10 +124,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * @returns {boolean} <code>true</code> if the occludee is visible; otherwise <code>false</code>.
      *
      * @example
-     * var cameraPosition = new Cartesian3(0, 0, 2.5);
-     * var ellipsoid = new Ellipsoid(1.0, 1.1, 0.9);
-     * var occluder = new EllipsoidalOccluder(ellipsoid, cameraPosition);
-     * var point = new Cartesian3(0, -3, -3);
+     * var cameraPosition = new Cesium.Cartesian3(0, 0, 2.5);
+     * var ellipsoid = new Cesium.Ellipsoid(1.0, 1.1, 0.9);
+     * var occluder = new Cesium.EllipsoidalOccluder(ellipsoid, cameraPosition);
+     * var point = new Cesium.Cartesian3(0, -3, -3);
      * var scaledSpacePoint = ellipsoid.transformPositionToScaledSpace(point);
      * occluder.isScaledSpacePointVisible(scaledSpacePoint); //returns true
      */
@@ -157,17 +159,17 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * @returns {Cartesian3} The computed horizon culling point, expressed in the ellipsoid-scaled space.
      */
     EllipsoidalOccluder.prototype.computeHorizonCullingPoint = function(directionToPoint, positions, result) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(directionToPoint)) {
             throw new DeveloperError('directionToPoint is required');
         }
         if (!defined(positions)) {
             throw new DeveloperError('positions is required');
         }
+        //>>includeEnd('debug');
 
         var ellipsoid = this._ellipsoid;
-
         var scaledSpaceDirectionToPoint = computeScaledSpaceDirectionToPoint(ellipsoid, directionToPoint);
-
         var resultMagnitude = 0.0;
 
         for (var i = 0, len = positions.length; i < len; ++i) {
@@ -200,6 +202,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * @returns {Cartesian3} The computed horizon culling point, expressed in the ellipsoid-scaled space.
      */
     EllipsoidalOccluder.prototype.computeHorizonCullingPointFromVertices = function(directionToPoint, vertices, stride, center, result) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(directionToPoint)) {
             throw new DeveloperError('directionToPoint is required');
         }
@@ -209,13 +212,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
         if (!defined(stride)) {
             throw new DeveloperError('stride is required');
         }
+        //>>includeEnd('debug');
 
         center = defaultValue(center, Cartesian3.ZERO);
-
         var ellipsoid = this._ellipsoid;
-
         var scaledSpaceDirectionToPoint = computeScaledSpaceDirectionToPoint(ellipsoid, directionToPoint);
-
         var resultMagnitude = 0.0;
 
         for (var i = 0, len = vertices.length; i < len; i += stride) {
@@ -245,9 +246,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * @returns {Cartesian3} The computed horizon culling point, expressed in the ellipsoid-scaled space.
      */
     EllipsoidalOccluder.prototype.computeHorizonCullingPointFromExtent = function(extent, ellipsoid, result) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(extent)) {
             throw new DeveloperError('extent is required.');
         }
+        //>>includeEnd('debug');
 
         var positions = extent.subsample(ellipsoid, 0.0, subsampleScratch);
         var bs = BoundingSphere.fromPoints(positions);

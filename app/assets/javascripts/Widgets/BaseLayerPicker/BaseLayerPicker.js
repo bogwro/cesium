@@ -92,13 +92,14 @@ define(['Core/defined', 'Core/defineProperties', 'Core/destroyObject', 'Core/Dev
      * baseLayerPicker.viewModel.selectedItem = providerViewModels[0];
      */
     var BaseLayerPicker = function(container, imageryLayers, imageryProviderViewModels) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(container)) {
             throw new DeveloperError('container is required.');
         }
-
         if (!defined(imageryLayers)) {
             throw new DeveloperError('imageryLayers is required.');
         }
+        //>>includeEnd('debug');
 
         container = getElement(container);
 

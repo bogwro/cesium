@@ -106,9 +106,11 @@ define(['Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Scene/Cust
      * @see SensorVolumeCollection#getLength
      */
     SensorVolumeCollection.prototype.get = function(index) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(index)) {
             throw new DeveloperError('index is required.');
         }
+        //>>includeEnd('debug');
 
         return this._sensors[index];
     };

@@ -36,15 +36,15 @@ define(['Core/defaultValue', 'Core/defined', 'ThirdParty/when'], function(
      *
      * @example
      * // throttle requests for an image
-     * var promise = throttleRequestsByServer(
+     * var promise = Cesium.throttleRequestByServer(
      *     'http://madeupserver.agi.com/myImage.png',
      *     function(url) {
-     *        return loadImage(url);
+     *        return Cesium.loadImage(url);
      *     });
-     * if (!defined(promise)) {
+     * if (!Cesium.defined(promise)) {
      *     // too many active requests, try again later.
      * } else {
-     *     when(promise, function(image) {
+     *     Cesium.when(promise, function(image) {
      *         // handle loaded image
      *     });
      * }

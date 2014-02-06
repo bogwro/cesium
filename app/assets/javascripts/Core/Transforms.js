@@ -50,9 +50,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
      *
      * @example
      * // Get the transform from local east-north-up at cartographic (0.0, 0.0) to Earth's fixed frame.
-     * var ellipsoid = Ellipsoid.WGS84;
-     * var center = ellipsoid.cartographicToCartesian(Cartographic.ZERO);
-     * var transform = Transforms.eastNorthUpToFixedFrame(center);
+     * var ellipsoid = Cesium.Ellipsoid.WGS84;
+     * var center = ellipsoid.cartographicToCartesian(Cesium.Cartographic.ZERO);
+     * var transform = Cesium.Transforms.eastNorthUpToFixedFrame(center);
      */
     Transforms.eastNorthUpToFixedFrame = function(origin, ellipsoid, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -156,9 +156,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
      *
      * @example
      * // Get the transform from local north-east-down at cartographic (0.0, 0.0) to Earth's fixed frame.
-     * var ellipsoid = Ellipsoid.WGS84;
-     * var center = ellipsoid.cartographicToCartesian(Cartographic.ZERO);
-     * var transform = Transforms.northEastDownToFixedFrame(center);
+     * var ellipsoid = Cesium.Ellipsoid.WGS84;
+     * var center = ellipsoid.cartographicToCartesian(Cesium.Cartographic.ZERO);
+     * var transform = Cesium.Transforms.northEastDownToFixedFrame(center);
      */
     Transforms.northEastDownToFixedFrame = function(origin, ellipsoid, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -260,11 +260,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
      * @example
      * //Set the view to in the inertial frame.
      * function updateAndRender() {
-     *     var now = new JulianDate();
+     *     var now = new Cesium.JulianDate();
      *     scene.initializeFrame();
-     *     scene.getCamera().transform = Matrix4.fromRotationTranslation(Transforms.computeTemeToPseudoFixedMatrix(now), Cartesian3.ZERO);
+     *     scene.getCamera().transform = Cesium.Matrix4.fromRotationTranslation(Cesium.Transforms.computeTemeToPseudoFixedMatrix(now), Cesium.Cartesian3.ZERO);
      *     scene.render();
-     *     requestAnimationFrame(updateAndRender);
+     *     Cesium.requestAnimationFrame(updateAndRender);
      * }
      * updateAndRender();
      */
@@ -361,7 +361,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
      * @see when
      *
      * @example
-     * var interval = new TimeInterval(...);
+     * var interval = new Cesium.TimeInterval(...);
      * when(preloadIcrfFixed(interval), function() {
      *     // the data is now loaded
      * });
@@ -399,14 +399,14 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
      * @example
      * //Set the view to the inertial frame.
      * function updateAndRender() {
-     *     var now = new JulianDate();
+     *     var now = new Cesium.JulianDate();
      *     scene.initializeFrame();
-     *     var icrfToFixed = Transforms.computeIcrfToFixedMatrix(now);
-     *     if (defined(icrfToFixed)) {
-     *         scene.getCamera().transform = Matrix4.fromRotationTranslation(icrfToFixed, Cartesian3.ZERO);
+     *     var icrfToFixed = Cesium.Transforms.computeIcrfToFixedMatrix(now);
+     *     if (Cesium.defined(icrfToFixed)) {
+     *         scene.getCamera().transform = Cesium.Matrix4.fromRotationTranslation(icrfToFixed, Cesium.Cartesian3.ZERO);
      *     }
      *     scene.render();
-     *     requestAnimationFrame(updateAndRender);
+     *     Cesium.requestAnimationFrame(updateAndRender);
      * }
      * updateAndRender();
      */
@@ -450,12 +450,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Iau200
      *
      * @example
      * // Transform a point from the ICRF axes to the Fixed axes.
-     * var now = new JulianDate();
-     * var pointInFixed = new Cartesian3(...);
-     * var fixedToIcrf = Transforms.computeIcrfToFixedMatrix(now);
+     * var now = new Cesium.JulianDate();
+     * var pointInFixed = new Cesium.Cartesian3(...);
+     * var fixedToIcrf = Cesium.Transforms.computeIcrfToFixedMatrix(now);
      * var pointInInertial;
-     * if (defined(fixedToIcrf)) {
-     *     pointInInertial = Matrix3.multiplyByVector(fixedToIcrf, pointInFixed);
+     * if (Cesium.defined(fixedToIcrf)) {
+     *     pointInInertial = Cesium.Matrix3.multiplyByVector(fixedToIcrf, pointInFixed);
      * }
      */
     Transforms.computeFixedToIcrfMatrix = function(date, result) {

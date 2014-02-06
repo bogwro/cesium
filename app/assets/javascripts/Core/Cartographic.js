@@ -121,9 +121,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
      * @exception {DeveloperError} epsilon is required and must be a number.
      */
     Cartographic.equalsEpsilon = function(left, right, epsilon) {
+        //>>includeStart('debug', pragmas.debug);
         if (typeof epsilon !== 'number') {
             throw new DeveloperError('epsilon is required and must be a number.');
         }
+        //>>includeEnd('debug');
+
         return (left === right) ||
                ((defined(left)) &&
                 (defined(right)) &&
@@ -142,9 +145,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
      * @exception {DeveloperError} cartographic is required.
      */
     Cartographic.toString = function(cartographic) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(cartographic)) {
             throw new DeveloperError('cartographic is required');
         }
+        //>>includeEnd('debug');
+
         return '(' + cartographic.longitude + ', ' + cartographic.latitude + ', ' + cartographic.height + ')';
     };
 

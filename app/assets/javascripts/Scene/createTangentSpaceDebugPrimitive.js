@@ -29,7 +29,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/ColorG
      * @exception {DeveloperError} options.geometry.attributes.position is required.
      *
      * @example
-     * scene.getPrimitives().add(createTangentSpaceDebugPrimitive({
+     * scene.getPrimitives().add(Cesium.createTangentSpaceDebugPrimitive({
      *    geometry : instance.geometry,
      *    length : 100000.0,
      *    modelMatrix : instance.modelMatrix
@@ -37,13 +37,14 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/ColorG
      */
     function createTangentSpaceDebugPrimitive(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
-
         var instances = [];
-
         var geometry = options.geometry;
+
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(geometry)) {
             throw new DeveloperError('options.geometry is required.');
         }
+        //>>includeEnd('debug');
 
         if (!defined(geometry.attributes) || !defined(geometry.primitiveType)) {
             // to create the debug lines, we need the computed attributes.

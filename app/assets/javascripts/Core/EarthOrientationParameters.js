@@ -50,8 +50,8 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/defined', 'Core/freezeOb
      *
      * @example
      * // Loading the EOP data
-     * var eop = new EarthOrientationParameters({ url : 'Data/EOP.json' });
-     * Transforms.earthOrientationParameters = eop;
+     * var eop = new Cesium.EarthOrientationParameters({ url : 'Data/EOP.json' });
+     * Cesium.Transforms.earthOrientationParameters = eop;
      */
     var EarthOrientationParameters = function EarthOrientationParameters(description) {
         description = defaultValue(description, defaultValue.EMPTY_OBJECT);

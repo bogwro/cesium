@@ -60,9 +60,9 @@ define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/defined', 'Core/Develope
         Cartesian3.clone(mesh.center, tile.center);
         tile.minimumHeight = mesh.minimumHeight;
         tile.maximumHeight = mesh.maximumHeight;
-        BoundingSphere.clone(mesh.boundingSphere3D, tile.boundingSphere3D);
+        tile.boundingSphere3D = BoundingSphere.clone(mesh.boundingSphere3D, tile.boundingSphere3D);
 
-        Cartesian3.clone(mesh.occludeePointInScaledSpace, tile.occludeePointInScaledSpace);
+        tile.occludeePointInScaledSpace = Cartesian3.clone(mesh.occludeePointInScaledSpace, tile.occludeePointInScaledSpace);
 
         // Free the tile's existing vertex array, if any.
         tile.freeVertexArray();
@@ -129,9 +129,12 @@ define(['Core/BoundingSphere', 'Core/Cartesian3', 'Core/defined', 'Core/Develope
     TileTerrain.prototype.processUpsampleStateMachine = function(context, terrainProvider, x, y, level) {
         if (this.state === TerrainState.UNLOADED) {
             var upsampleDetails = this.upsampleDetails;
+
+            //>>includeStart('debug', pragmas.debug);
             if (!defined(upsampleDetails)) {
                 throw new DeveloperError('TileTerrain cannot upsample unless provided upsampleDetails.');
             }
+            //>>includeEnd('debug');
 
             var sourceData = upsampleDetails.data;
             var sourceX = upsampleDetails.x;

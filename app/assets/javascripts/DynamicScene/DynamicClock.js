@@ -1,11 +1,12 @@
 /*global define*/
-define(['Core/Clock', 'Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/Event', 'DynamicScene/createDynamicPropertyDescriptor'], function(
+define(['Core/Clock', 'Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/Event', 'Core/JulianDate', 'DynamicScene/createDynamicPropertyDescriptor'], function(
         Clock,
         defaultValue,
         defined,
         defineProperties,
         DeveloperError,
         Event,
+        JulianDate,
         createDynamicPropertyDescriptor) {
     "use strict";
 
@@ -104,6 +105,24 @@ define(['Core/Clock', 'Core/defaultValue', 'Core/defined', 'Core/definePropertie
     };
 
     /**
+     * Returns true if this DynamicClock is equivalent to the other
+     * @memberof DynamicClock
+     *
+     * @param {DynamicClock} other The other DynamicClock to compare to.
+     * @returns {Boolean} <code>true</code> if the DynamicClocks are equal; otherwise, <code>false</code>.
+     */
+    DynamicClock.prototype.equals = function(other) {
+        return this === other ||
+               defined(other) &&
+               JulianDate.equals(this.startTime, other.startTime) &&
+               JulianDate.equals(this.stopTime, other.stopTime) &&
+               JulianDate.equals(this.currentTime, other.currentTime) &&
+               this.clockRange === other.clockRange &&
+               this.clockStep === other.clockStep &&
+               this.multiplier === other.multiplier;
+    };
+
+    /**
      * Assigns each unassigned property on this object to the value
      * of the same property on the provided source object.
      * @memberof DynamicClock
@@ -112,9 +131,12 @@ define(['Core/Clock', 'Core/defaultValue', 'Core/defined', 'Core/definePropertie
      * @exception {DeveloperError} source is required.
      */
     DynamicClock.prototype.merge = function(source) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(source)) {
             throw new DeveloperError('source is required.');
         }
+        //>>includeEnd('debug');
+
         this.startTime = defaultValue(this.startTime, source.startTime);
         this.stopTime = defaultValue(this.stopTime, source.stopTime);
         this.currentTime = defaultValue(this.currentTime, source.currentTime);

@@ -65,13 +65,14 @@ define(['Core/DeveloperError', 'Core/ClockRange', 'Core/defined', 'Core/destroyO
     var timelineMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     function Timeline(container, clock) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(container)) {
             throw new DeveloperError('container is required.');
         }
-
         if (!defined(clock)) {
             throw new DeveloperError('clock is required.');
         }
+        //>>includeEnd('debug');
 
         container = getElement(container);
 
@@ -195,9 +196,13 @@ define(['Core/DeveloperError', 'Core/ClockRange', 'Core/defined', 'Core/destroyO
 
     Timeline.prototype.zoomTo = function(startJulianDate, endJulianDate) {
         this._timeBarSecondsSpan = startJulianDate.getSecondsDifference(endJulianDate);
+
+        //>>includeStart('debug', pragmas.debug);
         if (this._timeBarSecondsSpan <= 0) {
             throw new DeveloperError('Start time must come before end time.');
         }
+        //>>includeEnd('debug');
+
         this._startJulian = startJulianDate;
         this._endJulian = endJulianDate;
 

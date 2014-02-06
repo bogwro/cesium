@@ -64,9 +64,12 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/binarySearch', 'Core/TimeIn
      * @exception {DeveloperError} index must be a number.
      */
     TimeIntervalCollection.prototype.get = function(index) {
+        //>>includeStart('debug', pragmas.debug);
         if (isNaN(index)) {
             throw new DeveloperError('index must be a number.');
         }
+        //>>includeEnd('debug');
+
         return this._intervals[index];
     };
 
@@ -185,9 +188,12 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/binarySearch', 'Core/TimeIn
      * @exception {DeveloperError} date is required.
      */
     TimeIntervalCollection.prototype.indexOf = function(date) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(date)) {
             throw new DeveloperError('date required');
         }
+        //>>includeEnd('debug');
+
         var thisIntervals = this._intervals;
         var index = binarySearch(thisIntervals, new TimeInterval(date, date, true, true), compareIntervalStartTimes);
         if (index >= 0) {
@@ -252,9 +258,12 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/binarySearch', 'Core/TimeIn
      * @exception {DeveloperError} interval is required.
      */
     TimeIntervalCollection.prototype.addInterval = function(interval, equalsCallback) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(interval)) {
             throw new DeveloperError("interval is required");
         }
+        //>>includeEnd('debug');
+
         if (!interval.isEmpty) {
             var comparison, index;
             var thisIntervals = this._intervals;
@@ -394,9 +403,11 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/binarySearch', 'Core/TimeIn
      * @exception {DeveloperError} interval is required.
      */
     TimeIntervalCollection.prototype.removeInterval = function(interval) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(interval)) {
             throw new DeveloperError("interval is required");
         }
+        //>>includeEnd('debug');
 
         if (interval.isEmpty) {
             return false;
@@ -507,9 +518,12 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/binarySearch', 'Core/TimeIn
      * @exception {DeveloperError} timeIntervalCollection is required.
      */
     TimeIntervalCollection.prototype.intersect = function(timeIntervalCollection, equalsCallback, mergeCallback) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(timeIntervalCollection)) {
             throw new DeveloperError('timeIntervalCollection is required.');
         }
+        //>>includeEnd('debug');
+
         return intersectInternal(this, timeIntervalCollection, equalsCallback, mergeCallback);
     };
 
@@ -532,9 +546,12 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/binarySearch', 'Core/TimeIn
      * @exception {DeveloperError} timeIntervalCollection is required.
      */
     TimeIntervalCollection.prototype.intersectInterval = function(interval, equalsCallback, mergeCallback) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(interval)) {
             throw new DeveloperError('interval is required.');
         }
+        //>>includeEnd('debug');
+
         var intervals = new TimeIntervalCollection();
         intervals.addInterval(interval);
         return intersectInternal(this, intervals, equalsCallback, mergeCallback);

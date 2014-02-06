@@ -1,5 +1,5 @@
 /*global define*/
-define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Core/GeographicProjection', 'Core/Ellipsoid', 'Core/Occluder', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Intersect', 'Core/Interval', 'Core/Matrix4', 'Core/JulianDate', 'Core/EllipsoidGeometry', 'Core/GeometryInstance', 'Core/GeometryPipeline', 'Core/ColorGeometryInstanceAttribute', 'Core/ShowGeometryInstanceAttribute', 'Renderer/Context', 'Renderer/ClearCommand', 'Renderer/PassState', 'Renderer/Pass', 'Scene/Camera', 'Scene/ScreenSpaceCameraController', 'Scene/CompositePrimitive', 'Scene/CullingVolume', 'Scene/AnimationCollection', 'Scene/SceneMode', 'Scene/SceneTransforms', 'Scene/FrameState', 'Scene/OrthographicFrustum', 'Scene/PerspectiveFrustum', 'Scene/PerspectiveOffCenterFrustum', 'Scene/FrustumCommands', 'Scene/Primitive', 'Scene/PerInstanceColorAppearance', 'Scene/SunPostProcess', 'Scene/CreditDisplay'], function(
+define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Core/GeographicProjection', 'Core/Ellipsoid', 'Core/Occluder', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Intersect', 'Core/Interval', 'Core/Matrix4', 'Core/JulianDate', 'Core/EllipsoidGeometry', 'Core/GeometryInstance', 'Core/GeometryPipeline', 'Core/ColorGeometryInstanceAttribute', 'Core/ShowGeometryInstanceAttribute', 'Renderer/Context', 'Renderer/ClearCommand', 'Renderer/PassState', 'Renderer/Pass', 'Scene/Camera', 'Scene/ScreenSpaceCameraController', 'Scene/CompositePrimitive', 'Scene/CullingVolume', 'Scene/AnimationCollection', 'Scene/SceneMode', 'Scene/SceneTransforms', 'Scene/FrameState', 'Scene/OrthographicFrustum', 'Scene/PerspectiveFrustum', 'Scene/PerspectiveOffCenterFrustum', 'Scene/FrustumCommands', 'Scene/PerformanceDisplay', 'Scene/Primitive', 'Scene/PerInstanceColorAppearance', 'Scene/SunPostProcess', 'Scene/CreditDisplay'], function(
         CesiumMath,
         Color,
         defaultValue,
@@ -38,6 +38,7 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
         PerspectiveFrustum,
         PerspectiveOffCenterFrustum,
         FrustumCommands,
+        PerformanceDisplay,
         Primitive,
         PerInstanceColorAppearance,
         SunPostProcess,
@@ -60,7 +61,7 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
      *
      * @example
      * // Create scene without anisotropic texture filtering
-     * var scene = new Scene(canvas, {
+     * var scene = new Cesium.Scene(canvas, {
      *   allowTextureFilterAnisotropic : false
      * });
      */
@@ -212,7 +213,7 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
          * };
          *
          * // Execute only the billboard's commands.  That is, only draw the billboard.
-         * var billboards = new BillboardCollection();
+         * var billboards = new Cesium.BillboardCollection();
          * scene.debugCommandFilter = function(command) {
          *     return command.owner === billboards;
          * };
@@ -256,7 +257,7 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
         /**
          * This property is for debugging only; it is not for production use.
          * <p>
-         * When {@see Scene.debugShowFrustums} is <code>true</code>, this contains
+         * When {@link Scene.debugShowFrustums} is <code>true</code>, this contains
          * properties with statistics about the number of command execute per frustum.
          * <code>totalCommands</code> is the total number of commands executed, ignoring
          * overlap. <code>commandsInFrustums</code> is an array with the number of times
@@ -271,6 +272,20 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
          * @readonly
          */
         this.debugFrustumStatistics = undefined;
+
+        /**
+         * This property is for debugging only; it is not for production use.
+         * <p>
+         * Displays frames per second and time between frames.
+         * </p>
+         *
+         * @type Boolean
+         *
+         * @default false
+         */
+        this.debugShowFramesPerSecond = false;
+
+        this._performanceDisplay = undefined;
 
         this._debugSphere = undefined;
 
@@ -857,11 +872,33 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
         executeOverlayCommands(this, passState);
 
         frameState.creditDisplay.endFrame();
+
+        if (this.debugShowFramesPerSecond) {
+            if (!defined(this._performanceDisplay)) {
+                var performanceContainer = document.createElement('div');
+                performanceContainer.style.position = 'absolute';
+                performanceContainer.style.top = '10px';
+                performanceContainer.style.left = '10px';
+                var container = this._canvas.parentNode;
+                container.appendChild(performanceContainer);
+                var performanceDisplay = new PerformanceDisplay({container: performanceContainer});
+                this._performanceDisplay = performanceDisplay;
+                this._performanceContainer = performanceContainer;
+            }
+
+            this._performanceDisplay.update();
+        } else if (defined(this._performanceDisplay)) {
+            this._performanceDisplay = this._performanceDisplay && this._performanceDisplay.destroy();
+            this._performanceContainer.parentNode.removeChild(this._performanceContainer);
+        }
+
         context.endFrame();
         executeEvents(frameState);
     };
 
     var orthoPickingFrustum = new OrthographicFrustum();
+    var scratchOrigin = new Cartesian3();
+    var scratchDirection = new Cartesian3();
     var scratchBufferDimensions = new Cartesian2();
     var scratchPixelSize = new Cartesian2();
 
@@ -878,10 +915,13 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
         var y = (2.0 / drawingBufferHeight) * (drawingBufferHeight - drawingBufferPosition.y) - 1.0;
         y *= (frustum.top - frustum.bottom) * 0.5;
 
-        var position = camera.position;
-        position = new Cartesian3(position.z, position.x, position.y);
-        position.y += x;
-        position.z += y;
+        var origin = Cartesian3.clone(camera.position, scratchOrigin);
+        Cartesian3.multiplyByScalar(camera.right, x, scratchDirection);
+        Cartesian3.add(scratchDirection, origin, origin);
+        Cartesian3.multiplyByScalar(camera.up, y, scratchDirection);
+        Cartesian3.add(scratchDirection, origin, origin);
+
+        Cartesian3.fromElements(origin.z, origin.x, origin.y, origin);
 
         scratchBufferDimensions.x = drawingBufferWidth;
         scratchBufferDimensions.y = drawingBufferHeight;
@@ -896,7 +936,7 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
         ortho.near = frustum.near;
         ortho.far = frustum.far;
 
-        return ortho.computeCullingVolume(position, camera.directionWC, camera.upWC);
+        return ortho.computeCullingVolume(origin, camera.directionWC, camera.upWC);
     }
 
     var perspPickingFrustum = new PerspectiveOffCenterFrustum();
@@ -967,9 +1007,11 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
      *
      */
     Scene.prototype.pick = function(windowPosition) {
+        //>>includeStart('debug', pragmas.debug);
         if(!defined(windowPosition)) {
             throw new DeveloperError('windowPosition is undefined.');
         }
+        //>>includeEnd('debug');
 
         var context = this._context;
         var us = this.getUniformState();
@@ -1017,15 +1059,18 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
      * @exception {DeveloperError} windowPosition is undefined.
      *
      * @example
-     * var pickedObjects = Scene.drillPick(new Cartesian2(100.0, 200.0));
+     * var pickedObjects = Cesium.Scene.drillPick(new Cesium.Cartesian2(100.0, 200.0));
      */
     Scene.prototype.drillPick = function(windowPosition) {
         // PERFORMANCE_IDEA: This function calls each primitive's update for each pass. Instead
         // we could update the primitive once, and then just execute their commands for each pass,
         // and cull commands for picked primitives.  e.g., base on the command's owner.
+
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(windowPosition)) {
             throw new DeveloperError('windowPosition is undefined.');
         }
+        //>>includeEnd('debug');
 
         var pickedObjects = [];
 
@@ -1080,6 +1125,7 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
      * @memberof Scene
      */
     Scene.prototype.destroy = function() {
+        this._animations.removeAll();
         this._screenSpaceCameraController = this._screenSpaceCameraController && this._screenSpaceCameraController.destroy();
         this._pickFramebuffer = this._pickFramebuffer && this._pickFramebuffer.destroy();
         this._primitives = this._primitives && this._primitives.destroy();
@@ -1090,6 +1136,11 @@ define(['Core/Math', 'Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/de
         this._sunPostProcess = this._sunPostProcess && this._sunPostProcess.destroy();
         this._context = this._context && this._context.destroy();
         this._frameState.creditDisplay.destroy();
+        if (defined(this._performanceDisplay)){
+            this._performanceDisplay = this._performanceDisplay && this._performanceDisplay.destroy();
+            this._performanceContainer.parentNode.removeChild(this._performanceContainer);
+        }
+
         return destroyObject(this);
     };
 

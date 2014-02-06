@@ -1,8 +1,9 @@
 /*global define*/
-define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Math', 'Renderer/MipmapHint', 'Renderer/PixelDatatype', 'Renderer/TextureMagnificationFilter', 'Renderer/TextureMinificationFilter', 'Renderer/TextureWrap', 'Renderer/CubeMapFace'], function(
+define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/defaultValue', 'Core/Math', 'Renderer/MipmapHint', 'Renderer/PixelDatatype', 'Renderer/TextureMagnificationFilter', 'Renderer/TextureMinificationFilter', 'Renderer/TextureWrap', 'Renderer/CubeMapFace'], function(
         defined,
         DeveloperError,
         destroyObject,
+        defaultValue,
         CesiumMath,
         MipmapHint,
         PixelDatatype,
@@ -138,22 +139,23 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/destroyObject', 'Core/Math'
      * // minification when the cube map is sampled.
      * cubeMap.generateMipmap();
      * cubeMap.setSampler(context.createSampler({
-     *   minificationFilter : TextureMinificationFilter.NEAREST_MIPMAP_LINEAR
+     *   minificationFilter : Cesium.TextureMinificationFilter.NEAREST_MIPMAP_LINEAR
      * }));
      */
     CubeMap.prototype.generateMipmap = function(hint) {
+        hint = defaultValue(hint, MipmapHint.DONT_CARE);
+
+        //>>includeStart('debug', pragmas.debug);
         if ((this._size > 1) && !CesiumMath.isPowerOfTwo(this._size)) {
             throw new DeveloperError('width and height must be a power of two to call generateMipmap().');
         }
-
-        hint = hint || MipmapHint.DONT_CARE;
         if (!MipmapHint.validate(hint)) {
             throw new DeveloperError('hint is invalid.');
         }
+        //>>includeEnd('debug');
 
         var gl = this._gl;
         var target = this._textureTarget;
-
         gl.hint(gl.GENERATE_MIPMAP_HINT, hint);
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(target, this._texture);

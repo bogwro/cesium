@@ -27,7 +27,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/isCros
      *
      * @example
      * // load a single image asynchronously
-     * loadImage('some/image/url.png').then(function(image) {
+     * Cesium.loadImage('some/image/url.png').then(function(image) {
      *     // use the loaded image
      * }, function() {
      *     // an error occurred
@@ -39,9 +39,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/isCros
      * });
      */
     var loadImage = function(url, allowCrossOrigin) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(url)) {
             throw new DeveloperError('url is required.');
         }
+        //>>includeEnd('debug');
 
         allowCrossOrigin = defaultValue(allowCrossOrigin, true);
 

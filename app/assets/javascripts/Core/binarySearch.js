@@ -33,9 +33,10 @@ define(['Core/defined', 'Core/DeveloperError'], function(
      *     return a - b;
      * };
      * var numbers = [0, 2, 4, 6, 8];
-     * var index = binarySearch(numbers, 6, comparator); // 3
+     * var index = Cesium.binarySearch(numbers, 6, comparator); // 3
      */
     var binarySearch = function(array, itemToFind, comparator) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(array)) {
             throw new DeveloperError('array is required.');
         }
@@ -45,6 +46,7 @@ define(['Core/defined', 'Core/DeveloperError'], function(
         if (!defined(comparator)) {
             throw new DeveloperError('comparator is required.');
         }
+        //>>includeEnd('debug');
 
         var low = 0;
         var high = array.length - 1;

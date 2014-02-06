@@ -1,8 +1,9 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeConstants', 'Core/LeapSecond', 'Core/TimeStandard', 'Core/isLeapYear', 'ThirdParty/sprintf'], function(
+define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/defaultValue', 'Core/TimeConstants', 'Core/LeapSecond', 'Core/TimeStandard', 'Core/isLeapYear', 'ThirdParty/sprintf'], function(
         DeveloperError,
         binarySearch,
         defined,
+        defaultValue,
         TimeConstants,
         LeapSecond,
         TimeStandard,
@@ -233,12 +234,12 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      *
      * @example
      * // Example 1. Construct a JulianDate representing the current system time.
-     * var julianDate = new JulianDate();
+     * var julianDate = new Cesium.JulianDate();
      *
      * // Example 2. Construct a JulianDate from a Julian day number and seconds of the day.
      * var julianDayNumber = 2448257;   // January 1, 1991
      * var secondsOfDay = 21600;        // 06:00:00
-     * var julianDate = new JulianDate(julianDayNumber, secondsOfDay, TimeStandard.UTC);
+     * var julianDate = new Cesium.JulianDate(julianDayNumber, secondsOfDay, Cesium.TimeStandard.UTC);
      */
     var JulianDate = function(julianDayNumber, julianSecondsOfDay, timeStandard) {
         this._julianDayNumber = undefined;
@@ -248,19 +249,19 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
         var secondsOfDay;
         //If any of the properties are defined, then we are constructing from components.
         if (defined(julianDayNumber) || defined(julianSecondsOfDay) || defined(timeStandard)) {
-            if (!defined(timeStandard)) {
-                timeStandard = TimeStandard.UTC;
-            } else if (timeStandard !== TimeStandard.UTC && timeStandard !== TimeStandard.TAI) {
+            timeStandard = defaultValue(timeStandard, TimeStandard.UTC);
+
+            //>>includeStart('debug', pragmas.debug);
+            if (timeStandard !== TimeStandard.UTC && timeStandard !== TimeStandard.TAI) {
                 throw new DeveloperError('timeStandard is not a known TimeStandard.');
             }
-
             if (julianDayNumber === null || isNaN(julianDayNumber)) {
                 throw new DeveloperError('julianDayNumber is required.');
             }
-
             if (julianSecondsOfDay === null || isNaN(julianSecondsOfDay)) {
                 throw new DeveloperError('julianSecondsOfDay is required.');
             }
+            //>>includeEnd('debug');
 
             //coerce to integer
             wholeDays = julianDayNumber | 0;
@@ -327,12 +328,14 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * @example
      * // Construct a JulianDate specifying the UTC time standard
      * var date = new Date('January 1, 2011 12:00:00 EST');
-     * var julianDate = JulianDate.fromDate(date, TimeStandard.UTC);
+     * var julianDate = Cesium.JulianDate.fromDate(date, Cesium.TimeStandard.UTC);
      */
     JulianDate.fromDate = function(date, timeStandard) {
+        //>>includeStart('debug', pragmas.debug);
         if (!(date instanceof Date) || isNaN(date.getTime())) {
             throw new DeveloperError('date must be a valid JavaScript Date.');
         }
+        //>>includeEnd('debug');
 
         var components = computeJulianDateComponentsFromDate(date);
         return new JulianDate(components[0], components[1], timeStandard);
@@ -359,16 +362,18 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      *
      * @example
      * // Example 1. Construct a JulianDate in UTC at April 24th, 2012 6:08PM UTC
-     * var julianDate = JulianDate.fromIso8601('2012-04-24T18:08Z');
+     * var julianDate = Cesium.JulianDate.fromIso8601('2012-04-24T18:08Z');
      * // Example 2. Construct a JulianDate in local time April 24th, 2012 12:00 AM
-     * var localDay = JulianDate.fromIso8601('2012-04-24');
+     * var localDay = Cesium.JulianDate.fromIso8601('2012-04-24');
      * // Example 3. Construct a JulianDate 5 hours behind UTC April 24th, 2012 5:00 pm UTC
-     * var localDay = JulianDate.fromIso8601('2012-04-24T12:00-05:00');
+     * var localDay = Cesium.JulianDate.fromIso8601('2012-04-24T12:00-05:00');
      */
     JulianDate.fromIso8601 = function(iso8601String) {
+        //>>includeStart('debug', pragmas.debug);
         if (typeof iso8601String !== 'string') {
             throw new DeveloperError(iso8601ErrorMessage);
         }
+        //>>includeEnd('debug');
 
         //Comma and decimal point both indicate a fractional number according to ISO 8601,
         //start out by blanket replacing , with . which is the only valid such symbol in JS.
@@ -624,12 +629,15 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      *
      * @example
      * // Construct a date which corresponds to January 1, 1991 06:00:00 UTC.
-     * var julianDate = JulianDate.fromTotalDays(2448257.75, TimeStandard.UTC);
+     * var julianDate = Cesium.JulianDate.fromTotalDays(2448257.75, Cesium.TimeStandard.UTC);
      */
     JulianDate.fromTotalDays = function(totalDays, timeStandard) {
+        //>>includeStart('debug', pragmas.debug);
         if (totalDays === null || isNaN(totalDays)) {
             throw new DeveloperError('totalDays is required.');
         }
+        //>>includeEnd('debug');
+
         return new JulianDate(totalDays, 0, timeStandard);
     };
 
@@ -688,9 +696,12 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * @see JulianDate#equals
      */
     JulianDate.equalsEpsilon = function(left, right, epsilon) {
+        //>>includeStart('debug', pragmas.debug);
         if (epsilon === null || isNaN(epsilon)) {
             throw new DeveloperError('epsilon is required and must be a number.');
         }
+        //>>includeEnd('debug');
+
         return Math.abs(left.getSecondsDifference(right)) <= epsilon;
     };
 
@@ -878,8 +889,8 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * @see JulianDate#getDaysDifference
      *
      * @example
-     * var start = JulianDate.fromDate(new Date('July 4, 2011 12:00:00'));
-     * var end = JulianDate.fromDate(new Date('July 5, 2011 12:01:00'));
+     * var start = Cesium.JulianDate.fromDate(new Date('July 4, 2011 12:00:00'));
+     * var end = Cesium.JulianDate.fromDate(new Date('July 5, 2011 12:01:00'));
      * var difference = start.getSecondsDifference(end);    // 86460.0 seconds
      */
     JulianDate.prototype.getSecondsDifference = function(other) {
@@ -903,8 +914,8 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * @see JulianDate#getDaysDifference
      *
      * @example
-     * var start = JulianDate.fromDate(new Date('July 4, 2011 12:00:00'));
-     * var end = JulianDate.fromDate(new Date('July 5, 2011 12:01:00'));
+     * var start = Cesium.JulianDate.fromDate(new Date('July 4, 2011 12:00:00'));
+     * var end = Cesium.JulianDate.fromDate(new Date('July 5, 2011 12:01:00'));
      * var difference = start.getMinutesDifference(end);    // 1441.0 minutes
      */
     JulianDate.prototype.getMinutesDifference = function(other) {
@@ -925,8 +936,8 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * @see JulianDate#getMinutesDifference
      *
      * @example
-     * var start = JulianDate.fromDate(new Date('July 4, 2011 12:00:00'));
-     * var end = JulianDate.fromDate(new Date('July 5, 2011 14:24:00'));
+     * var start = Cesium.JulianDate.fromDate(new Date('July 4, 2011 12:00:00'));
+     * var end = Cesium.JulianDate.fromDate(new Date('July 5, 2011 14:24:00'));
      * var difference = start.getDaysDifference(end);    // 1.1 days
      */
     JulianDate.prototype.getDaysDifference = function(other) {
@@ -949,7 +960,7 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      *
      * @example
      * var date = new Date('August 1, 2012 12:00:00 UTC');
-     * var julianDate = JulianDate.fromDate(date);
+     * var julianDate = Cesium.JulianDate.fromDate(date);
      * var difference = julianDate.getTaiMinusUtc(); //35
      */
     JulianDate.prototype.getTaiMinusUtc = function() {
@@ -987,13 +998,16 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * var date = new Date();
      * date.setUTCFullYear(2011, 6, 4);     // July 4, 2011 @ 12:00:00 UTC
      * date.setUTCHours(12, 0, 00, 0);
-     * var start = JulianDate.fromDate(date);
+     * var start = Cesium.JulianDate.fromDate(date);
      * var end = start.addSeconds(95);      // July 4, 2011 @ 12:01:35 UTC
      */
     JulianDate.prototype.addSeconds = function(seconds, result) {
+        //>>includeStart('debug', pragmas.debug);
         if (seconds === null || isNaN(seconds)) {
             throw new DeveloperError('seconds is required and must be a number.');
         }
+        //>>includeEnd('debug');
+
         return setComponents(this._julianDayNumber, this._secondsOfDay + seconds, result);
     };
 
@@ -1017,13 +1031,16 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * var date = new Date();
      * date.setUTCFullYear(2011, 6, 4);     // July 4, 2011 @ 12:00 UTC
      * date.setUTCHours(12, 0, 0, 0);
-     * var start = JulianDate.fromDate(date);
+     * var start = Cesium.JulianDate.fromDate(date);
      * var end = start.addMinutes(65);      // July 4, 2011 @ 13:05 UTC
      */
     JulianDate.prototype.addMinutes = function(duration) {
+        //>>includeStart('debug', pragmas.debug);
         if (duration === null || isNaN(duration)) {
             throw new DeveloperError('duration is required and must be a number.');
         }
+        //>>includeEnd('debug');
+
         var newSecondsOfDay = this._secondsOfDay + (duration * TimeConstants.SECONDS_PER_MINUTE);
         return new JulianDate(this._julianDayNumber, newSecondsOfDay, TimeStandard.TAI);
     };
@@ -1048,13 +1065,16 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * var date = new Date();
      * date.setUTCFullYear(2011, 6, 4);     // July 4, 2011 @ 12:00 UTC
      * date.setUTCHours(12, 0, 0, 0);
-     * var start = JulianDate.fromDate(date);
+     * var start = Cesium.JulianDate.fromDate(date);
      * var end = start.addHours(6);         // July 4, 2011 @ 18:00 UTC
      */
     JulianDate.prototype.addHours = function(duration) {
+        //>>includeStart('debug', pragmas.debug);
         if (duration === null || isNaN(duration)) {
             throw new DeveloperError('duration is required and must be a number.');
         }
+        //>>includeEnd('debug');
+
         var newSecondsOfDay = this._secondsOfDay + (duration * TimeConstants.SECONDS_PER_HOUR);
         return new JulianDate(this._julianDayNumber, newSecondsOfDay, TimeStandard.TAI);
     };
@@ -1079,13 +1099,16 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * var date = new Date();
      * date.setUTCFullYear(2011, 6, 4);     // July 4, 2011 @ 12:00 UTC
      * date.setUTCHours(12, 0, 0, 0);
-     * var start = JulianDate.fromDate(date);
+     * var start = Cesium.JulianDate.fromDate(date);
      * var end = start.addDays(5);         // July 9, 2011 @ 12:00 UTC
      */
     JulianDate.prototype.addDays = function(duration) {
+        //>>includeStart('debug', pragmas.debug);
         if (duration === null || isNaN(duration)) {
             throw new DeveloperError('duration is required and must be a number.');
         }
+        //>>includeEnd('debug');
+
         var newJulianDayNumber = this._julianDayNumber + duration;
         return new JulianDate(newJulianDayNumber, this._secondsOfDay, TimeStandard.TAI);
     };
@@ -1104,8 +1127,8 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * @see JulianDate#greaterThanOrEquals
      *
      * @example
-     * var start = JulianDate.fromDate(new Date('July 6, 1991 12:00:00'));
-     * var end = JulianDate.fromDate(new Date('July 6, 2011 12:01:00'));
+     * var start = Cesium.JulianDate.fromDate(new Date('July 6, 1991 12:00:00'));
+     * var end = Cesium.JulianDate.fromDate(new Date('July 6, 2011 12:01:00'));
      * start.lessThan(end);     // true
      */
     JulianDate.prototype.lessThan = function(other) {
@@ -1126,8 +1149,8 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * @see JulianDate#greaterThanOrEquals
      *
      * @example
-     * var start = JulianDate.fromDate(new Date('July 6, 1991 12:00:00'));
-     * var end = JulianDate.fromDate(new Date('July 6, 2011 12:00:00'));
+     * var start = Cesium.JulianDate.fromDate(new Date('July 6, 1991 12:00:00'));
+     * var end = Cesium.JulianDate.fromDate(new Date('July 6, 2011 12:00:00'));
      * start.lessThanOrEquals(end);     // true
      */
     JulianDate.prototype.lessThanOrEquals = function(other) {
@@ -1148,8 +1171,8 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * @see JulianDate#greaterThanOrEquals
      *
      * @example
-     * var start = JulianDate.fromDate(new Date('July 6, 1991 12:00:00'));
-     * var end = JulianDate.fromDate(new Date('July 6, 2011 12:01:00'));
+     * var start = Cesium.JulianDate.fromDate(new Date('July 6, 1991 12:00:00'));
+     * var end = Cesium.JulianDate.fromDate(new Date('July 6, 2011 12:01:00'));
      * end.greaterThan(start);      // true
      */
     JulianDate.prototype.greaterThan = function(other) {
@@ -1170,8 +1193,8 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * @see JulianDate#greaterThan
      *
      * @example
-     * var start = JulianDate.fromDate(new Date('July 6, 1991 12:00:00'));
-     * var end = JulianDate.fromDate(new Date('July 6, 2011 12:00:00'));
+     * var start = Cesium.JulianDate.fromDate(new Date('July 6, 1991 12:00:00'));
+     * var end = Cesium.JulianDate.fromDate(new Date('July 6, 2011 12:00:00'));
      * end.greaterThanOrEquals(start);      // true
      */
     JulianDate.prototype.greaterThanOrEquals = function(other) {
@@ -1205,8 +1228,8 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * @see JulianDate#equalsEpsilon
      *
      * @example
-     * var original = JulianDate.fromDate(new Date('July 4, 2011 12:00:00'));
-     * var clone = JulianDate.fromDate(new Date('July 4, 2011 12:00:00'));
+     * var original = Cesium.JulianDate.fromDate(new Date('July 4, 2011 12:00:00'));
+     * var clone = Cesium.JulianDate.fromDate(new Date('July 4, 2011 12:00:00'));
      * original.equals(clone);      // true
      */
     JulianDate.prototype.equals = function(other) {
@@ -1231,8 +1254,8 @@ define(['Core/DeveloperError', 'Core/binarySearch', 'Core/defined', 'Core/TimeCo
      * @see JulianDate#equals
      *
      * @example
-     * var original = JulianDate.fromDate(new Date('July 4, 2011 12:00:00'));
-     * var clone = JulianDate.fromDate(new Date('July 4, 2011 12:00:01'));
+     * var original = Cesium.JulianDate.fromDate(new Date('July 4, 2011 12:00:00'));
+     * var clone = Cesium.JulianDate.fromDate(new Date('July 4, 2011 12:00:01'));
      * original.equalsEpsilon(clone, 2);    // true
      */
     JulianDate.prototype.equalsEpsilon = function(other, epsilon) {

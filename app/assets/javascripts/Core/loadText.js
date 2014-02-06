@@ -19,7 +19,7 @@ define(['Core/loadWithXhr'], function(
      *
      * @example
      * // load text from a URL, setting a custom header
-     * loadText('http://someUrl.com/someJson.txt', {
+     * Cesium.loadText('http://someUrl.com/someJson.txt', {
      *   'X-Custom-Header' : 'some value'
      * }).then(function(text) {
      *     //Do something with the text

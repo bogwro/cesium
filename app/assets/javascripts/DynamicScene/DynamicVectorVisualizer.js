@@ -36,9 +36,12 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
      *
      */
     var DynamicVectorVisualizer = function(scene, dynamicObjectCollection) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(scene)) {
             throw new DeveloperError('scene is required.');
         }
+        //>>includeEnd('debug');
+
         this._scene = scene;
         this._unusedIndexes = [];
         this._primitives = scene.getPrimitives();
@@ -94,9 +97,12 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
      * @exception {DeveloperError} time is required.
      */
     DynamicVectorVisualizer.prototype.update = function(time) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(time)) {
             throw new DeveloperError('time is requied.');
         }
+        //>>includeEnd('debug');
+
         if (defined(this._dynamicObjectCollection)) {
             var dynamicObjects = this._dynamicObjectCollection.getObjects();
             for ( var i = 0, len = dynamicObjects.length; i < len; i++) {
@@ -158,7 +164,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
      * visualizer = visualizer && visualizer.destroy();
      */
     DynamicVectorVisualizer.prototype.destroy = function() {
-        this.removeAllPrimitives();
+        this.setDynamicObjectCollection(undefined);
         this._scene.getPrimitives().remove(this._polylineCollection);
         return destroyObject(this);
     };

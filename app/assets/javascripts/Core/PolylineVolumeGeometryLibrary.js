@@ -1,12 +1,11 @@
 /*global define*/
-define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/CornerType', 'Core/DeveloperError', 'Core/EllipsoidTangentPlane', 'Core/PolylinePipeline', 'Core/Matrix3', 'Core/Matrix4', 'Core/Quaternion', 'Core/Transforms', 'Core/Math'], function(
+define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/CornerType', 'Core/EllipsoidTangentPlane', 'Core/PolylinePipeline', 'Core/Matrix3', 'Core/Matrix4', 'Core/Quaternion', 'Core/Transforms', 'Core/Math'], function(
         defined,
         Cartesian2,
         Cartesian3,
         Cartesian4,
         Cartographic,
         CornerType,
-        DeveloperError,
         EllipsoidTangentPlane,
         PolylinePipeline,
         Matrix3,

@@ -776,14 +776,16 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian2', 'Core/Cartesian3'
          * @exception {DeveloperError} At least three positions are required.
          */
         removeDuplicates : function(positions) {
+            //>>includeStart('debug', pragmas.debug);
             if (!defined(positions)) {
                 throw new DeveloperError('positions is required.');
             }
-
-            var length = positions.length;
-            if (length < 3) {
+            if (positions.length < 3) {
                 throw new DeveloperError('At least three positions are required.');
             }
+            //>>includeEnd('debug');
+
+            var length = positions.length;
 
             var cleanedPositions = [];
 
@@ -806,15 +808,16 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian2', 'Core/Cartesian3'
          * @exception {DeveloperError} At least three positions are required.
          */
         computeArea2D : function(positions) {
+            //>>includeStart('debug', pragmas.debug);
             if (!defined(positions)) {
                 throw new DeveloperError('positions is required.');
             }
-
-            var length = positions.length;
-            if (length < 3) {
+            if (positions.length < 3) {
                 throw new DeveloperError('At least three positions are required.');
             }
+            //>>includeEnd('debug');
 
+            var length = positions.length;
             var area = 0.0;
 
             for ( var i0 = length - 1, i1 = 0; i1 < length; i0 = i1++) {
@@ -850,15 +853,16 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian2', 'Core/Cartesian3'
          * @exception {DeveloperError} At least three positions are required.
          */
         triangulate : function(positions) {
+            //>>includeStart('debug', pragmas.debug);
             if (!defined(positions)) {
                 throw new DeveloperError('positions is required.');
             }
-
-            var length = positions.length;
-            if (length < 3) {
+            if (positions.length < 3) {
                 throw new DeveloperError('At least three positions are required.');
             }
+            //>>includeEnd('debug');
 
+            var length = positions.length;
             // Keep track of indices for later
             var nodeArray = [];
             for ( var i = 0; i < length; ++i) {
@@ -895,26 +899,25 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian2', 'Core/Cartesian3'
          * @exception {DeveloperError} Granularity must be greater than zero.
          */
         computeSubdivision : function(positions, indices, granularity) {
+            granularity = defaultValue(granularity, CesiumMath.RADIANS_PER_DEGREE);
+
+            //>>includeStart('debug', pragmas.debug);
             if (!defined(positions)) {
                 throw new DeveloperError('positions is required.');
             }
-
             if (!defined(indices)) {
                 throw new DeveloperError('indices is required.');
             }
-
             if (indices.length < 3) {
                 throw new DeveloperError('At least three indices are required.');
             }
-
             if (indices.length % 3 !== 0) {
                 throw new DeveloperError('The number of indices must be divisable by three.');
             }
-
-            granularity = defaultValue(granularity, CesiumMath.RADIANS_PER_DEGREE);
             if (granularity <= 0.0) {
                 throw new DeveloperError('granularity must be greater than zero.');
             }
+            //>>includeEnd('debug');
 
             // Use a queue for triangles that need (or might need) to be subdivided.
             var triangles = new Queue();
@@ -1111,10 +1114,11 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian2', 'Core/Cartesian3'
          *
          * @example
          * // Simplifying a polygon with multiple holes.
-         * outerRing = PolygonPipeline.eliminateHoles(outerRing, innerRings);
+         * outerRing = Cesium.PolygonPipeline.eliminateHoles(outerRing, innerRings);
          * polygon.setPositions(outerRing);
          */
         eliminateHoles : function(outerRing, innerRings, ellipsoid) {
+            //>>includeStart('debug', pragmas.debug);
             if (!defined(outerRing)) {
                 throw new DeveloperError('outerRing is required.');
             }
@@ -1124,6 +1128,8 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/Cartesian2', 'Core/Cartesian3'
             if (!defined(innerRings)) {
                 throw new DeveloperError('innerRings is required.');
             }
+            //>>includeEnd('debug');
+
             ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
 
             var innerRingsCopy = [];

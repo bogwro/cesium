@@ -32,7 +32,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartesian3', 'Core/EllipsoidG
      * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid that the atmosphere is drawn around.
      *
      * @example
-     * scene.skyAtmosphere = new SkyAtmosphere();
+     * scene.skyAtmosphere = new Cesium.SkyAtmosphere();
      *
      * @see Scene.skyAtmosphere
      */
@@ -128,7 +128,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Cartesian3', 'Core/EllipsoidG
             }));
             command.vertexArray = context.createVertexArrayFromGeometry({
                 geometry : geometry,
-                attributeIndices : GeometryPipeline.createAttributeIndices(geometry),
+                attributeLocations : GeometryPipeline.createAttributeLocations(geometry),
                 bufferUsage : BufferUsage.STATIC_DRAW
             });
             command.primitiveType = PrimitiveType.TRIANGLES;

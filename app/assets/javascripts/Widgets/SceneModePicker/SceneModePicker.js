@@ -47,12 +47,14 @@ define(['Core/defineProperties', 'Core/defined', 'Core/destroyObject', 'Core/Dev
      * var sceneModePicker = new Cesium.SceneModePicker('sceneModePickerContainer', transitioner);
      */
     var SceneModePicker = function(container, transitioner) {
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(container)) {
             throw new DeveloperError('container is required.');
         }
         if (!defined(transitioner)) {
             throw new DeveloperError('transitioner is required.');
         }
+        //>>includeEnd('debug');
 
         container = getElement(container);
 

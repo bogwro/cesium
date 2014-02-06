@@ -127,7 +127,7 @@ define(['Core/Cartesian2', 'Core/Cartesian3', 'Core/clone', 'Core/defaultValue',
             times[k] = k * scalar;
         }
 
-        return new HermiteSpline({
+        return HermiteSpline.createNaturalCubic({
             points : points,
             times : times
         });
@@ -240,7 +240,7 @@ define(['Core/Cartesian2', 'Core/Cartesian3', 'Core/clone', 'Core/defaultValue',
             times[k] = k * scalar;
         }
 
-        return new HermiteSpline({
+        return HermiteSpline.createNaturalCubic({
             points : points,
             times : times
         });
@@ -332,30 +332,6 @@ define(['Core/Cartesian2', 'Core/Cartesian3', 'Core/clone', 'Core/defaultValue',
         return update;
     }
 
-    function disableInput(controller) {
-      var backup = {
-          enableTranslate: controller.enableTranslate,
-          enableZoom: controller.enableZoom,
-          enableRotate: controller.enableRotate,
-          enableTilt: controller.enableTilt,
-          enableLook: controller.enableLook
-      };
-      controller.enableTranslate = false;
-      controller.enableZoom = false;
-      controller.enableRotate = false;
-      controller.enableTilt = false;
-      controller.enableLook = false;
-      return backup;
-    }
-
-    function restoreInput(controller, backup) {
-      controller.enableTranslate = backup.enableTranslate;
-      controller.enableZoom = backup.enableZoom;
-      controller.enableRotate = backup.enableRotate;
-      controller.enableTilt = backup.enableTilt;
-      controller.enableLook = backup.enableLook;
-    }
-
     /**
      * Creates an animation to fly the camera from it's current position to a position given by a Cartesian. All arguments should
      * be in the current camera reference frame.
@@ -386,33 +362,31 @@ define(['Core/Cartesian2', 'Core/Cartesian3', 'Core/clone', 'Core/defaultValue',
         var direction = description.direction;
         var up = description.up;
 
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(scene)) {
             throw new DeveloperError('scene is required.');
         }
-
         if (!defined(destination)) {
             throw new DeveloperError('destination is required.');
         }
-
         if ((defined(direction) && !defined(up)) || (defined(up) && !defined(direction))) {
             throw new DeveloperError('If either direction or up is given, then both are required.');
         }
-
-        var frameState = scene.getFrameState();
-        if (frameState.mode === SceneMode.MORPHING) {
+        if (scene.getFrameState().mode === SceneMode.MORPHING) {
             throw new DeveloperError('frameState.mode cannot be SceneMode.MORPHING');
         }
+        //>>includeEnd('debug');
 
         var duration = defaultValue(description.duration, 3000.0);
-
+        var frameState = scene.getFrameState();
         var controller = scene.getScreenSpaceCameraController();
-        var backup = disableInput(controller);
+        controller.enableInputs = false;
         var wrapCallback = function(cb) {
             var wrapped = function() {
                 if (typeof cb === 'function') {
                     cb();
                 }
-                restoreInput(controller, backup);
+                controller.enableInputs = true;
             };
             return wrapped;
         };
@@ -537,12 +511,14 @@ define(['Core/Cartesian2', 'Core/Cartesian3', 'Core/clone', 'Core/defaultValue',
         description = defaultValue(description, defaultValue.EMPTY_OBJECT);
         var destination = description.destination;
 
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(scene)) {
             throw new DeveloperError('scene is required.');
         }
         if (!defined(destination)) {
             throw new DeveloperError('description.destination is required.');
         }
+        //>>includeEnd('debug');
 
         var frameState = scene.getFrameState();
         var projection = frameState.scene2D.projection;
@@ -582,6 +558,8 @@ define(['Core/Cartesian2', 'Core/Cartesian3', 'Core/clone', 'Core/defaultValue',
         description = defaultValue(description, defaultValue.EMPTY_OBJECT);
         var extent = description.destination;
         var frameState = scene.getFrameState();
+
+        //>>includeStart('debug', pragmas.debug);
         if (!defined(frameState)) {
             throw new DeveloperError('frameState is required.');
         }
@@ -591,6 +569,7 @@ define(['Core/Cartesian2', 'Core/Cartesian3', 'Core/clone', 'Core/defaultValue',
         if (frameState.mode === SceneMode.MORPHING) {
             throw new DeveloperError('frameState.mode cannot be SceneMode.MORPHING');
         }
+        //>>includeEnd('debug');
 
         var createAnimationDescription = clone(description);
         var camera = frameState.camera;

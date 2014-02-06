@@ -32,14 +32,14 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/ComponentDatatype', 'Core/I
      *
      * @example
      * // A polyline with two connected line segments
-     * var polyline = new SimplePolylineGeometry({
+     * var polyline = new Cesium.SimplePolylineGeometry({
      *   positions : ellipsoid.cartographicArrayToCartesianArray([
-     *     Cartographic.fromDegrees(0.0, 0.0),
-     *     Cartographic.fromDegrees(5.0, 0.0),
-     *     Cartographic.fromDegrees(5.0, 5.0)
+     *     Cesium.Cartographic.fromDegrees(0.0, 0.0),
+     *     Cesium.Cartographic.fromDegrees(5.0, 0.0),
+     *     Cesium.Cartographic.fromDegrees(5.0, 5.0)
      *   ])
      * });
-     * var geometry = SimplePolylineGeometry.createGeometry(polyline);
+     * var geometry = Cesium.SimplePolylineGeometry.createGeometry(polyline);
      */
     var SimplePolylineGeometry = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
@@ -47,13 +47,14 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/ComponentDatatype', 'Core/I
         var colors = options.colors;
         var perVertex = defaultValue(options.colorsPerVertex, false);
 
+        //>>includeStart('debug', pragmas.debug);
         if ((!defined(positions)) || (positions.length < 2)) {
             throw new DeveloperError('At least two positions are required.');
         }
-
         if (defined(colors) && ((perVertex && colors.length < positions.length) || (!perVertex && colors.length < positions.length - 1))) {
             throw new DeveloperError('colors has an invalid length.');
         }
+        //>>includeEnd('debug');
 
         this._positions = positions;
         this._colors = colors;

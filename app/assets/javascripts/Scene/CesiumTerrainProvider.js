@@ -28,9 +28,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/loadArrayBuffer', 'Core/throt
      * @see TerrainProvider
      */
     var CesiumTerrainProvider = function CesiumTerrainProvider(description) {
+        //>>includeStart('debug', pragmas.debug)
         if (!defined(description) || !defined(description.url)) {
             throw new DeveloperError('description.url is required.');
         }
+        //>>includeEnd('debug');
 
         this._url = description.url;
         this._proxy = description.proxy;
