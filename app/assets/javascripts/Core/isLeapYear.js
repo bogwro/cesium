@@ -1,5 +1,7 @@
 /*global define*/
-define(['Core/DeveloperError'], function(
+define([
+        './DeveloperError'
+    ], function(
         DeveloperError) {
     "use strict";
 
@@ -9,10 +11,7 @@ define(['Core/DeveloperError'], function(
      * @exports isLeapYear
      *
      * @param {Number} year The year to be tested.
-     *
-     * @returns {Boolean} True if <code>year</code> is a leap yer.
-     *
-     * @exception {DeveloperError} year is required and must be a number.
+     * @returns {Boolean} True if <code>year</code> is a leap year.
      *
      * @example
      * var leapYear = Cesium.isLeapYear(2000); // true

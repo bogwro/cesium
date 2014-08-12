@@ -1,7 +1,11 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/Cartesian3', 'Core/EllipsoidGeometry'], function(
-        defaultValue,
+define([
+        './Cartesian3',
+        './defaultValue',
+        './EllipsoidGeometry'
+    ], function(
         Cartesian3,
+        defaultValue,
         EllipsoidGeometry) {
     "use strict";
 
@@ -11,6 +15,7 @@ define(['Core/defaultValue', 'Core/Cartesian3', 'Core/EllipsoidGeometry'], funct
      * @alias SphereGeometry
      * @constructor
      *
+     * @param {Object} [options] Object with the following properties:
      * @param {Number} [options.radius=1.0] The radius of the sphere.
      * @param {Number} [options.stackPartitions=64] The number of times to partition the ellipsoid into stacks.
      * @param {Number} [options.slicePartitions=64] The number of times to partition the ellipsoid into radial slices.
@@ -20,6 +25,8 @@ define(['Core/defaultValue', 'Core/Cartesian3', 'Core/EllipsoidGeometry'], funct
      * @exception {DeveloperError} options.stackPartitions cannot be less than three.
      *
      * @see SphereGeometry#createGeometry
+     *
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Sphere.html|Cesium Sandcastle Sphere Demo}
      *
      * @example
      * var sphere = new Cesium.SphereGeometry({

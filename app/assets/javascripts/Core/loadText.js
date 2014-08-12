@@ -1,5 +1,7 @@
 /*global define*/
-define(['Core/loadWithXhr'], function(
+define([
+        './loadWithXhr'
+    ], function(
         loadWithXhr) {
     "use strict";
 
@@ -15,21 +17,19 @@ define(['Core/loadWithXhr'], function(
      * @param {Object} [headers] HTTP headers to send with the request.
      * @returns {Promise} a promise that will resolve to the requested data when loaded.
      *
-     * @exception {DeveloperError} url is required.
+     * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest|XMLHttpRequest}
+     * @see {@link http://www.w3.org/TR/cors/|Cross-Origin Resource Sharing}
+     * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      *
      * @example
      * // load text from a URL, setting a custom header
      * Cesium.loadText('http://someUrl.com/someJson.txt', {
      *   'X-Custom-Header' : 'some value'
      * }).then(function(text) {
-     *     //Do something with the text
-     * }, function() {
+     *     // Do something with the text
+     * }.otherwise(function(error) {
      *     // an error occurred
      * });
-     *
-     * @see <a href="http://en.wikipedia.org/wiki/XMLHttpRequest">XMLHttpRequest</a>
-     * @see <a href='http://www.w3.org/TR/cors/'>Cross-Origin Resource Sharing</a>
-     * @see <a href='http://wiki.commonjs.org/wiki/Promises/A'>CommonJS Promises/A</a>
      */
     var loadText = function(url, headers) {
         return loadWithXhr({

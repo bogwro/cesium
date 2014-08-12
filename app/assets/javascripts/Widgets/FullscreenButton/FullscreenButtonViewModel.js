@@ -1,12 +1,20 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Fullscreen', 'Widgets/createCommand', 'ThirdParty/knockout'], function(
+define([
+        '../../Core/defaultValue',
+        '../../Core/defineProperties',
+        '../../Core/destroyObject',
+        '../../Core/DeveloperError',
+        '../../Core/Fullscreen',
+        '../../ThirdParty/knockout',
+        '../createCommand'
+    ], function(
         defaultValue,
         defineProperties,
         destroyObject,
         DeveloperError,
         Fullscreen,
-        createCommand,
-        knockout) {
+        knockout,
+        createCommand) {
     "use strict";
 
     /**
@@ -19,8 +27,8 @@ define(['Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Cor
     var FullscreenButtonViewModel = function(fullscreenElement) {
         var that = this;
 
-        var tmpIsFullscreen = knockout.observable(Fullscreen.isFullscreen());
-        var tmpIsEnabled = knockout.observable(Fullscreen.isFullscreenEnabled());
+        var tmpIsFullscreen = knockout.observable(Fullscreen.fullscreen);
+        var tmpIsEnabled = knockout.observable(Fullscreen.enabled);
 
         /**
          * Gets whether or not fullscreen mode is active.  This property is observable.
@@ -38,7 +46,7 @@ define(['Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Cor
          * Gets or sets whether or not fullscreen functionality should be enabled.  This property is observable.
          *
          * @type {Boolean}
-         * @see Fullscreen.isFullscreenEnabled
+         * @see Fullscreen.enabled
          */
         this.isFullscreenEnabled = undefined;
         knockout.defineProperty(this, 'isFullscreenEnabled', {
@@ -46,7 +54,7 @@ define(['Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Cor
                 return tmpIsEnabled();
             },
             set : function(value) {
-                tmpIsEnabled(value && Fullscreen.isFullscreenEnabled());
+                tmpIsEnabled(value && Fullscreen.enabled);
             }
         });
 
@@ -64,7 +72,7 @@ define(['Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Cor
         });
 
         this._command = createCommand(function() {
-            if (Fullscreen.isFullscreen()) {
+            if (Fullscreen.fullscreen) {
                 Fullscreen.exitFullscreen();
             } else {
                 Fullscreen.requestFullscreen(that._fullscreenElement);
@@ -74,9 +82,9 @@ define(['Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Cor
         this._fullscreenElement = defaultValue(fullscreenElement, document.body);
 
         this._callback = function() {
-            tmpIsFullscreen(Fullscreen.isFullscreen());
+            tmpIsFullscreen(Fullscreen.fullscreen);
         };
-        document.addEventListener(Fullscreen.getFullscreenChangeEventName(), this._callback);
+        document.addEventListener(Fullscreen.changeEventName, this._callback);
     };
 
     defineProperties(FullscreenButtonViewModel.prototype, {
@@ -117,7 +125,6 @@ define(['Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Cor
     });
 
     /**
-     * @memberof FullscreenButtonViewModel
      * @returns {Boolean} true if the object has been destroyed, false otherwise.
      */
     FullscreenButtonViewModel.prototype.isDestroyed = function() {
@@ -127,10 +134,9 @@ define(['Core/defaultValue', 'Core/defineProperties', 'Core/destroyObject', 'Cor
     /**
      * Destroys the view model.  Should be called to
      * properly clean up the view model when it is no longer needed.
-     * @memberof FullscreenButtonViewModel
      */
     FullscreenButtonViewModel.prototype.destroy = function() {
-        document.removeEventListener(Fullscreen.getFullscreenChangeEventName(), this._callback);
+        document.removeEventListener(Fullscreen.changeEventName, this._callback);
         destroyObject(this);
     };
 

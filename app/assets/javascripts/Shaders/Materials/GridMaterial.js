@@ -10,6 +10,7 @@ uniform vec4 color;\n\
 uniform float cellAlpha;\n\
 uniform vec2 lineCount;\n\
 uniform vec2 lineThickness;\n\
+uniform vec2 lineOffset;\n\
 \n\
 czm_material czm_getMaterial(czm_materialInput materialInput)\n\
 {\n\
@@ -17,16 +18,16 @@ czm_material czm_getMaterial(czm_materialInput materialInput)\n\
 \n\
     vec2 st = materialInput.st;\n\
 \n\
-    float scaledWidth = fract(lineCount.s * st.s);\n\
+    float scaledWidth = fract(lineCount.s * st.s - lineOffset.s);\n\
     scaledWidth = abs(scaledWidth - floor(scaledWidth + 0.5));\n\
-    float scaledHeight = fract(lineCount.t * st.t);\n\
+    float scaledHeight = fract(lineCount.t * st.t - lineOffset.t);\n\
     scaledHeight = abs(scaledHeight - floor(scaledHeight + 0.5));\n\
 \n\
     float value;\n\
 #ifdef GL_OES_standard_derivatives\n\
     // Fuzz Factor - Controls blurriness of lines\n\
     const float fuzz = 1.2;\n\
-    vec2 thickness = lineThickness - 1.0;\n\
+    vec2 thickness = (lineThickness * czm_resolutionScale) - 1.0;\n\
 \n\
     // From \"3D Engine Design for Virtual Globes\" by Cozzi and Ring, Listing 4.13.\n\
     vec2 dx = abs(dFdx(st));\n\
@@ -47,7 +48,7 @@ czm_material czm_getMaterial(czm_materialInput materialInput)\n\
 \n\
     // Edges taken from RimLightingMaterial.glsl\n\
     // See http://www.fundza.com/rman_shaders/surface/fake_rim/fake_rim1.html\n\
-    float dRim = 1.0 - dot(materialInput.normalEC, normalize(materialInput.positionToEyeEC));\n\
+    float dRim = 1.0 - abs(dot(materialInput.normalEC, normalize(materialInput.positionToEyeEC)));\n\
     float sRim = smoothstep(0.8, 1.0, dRim);\n\
     value *= (1.0 - sRim);\n\
 \n\

@@ -1,37 +1,61 @@
 /*global define*/
-define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/EncodedCartesian3', 'Core/Intersect', 'Core/IntersectionTests', 'Core/Math', 'Core/Matrix3', 'Core/Matrix4', 'Core/Plane', 'Core/GeographicProjection', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/Tipsify', 'Core/BoundingSphere', 'Core/Geometry', 'Core/GeometryAttribute'], function(
+define([
+        './barycentricCoordinates',
+        './BoundingSphere',
+        './Cartesian2',
+        './Cartesian3',
+        './Cartesian4',
+        './Cartographic',
+        './ComponentDatatype',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './EncodedCartesian3',
+        './GeographicProjection',
+        './Geometry',
+        './GeometryAttribute',
+        './IndexDatatype',
+        './Intersect',
+        './IntersectionTests',
+        './Math',
+        './Matrix3',
+        './Matrix4',
+        './Plane',
+        './PrimitiveType',
+        './Tipsify'
+    ], function(
         barycentricCoordinates,
-        defaultValue,
-        defined,
-        DeveloperError,
+        BoundingSphere,
         Cartesian2,
         Cartesian3,
         Cartesian4,
         Cartographic,
+        ComponentDatatype,
+        defaultValue,
+        defined,
+        DeveloperError,
         EncodedCartesian3,
+        GeographicProjection,
+        Geometry,
+        GeometryAttribute,
+        IndexDatatype,
         Intersect,
         IntersectionTests,
         CesiumMath,
         Matrix3,
         Matrix4,
         Plane,
-        GeographicProjection,
-        ComponentDatatype,
-        IndexDatatype,
         PrimitiveType,
-        Tipsify,
-        BoundingSphere,
-        Geometry,
-        GeometryAttribute) {
+        Tipsify) {
     "use strict";
 
     /**
      * Content pipeline functions for geometries.
      *
-     * @exports GeometryPipeline
+     * @namespace
+     * @alias GeometryPipeline
      *
      * @see Geometry
-     * @see Context#createVertexArrayFromGeometry
      */
     var GeometryPipeline = {};
 
@@ -105,10 +129,8 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
      * </p>
      *
      * @param {Geometry} geometry The geometry to modify.
-     *
      * @returns {Geometry} The modified <code>geometry</code> argument, with its triangle indices converted to lines.
      *
-     * @exception {DeveloperError} geometry is required.
      * @exception {DeveloperError} geometry.primitiveType must be TRIANGLES, TRIANGLE_STRIP, or TRIANGLE_FAN.
      *
      * @example
@@ -151,11 +173,8 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
      * @param {Geometry} geometry The <code>Geometry</code> instance with the attribute.
      * @param {String} [attributeName='normal'] The name of the attribute.
      * @param {Number} [length=10000.0] The length of each line segment in meters.  This can be negative to point the vector in the opposite direction.
-     *
      * @returns {Geometry} A new <code>Geometry<code> instance with line segments for the vector.
      *
-     * @exception {DeveloperError} geometry is required.
-     * @exception {DeveloperError} geometry.attributes.position is required.
      * @exception {DeveloperError} geometry.attributes must have an attribute with the same name as the attributeName parameter.
      *
      * @example
@@ -219,10 +238,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
      * for matching vertex attributes and shader programs.
      *
      * @param {Geometry} geometry The geometry, which is not modified, to create the object for.
-     *
      * @returns {Object} An object with attribute name / index pairs.
-     *
-     * @exception {DeveloperError} geometry is required.
      *
      * @example
      * var attributeLocations = Cesium.GeometryPipeline.createAttributeLocations(geometry);
@@ -231,9 +247,6 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
      * //   'position' : 0,
      * //   'normal' : 1
      * // }
-     *
-     * @see Context#createVertexArrayFromGeometry
-     * @see ShaderCache
      */
     GeometryPipeline.createAttributeLocations = function(geometry) {
         //>>includeStart('debug', pragmas.debug);
@@ -294,16 +307,14 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
      * Reorders a geometry's attributes and <code>indices</code> to achieve better performance from the GPU's pre-vertex-shader cache.
      *
      * @param {Geometry} geometry The geometry to modify.
-     *
      * @returns {Geometry} The modified <code>geometry</code> argument, with its attributes and indices reordered for the GPU's pre-vertex-shader cache.
      *
-     * @exception {DeveloperError} geometry is required.
      * @exception {DeveloperError} Each attribute array in geometry.attributes must have the same number of attributes.
+     *
+     * @see GeometryPipeline.reorderForPostVertexCache
      *
      * @example
      * geometry = Cesium.GeometryPipeline.reorderForPreVertexCache(geometry);
-     *
-     * @see GeometryPipeline.reorderForPostVertexCache
      */
     GeometryPipeline.reorderForPreVertexCache = function(geometry) {
         //>>includeStart('debug', pragmas.debug);
@@ -382,19 +393,16 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
      *
      * @param {Geometry} geometry The geometry to modify.
      * @param {Number} [cacheCapacity=24] The number of vertices that can be held in the GPU's vertex cache.
-     *
      * @returns {Geometry} The modified <code>geometry</code> argument, with its indices reordered for the post-vertex-shader cache.
      *
-     * @exception {DeveloperError} geometry is required.
      * @exception {DeveloperError} cacheCapacity must be greater than two.
+     *
+     * @see GeometryPipeline.reorderForPreVertexCache
+     * @see {@link http://gfx.cs.princeton.edu/pubs/Sander_2007_%3ETR/tipsy.pdf|Fast Triangle Reordering for Vertex Locality and Reduced Overdraw}
+     * by Sander, Nehab, and Barczak
      *
      * @example
      * geometry = Cesium.GeometryPipeline.reorderForPostVertexCache(geometry);
-     *
-     * @see GeometryPipeline.reorderForPreVertexCache
-     * @see <a href='http://gfx.cs.princeton.edu/pubs/Sander_2007_%3ETR/tipsy.pdf'>
-     * Fast Triangle Reordering for Vertex Locality and Reduced Overdraw</a>
-     * by Sander, Nehab, and Barczak
      */
     GeometryPipeline.reorderForPostVertexCache = function(geometry, cacheCapacity) {
         //>>includeStart('debug', pragmas.debug);
@@ -461,16 +469,14 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
     /**
      * Splits a geometry into multiple geometries, if necessary, to ensure that indices in the
      * <code>indices</code> fit into unsigned shorts.  This is used to meet the WebGL requirements
-     * when {@link Context#getElementIndexUint} is <code>false</code>.
+     * when unsigned int indices are not supported.
      * <p>
      * If the geometry does not have any <code>indices</code>, this function has no effect.
      * </p>
      *
      * @param {Geometry} geometry The geometry to be split into multiple geometries.
+     * @returns {Geometry[]} An array of geometries, each with indices that fit into unsigned shorts.
      *
-     * @returns {Array} An array of geometries, each with indices that fit into unsigned shorts.
-     *
-     * @exception {DeveloperError} geometry is required.
      * @exception {DeveloperError} geometry.primitiveType must equal to PrimitiveType.TRIANGLES, PrimitiveType.LINES, or PrimitiveType.POINTS
      * @exception {DeveloperError} All geometry attribute lists must have the same number of attributes.
      *
@@ -573,13 +579,8 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
      * @param {String} attributeName3D The name of the attribute in 3D.
      * @param {String} attributeName2D The name of the attribute in 2D.
      * @param {Object} [projection=new GeographicProjection()] The projection to use.
-     *
      * @returns {Geometry} The modified <code>geometry</code> argument with <code>position3D</code> and <code>position2D</code> attributes.
      *
-     * @exception {DeveloperError} geometry is required.
-     * @exception {DeveloperError} attributeName is required.
-     * @exception {DeveloperError} attributeName3D is required.
-     * @exception {DeveloperError} attributeName2D is required.
      * @exception {DeveloperError} geometry must have attribute matching the attributeName argument.
      * @exception {DeveloperError} The attribute componentDatatype must be ComponentDatatype.DOUBLE.
      * @exception {DeveloperError} Could not project a point to 2D.
@@ -604,14 +605,14 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
         if (!defined(geometry.attributes[attributeName])) {
             throw new DeveloperError('geometry must have attribute matching the attributeName argument: ' + attributeName + '.');
         }
-        if (geometry.attributes[attributeName].componentDatatype.value !== ComponentDatatype.DOUBLE.value) {
+        if (geometry.attributes[attributeName].componentDatatype !== ComponentDatatype.DOUBLE) {
             throw new DeveloperError('The attribute componentDatatype must be ComponentDatatype.DOUBLE.');
         }
         //>>includeEnd('debug');
 
         var attribute = geometry.attributes[attributeName];
         projection = (defined(projection)) ? projection : new GeographicProjection();
-        var ellipsoid = projection.getEllipsoid();
+        var ellipsoid = projection.ellipsoid;
 
         // Project original values to 2D.
         var values3D = attribute.values;
@@ -654,7 +655,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
 
     /**
      * Encodes floating-point geometry attribute values as two separate attributes to improve
-     * rendering precision using the same encoding as {@link EncodedCartesian3}.
+     * rendering precision.
      * <p>
      * This is commonly used to create high-precision position vertex attributes.
      * </p>
@@ -663,20 +664,13 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
      * @param {String} attributeName The name of the attribute.
      * @param {String} attributeHighName The name of the attribute for the encoded high bits.
      * @param {String} attributeLowName The name of the attribute for the encoded low bits.
-     *
      * @returns {Geometry} The modified <code>geometry</code> argument, with its encoded attribute.
      *
-     * @exception {DeveloperError} geometry is required.
-     * @exception {DeveloperError} attributeName is required.
-     * @exception {DeveloperError} attributeHighName is required.
-     * @exception {DeveloperError} attributeLowName is required.
      * @exception {DeveloperError} geometry must have attribute matching the attributeName argument.
      * @exception {DeveloperError} The attribute componentDatatype must be ComponentDatatype.DOUBLE.
      *
      * @example
      * geometry = Cesium.GeometryPipeline.encodeAttribute(geometry, 'position3D', 'position3DHigh', 'position3DLow');
-     *
-     * @see EncodedCartesian3
      */
     GeometryPipeline.encodeAttribute = function(geometry, attributeName, attributeHighName, attributeLowName) {
         //>>includeStart('debug', pragmas.debug);
@@ -695,7 +689,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
         if (!defined(geometry.attributes[attributeName])) {
             throw new DeveloperError('geometry must have attribute matching the attributeName argument: ' + attributeName + '.');
         }
-        if (geometry.attributes[attributeName].componentDatatype.value !== ComponentDatatype.DOUBLE.value) {
+        if (geometry.attributes[attributeName].componentDatatype !== ComponentDatatype.DOUBLE) {
             throw new DeveloperError('The attribute componentDatatype must be ComponentDatatype.DOUBLE.');
         }
         //>>includeEnd('debug');
@@ -767,18 +761,15 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
      * <code>binormal</code>, and <code>tangent</code>.
      *
      * @param {GeometryInstance} instance The geometry instance to modify.
-     *
      * @returns {GeometryInstance} The modified <code>instance</code> argument, with its attributes transforms to world coordinates.
      *
-     * @exception {DeveloperError} instance is required.
+     * @see GeometryPipeline.combine
      *
      * @example
      * for (var i = 0; i < instances.length; ++i) {
      *   Cesium.GeometryPipeline.transformToWorldCoordinates(instances[i]);
      * }
      * var geometry = Cesium.GeometryPipeline.combine(instances);
-     *
-     * @see GeometryPipeline.combine
      */
     GeometryPipeline.transformToWorldCoordinates = function(instance) {
         //>>includeStart('debug', pragmas.debug);
@@ -847,7 +838,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
                     var otherAttribute = instances[i].geometry.attributes[name];
 
                     if ((!defined(otherAttribute)) ||
-                        (attribute.componentDatatype.value !== otherAttribute.componentDatatype.value) ||
+                        (attribute.componentDatatype !== otherAttribute.componentDatatype) ||
                         (attribute.componentsPerAttribute !== otherAttribute.componentsPerAttribute) ||
                         (attribute.normalize !== otherAttribute.normalize)) {
 
@@ -872,6 +863,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
         return attributesInAllGeometries;
     }
 
+    var tempScratch = new Cartesian3();
     /**
      * Combines geometry from several {@link GeometryInstance} objects into one geometry.
      * This concatenates the attributes, concatenates and adjusts the indices, and creates
@@ -884,22 +876,20 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
      * This is used by {@link Primitive} to efficiently render a large amount of static data.
      * </p>
      *
-     * @param {Array} [instances] The array of {@link GeometryInstance} objects whose geometry will be combined.
-     *
+     * @param {GeometryInstance[]} [instances] The array of {@link GeometryInstance} objects whose geometry will be combined.
      * @returns {Geometry} A single geometry created from the provided geometry instances.
      *
-     * @exception {DeveloperError} instances is required and must have length greater than zero.
      * @exception {DeveloperError} All instances must have the same modelMatrix.
      * @exception {DeveloperError} All instance geometries must have an indices or not have one.
      * @exception {DeveloperError} All instance geometries must have the same primitiveType.
+     *
+     * @see GeometryPipeline.transformToWorldCoordinates
      *
      * @example
      * for (var i = 0; i < instances.length; ++i) {
      *   Cesium.GeometryPipeline.transformToWorldCoordinates(instances[i]);
      * }
      * var geometry = Cesium.GeometryPipeline.combine(instances);
-     *
-     * @see GeometryPipeline.transformToWorldCoordinates
      */
     GeometryPipeline.combine = function(instances) {
         //>>includeStart('debug', pragmas.debug);
@@ -1009,7 +999,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
 
             for (i = 0; i < length; ++i) {
                 bs = instances[i].geometry.boundingSphere;
-                var tempRadius = Cartesian3.magnitude(Cartesian3.subtract(bs.center, center)) + bs.radius;
+                var tempRadius = Cartesian3.magnitude(Cartesian3.subtract(bs.center, center, tempScratch)) + bs.radius;
 
                 if (tempRadius > radius) {
                     radius = tempRadius;
@@ -1036,12 +1026,8 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
      * This assumes a counter-clockwise winding order.
      *
      * @param {Geometry} geometry The geometry to modify.
-     *
      * @returns {Geometry} The modified <code>geometry</code> argument with the computed <code>normal</code> attribute.
      *
-     * @exception {DeveloperError} geometry is required.
-     * @exception {DeveloperError} geometry.attributes.position.values is required.
-     * @exception {DeveloperError} geometry.indices is required.
      * @exception {DeveloperError} geometry.indices length must be greater than 0 and be a multiple of 3.
      * @exception {DeveloperError} geometry.primitiveType must be {@link PrimitiveType.TRIANGLES}.
      *
@@ -1109,7 +1095,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
 
             Cartesian3.subtract(v1, v0, v1);
             Cartesian3.subtract(v2, v0, v2);
-            normalsPerTriangle[j] = Cartesian3.cross(v1, v2);
+            normalsPerTriangle[j] = Cartesian3.cross(v1, v2, new Cartesian3());
             j++;
         }
 
@@ -1183,14 +1169,8 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
      * </p>
      *
      * @param {Geometry} geometry The geometry to modify.
-     *
      * @returns {Geometry} The modified <code>geometry</code> argument with the computed <code>binormal</code> and <code>tangent</code> attributes.
      *
-     * @exception {DeveloperError} geometry is required.
-     * @exception {DeveloperError} geometry.attributes.position.values is required.
-     * @exception {DeveloperError} geometry.attributes.normal.values is required.
-     * @exception {DeveloperError} geometry.attributes.st.values is required.
-     * @exception {DeveloperError} geometry.indices is required.
      * @exception {DeveloperError} geometry.indices length must be greater than 0 and be a multiple of 3.
      * @exception {DeveloperError} geometry.primitiveType must be {@link PrimitiveType.TRIANGLES}.
      *
@@ -1637,6 +1617,13 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
         return splitTriangleResult;
     }
 
+    var u0Scratch = new Cartesian2();
+    var u1Scratch = new Cartesian2();
+    var u2Scratch = new Cartesian2();
+    var v0Scratch = new Cartesian3();
+    var v1Scratch = new Cartesian3();
+    var v2Scratch = new Cartesian3();
+    var computeScratch = new Cartesian3();
     function computeTriangleAttributes(i0, i1, i2, dividedTriangle, normals, binormals, tangents, texCoords) {
         if (!defined(normals) && !defined(binormals) && !defined(tangents) && !defined(texCoords)) {
             return;
@@ -1651,8 +1638,12 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
         var b0, b1, b2;
         var t0, t1, t2;
         var s0, s1, s2;
-        var v0, v1, v2;
-        var u0, u1, u2;
+        var v0 = v0Scratch;
+        var v1 = v1Scratch;
+        var v2 = v2Scratch;
+        var u0 = u0Scratch;
+        var u1 = u1Scratch;
+        var u2 = u2Scratch;
 
         if (defined(normals)) {
             n0 = Cartesian3.fromArray(normals, i0 * 3);
@@ -1687,7 +1678,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
                 v1 = Cartesian3.multiplyByScalar(n1, coords.y, v1);
                 v2 = Cartesian3.multiplyByScalar(n2, coords.z, v2);
 
-                var normal = Cartesian3.add(v0, v1);
+                var normal = Cartesian3.add(v0, v1, computeScratch);
                 Cartesian3.add(normal, v2, normal);
                 Cartesian3.normalize(normal, normal);
 
@@ -1699,7 +1690,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
                 v1 = Cartesian3.multiplyByScalar(b1, coords.y, v1);
                 v2 = Cartesian3.multiplyByScalar(b2, coords.z, v2);
 
-                var binormal = Cartesian3.add(v0, v1);
+                var binormal = Cartesian3.add(v0, v1, computeScratch);
                 Cartesian3.add(binormal, v2, binormal);
                 Cartesian3.normalize(binormal, binormal);
 
@@ -1711,7 +1702,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
                 v1 = Cartesian3.multiplyByScalar(t1, coords.y, v1);
                 v2 = Cartesian3.multiplyByScalar(t2, coords.z, v2);
 
-                var tangent = Cartesian3.add(v0, v1);
+                var tangent = Cartesian3.add(v0, v1, computeScratch);
                 Cartesian3.add(tangent, v2, tangent);
                 Cartesian3.normalize(tangent, tangent);
 
@@ -1723,7 +1714,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
                 u1 = Cartesian2.multiplyByScalar(s1, coords.y, u1);
                 u2 = Cartesian2.multiplyByScalar(s2, coords.z, u2);
 
-                var texCoord = Cartesian2.add(u0, u1);
+                var texCoord = Cartesian2.add(u0, u1, u0);
                 Cartesian2.add(texCoord, u2, texCoord);
 
                 texCoords.push(texCoord.x, texCoord.y);
@@ -1809,6 +1800,8 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
         geometry.indices = IndexDatatype.createTypedArray(numberOfVertices, newIndices);
     }
 
+    var offsetScratch = new Cartesian3();
+    var offsetPointScratch = new Cartesian3();
     function wrapLongitudeLines(geometry) {
         var attributes = geometry.attributes;
         var positions = attributes.position.values;
@@ -1855,7 +1848,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
                 var intersection = IntersectionTests.lineSegmentPlane(prev, cur, xzPlane);
                 if (defined(intersection)) {
                     // move point on the xz-plane slightly away from the plane
-                    var offset = Cartesian3.multiplyByScalar(Cartesian3.UNIT_Y, 5.0 * CesiumMath.EPSILON9);
+                    var offset = Cartesian3.multiplyByScalar(Cartesian3.UNIT_Y, 5.0 * CesiumMath.EPSILON9, offsetScratch);
                     if (prev.y < 0.0) {
                         Cartesian3.negate(offset, offset);
                     }
@@ -1863,7 +1856,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
                     var index = newPositions.length / 3;
                     newIndices.push(index, index + 1);
 
-                    var offsetPoint = Cartesian3.add(intersection, offset);
+                    var offsetPoint = Cartesian3.add(intersection, offset, offsetPointScratch);
                     newPositions.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
 
                     Cartesian3.negate(offset, offset);
@@ -1887,10 +1880,7 @@ define(['Core/barycentricCoordinates', 'Core/defaultValue', 'Core/defined', 'Cor
      * correcting drawing in 2D and Columbus view.
      *
      * @param {Geometry} geometry The geometry to modify.
-     *
      * @returns {Geometry} The modified <code>geometry</code> argument, with it's primitives split at the International Date Line.
-     *
-     * @exception {DeveloperError} geometry is required.
      *
      * @example
      * geometry = Cesium.GeometryPipeline.wrapLongitude(geometry);

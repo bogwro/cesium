@@ -1,16 +1,33 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Matrix4', 'Core/writeTextToCanvas', 'Scene/BillboardCollection', 'Scene/Label', 'Scene/LabelStyle', 'Scene/HorizontalOrigin', 'Scene/VerticalOrigin'], function(
-        defaultValue,
-        DeveloperError,
-        defined,
-        destroyObject,
+define([
+        '../Core/Cartesian2',
+        '../Core/defaultValue',
+        '../Core/defined',
+        '../Core/defineProperties',
+        '../Core/destroyObject',
+        '../Core/DeveloperError',
+        '../Core/Matrix4',
+        '../Core/writeTextToCanvas',
+        './BillboardCollection',
+        './HorizontalOrigin',
+        './Label',
+        './LabelStyle',
+        './TextureAtlas',
+        './VerticalOrigin'
+    ], function(
         Cartesian2,
+        defaultValue,
+        defined,
+        defineProperties,
+        destroyObject,
+        DeveloperError,
         Matrix4,
         writeTextToCanvas,
         BillboardCollection,
+        HorizontalOrigin,
         Label,
         LabelStyle,
-        HorizontalOrigin,
+        TextureAtlas,
         VerticalOrigin) {
     "use strict";
 
@@ -63,13 +80,17 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
 
         var billboard = glyph.billboard;
         if (defined(billboard)) {
-            billboard.setShow(false);
-            billboard.setImageIndex(-1);
-            // Destroy pickId to allow setting _pickIdThis and _id when the billboard is reused.
-            billboard._pickId = billboard._pickId && billboard._pickId.destroy();
+            billboard.show = false;
+            billboard.image = undefined;
             labelCollection._spareBillboards.push(billboard);
             glyph.billboard = undefined;
         }
+    }
+
+    function addGlyphToTextureAtlas(textureAtlas, id, canvas, glyphTextureInfo) {
+        textureAtlas.addImage(id, canvas).then(function(index, id) {
+            glyphTextureInfo.index = index;
+        });
     }
 
     function rebindAllGlyphs(labelCollection, label) {
@@ -78,7 +99,9 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
         var glyphs = label._glyphs;
         var glyphsLength = glyphs.length;
 
-        var glyph, glyphIndex, textIndex;
+        var glyph;
+        var glyphIndex;
+        var textIndex;
 
         // if we have more glyphs than needed, unbind the extras.
         if (textLength < glyphsLength) {
@@ -91,7 +114,6 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
         glyphs.length = textLength;
 
         var glyphTextureCache = labelCollection._glyphTextureCache;
-        var textureAtlas = labelCollection._textureAtlas;
 
         // walk the text looking for new characters (creating new glyphs for each)
         // or changed characters (rebinding existing glyphs)
@@ -119,13 +141,13 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
             var glyphTextureInfo = glyphTextureCache[id];
             if (!defined(glyphTextureInfo)) {
                 var canvas = createGlyphCanvas(character, font, fillColor, outlineColor, outlineWidth, style, verticalOrigin);
-                var index = -1;
-                if (canvas.width > 0 && canvas.height > 0) {
-                    index = textureAtlas.addImage(canvas);
-                }
 
-                glyphTextureInfo = new GlyphTextureInfo(labelCollection, index, canvas.dimensions);
+                glyphTextureInfo = new GlyphTextureInfo(labelCollection, -1, canvas.dimensions);
                 glyphTextureCache[id] = glyphTextureInfo;
+
+                if (canvas.width > 0 && canvas.height > 0) {
+                    addGlyphToTextureAtlas(labelCollection._textureAtlas, id, canvas, glyphTextureInfo);
+                }
             }
 
             glyph = glyphs[textIndex];
@@ -157,25 +179,27 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
                 var billboard = glyph.billboard;
                 if (!defined(billboard)) {
                     if (labelCollection._spareBillboards.length > 0) {
-                        glyph.billboard = billboard = labelCollection._spareBillboards.pop();
+                        billboard = labelCollection._spareBillboards.pop();
                     } else {
-                        glyph.billboard = billboard = labelCollection._billboardCollection.add();
+                        billboard = labelCollection._billboardCollection.add({
+                            collection : labelCollection
+                        });
                     }
-
-                    billboard.setShow(label._show);
-                    billboard.setPosition(label._position);
-                    billboard.setEyeOffset(label._eyeOffset);
-                    billboard.setPixelOffset(label._pixelOffset);
-                    billboard.setHorizontalOrigin(HorizontalOrigin.LEFT);
-                    billboard.setVerticalOrigin(label._verticalOrigin);
-                    billboard.setScale(label._scale);
-                    billboard._pickIdThis = label;
-                    billboard._id = label._id;
+                    glyph.billboard = billboard;
                 }
 
-                glyph.billboard.setImageIndex(glyphTextureInfo.index);
-                glyph.billboard.setTranslucencyByDistance(label._translucencyByDistance);
-                glyph.billboard.setPixelOffsetScaleByDistance(label._pixelOffsetScaleByDistance);
+                billboard.show = label._show;
+                billboard.position = label._position;
+                billboard.eyeOffset = label._eyeOffset;
+                billboard.pixelOffset = label._pixelOffset;
+                billboard.horizontalOrigin = HorizontalOrigin.LEFT;
+                billboard.verticalOrigin = label._verticalOrigin;
+                billboard.scale = label._scale;
+                billboard.pickPrimitive = label;
+                billboard.id = label._id;
+                billboard.image = id;
+                billboard.translucencyByDistance = label._translucencyByDistance;
+                billboard.pixelOffsetScaleByDistance = label._pixelOffsetScaleByDistance;
             }
         }
 
@@ -187,7 +211,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
     // reusable Cartesian2 instance
     var glyphPixelOffset = new Cartesian2();
 
-    function repositionAllGlyphs(label) {
+    function repositionAllGlyphs(label, resolutionScale) {
         var glyphs = label._glyphs;
         var glyph;
         var dimensions;
@@ -212,7 +236,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
             widthOffset -= totalWidth * scale;
         }
 
-        glyphPixelOffset.x = widthOffset;
+        glyphPixelOffset.x = widthOffset * resolutionScale;
         glyphPixelOffset.y = 0;
 
         var verticalOrigin = label._verticalOrigin;
@@ -228,11 +252,13 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
                 glyphPixelOffset.y = -(maxHeight - dimensions.height) / 2 * scale - dimensions.descent * scale;
             }
 
+            glyphPixelOffset.y *= resolutionScale;
+
             if (defined(glyph.billboard)) {
                 glyph.billboard._setTranslate(glyphPixelOffset);
             }
 
-            glyphPixelOffset.x += dimensions.width * scale;
+            glyphPixelOffset.x += dimensions.width * scale * resolutionScale;
         }
     }
 
@@ -260,6 +286,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
      * @alias LabelCollection
      * @constructor
      *
+     * @param {Object} [options] Object with the following properties:
      * @param {Matrix4} [options.modelMatrix=Matrix4.IDENTITY] The 4x4 transformation matrix that transforms each label from model to world coordinates.
      * @param {Boolean} [options.debugShowBoundingVolume=false] For debugging only. Determines if this primitive's commands' bounding spheres are shown.
      *
@@ -273,6 +300,8 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
      * @see Label
      * @see BillboardCollection
      *
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Labels.html|Cesium Sandcastle Labels Demo}
+     *
      * @example
      * // Create a label collection with two labels
      * var labels = new Cesium.LabelCollection();
@@ -284,8 +313,6 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
      *   position : { x : 4.0, y : 5.0, z : 6.0 },
      *   text : 'Another label'
      * });
-     *
-     * @demo <a href="http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Labels.html">Cesium Sandcastle Labels Demo</a>
      */
     var LabelCollection = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
@@ -293,29 +320,26 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
         this._textureAtlas = undefined;
 
         this._billboardCollection = new BillboardCollection();
-        this._billboardCollection.setDestroyTextureAtlas(false);
+        this._billboardCollection.destroyTextureAtlas = false;
 
         this._spareBillboards = [];
         this._glyphTextureCache = {};
         this._labels = [];
         this._labelsToUpdate = [];
         this._totalGlyphCount = 0;
+        this._resolutionScale = undefined;
 
         /**
          * The 4x4 transformation matrix that transforms each label in this collection from model to world coordinates.
          * When this is the identity matrix, the labels are drawn in world coordinates, i.e., Earth's WGS84 coordinates.
          * Local reference frames can be used by providing a different transformation matrix, like that returned
-         * by {@link Transforms.eastNorthUpToFixedFrame}.  This matrix is available to GLSL vertex and fragment
-         * shaders via {@link czm_model} and derived uniforms.
+         * by {@link Transforms.eastNorthUpToFixedFrame}.
          *
          * @type Matrix4
          * @default {@link Matrix4.IDENTITY}
          *
-         * @see Transforms.eastNorthUpToFixedFrame
-         * @see czm_model
-         *
          * @example
-         * var center = ellipsoid.cartographicToCartesian(Cesium.Cartographic.fromDegrees(-75.59777, 40.03883));
+         * var center = Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883);
          * labels.modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(center);
          * labels.add({
          *   position : new Cesium.Cartesian3(0.0, 0.0, 0.0),
@@ -339,7 +363,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
         /**
          * This property is for debugging only; it is not for production use nor is it optimized.
          * <p>
-         * Draws the bounding sphere for each {@link DrawCommand} in the primitive.
+         * Draws the bounding sphere for each draw command in the primitive.
          * </p>
          *
          * @type {Boolean}
@@ -349,18 +373,29 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
         this.debugShowBoundingVolume = defaultValue(options.debugShowBoundingVolume, false);
     };
 
+    defineProperties(LabelCollection.prototype, {
+        /**
+         * Returns the number of labels in this collection.  This is commonly used with
+         * {@link LabelCollection#get} to iterate over all the labels
+         * in the collection.
+         * @memberof LabelCollection.prototype
+         * @type {Number}
+         */
+        length : {
+            get : function() {
+                return this._labels.length;
+            }
+        }
+    });
+
     /**
      * Creates and adds a label with the specified initial properties to the collection.
      * The added label is returned so it can be modified or removed from the collection later.
      *
-     * @memberof LabelCollection
-     *
-     * @param {Object}[description] A template describing the label's properties as shown in Example 1.
-     *
+     * @param {Object}[options] A template describing the label's properties as shown in Example 1.
      * @returns {Label} The label that was added to the collection.
      *
-     * @performance Calling <code>add</code> is expected constant time.  However, when
-     * {@link LabelCollection#update} is called, the collection's vertex buffer
+     * @performance Calling <code>add</code> is expected constant time.  However, the collection's vertex buffer
      * is rewritten; this operations is <code>O(n)</code> and also incurs
      * CPU to GPU overhead.  For best performance, add as many billboards as possible before
      * calling <code>update</code>.
@@ -369,7 +404,6 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
      *
      * @see LabelCollection#remove
      * @see LabelCollection#removeAll
-     * @see LabelCollection#update
      *
      * @example
      * // Example 1:  Add a label, specifying all the default values.
@@ -378,8 +412,8 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
      *   position : Cesium.Cartesian3.ZERO,
      *   text : '',
      *   font : '30px sans-serif',
-     *   fillColor : 'white',
-     *   outlineColor : 'white',
+     *   fillColor : Cesium.Color.WHITE,
+     *   outlineColor : Cesium.Color.BLACK,
      *   style : Cesium.LabelStyle.FILL,
      *   pixelOffset : Cesium.Cartesian2.ZERO,
      *   eyeOffset : Cesium.Cartesian3.ZERO,
@@ -388,16 +422,17 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
      *   scale : 1.0
      * });
      *
+     * @example
      * // Example 2:  Specify only the label's cartographic position,
      * // text, and font.
      * var l = labels.add({
-     *   position : ellipsoid.cartographicToCartesian(new Cesium.Cartographic(longitude, latitude, height)),
+     *   position : Cesium.Cartesian3.fromRadians(longitude, latitude, height),
      *   text : 'Hello World',
      *   font : '24px Helvetica',
      * });
      */
-    LabelCollection.prototype.add = function(description) {
-        var label = new Label(description, this);
+    LabelCollection.prototype.add = function(options) {
+        var label = new Label(options, this);
 
         this._labels.push(label);
         this._labelsToUpdate.push(label);
@@ -408,25 +443,20 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
     /**
      * Removes a label from the collection.  Once removed, a label is no longer usable.
      *
-     * @memberof LabelCollection
-     *
      * @param {Label} label The label to remove.
-     *
      * @returns {Boolean} <code>true</code> if the label was removed; <code>false</code> if the label was not found in the collection.
      *
-     * @performance Calling <code>remove</code> is expected constant time.  However, when
-     * {@link LabelCollection#update} is called, the collection's vertex buffer
+     * @performance Calling <code>remove</code> is expected constant time.  However, the collection's vertex buffer
      * is rewritten - an <code>O(n)</code> operation that also incurs CPU to GPU overhead.  For
      * best performance, remove as many labels as possible before calling <code>update</code>.
      * If you intend to temporarily hide a label, it is usually more efficient to call
-     * {@link Label#setShow} instead of removing and re-adding the label.
+     * {@link Label#show} instead of removing and re-adding the label.
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *
      * @see LabelCollection#add
      * @see LabelCollection#removeAll
-     * @see LabelCollection#update
-     * @see Label#setShow
+     * @see Label#show
      *
      * @example
      * var l = labels.add(...);
@@ -447,8 +477,6 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
     /**
      * Removes all labels from the collection.
      *
-     * @memberof LabelCollection
-     *
      * @performance <code>O(n)</code>.  It is more efficient to remove all the labels
      * from a collection and then add new ones than to create a new collection entirely.
      *
@@ -456,7 +484,6 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
      *
      * @see LabelCollection#add
      * @see LabelCollection#remove
-     * @see LabelCollection#update
      *
      * @example
      * labels.add(...);
@@ -476,10 +503,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
     /**
      * Check whether this collection contains a given label.
      *
-     * @memberof LabelCollection
-     *
      * @param {Label} label The label to check for.
-     *
      * @returns {Boolean} true if this collection contains the label, false otherwise.
      *
      * @see LabelCollection#get
@@ -492,30 +516,27 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
      * Returns the label in the collection at the specified index.  Indices are zero-based
      * and increase as labels are added.  Removing a label shifts all labels after
      * it to the left, changing their indices.  This function is commonly used with
-     * {@link LabelCollection#getLength} to iterate over all the labels
+     * {@link LabelCollection#length} to iterate over all the labels
      * in the collection.
-     *
-     * @memberof LabelCollection
      *
      * @param {Number} index The zero-based index of the billboard.
      *
      * @returns {Label} The label at the specified index.
      *
      * @performance Expected constant time.  If labels were removed from the collection and
-     * {@link LabelCollection#update} was not called, an implicit <code>O(n)</code>
+     * {@link Scene#render} was not called, an implicit <code>O(n)</code>
      * operation is performed.
      *
-     * @exception {DeveloperError} index is required.
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *
-     * @see LabelCollection#getLength
+     * @see LabelCollection#length
      *
      * @example
      * // Toggle the show property of every label in the collection
-     * var len = labels.getLength();
+     * var len = labels.length;
      * for (var i = 0; i < len; ++i) {
      *   var l = billboards.get(i);
-     *   l.setShow(!l.getShow());
+     *   l.show = !l.show;
      * }
      */
     LabelCollection.prototype.get = function(index) {
@@ -529,35 +550,6 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
     };
 
     /**
-     * Returns the number of labels in this collection.  This is commonly used with
-     * {@link LabelCollection#get} to iterate over all the labels
-     * in the collection.
-     *
-     * @memberof LabelCollection
-     *
-     * @returns {Number} The number of labels in this collection.
-     *
-     * @performance Expected constant time.  If labels were removed from the collection and
-     * {@link LabelCollection#update} was not called, an implicit <code>O(n)</code>
-     * operation is performed.
-     *
-     * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
-     *
-     * @see LabelCollection#get
-     *
-     * @example
-     * // Toggle the show property of every label in the collection
-     * var len = labels.getLength();
-     * for (var i = 0; i < len; ++i) {
-     *   var l = billboards.get(i);
-     *   l.setShow(!l.getShow());
-     * }
-     */
-    LabelCollection.prototype.getLength = function() {
-        return this._labels.length;
-    };
-
-    /**
      * @private
      */
     LabelCollection.prototype.update = function(context, frameState, commandList) {
@@ -567,12 +559,25 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
         billboardCollection.debugShowBoundingVolume = this.debugShowBoundingVolume;
 
         if (!defined(this._textureAtlas)) {
-            this._textureAtlas = context.createTextureAtlas();
-            billboardCollection.setTextureAtlas(this._textureAtlas);
+            this._textureAtlas = new TextureAtlas({
+                context : context
+            });
+            billboardCollection.textureAtlas = this._textureAtlas;
         }
 
-        var labelsToUpdate = this._labelsToUpdate;
-        for ( var i = 0, len = labelsToUpdate.length; i < len; ++i) {
+        var uniformState = context.uniformState;
+        var resolutionScale = uniformState.resolutionScale;
+        var resolutionChanged = this._resolutionScale !== resolutionScale;
+        this._resolutionScale = resolutionScale;
+
+        var labelsToUpdate;
+        if (resolutionChanged) {
+            labelsToUpdate = this._labels;
+        } else {
+            labelsToUpdate = this._labelsToUpdate;
+        }
+
+        for (var i = 0, len = labelsToUpdate.length; i < len; ++i) {
             var label = labelsToUpdate[i];
             if (label.isDestroyed()) {
                 continue;
@@ -585,16 +590,16 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
                 label._rebindAllGlyphs = false;
             }
 
-            if (label._repositionAllGlyphs) {
-                repositionAllGlyphs(label);
+            if (resolutionChanged || label._repositionAllGlyphs) {
+                repositionAllGlyphs(label, resolutionScale);
                 label._repositionAllGlyphs = false;
             }
 
             var glyphCountDifference = label._glyphs.length - preUpdateGlyphCount;
             this._totalGlyphCount += glyphCountDifference;
         }
-        labelsToUpdate.length = 0;
 
+        this._labelsToUpdate.length = 0;
         billboardCollection.update(context, frameState, commandList);
     };
 
@@ -603,8 +608,6 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
      * <br /><br />
      * If this object was destroyed, it should not be used; calling any function other than
      * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.
-     *
-     * @memberof LabelCollection
      *
      * @returns {Boolean} True if this object was destroyed; otherwise, false.
      *
@@ -621,8 +624,6 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/defined', 'Core/destro
      * Once an object is destroyed, it should not be used; calling any function other than
      * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.  Therefore,
      * assign the return value (<code>undefined</code>) to the object as done in the example.
-     *
-     * @memberof LabelCollection
      *
      * @returns {undefined}
      *

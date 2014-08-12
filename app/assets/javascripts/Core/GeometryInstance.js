@@ -1,11 +1,14 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Matrix4', 'Core/Geometry', 'Core/GeometryInstanceAttribute'], function(
+define([
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './Matrix4'
+    ], function(
         defaultValue,
         defined,
         DeveloperError,
-        Matrix4,
-        Geometry,
-        GeometryInstanceAttribute) {
+        Matrix4) {
     "use strict";
 
     /**
@@ -17,12 +20,13 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Matrix
      * @alias GeometryInstance
      * @constructor
      *
+     * @param {Object} options Object with the following properties:
      * @param {Geometry} options.geometry The geometry to instance.
      * @param {Matrix4} [options.modelMatrix=Matrix4.IDENTITY] The model matrix that transforms to transform the geometry from model to world coordinates.
-     * @param {Object} [options.id=undefined] A user-defined object to return when the instance is picked with {@link Scene#pick} or get/set per-instance attributes with {@link Primitive#getGeometryInstanceAttributes}.
+     * @param {Object} [options.id] A user-defined object to return when the instance is picked with {@link Scene#pick} or get/set per-instance attributes with {@link Primitive#getGeometryInstanceAttributes}.
      * @param {Object} [options.attributes] Per-instance attributes like a show or color attribute shown in the example below.
      *
-     * @exception {DeveloperError} options.geometry is required.
+     * @see Geometry
      *
      * @example
      * // Create geometry for a box, and two instances that refer to it.
@@ -35,7 +39,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Matrix
      * var instanceBottom = new Cesium.GeometryInstance({
      *   geometry : geometry,
      *   modelMatrix : Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(
-     *     ellipsoid.cartographicToCartesian(Cesium.Cartographic.fromDegrees(-75.59777, 40.03883))), new Cesium.Cartesian3(0.0, 0.0, 1000000.0)),
+     *     Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883)), new Cesium.Cartesian3(0.0, 0.0, 1000000.0), new Cesium.Matrix4()),
      *   attributes : {
      *     color : new Cesium.ColorGeometryInstanceAttribute(Cesium.Color.AQUA)
      *   }
@@ -44,14 +48,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Matrix
      * var instanceTop = new Cesium.GeometryInstance({
      *   geometry : geometry,
      *   modelMatrix : Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(
-     *     ellipsoid.cartographicToCartesian(Cesium.Cartographic.fromDegrees(-75.59777, 40.03883))), new Cesium.Cartesian3(0.0, 0.0, 3000000.0)),
+     *     Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883)), new Cesium.Cartesian3(0.0, 0.0, 3000000.0), new Cesium.Matrix4()),
      *   attributes : {
      *     color : new Cesium.ColorGeometryInstanceAttribute(Cesium.Color.AQUA)
      *   }
      *   id : 'top'
      * });
-     *
-     * @see Geometry
      */
     var GeometryInstance = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);

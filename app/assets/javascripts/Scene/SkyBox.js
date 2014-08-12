@@ -1,22 +1,38 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Core/Matrix4', 'Core/GeometryPipeline', 'Core/VertexFormat', 'Core/PrimitiveType', 'Renderer/loadCubeMap', 'Renderer/BufferUsage', 'Renderer/DrawCommand', 'Renderer/BlendingState', 'Scene/SceneMode', 'Shaders/SkyBoxVS', 'Shaders/SkyBoxFS'], function(
-        defaultValue,
+define([
+        '../Core/BoxGeometry',
+        '../Core/Cartesian3',
+        '../Core/defaultValue',
+        '../Core/defined',
+        '../Core/destroyObject',
+        '../Core/DeveloperError',
+        '../Core/GeometryPipeline',
+        '../Core/Matrix4',
+        '../Core/VertexFormat',
+        '../Renderer/BufferUsage',
+        '../Renderer/DrawCommand',
+        '../Renderer/loadCubeMap',
+        '../Shaders/SkyBoxFS',
+        '../Shaders/SkyBoxVS',
+        './BlendingState',
+        './SceneMode'
+    ], function(
         BoxGeometry,
         Cartesian3,
+        defaultValue,
         defined,
         destroyObject,
         DeveloperError,
-        Matrix4,
         GeometryPipeline,
+        Matrix4,
         VertexFormat,
-        PrimitiveType,
-        loadCubeMap,
         BufferUsage,
         DrawCommand,
-        BlendingState,
-        SceneMode,
+        loadCubeMap,
+        SkyBoxFS,
         SkyBoxVS,
-        SkyBoxFS) {
+        BlendingState,
+        SceneMode) {
     "use strict";
 
     /**
@@ -28,8 +44,12 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
      * @alias SkyBox
      * @constructor
      *
+     * @param {Object} options Object with the following properties:
      * @param {Object} [options.sources] The source URL or <code>Image</code> object for each of the six cube map faces.  See the example below.
      * @param {Boolean} [options.show=true] Determines if this primitive will be shown.
+     *
+     * @see Scene#skyBox
+     * @see Transforms.computeTemeToPseudoFixedMatrix
      *
      * @example
      * scene.skyBox = new Cesium.SkyBox({
@@ -42,9 +62,6 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
      *     negativeZ : 'skybox_nz.png'
      *   }
      * });
-     *
-     * @see Scene#skyBox
-     * @see Transforms.computeTemeToPseudoFixedMatrix
      */
     var SkyBox = function(options) {
         /**
@@ -67,16 +84,23 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
          */
         this.show = defaultValue(options.show, true);
 
-        this._command = new DrawCommand();
-        this._command.owner = this;
+        this._command = new DrawCommand({
+            modelMatrix : Matrix4.clone(Matrix4.IDENTITY),
+            owner : this
+        });
         this._cubeMap = undefined;
     };
 
     /**
-     * @exception {DeveloperError} sources is required and must have positiveX, negativeX, positiveY, negativeY, positiveZ, and negativeZ properties.
-     * @exception {DeveloperError} sources properties must all be the same type.
+     * Called when {@link Viewer} or {@link CesiumWidget} render the scene to
+     * get the draw commands needed to render this primitive.
+     * <p>
+     * Do not call this function directly.  This is documented just to
+     * list the exceptions that may be propagated when the scene is rendered:
+     * </p>
      *
-     * @private
+     * @exception {DeveloperError} this.sources is required and must have positiveX, negativeX, positiveY, negativeY, positiveZ, and negativeZ properties.
+     * @exception {DeveloperError} this.sources properties must all be the same type.
      */
     SkyBox.prototype.update = function(context, frameState) {
         if (!this.show) {
@@ -104,7 +128,7 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
                 (!defined(sources.negativeY)) ||
                 (!defined(sources.positiveZ)) ||
                 (!defined(sources.negativeZ))) {
-                throw new DeveloperError('sources is required and must have positiveX, negativeX, positiveY, negativeY, positiveZ, and negativeZ properties.');
+                throw new DeveloperError('this.sources is required and must have positiveX, negativeX, positiveY, negativeY, positiveZ, and negativeZ properties.');
             }
 
             if ((typeof sources.positiveX !== typeof sources.negativeX) ||
@@ -112,7 +136,7 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
                 (typeof sources.positiveX !== typeof sources.negativeY) ||
                 (typeof sources.positiveX !== typeof sources.positiveZ) ||
                 (typeof sources.positiveX !== typeof sources.negativeZ)) {
-                throw new DeveloperError('sources properties must all be the same type.');
+                throw new DeveloperError('this.sources properties must all be the same type.');
             }
             //>>includeEnd('debug');
 
@@ -147,14 +171,12 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
             }));
             var attributeLocations = GeometryPipeline.createAttributeLocations(geometry);
 
-            command.primitiveType = PrimitiveType.TRIANGLES;
-            command.modelMatrix = Matrix4.clone(Matrix4.IDENTITY);
             command.vertexArray = context.createVertexArrayFromGeometry({
                 geometry: geometry,
                 attributeLocations: attributeLocations,
                 bufferUsage: BufferUsage.STATIC_DRAW
             });
-            command.shaderProgram = context.getShaderCache().getShaderProgram(SkyBoxVS, SkyBoxFS, attributeLocations);
+            command.shaderProgram = context.createShaderProgram(SkyBoxVS, SkyBoxFS, attributeLocations);
             command.renderState = context.createRenderState({
                 blending : BlendingState.ALPHA_BLEND
             });
@@ -173,8 +195,6 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
      * If this object was destroyed, it should not be used; calling any function other than
      * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.
      *
-     * @memberof SkyBox
-     *
      * @returns {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
      *
      * @see SkyBox#destroy
@@ -191,8 +211,6 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
      * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.  Therefore,
      * assign the return value (<code>undefined</code>) to the object as done in the example.
      *
-     * @memberof SkyBox
-     *
      * @returns {undefined}
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
@@ -205,7 +223,7 @@ define(['Core/defaultValue', 'Core/BoxGeometry', 'Core/Cartesian3', 'Core/define
     SkyBox.prototype.destroy = function() {
         var command = this._command;
         command.vertexArray = command.vertexArray && command.vertexArray.destroy();
-        command.shaderProgram = command.shaderProgram && command.shaderProgram.release();
+        command.shaderProgram = command.shaderProgram && command.shaderProgram.destroy();
         this._cubeMap = this._cubeMap && this._cubeMap.destroy();
         return destroyObject(this);
     };

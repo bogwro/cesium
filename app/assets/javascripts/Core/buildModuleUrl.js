@@ -1,9 +1,14 @@
 /*global define*/
-define(['require', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/Uri'], function(
-        require,
+define([
+        '../ThirdParty/Uri',
+        './defined',
+        './DeveloperError',
+        'require'
+    ], function(
+        Uri,
         defined,
         DeveloperError,
-        Uri) {
+        require) {
     "use strict";
     /*global CESIUM_BASE_URL*/
 

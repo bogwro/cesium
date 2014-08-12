@@ -1,10 +1,18 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Color', 'Core/BoundingRectangle', 'Renderer/PassState', 'Renderer/RenderbufferFormat'], function(
+define([
+        '../Core/BoundingRectangle',
+        '../Core/Color',
+        '../Core/defaultValue',
+        '../Core/defined',
+        '../Core/destroyObject',
+        './PassState',
+        './RenderbufferFormat'
+    ], function(
+        BoundingRectangle,
+        Color,
         defaultValue,
         defined,
         destroyObject,
-        Color,
-        BoundingRectangle,
         PassState,
         RenderbufferFormat) {
     "use strict";
@@ -30,8 +38,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Color',
 
     PickFramebuffer.prototype.begin = function(screenSpaceRectangle) {
         var context = this._context;
-        var width = context.getDrawingBufferWidth();
-        var height = context.getDrawingBufferHeight();
+        var width = context.drawingBufferWidth;
+        var height = context.drawingBufferHeight;
 
         BoundingRectangle.clone(screenSpaceRectangle, this._passState.scissorTest.rectangle);
 

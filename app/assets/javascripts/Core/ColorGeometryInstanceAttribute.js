@@ -1,9 +1,17 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/Color', 'Core/ComponentDatatype', 'Core/DeveloperError'], function(
-        defaultValue,
-        defined,
+define([
+        './Color',
+        './ComponentDatatype',
+        './defaultValue',
+        './defined',
+        './defineProperties',
+        './DeveloperError'
+    ], function(
         Color,
         ComponentDatatype,
+        defaultValue,
+        defined,
+        defineProperties,
         DeveloperError) {
     "use strict";
 
@@ -18,63 +26,27 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Color', 'Core/ComponentDataty
      * @param {Number} [blue=1.0] The blue component.
      * @param {Number} [alpha=1.0] The alpha component.
      *
+     * @see GeometryInstance
+     * @see GeometryInstanceAttribute
+     *
      * @example
      * var instance = new Cesium.GeometryInstance({
      *   geometry : new Cesium.BoxGeometry({
      *     dimensions : new Cesium.Cartesian3(1000000.0, 1000000.0, 500000.0)
      *   }),
      *   modelMatrix : Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(
-     *     ellipsoid.cartographicToCartesian(Cesium.Cartographic.fromDegrees(-0.0, 0.0))), new Cesium.Cartesian3(0.0, 0.0, 1000000.0)),
+     *     Cesium.Cartesian3.fromDegrees(0.0, 0.0), new Cesium.Cartesian3(0.0, 0.0, 1000000.0), new Cesium.Matrix4()),
      *   id : 'box',
      *   attributes : {
      *     color : new Cesium.ColorGeometryInstanceAttribute(red, green, blue, alpha)
      *   }
      * });
-     *
-     * @see GeometryInstance
-     * @see GeometryInstanceAttribute
      */
     var ColorGeometryInstanceAttribute = function(red, green, blue, alpha) {
         red = defaultValue(red, 1.0);
         green = defaultValue(green, 1.0);
         blue = defaultValue(blue, 1.0);
         alpha = defaultValue(alpha, 1.0);
-
-        /**
-         * The datatype of each component in the attribute, e.g., individual elements in
-         * {@link ColorGeometryInstanceAttribute#value}.
-         *
-         * @type ComponentDatatype
-         *
-         * @default {@link ComponentDatatype.UNSIGNED_BYTE}
-         *
-         * @readonly
-         */
-        this.componentDatatype = ComponentDatatype.UNSIGNED_BYTE;
-
-        /**
-         * The number of components in the attributes, i.e., {@link ColorGeometryInstanceAttribute#value}.
-         *
-         * @type Number
-         *
-         * @default 4
-         *
-         * @readonly
-         */
-        this.componentsPerAttribute = 4;
-
-        /**
-         * When <code>true</code> and <code>componentDatatype</code> is an integer format,
-         * indicate that the components should be mapped to the range [0, 1] (unsigned)
-         * or [-1, 1] (signed) when they are accessed as floating-point for rendering.
-         *
-         * @type Boolean
-         *
-         * @default true
-         *
-         * @readonly
-         */
-        this.normalize = true;
 
         /**
          * The values for the attributes stored in a typed array.
@@ -91,14 +63,64 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Color', 'Core/ComponentDataty
         ]);
     };
 
+    defineProperties(ColorGeometryInstanceAttribute.prototype, {
+        /**
+         * The datatype of each component in the attribute, e.g., individual elements in
+         * {@link ColorGeometryInstanceAttribute#value}.
+         *
+         * @memberof ColorGeometryInstanceAttribute.prototype
+         *
+         * @type {ComponentDatatype}
+         * @readonly
+         *
+         * @default {@link ComponentDatatype.UNSIGNED_BYTE}
+         */
+        componentDatatype : {
+            get : function() {
+                return ComponentDatatype.UNSIGNED_BYTE;
+            }
+        },
+
+        /**
+         * The number of components in the attributes, i.e., {@link ColorGeometryInstanceAttribute#value}.
+         *
+         * @memberof ColorGeometryInstanceAttribute.prototype
+         *
+         * @type {Number}
+         * @readonly
+         *
+         * @default 4
+         */
+        componentsPerAttribute : {
+            get : function() {
+                return 4;
+            }
+        },
+
+        /**
+         * When <code>true</code> and <code>componentDatatype</code> is an integer format,
+         * indicate that the components should be mapped to the range [0, 1] (unsigned)
+         * or [-1, 1] (signed) when they are accessed as floating-point for rendering.
+         *
+         * @memberof ColorGeometryInstanceAttribute.prototype
+         *
+         * @type {Boolean}
+         * @readonly
+         *
+         * @default true
+         */
+        normalize : {
+            get : function() {
+                return true;
+            }
+        }
+    });
+
     /**
      * Creates a new {@link ColorGeometryInstanceAttribute} instance given the provided {@link Color}.
      *
      * @param {Color} color The color.
-     *
      * @returns {ColorGeometryInstanceAttribute} The new {@link ColorGeometryInstanceAttribute} instance.
-     *
-     * @exception {DeveloperError} color is required.
      *
      * @example
      * var instance = new Cesium.GeometryInstance({
@@ -125,8 +147,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/Color', 'Core/ComponentDataty
      * @param {Uint8Array} [result] The array to store the result in, if undefined a new instance will be created.
      *
      * @returns {Uint8Array} The modified result parameter or a new instance if result was undefined.
-     *
-     * @exception {DeveloperError} color is required.
      *
      * @example
      * var attributes = primitive.getGeometryInstanceAttributes('an id');

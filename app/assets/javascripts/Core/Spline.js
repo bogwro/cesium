@@ -1,5 +1,9 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
+define([
+        './defaultValue',
+        './defined',
+        './DeveloperError'
+    ], function(
         defaultValue,
         defined,
         DeveloperError) {
@@ -12,59 +16,51 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
      * @alias Spline
      * @constructor
      *
-     * @see BSpline
-     * @see BezierSpline
-     * @see HermiteSpline
      * @see CatmullRomSpline
+     * @see HermiteSpline
      * @see LinearSpline
      * @see QuaternionSpline
      */
     var Spline = function() {
         /**
          * An array of times for the control points.
-         * @type {Array}
+         * @type {Number[]}
          * @default undefined
          */
         this.times = undefined;
 
         /**
          * An array of control points.
-         * @type {Array}
+         * @type {Cartesian3[]|Quaternion[]}
          * @default undefined
          */
         this.points = undefined;
 
-        throw new DeveloperError('This type should not be instantiated directly.');
+        DeveloperError.throwInstantiationError();
     };
 
     /**
      * Evaluates the curve at a given time.
-     * @memberof Spline
+     * @function
      *
      * @param {Number} time The time at which to evaluate the curve.
      * @param {Cartesian3|Quaternion} [result] The object onto which to store the result.
-     *
      * @returns {Cartesian3|Quaternion} The modified result parameter or a new instance of the point on the curve at the given time.
      *
-     * @exception {DeveloperError} time is required.
      * @exception {DeveloperError} time must be in the range <code>[t<sub>0</sub>, t<sub>n</sub>]</code>, where <code>t<sub>0</sub></code>
      *                             is the first element in the array <code>times</code> and <code>t<sub>n</sub></code> is the last element
      *                             in the array <code>times</code>.
      */
-    Spline.prototype.evaluate = function(time, result) {
-        throw new DeveloperError('This type should not be instantiated directly.');
-    };
+    Spline.prototype.evaluate = DeveloperError.throwInstantiationError;
 
     /**
      * Finds an index <code>i</code> in <code>times</code> such that the parameter
      * <code>time</code> is in the interval <code>[times[i], times[i + 1]]</code>.
-     * @memberof Spline
      *
      * @param {Number} time The time.
      * @param {Number} startIndex The index from which to start the search.
      * @returns {Number} The index for the element at the start of the interval.
      *
-     * @exception {DeveloperError} time is required.
      * @exception {DeveloperError} time must be in the range <code>[t<sub>0</sub>, t<sub>n</sub>]</code>, where <code>t<sub>0</sub></code>
      *                             is the first element in the array <code>times</code> and <code>t<sub>n</sub></code> is the last element
      *                             in the array <code>times</code>.

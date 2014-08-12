@@ -1,5 +1,7 @@
 /*global define*/
-define(['Scene/SceneMode'], function(
+define([
+        './SceneMode'
+    ], function(
         SceneMode) {
     "use strict";
 
@@ -11,6 +13,8 @@ define(['Scene/SceneMode'], function(
      *
      * @alias FrameState
      * @constructor
+     *
+     * @private
      */
     var FrameState = function(creditDisplay) {
         /**
@@ -25,9 +29,8 @@ define(['Scene/SceneMode'], function(
          * with 0.0 being 2D or Columbus View and 1.0 being 3D.
          *
          * @type {Number}
-         * @default {@link SceneMode.SCENE3D.morphTime}
          */
-        this.morphTime = SceneMode.SCENE3D.morphTime;
+        this.morphTime = SceneMode.getMorphTime(SceneMode.SCENE3D);
 
         /**
          * The current frame number.
@@ -45,13 +48,13 @@ define(['Scene/SceneMode'], function(
          */
         this.time = undefined;
 
-        this.scene2D = {
-            /**
-             * The projection to use in 2D mode.
-             * @default undefined
-             */
-            projection : undefined
-        };
+        /**
+         * The map projection to use in 2D and Columbus View modes.
+         *
+         * @type {MapProjection}
+         * @default undefined
+         */
+        this.mapProjection = undefined;
 
         /**
          * The current camera.
@@ -96,17 +99,36 @@ define(['Scene/SceneMode'], function(
         this.creditDisplay = creditDisplay;
 
         /**
-         * An array of {@link Event} instances to raise at the end of the frame.
+         * An array of functions to be called at the end of the frame.  This array
+         * will be cleared after each frame.
+         * <p>
          * This allows queueing up events in <code>update</code> functions and
          * firing them at a time when the subscribers are free to change the
          * scene state, e.g., manipulate the camera, instead of firing events
          * directly in <code>update</code> functions.
+         * </p>
          *
-         * @type {Array}
-         * @default []
+         * @type {FrameState~AfterRenderCallback[]}
+         *
+         * @example
+         * frameState.afterRender.push(function() {
+         *   // take some action, raise an event, etc.
+         * });
          */
-        this.events = [];
+        this.afterRender = [];
+
+        /**
+         * Gets whether or not to optimized for 3D only.
+         * @type {Boolean}
+         * @default false
+         */
+        this.scene3DOnly = false;
     };
+
+    /**
+     * A function that will be called at the end of the frame.
+     * @callback FrameState~AfterRenderCallback
+     */
 
     return FrameState;
 });

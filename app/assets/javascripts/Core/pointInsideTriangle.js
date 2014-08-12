@@ -1,5 +1,8 @@
 /*global define*/
-define(['Core/barycentricCoordinates', 'Core/Cartesian3'], function(
+define([
+        './barycentricCoordinates',
+        './Cartesian3'
+    ], function(
         barycentricCoordinates,
         Cartesian3) {
     "use strict";
@@ -15,10 +18,7 @@ define(['Core/barycentricCoordinates', 'Core/Cartesian3'], function(
      * @param {Cartesian2|Cartesian3} p0 The first point of the triangle.
      * @param {Cartesian2|Cartesian3} p1 The second point of the triangle.
      * @param {Cartesian2|Cartesian3} p2 The third point of the triangle.
-     *
      * @returns {Boolean} <code>true</code> if the point is inside the triangle; otherwise, <code>false</code>.
-     *
-     * @exception {DeveloperError} point, p0, p1, and p2 are required.
      *
      * @example
      * // Returns true

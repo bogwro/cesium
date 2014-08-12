@@ -1,5 +1,10 @@
 /*global define*/
-define(['Core/defined', 'Core/DeveloperError', 'Core/loadImage', 'ThirdParty/when'], function(
+define([
+        '../Core/defined',
+        '../Core/DeveloperError',
+        '../Core/loadImage',
+        '../ThirdParty/when'
+    ], function(
         defined,
         DeveloperError,
         loadImage,
@@ -17,11 +22,13 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/loadImage', 'ThirdParty/whe
      * @param {Boolean} [allowCrossOrigin=true] Whether to request the image using Cross-Origin
      *        Resource Sharing (CORS).  CORS is only actually used if the image URL is actually cross-origin.
      *        Data URIs are never requested using CORS.
-     *
      * @returns {Promise} a promise that will resolve to the requested {@link CubeMap} when loaded.
      *
      * @exception {DeveloperError} context is required.
      * @exception {DeveloperError} urls is required and must have positiveX, negativeX, positiveY, negativeY, positiveZ, and negativeZ properties.
+     *
+     * @see {@link http://www.w3.org/TR/cors/|Cross-Origin Resource Sharing}
+     * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      *
      * @example
      * Cesium.loadCubeMap(context, {
@@ -33,12 +40,11 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/loadImage', 'ThirdParty/whe
      *     negativeZ : 'skybox_nz.png'
      * }).then(function(cubeMap) {
      *     // use the cubemap
-     * }, function() {
+     * }).otherwise(function(error) {
      *     // an error occurred
      * });
      *
-     * @see <a href='http://www.w3.org/TR/cors/'>Cross-Origin Resource Sharing</a>
-     * @see <a href='http://wiki.commonjs.org/wiki/Promises/A'>CommonJS Promises/A</a>
+     * @private
      */
     var loadCubeMap = function(context, urls, allowCrossOrigin) {
         //>>includeStart('debug', pragmas.debug);

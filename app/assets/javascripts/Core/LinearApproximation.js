@@ -1,16 +1,17 @@
 /*global define*/
-define(['Core/defined', 'Core/DeveloperError'],function(
-         defined,
-         DeveloperError) {
+define([
+        './defined',
+        './DeveloperError'
+    ], function(
+        defined,
+        DeveloperError) {
     "use strict";
 
-
     /**
-     * Functions for performing linear interpolation.
-     * @exports LinearApproximation
+     * An {@link InterpolationAlgorithm} for performing linear interpolation.
      *
-     * @see LagrangePolynomialApproximation
-     * @see HermitePolynomialApproximation
+     * @namespace
+     * @alias LinearApproximation
      */
     var LinearApproximation = {
         type : 'Linear'
@@ -18,49 +19,28 @@ define(['Core/defined', 'Core/DeveloperError'],function(
 
     /**
      * Given the desired degree, returns the number of data points required for interpolation.
+     * Since linear interpolation can only generate a first degree polynomial, this function
+     * always returns 2.
+     * @param {Number} degree The desired degree of interpolation.
+     * @returns {Number} This function always returns 2.
      *
-     * @memberof LinearApproximation
-     *
-     * @param degree The desired degree of interpolation.
-     *
-     * @exception {DeveloperError} Linear interpolation can only generate a first degree polynomial.
-     *
-     * @returns The number of required data points needed for the desired degree of interpolation.
      */
     LinearApproximation.getRequiredDataPoints = function(degree) {
-        //>>includeStart('debug', pragmas.debug);
-        if (degree !== 1) {
-            throw new DeveloperError('Linear interpolation can only generate a first degree polynomial.');
-        }
-        //>>includeEnd('debug');
-
         return 2;
     };
 
     /**
-     * <p>
      * Interpolates values using linear approximation.
-     * </p>
      *
      * @param {Number} x The independent variable for which the dependent variables will be interpolated.
-     *
-     * @param {Array} xTable The array of independent variables to use to interpolate.  The values
+     * @param {Number[]} xTable The array of independent variables to use to interpolate.  The values
      * in this array must be in increasing order and the same value must not occur twice in the array.
-     *
-     * @param {Array} yTable The array of dependent variables to use to interpolate.  For a set of three
+     * @param {Number[]} yTable The array of dependent variables to use to interpolate.  For a set of three
      * dependent values (p,q,w) at time 1 and time 2 this should be as follows: {p1, q1, w1, p2, q2, w2}.
-     *
      * @param {Number} yStride The number of dependent variable values in yTable corresponding to
      * each independent variable value in xTable.
-     *
-     * @param {Array} [result] An existing array into which to store the result.
-     *
-     * @returns The array of interpolated values, or the result parameter if one was provided.
-     *
-     * @see LagrangePolynomialApproximation
-     * @see HermitePolynomialApproximation
-     *
-     * @memberof LinearApproximation
+     * @param {Number[]} [result] An existing array into which to store the result.
+     * @returns {Number[]} The array of interpolated values, or the result parameter if one was provided.
      */
     LinearApproximation.interpolateOrderZero = function(x, xTable, yTable, yStride, result) {
         //>>includeStart('debug', pragmas.debug);

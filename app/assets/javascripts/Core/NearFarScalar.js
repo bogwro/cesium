@@ -1,5 +1,9 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
+define([
+        './defaultValue',
+        './defined',
+        './DeveloperError'
+    ], function(
         defaultValue,
         defined,
         DeveloperError) {
@@ -46,7 +50,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
 
     /**
      * Duplicates a NearFarScalar instance.
-     * @memberof NearFarScalar
      *
      * @param {NearFarScalar} nearFarScalar The NearFarScalar to duplicate.
      * @param {NearFarScalar} [result] The object onto which to store the result.
@@ -71,20 +74,16 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
 
     /**
      * The number of elements used to pack the object into an array.
-     * @Type {Number}
+     * @type {Number}
      */
     NearFarScalar.packedLength = 4;
 
     /**
      * Stores the provided instance into the provided array.
-     * @memberof NearFarScalar
      *
      * @param {NearFarScalar} value The value to pack.
-     * @param {Array} array The array to pack into.
+     * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
-     *
-     * @exception {DeveloperError} value is required.
-     * @exception {DeveloperError} array is required.
      */
     NearFarScalar.pack = function(value, array, startingIndex) {
         //>>includeStart('debug', pragmas.debug);
@@ -106,13 +105,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
 
     /**
      * Retrieves an instance from a packed array.
-     * @memberof NearFarScalar
      *
-     * @param {Array} array The packed array.
+     * @param {Number[]} array The packed array.
      * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
      * @param {NearFarScalar} [result] The object into which to store the result.
-     *
-     * @exception {DeveloperError} array is required.
      */
     NearFarScalar.unpack = function(array, startingIndex, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -136,11 +132,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
     /**
      * Compares the provided NearFarScalar and returns <code>true</code> if they are equal,
      * <code>false</code> otherwise.
-     * @memberof NearFarScalar
      *
      * @param {NearFarScalar} [left] The first NearFarScalar.
      * @param {NearFarScalar} [right] The second NearFarScalar.
-     *
      * @returns {Boolean} <code>true</code> if left and right are equal; otherwise <code>false</code>.
      */
     NearFarScalar.equals = function(left, right) {
@@ -155,7 +149,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
 
     /**
      * Duplicates this instance.
-     * @memberof NearFarScalar
      *
      * @param {NearFarScalar} [result] The object onto which to store the result.
      * @returns {NearFarScalar} The modified result parameter or a new NearFarScalar instance if one was not provided.
@@ -167,10 +160,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
     /**
      * Compares this instance to the provided NearFarScalar and returns <code>true</code> if they are equal,
      * <code>false</code> otherwise.
-     * @memberof NearFarScalar
      *
      * @param {NearFarScalar} [right] The right hand side NearFarScalar.
-     *
      * @returns {Boolean} <code>true</code> if left and right are equal; otherwise <code>false</code>.
      */
     NearFarScalar.prototype.equals = function(right) {

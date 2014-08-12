@@ -1,5 +1,12 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/DeveloperError', 'Core/Event', 'ThirdParty/knockout'], function(
+define([
+        '../Core/defaultValue',
+        '../Core/defined',
+        '../Core/defineProperties',
+        '../Core/DeveloperError',
+        '../Core/Event',
+        '../ThirdParty/knockout'
+    ], function(
         defaultValue,
         defined,
         defineProperties,
@@ -20,8 +27,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Deve
      *
      * @param {Function} func The function to execute.
      * @param {Boolean} [canExecute=true] A boolean indicating whether the function can currently be executed.
-     *
-     * @exception {DeveloperError} func is required.
      */
     var createCommand = function(func, canExecute) {
         //>>includeStart('debug', pragmas.debug);

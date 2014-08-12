@@ -1,18 +1,30 @@
 /*global define*/
-define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Cartographic', 'Core/CornerType', 'Core/EllipsoidTangentPlane', 'Core/PolylinePipeline', 'Core/Matrix3', 'Core/Matrix4', 'Core/Quaternion', 'Core/Transforms', 'Core/Math'], function(
-        defined,
+define([
+        './Cartesian2',
+        './Cartesian3',
+        './Cartesian4',
+        './Cartographic',
+        './CornerType',
+        './EllipsoidTangentPlane',
+        './Math',
+        './Matrix3',
+        './Matrix4',
+        './PolylinePipeline',
+        './Quaternion',
+        './Transforms'
+    ], function(
         Cartesian2,
         Cartesian3,
         Cartesian4,
         Cartographic,
         CornerType,
         EllipsoidTangentPlane,
-        PolylinePipeline,
+        CesiumMath,
         Matrix3,
         Matrix4,
+        PolylinePipeline,
         Quaternion,
-        Transforms,
-        CesiumMath) {
+        Transforms) {
     "use strict";
 
     var scratch2Array = [new Cartesian3(), new Cartesian3()];
@@ -37,7 +49,7 @@ define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4',
     var cartographic = new Cartographic();
     function scaleToSurface(positions, ellipsoid) {
         var heights = new Array(positions.length);
-        for ( var i = 0; i < positions.length; i++) {
+        for (var i = 0; i < positions.length; i++) {
             var pos = positions[i];
             cartographic = ellipsoid.cartesianToCartographic(pos, cartographic);
             heights[i] = cartographic.height;
@@ -106,8 +118,8 @@ define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4',
         var scale = scaleMatrix;
         scale[0] = xScalar;
 
-        for ( var j = 0; j < repeat; j++) {
-            for ( var i = 0; i < shape.length; i += 3) {
+        for (var j = 0; j < repeat; j++) {
+            for (var i = 0; i < shape.length; i += 3) {
                 finalPosition = Cartesian3.fromArray(shape, i, finalPosition);
                 finalPosition = Matrix3.multiplyByVector(scale, finalPosition, finalPosition);
                 finalPosition = Matrix4.multiplyByPoint(transform, finalPosition, finalPosition);
@@ -120,7 +132,7 @@ define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4',
 
     var centerScratch = new Cartesian3();
     function addPositions(centers, left, shape, finalPositions, ellipsoid, heights, xScalar) {
-        for ( var i = 0; i < centers.length; i += 3) {
+        for (var i = 0; i < centers.length; i += 3) {
             var center = Cartesian3.fromArray(centers, i, centerScratch);
             finalPositions = addPosition(center, left, shape, finalPositions, ellipsoid, heights[i / 3], xScalar, 1);
         }
@@ -138,7 +150,7 @@ define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4',
         shape[index++] = point.x - xOffset;
         shape[index++] = 0.0;
         shape[index++] = point.y - yOffset;
-        for ( var i = 1; i < length; i++) {
+        for (var i = 1; i < length; i++) {
             point = shape2D[i];
             var x = point.x - xOffset;
             var z = point.y - yOffset;
@@ -165,7 +177,7 @@ define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4',
         var xOffset = boundingRectangle.x + boundingRectangle.width / 2;
         var yOffset = boundingRectangle.y + boundingRectangle.height / 2;
 
-        for ( var i = 0; i < length; i++) {
+        for (var i = 0; i < length; i++) {
             shape[index++] = shape2D[i].x - xOffset;
             shape[index++] = 0;
             shape[index++] = shape2D[i].y - yOffset;
@@ -179,7 +191,7 @@ define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4',
     var rotMatrix = new Matrix3();
     function computeRoundCorner(pivot, startPoint, endPoint, cornerType, leftIsOutside, ellipsoid, finalPositions, shape, height, duplicatePoints) {
         var angle = Cartesian3.angleBetween(Cartesian3.subtract(startPoint, pivot, scratch1), Cartesian3.subtract(endPoint, pivot, scratch2));
-        var granularity = (cornerType.value === CornerType.BEVELED.value) ? 0 : Math.ceil(angle / CesiumMath.toRadians(5));
+        var granularity = (cornerType === CornerType.BEVELED) ? 0 : Math.ceil(angle / CesiumMath.toRadians(5));
 
         var m;
         if (leftIsOutside) {
@@ -193,7 +205,7 @@ define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4',
         startPoint = Cartesian3.clone(startPoint, startPointScratch);
         if (granularity > 0) {
             var repeat = duplicatePoints ? 2 : 1;
-            for ( var i = 0; i < granularity; i++) {
+            for (var i = 0; i < granularity; i++) {
                 startPoint = Matrix3.multiplyByVector(m, startPoint, startPoint);
                 left = Cartesian3.subtract(startPoint, pivot, scratch1);
                 left = Cartesian3.normalize(left, left);
@@ -228,7 +240,7 @@ define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4',
     PolylineVolumeGeometryLibrary.removeDuplicatesFromShape = function(shapePositions) {
         var length = shapePositions.length;
         var cleanedPositions = [];
-        for ( var i0 = length - 1, i1 = 0; i1 < length; i0 = i1++) {
+        for (var i0 = length - 1, i1 = 0; i1 < length; i0 = i1++) {
             var v0 = shapePositions[i0];
             var v1 = shapePositions[i1];
 
@@ -318,7 +330,7 @@ define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4',
         backward = Cartesian3.negate(forward, backward);
         var subdividedHeights;
         var subdividedPositions;
-        for ( var i = 1; i < length - 1; i++) {
+        for (var i = 1; i < length - 1; i++) {
             var repeat = duplicatePoints ? 2 : 1;
             nextPosition = positions[i + 1];
             forward = Cartesian3.subtract(nextPosition, position, forward);
@@ -339,12 +351,16 @@ define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4',
                     scratch2Array[0] = Cartesian3.clone(previousPosition, scratch2Array[0]);
                     scratch2Array[1] = Cartesian3.clone(start, scratch2Array[1]);
                     subdividedHeights = subdivideHeights(scratch2Array, h0 + heightOffset, h1 + heightOffset, granularity);
-                    subdividedPositions = PolylinePipeline.scaleToSurface(scratch2Array);
+                    subdividedPositions = PolylinePipeline.generateArc({
+                        positions: scratch2Array,
+                        granularity: granularity,
+                        ellipsoid: ellipsoid
+                    });
                     finalPositions = addPositions(subdividedPositions, left, shapeForSides, finalPositions, ellipsoid, subdividedHeights, 1);
                     left = Cartesian3.cross(surfaceNormal, forward, left);
                     left = Cartesian3.normalize(left, left);
                     end = Cartesian3.add(pivot, Cartesian3.multiplyByScalar(left, width, end), end);
-                    if (cornerType.value === CornerType.ROUNDED.value || cornerType.value === CornerType.BEVELED.value) {
+                    if (cornerType === CornerType.ROUNDED || cornerType === CornerType.BEVELED) {
                         computeRoundCorner(pivot, start, end, cornerType, leftIsOutside, ellipsoid, finalPositions, shapeForSides, h1 + heightOffset, duplicatePoints);
                     } else {
                         cornerDirection = Cartesian3.negate(cornerDirection, cornerDirection);
@@ -357,12 +373,16 @@ define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4',
                     scratch2Array[0] = Cartesian3.clone(previousPosition, scratch2Array[0]);
                     scratch2Array[1] = Cartesian3.clone(start, scratch2Array[1]);
                     subdividedHeights = subdivideHeights(scratch2Array, h0 + heightOffset, h1 + heightOffset, granularity);
-                    subdividedPositions = PolylinePipeline.scaleToSurface(scratch2Array, granularity, ellipsoid);
+                    subdividedPositions = PolylinePipeline.generateArc({
+                        positions: scratch2Array,
+                        granularity: granularity,
+                        ellipsoid: ellipsoid
+                    });
                     finalPositions = addPositions(subdividedPositions, left, shapeForSides, finalPositions, ellipsoid, subdividedHeights, 1);
                     left = Cartesian3.cross(surfaceNormal, forward, left);
                     left = Cartesian3.normalize(left, left);
                     end = Cartesian3.add(pivot, Cartesian3.multiplyByScalar(left, -width, end), end);
-                    if (cornerType.value === CornerType.ROUNDED.value || cornerType.value === CornerType.BEVELED.value) {
+                    if (cornerType === CornerType.ROUNDED || cornerType === CornerType.BEVELED) {
                         computeRoundCorner(pivot, start, end, cornerType, leftIsOutside, ellipsoid, finalPositions, shapeForSides, h1 + heightOffset, duplicatePoints);
                     } else {
                         finalPositions = addPosition(position, cornerDirection, shapeForSides, finalPositions, ellipsoid, h1 + heightOffset, scalar, repeat);
@@ -382,7 +402,11 @@ define(['Core/defined', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4',
         scratch2Array[0] = Cartesian3.clone(previousPosition, scratch2Array[0]);
         scratch2Array[1] = Cartesian3.clone(position, scratch2Array[1]);
         subdividedHeights = subdivideHeights(scratch2Array, h0 + heightOffset, h1 + heightOffset, granularity);
-        subdividedPositions = PolylinePipeline.scaleToSurface(scratch2Array, granularity, ellipsoid);
+        subdividedPositions = PolylinePipeline.generateArc({
+            positions: scratch2Array,
+            granularity: granularity,
+            ellipsoid: ellipsoid
+        });
         finalPositions = addPositions(subdividedPositions, left, shapeForSides, finalPositions, ellipsoid, subdividedHeights, 1);
         if (duplicatePoints) {
             ends = addPosition(position, left, shapeForEnds, ends, ellipsoid, h1 + heightOffset, 1, 1);

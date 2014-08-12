@@ -1,12 +1,20 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Cartesian2', 'Core/ScreenSpaceEventType', 'Core/KeyboardEventModifier', 'Core/defaultValue'], function(
-        DeveloperError,
+define([
+        './Cartesian2',
+        './defaultValue',
+        './defined',
+        './destroyObject',
+        './DeveloperError',
+        './KeyboardEventModifier',
+        './ScreenSpaceEventType'
+    ], function(
+        Cartesian2,
+        defaultValue,
         defined,
         destroyObject,
-        Cartesian2,
-        ScreenSpaceEventType,
+        DeveloperError,
         KeyboardEventModifier,
-        defaultValue) {
+        ScreenSpaceEventType) {
     "use strict";
 
     /**
@@ -15,7 +23,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
      *
      * @alias ScreenSpaceEventHandler
      *
-     * @param {DOC_TBA} element The element to add events to. Defaults to document.
+     * @param {Canvas} [element=document] The element to add events to.
      * @constructor
      */
     var ScreenSpaceEventHandler = function(element) {
@@ -40,8 +48,6 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
         register(this);
     };
 
-    var scratchPosition = new Cartesian2();
-
     function getPosition(screenSpaceEventHandler, event, result) {
         if (screenSpaceEventHandler._element === document) {
             result.x = event.clientX;
@@ -56,9 +62,9 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
     }
 
     function getMouseEventsKey(type, modifier) {
-        var key = type.name;
+        var key = type;
         if (defined(modifier)) {
-            key += '+' + modifier.name;
+            key += '+' + modifier;
         }
         return key;
     }
@@ -66,15 +72,10 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
     /**
      * Set a function to be executed on an input event.
      *
-     * @memberof ScreenSpaceEventHandler
-     *
      * @param {Function} action Function to be executed when the input event occurs.
-     * @param {Enumeration} type The ScreenSpaceEventType of input event.
-     * @param {Enumeration} [modifier] A KeyboardEventModifier key that is held when a <code>type</code>
+     * @param {Number} type The ScreenSpaceEventType of input event.
+     * @param {Number} [modifier] A KeyboardEventModifier key that is held when a <code>type</code>
      * event occurs.
-     *
-     * @exception {DeveloperError} action is required.
-     * @exception {DeveloperError} type is required.
      *
      * @see ScreenSpaceEventHandler#getInputAction
      * @see ScreenSpaceEventHandler#removeInputAction
@@ -96,13 +97,9 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
     /**
      * Returns the function to be executed on an input event.
      *
-     * @memberof ScreenSpaceEventHandler
-     *
-     * @param {Enumeration} type The ScreenSpaceEventType of input event.
-     * @param {Enumeration} [modifier] A KeyboardEventModifier key that is held when a <code>type</code>
+     * @param {Number} type The ScreenSpaceEventType of input event.
+     * @param {Number} [modifier] A KeyboardEventModifier key that is held when a <code>type</code>
      * event occurs.
-     *
-     * @exception {DeveloperError} type is required.
      *
      * @see ScreenSpaceEventHandler#setInputAction
      * @see ScreenSpaceEventHandler#removeInputAction
@@ -121,13 +118,9 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
     /**
      * Removes the function to be executed on an input event.
      *
-     * @memberof ScreenSpaceEventHandler
-     *
-     * @param {Enumeration} type The ScreenSpaceEventType of input event.
-     * @param {Enumeration} [modifier] A KeyboardEventModifier key that is held when a <code>type</code>
+     * @param {Number} type The ScreenSpaceEventType of input event.
+     * @param {Number} [modifier] A KeyboardEventModifier key that is held when a <code>type</code>
      * event occurs.
-     *
-     * @exception {DeveloperError} type is required.
      *
      * @see ScreenSpaceEventHandler#getInputAction
      * @see ScreenSpaceEventHandler#setInputAction
@@ -171,10 +164,6 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
         var modifier = getModifier(event);
         var action;
 
-        // IE_TODO:  On some versions of IE, the left-button is 1, and the right-button is 4.
-        // See: http://www.unixpapa.com/js/mouse.html
-        // This is not the case in Chrome Frame, so we are OK for now, but are there
-        // constants somewhere?
         if (event.button === 0) {
             screenSpaceEventHandler._leftMouseButtonDown = true;
             action = screenSpaceEventHandler.getInputAction(ScreenSpaceEventType.LEFT_DOWN, modifier);
@@ -203,10 +192,6 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
             return;
         }
 
-        // IE_TODO:  On some versions of IE, the left-button is 1, and the right-button is 4.
-        // See: http://www.unixpapa.com/js/mouse.html
-        // This is not the case in Chrome Frame, so we are OK for now, but are there
-        // constants somewhere?
         if (event.button === 0) {
             screenSpaceEventHandler._leftMouseButtonDown = false;
             action = screenSpaceEventHandler.getInputAction(ScreenSpaceEventType.LEFT_UP, modifier);
@@ -397,8 +382,8 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
         if (screenSpaceEventHandler._leftMouseButtonDown && (event.touches.length === 1)) {
             pos = getPosition(screenSpaceEventHandler, event.touches[0], touchMovementEvent.endPosition);
 
-            var xDiff = screenSpaceEventHandler._lastMouseX - pos.x;
-            var yDiff = screenSpaceEventHandler._lastMouseY - pos.y;
+            var xDiff = screenSpaceEventHandler._lastMousePosition.x - pos.x;
+            var yDiff = screenSpaceEventHandler._lastMousePosition.y - pos.y;
             screenSpaceEventHandler._totalPixels += Math.sqrt(xDiff * xDiff + yDiff * yDiff);
 
             Cartesian2.clone(screenSpaceEventHandler._lastMousePosition, touchMovementEvent.startPosition);
@@ -421,7 +406,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
                 pos = getPosition(screenSpaceEventHandler, event.touches[1], touchMovementEvent.startPosition);
                 pos2 = getPosition(screenSpaceEventHandler, event.touches[0], touchMovementEvent.endPosition);
             } else {
-                pos = getPosition(screenSpaceEventHandler, event.touches[0],touchMovementEvent.startPosition);
+                pos = getPosition(screenSpaceEventHandler, event.touches[0], touchMovementEvent.startPosition);
                 pos2 = getPosition(screenSpaceEventHandler, event.touches[1], touchMovementEvent.endPosition);
             }
 
@@ -477,10 +462,6 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
         var action;
         var pos = getPosition(screenSpaceEventHandler, event, mouseDbleClickEvent.position);
 
-        // IE_TODO:  On some versions of IE, the left-button is 1, and the right-button is 4.
-        // See: http://www.unixpapa.com/js/mouse.html
-        // This is not the case in Chrome Frame, so we are OK for now, but are there
-        // constants somewhere?
         if (event.button === 0) {
             action = screenSpaceEventHandler.getInputAction(ScreenSpaceEventType.LEFT_DOUBLE_CLICK, modifier);
         } else if (event.button === 1) {
@@ -568,7 +549,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
             }
         });
 
-        for ( var i = 0; i < screenSpaceEventHandler._callbacks.length; i++) {
+        for (var i = 0; i < screenSpaceEventHandler._callbacks.length; i++) {
             var cback = screenSpaceEventHandler._callbacks[i];
             if (cback.onDoc) {
                 document.addEventListener(cback.name, cback.action, false);
@@ -579,7 +560,7 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
     }
 
     ScreenSpaceEventHandler.prototype._unregister = function() {
-        for ( var i = 0; i < this._callbacks.length; i++) {
+        for (var i = 0; i < this._callbacks.length; i++) {
             var cback = this._callbacks[i];
             if (cback.onDoc) {
                 document.removeEventListener(cback.name, cback.action, false);
@@ -595,8 +576,6 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
      * If this object was destroyed, it should not be used; calling any function other than
      * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.
      *
-     * @memberof ScreenSpaceEventHandler
-     *
      * @returns {Boolean} <code>true</code> if this object was destroyed; otherwise, <code>false</code>.
      *
      * @see ScreenSpaceEventHandler#destroy
@@ -611,8 +590,6 @@ define(['Core/DeveloperError', 'Core/defined', 'Core/destroyObject', 'Core/Carte
      * Once an object is destroyed, it should not be used; calling any function other than
      * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.  Therefore,
      * assign the return value (<code>undefined</code>) to the object as done in the example.
-     *
-     * @memberof ScreenSpaceEventHandler
      *
      * @returns {undefined}
      *

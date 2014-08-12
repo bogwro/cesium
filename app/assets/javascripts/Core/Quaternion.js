@@ -1,9 +1,19 @@
 /*global define*/
-define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freezeObject', 'Core/Math', 'Core/Matrix3'], function(
+define([
+        './Cartesian3',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './FeatureDetection',
+        './freezeObject',
+        './Math',
+        './Matrix3'
+    ], function(
         Cartesian3,
         defaultValue,
         defined,
         DeveloperError,
+        FeatureDetection,
         freezeObject,
         CesiumMath,
         Matrix3) {
@@ -51,19 +61,15 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         this.w = defaultValue(w, 0.0);
     };
 
-    var fromAxisAngleScratch;
+    var fromAxisAngleScratch = new Cartesian3();
 
     /**
      * Computes a quaternion representing a rotation around an axis.
-     * @memberof Quaternion
      *
      * @param {Cartesian3} axis The axis of rotation.
      * @param {Number} angle The angle in radians to rotate around the axis.
      * @param {Quaternion} [result] The object onto which to store the result.
      * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} axis is required.
-     * @exception {DeveloperError} angle is required and must be a number.
      */
     Quaternion.fromAxisAngle = function(axis, angle, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -97,13 +103,10 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
     var fromRotationMatrixQuat = new Array(3);
     /**
      * Computes a Quaternion from the provided Matrix3 instance.
-     * @memberof Quaternion
      *
      * @param {Matrix3} matrix The rotation matrix.
      * @param {Quaternion} [result] The object onto which to store the result.
      * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} matrix is required.
      *
      * @see Matrix3.fromQuaternion
      */
@@ -180,20 +183,16 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * The number of elements used to pack the object into an array.
-     * @Type {Number}
+     * @type {Number}
      */
     Quaternion.packedLength = 4;
 
     /**
      * Stores the provided instance into the provided array.
-     * @memberof Quaternion
      *
      * @param {Quaternion} value The value to pack.
-     * @param {Array} array The array to pack into.
+     * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
-     *
-     * @exception {DeveloperError} value is required.
-     * @exception {DeveloperError} array is required.
      */
     Quaternion.pack = function(value, array, startingIndex) {
         //>>includeStart('debug', pragmas.debug);
@@ -216,13 +215,10 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Retrieves an instance from a packed array.
-     * @memberof Quaternion
      *
-     * @param {Array} array The packed array.
+     * @param {Number[]} array The packed array.
      * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
      * @param {Quaternion} [result] The object into which to store the result.
-     *
-     * @exception {DeveloperError} array is required.
      */
     Quaternion.unpack = function(array, startingIndex, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -245,26 +241,23 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * The number of elements used to store the object into an array in its interpolatable form.
-     * @Type {Number}
+     * @type {Number}
      */
     Quaternion.packedInterpolationLength = 3;
 
     /**
      * Converts a packed array into a form suitable for interpolation.
-     * @memberof Quaternion
      *
-     * @param {Array} packedArray The packed array.
+     * @param {Number[]} packedArray The packed array.
      * @param {Number} [startingIndex=0] The index of the first element to be converted.
      * @param {Number} [lastIndex=packedArray.length] The index of the last element to be converted.
-     * @param {Array} [result] The object into which to store the result.
-     *
-     * @exception {DeveloperError} packedArray is required.
+     * @param {Number[]} [result] The object into which to store the result.
      */
     Quaternion.convertPackedArrayForInterpolation = function(packedArray, startingIndex, lastIndex, result) {
         Quaternion.unpack(packedArray, lastIndex * 4, sampledQuaternionQuaternion0Conjugate);
         Quaternion.conjugate(sampledQuaternionQuaternion0Conjugate, sampledQuaternionQuaternion0Conjugate);
 
-        for ( var i = 0, len = lastIndex - startingIndex + 1; i < len; i++) {
+        for (var i = 0, len = lastIndex - startingIndex + 1; i < len; i++) {
             var offset = i * 3;
             Quaternion.unpack(packedArray, (startingIndex + i) * 4, sampledQuaternionTempQuaternion);
 
@@ -274,8 +267,8 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
                 Quaternion.negate(sampledQuaternionTempQuaternion, sampledQuaternionTempQuaternion);
             }
 
-            Quaternion.getAxis(sampledQuaternionTempQuaternion, sampledQuaternionAxis);
-            var angle = Quaternion.getAngle(sampledQuaternionTempQuaternion);
+            Quaternion.computeAxis(sampledQuaternionTempQuaternion, sampledQuaternionAxis);
+            var angle = Quaternion.computeAngle(sampledQuaternionTempQuaternion);
             result[offset] = sampledQuaternionAxis.x * angle;
             result[offset + 1] = sampledQuaternionAxis.y * angle;
             result[offset + 2] = sampledQuaternionAxis.z * angle;
@@ -284,16 +277,12 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Retrieves an instance from a packed array converted with {@link convertPackedArrayForInterpolation}.
-     * @memberof Quaternion
      *
-     * @param {Array} array The original packed array.
-     * @param {Array} sourceArray The converted array.
+     * @param {Number[]} array The original packed array.
+     * @param {Number[]} sourceArray The converted array.
      * @param {Number} [startingIndex=0] The startingIndex used to convert the array.
      * @param {Number} [lastIndex=packedArray.length] The lastIndex used to convert the array.
      * @param {Quaternion} [result] The object into which to store the result.
-     *
-     * @exception {DeveloperError} array is required.
-     * @exception {DeveloperError} sourceArray is required.
      */
     Quaternion.unpackInterpolationResult = function(array, sourceArray, firstIndex, lastIndex, result) {
         if (!defined(result)) {
@@ -315,7 +304,6 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Duplicates a Quaternion instance.
-     * @memberof Quaternion
      *
      * @param {Quaternion} quaternion The quaternion to duplicate.
      * @param {Quaternion} [result] The object onto which to store the result.
@@ -339,24 +327,21 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Computes the conjugate of the provided quaternion.
-     * @memberof Quaternion
      *
      * @param {Quaternion} quaternion The quaternion to conjugate.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} quaternion is required.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      */
     Quaternion.conjugate = function(quaternion, result) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(quaternion)) {
             throw new DeveloperError('quaternion is required');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        if (!defined(result)) {
-            return new Quaternion(-quaternion.x, -quaternion.y, -quaternion.z, quaternion.w);
-        }
         result.x = -quaternion.x;
         result.y = -quaternion.y;
         result.z = -quaternion.z;
@@ -366,12 +351,9 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Computes magnitude squared for the provided quaternion.
-     * @memberof Quaternion
      *
      * @param {Quaternion} quaternion The quaternion to conjugate.
      * @returns {Number} The magnitude squared.
-     *
-     * @exception {DeveloperError} quaternion is required.
      */
     Quaternion.magnitudeSquared = function(quaternion) {
         //>>includeStart('debug', pragmas.debug);
@@ -385,12 +367,9 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Computes magnitude for the provided quaternion.
-     * @memberof Quaternion
      *
      * @param {Quaternion} quaternion The quaternion to conjugate.
      * @returns {Number} The magnitude.
-     *
-     * @exception {DeveloperError} quaternion is required.
      */
     Quaternion.magnitude = function(quaternion) {
         return Math.sqrt(Quaternion.magnitudeSquared(quaternion));
@@ -398,24 +377,24 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Computes the normalized form of the provided quaternion.
-     * @memberof Quaternion
      *
      * @param {Quaternion} quaternion The quaternion to normalize.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} quaternion is required.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      */
     Quaternion.normalize = function(quaternion, result) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
+        //>>includeEnd('debug');
+
         var inverseMagnitude = 1.0 / Quaternion.magnitude(quaternion);
         var x = quaternion.x * inverseMagnitude;
         var y = quaternion.y * inverseMagnitude;
         var z = quaternion.z * inverseMagnitude;
         var w = quaternion.w * inverseMagnitude;
 
-        if (!defined(result)) {
-            return new Quaternion(x, y, z, w);
-        }
         result.x = x;
         result.y = y;
         result.z = z;
@@ -425,15 +404,18 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Computes the inverse of the provided quaternion.
-     * @memberof Quaternion
      *
      * @param {Quaternion} quaternion The quaternion to normalize.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} quaternion is required.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      */
     Quaternion.inverse = function(quaternion, result) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
+        //>>includeEnd('debug');
+
         var magnitudeSquared = Quaternion.magnitudeSquared(quaternion);
         result = Quaternion.conjugate(quaternion, result);
         return Quaternion.multiplyByScalar(result, 1.0 / magnitudeSquared, result);
@@ -441,15 +423,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Computes the componentwise sum of two quaternions.
-     * @memberof Quaternion
      *
      * @param {Quaternion} left The first quaternion.
      * @param {Quaternion} right The second quaternion.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} left is required.
-     * @exception {DeveloperError} right is required.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      */
     Quaternion.add = function(left, right, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -459,11 +437,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         if (!defined(right)) {
             throw new DeveloperError('right is required');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        if (!defined(result)) {
-            return new Quaternion(left.x + right.x, left.y + right.y, left.z + right.z, left.w + right.w);
-        }
         result.x = left.x + right.x;
         result.y = left.y + right.y;
         result.z = left.z + right.z;
@@ -473,15 +451,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Computes the componentwise difference of two quaternions.
-     * @memberof Quaternion
      *
      * @param {Quaternion} left The first quaternion.
      * @param {Quaternion} right The second quaternion.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} left is required.
-     * @exception {DeveloperError} right is required.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      */
     Quaternion.subtract = function(left, right, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -491,11 +465,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         if (!defined(right)) {
             throw new DeveloperError('right is required');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        if (!defined(result)) {
-            return new Quaternion(left.x - right.x, left.y - right.y, left.z - right.z, left.w - right.w);
-        }
         result.x = left.x - right.x;
         result.y = left.y - right.y;
         result.z = left.z - right.z;
@@ -505,24 +479,21 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Negates the provided quaternion.
-     * @memberof Quaternion
      *
      * @param {Quaternion} quaternion The quaternion to be negated.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} quaternion is required.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      */
     Quaternion.negate = function(quaternion, result) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(quaternion)) {
             throw new DeveloperError('quaternion is required');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        if (!defined(result)) {
-            return new Quaternion(-quaternion.x, -quaternion.y, -quaternion.z, -quaternion.w);
-        }
         result.x = -quaternion.x;
         result.y = -quaternion.y;
         result.z = -quaternion.z;
@@ -532,14 +503,10 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Computes the dot (scalar) product of two quaternions.
-     * @memberof Quaternion
      *
      * @param {Quaternion} left The first quaternion.
      * @param {Quaternion} right The second quaternion.
      * @returns {Number} The dot product.
-     *
-     * @exception {DeveloperError} left is required.
-     * @exception {DeveloperError} right is required.
      */
     Quaternion.dot = function(left, right) {
         //>>includeStart('debug', pragmas.debug);
@@ -554,18 +521,13 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         return left.x * right.x + left.y * right.y + left.z * right.z + left.w * right.w;
     };
 
-
     /**
      * Computes the product of two quaternions.
-     * @memberof Quaternion
      *
      * @param {Quaternion} left The first quaternion.
      * @param {Quaternion} right The second quaternion.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} left is required.
-     * @exception {DeveloperError} right is required.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      */
     Quaternion.multiply = function(left, right, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -574,6 +536,9 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         }
         if (!defined(right)) {
             throw new DeveloperError('right is required');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
         }
         //>>includeEnd('debug');
 
@@ -592,9 +557,6 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         var z = leftW * rightZ + leftX * rightY - leftY * rightX + leftZ * rightW;
         var w = leftW * rightW - leftX * rightX - leftY * rightY - leftZ * rightZ;
 
-        if (!defined(result)) {
-            return new Quaternion(x, y, z, w);
-        }
         result.x = x;
         result.y = y;
         result.z = z;
@@ -604,15 +566,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Multiplies the provided quaternion componentwise by the provided scalar.
-     * @memberof Quaternion
      *
      * @param {Quaternion} quaternion The quaternion to be scaled.
      * @param {Number} scalar The scalar to multiply with.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} quaternion is required.
-     * @exception {DeveloperError} scalar is required and must be a number.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      */
     Quaternion.multiplyByScalar = function(quaternion, scalar, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -622,11 +580,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         if (typeof scalar !== 'number') {
             throw new DeveloperError('scalar is required and must be a number.');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        if (!defined(result)) {
-            return new Quaternion(quaternion.x * scalar,  quaternion.y * scalar, quaternion.z * scalar, quaternion.w * scalar);
-        }
         result.x = quaternion.x * scalar;
         result.y = quaternion.y * scalar;
         result.z = quaternion.z * scalar;
@@ -636,15 +594,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Divides the provided quaternion componentwise by the provided scalar.
-     * @memberof Quaternion
      *
      * @param {Quaternion} quaternion The quaternion to be divided.
      * @param {Number} scalar The scalar to divide by.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} quaternion is required.
-     * @exception {DeveloperError} scalar is required and must be a number.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      */
     Quaternion.divideByScalar = function(quaternion, scalar, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -654,11 +608,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         if (typeof scalar !== 'number') {
             throw new DeveloperError('scalar is required and must be a number.');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        if (!defined(result)) {
-            return new Quaternion(quaternion.x / scalar, quaternion.y / scalar, quaternion.z / scalar, quaternion.w / scalar);
-        }
         result.x = quaternion.x / scalar;
         result.y = quaternion.y / scalar;
         result.z = quaternion.z / scalar;
@@ -668,34 +622,29 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Computes the axis of rotation of the provided quaternion.
-     * @memberof Quaternion
      *
      * @param {Quaternion} quaternion The quaternion to use.
-     * @param {Cartesian3} [result] The object onto which to store the result.
-     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @exception {DeveloperError} quaternion is required.
+     * @param {Cartesian3} result The object onto which to store the result.
+     * @returns {Cartesian3} The modified result parameter.
      */
-    Quaternion.getAxis = function(quaternion, result) {
+    Quaternion.computeAxis = function(quaternion, result) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(quaternion)) {
             throw new DeveloperError('quaternion is required');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
         }
         //>>includeEnd('debug');
 
         var w = quaternion.w;
         if (Math.abs(w - 1.0) < CesiumMath.EPSILON6) {
-            if (!defined(result)) {
-                return new Cartesian3();
-            }
             result.x = result.y = result.z = 0;
             return result;
         }
 
         var scalar = 1.0 / Math.sqrt(1.0 - (w * w));
-        if (!defined(result)) {
-            return new Cartesian3(quaternion.x * scalar, quaternion.y * scalar, quaternion.z * scalar);
-        }
+
         result.x = quaternion.x * scalar;
         result.y = quaternion.y * scalar;
         result.z = quaternion.z * scalar;
@@ -704,14 +653,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Computes the angle of rotation of the provided quaternion.
-     * @memberof Quaternion
      *
      * @param {Quaternion} quaternion The quaternion to use.
      * @returns {Number} The angle of rotation.
-     *
-     * @exception {DeveloperError} quaternion is required.
      */
-    Quaternion.getAngle = function(quaternion) {
+    Quaternion.computeAngle = function(quaternion) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(quaternion)) {
             throw new DeveloperError('quaternion is required');
@@ -724,20 +670,15 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         return 2.0 * Math.acos(quaternion.w);
     };
 
-    var lerpScratch;
+    var lerpScratch = new Quaternion();
     /**
      * Computes the linear interpolation or extrapolation at t using the provided quaternions.
-     * @memberof Quaternion
      *
      * @param {Quaternion} start The value corresponding to t at 0.0.
      * @param {Quaternion} end The value corresponding to t at 1.0.
      * @param {Number} t The point along t at which to interpolate.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} start is required.
-     * @exception {DeveloperError} end is required.
-     * @exception {DeveloperError} t is required and must be a number.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      */
     Quaternion.lerp = function(start, end, t, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -750,6 +691,9 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         if (typeof t !== 'number') {
             throw new DeveloperError('t is required and must be a number.');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
         lerpScratch = Quaternion.multiplyByScalar(end, t, lerpScratch);
@@ -757,22 +701,17 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         return Quaternion.add(lerpScratch, result, result);
     };
 
-    var slerpEndNegated;
-    var slerpScaledP;
-    var slerpScaledR;
+    var slerpEndNegated = new Quaternion();
+    var slerpScaledP = new Quaternion();
+    var slerpScaledR = new Quaternion();
     /**
      * Computes the spherical linear interpolation or extrapolation at t using the provided quaternions.
-     * @memberof Quaternion
      *
      * @param {Quaternion} start The value corresponding to t at 0.0.
      * @param {Quaternion} end The value corresponding to t at 1.0.
      * @param {Number} t The point along t at which to interpolate.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} start is required.
-     * @exception {DeveloperError} end is required.
-     * @exception {DeveloperError} t is required and must be a number.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      *
      * @see Quaternion#fastSlerp
      */
@@ -786,6 +725,9 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         }
         if (typeof t !== 'number') {
             throw new DeveloperError('t is required and must be a number.');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
         }
         //>>includeEnd('debug');
 
@@ -814,51 +756,45 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * The logarithmic quaternion function.
-     * @memberof Quaternion
      *
      * @param {Quaternion} quaternion The unit quaternion.
-     * @param {Cartesian3} [result] The object onto which to store the result.
-     * @returns {Cartesian3} The modified result parameter or a new instance if one was not provided.
-     *
-     * @exception {DeveloperError} quaternion is required.
+     * @param {Cartesian3} result The object onto which to store the result.
+     * @returns {Cartesian3} The modified result parameter.
      */
     Quaternion.log = function(quaternion, result) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(quaternion)) {
             throw new DeveloperError('quaternion is required.');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        var theta = Math.acos(CesiumMath.clamp(quaternion.w, -1.0, 1.0));
+        var theta = CesiumMath.acosClamped(quaternion.w);
         var thetaOverSinTheta = 0.0;
 
         if (theta !== 0.0) {
             thetaOverSinTheta = theta / Math.sin(theta);
         }
 
-        if (!defined(result)) {
-            result = new Cartesian3();
-        }
-
         return Cartesian3.multiplyByScalar(quaternion, thetaOverSinTheta, result);
     };
 
-    var expScratch = new Cartesian3();
-
     /**
      * The exponential quaternion function.
-     * @memberof Quaternion
      *
      * @param {Cartesian3} cartesian The cartesian.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new instance if one was not provided.
-     *
-     * @exception {DeveloperError} cartesian is required.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      */
     Quaternion.exp = function(cartesian, result) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required.');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
         }
         //>>includeEnd('debug');
 
@@ -867,10 +803,6 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
         if (theta !== 0.0) {
             sinThetaOverTheta = Math.sin(theta) / theta;
-        }
-
-        if (!defined(result)) {
-            result = new Quaternion();
         }
 
         result.x = cartesian.x * sinThetaOverTheta;
@@ -889,22 +821,22 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
     /**
      * Computes an inner quadrangle point.
      * <p>This will compute quaternions that ensure a squad curve is C<sup>1</sup>.</p>
-     * @memberof Quaternion
      *
      * @param {Quaternion} q0 The first quaternion.
      * @param {Quaternion} q1 The second quaternion.
      * @param {Quaternion} q2 The third quaternion.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new instance if none was provided.
-     *
-     * @exception {DeveloperError} q0, q1, and q2 are required.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      *
      * @see Quaternion#squad
      */
-    Quaternion.innerQuadrangle = function(q0, q1, q2, result) {
+    Quaternion.computeInnerQuadrangle = function(q0, q1, q2, result) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(q0) || !defined(q1) || !defined(q2)) {
             throw new DeveloperError('q0, q1, and q2 are required.');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
         }
         //>>includeEnd('debug');
 
@@ -925,29 +857,25 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Computes the spherical quadrangle interpolation between quaternions.
-     * @memberof Quaternion
      *
      * @param {Quaternion} q0 The first quaternion.
      * @param {Quaternion} q1 The second quaternion.
      * @param {Quaternion} s0 The first inner quadrangle.
      * @param {Quaternion} s1 The second inner quadrangle.
      * @param {Number} t The time in [0,1] used to interpolate.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new instance if none was provided.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      *
-     * @exception {DeveloperError} q0, q1, s0, and s1 are required.
-     * @exception {DeveloperError} t is required and must be a number.
-     *
-     * @see Quaternion#innerQuadrangle
+     * @see Quaternion#computeInnerQuadrangle
      *
      * @example
      * // 1. compute the squad interpolation between two quaternions on a curve
-     * var s0 = Cesium.Quaternion.innerQuadrangle(quaternions[i - 1], quaternions[i], quaternions[i + 1]);
-     * var s1 = Cesium.Quaternion.innerQuadrangle(quaternions[i], quaternions[i + 1], quaternions[i + 2]);
+     * var s0 = Cesium.Quaternion.computeInnerQuadrangle(quaternions[i - 1], quaternions[i], quaternions[i + 1]);
+     * var s1 = Cesium.Quaternion.computeInnerQuadrangle(quaternions[i], quaternions[i + 1], quaternions[i + 2]);
      * var q = Cesium.Quaternion.squad(quaternions[i], quaternions[i + 1], s0, s1, t);
      *
      * // 2. compute the squad interpolation as above but where the first quaternion is a end point.
-     * var s1 = Cesium.Quaternion.innerQuadrangle(quaternions[0], quaternions[1], quaternions[2]);
+     * var s1 = Cesium.Quaternion.computeInnerQuadrangle(quaternions[0], quaternions[1], quaternions[2]);
      * var q = Cesium.Quaternion.squad(quaternions[0], quaternions[1], quaternions[0], s1, t);
      */
     Quaternion.squad = function(q0, q1, s0, s1, t, result) {
@@ -955,9 +883,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         if (!defined(q0) || !defined(q1) || !defined(s0) || !defined(s1)) {
             throw new DeveloperError('q0, q1, s0, and s1 are required.');
         }
-
         if (typeof t !== 'number') {
             throw new DeveloperError('t is required and must be a number.');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
         }
         //>>includeEnd('debug');
 
@@ -968,10 +898,10 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     var fastSlerpScratchQuaternion = new Quaternion();
     var opmu = 1.90110745351730037;
-    var u = new Float32Array(8);
-    var v = new Float32Array(8);
-    var bT = new Float32Array(8);
-    var bD = new Float32Array(8);
+    var u = FeatureDetection.supportsTypedArrays() ? new Float32Array(8) : [];
+    var v = FeatureDetection.supportsTypedArrays() ? new Float32Array(8) : [];
+    var bT = FeatureDetection.supportsTypedArrays() ? new Float32Array(8) : [];
+    var bD = FeatureDetection.supportsTypedArrays() ? new Float32Array(8) : [];
 
     for (var i = 0; i < 7; ++i) {
         var s = i + 1.0;
@@ -986,17 +916,12 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
     /**
      * Computes the spherical linear interpolation or extrapolation at t using the provided quaternions.
      * This implementation is faster than {@link Quaternion#slerp}, but is only accurate up to 10<sup>-6</sup>.
-     * @memberof Quaternion
      *
      * @param {Quaternion} start The value corresponding to t at 0.0.
      * @param {Quaternion} end The value corresponding to t at 1.0.
      * @param {Number} t The point along t at which to interpolate.
-     * @param {Quaternion} [result] The object onto which to store the result.
-     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
-     *
-     * @exception {DeveloperError} start is required.
-     * @exception {DeveloperError} end is required.
-     * @exception {DeveloperError} t is required and must be a number.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter.
      *
      * @see Quaternion#slerp
      */
@@ -1005,19 +930,16 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         if (!defined(start)) {
             throw new DeveloperError('start is required.');
         }
-
         if (!defined(end)) {
             throw new DeveloperError('end is required.');
         }
-
         if (typeof t !== 'number') {
             throw new DeveloperError('t is required and must be a number.');
         }
-        //>>includeEnd('debug');
-
         if (!defined(result)) {
-            result = new Quaternion();
+            throw new DeveloperError('result is required');
         }
+        //>>includeEnd('debug');
 
         var x = Quaternion.dot(start, end);
 
@@ -1054,7 +976,6 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
     /**
      * Computes the spherical quadrangle interpolation between quaternions.
      * An implementation that is faster than {@link Quaternion#squad}, but less accurate.
-     * @memberof Quaternion
      *
      * @param {Quaternion} q0 The first quaternion.
      * @param {Quaternion} q1 The second quaternion.
@@ -1064,9 +985,6 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      * @param {Quaternion} [result] The object onto which to store the result.
      * @returns {Quaternion} The modified result parameter or a new instance if none was provided.
      *
-     * @exception {DeveloperError} q0, q1, s0, and s1 are required.
-     * @exception {DeveloperError} t is required and must be a number.
-     *
      * @see Quaternion#squad
      */
     Quaternion.fastSquad = function(q0, q1, s0, s1, t, result) {
@@ -1074,9 +992,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
         if (!defined(q0) || !defined(q1) || !defined(s0) || !defined(s1)) {
             throw new DeveloperError('q0, q1, s0, and s1 are required.');
         }
-
         if (typeof t !== 'number') {
             throw new DeveloperError('t is required and must be a number.');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
         }
         //>>includeEnd('debug');
 
@@ -1088,7 +1008,6 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
     /**
      * Compares the provided quaternions componentwise and returns
      * <code>true</code> if they are equal, <code>false</code> otherwise.
-     * @memberof Quaternion
      *
      * @param {Quaternion} [left] The first quaternion.
      * @param {Quaternion} [right] The second quaternion.
@@ -1108,14 +1027,11 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      * Compares the provided quaternions componentwise and returns
      * <code>true</code> if they are within the provided epsilon,
      * <code>false</code> otherwise.
-     * @memberof Quaternion
      *
      * @param {Quaternion} [left] The first quaternion.
      * @param {Quaternion} [right] The second quaternion.
      * @param {Number} epsilon The epsilon to use for equality testing.
      * @returns {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
-     *
-     * @exception {DeveloperError} epsilon is required and must be a number.
      */
     Quaternion.equalsEpsilon = function(left, right, epsilon) {
         //>>includeStart('debug', pragmas.debug);
@@ -1135,19 +1051,22 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * An immutable Quaternion instance initialized to (0.0, 0.0, 0.0, 0.0).
-     * @memberof Quaternion
+     *
+     * @type {Quaternion}
+     * @constant
      */
     Quaternion.ZERO = freezeObject(new Quaternion(0.0, 0.0, 0.0, 0.0));
 
     /**
      * An immutable Quaternion instance initialized to (0.0, 0.0, 0.0, 1.0).
-     * @memberof Quaternion
+     *
+     * @type {Quaternion}
+     * @constant
      */
     Quaternion.IDENTITY = freezeObject(new Quaternion(0.0, 0.0, 0.0, 1.0));
 
     /**
      * Duplicates this Quaternion instance.
-     * @memberof Quaternion
      *
      * @param {Quaternion} [result] The object onto which to store the result.
      * @returns {Quaternion} The modified result parameter or a new Quaternion instance if one was not provided.
@@ -1159,7 +1078,6 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
     /**
      * Compares this and the provided quaternion componentwise and returns
      * <code>true</code> if they are equal, <code>false</code> otherwise.
-     * @memberof Quaternion
      *
      * @param {Quaternion} [right] The right hand side quaternion.
      * @returns {Boolean} <code>true</code> if left and right are equal, <code>false</code> otherwise.
@@ -1172,13 +1090,10 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
      * Compares this and the provided quaternion componentwise and returns
      * <code>true</code> if they are within the provided epsilon,
      * <code>false</code> otherwise.
-     * @memberof Quaternion
      *
      * @param {Quaternion} [right] The right hand side quaternion.
      * @param {Number} epsilon The epsilon to use for equality testing.
      * @returns {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
-     *
-     * @exception {DeveloperError} epsilon is required and must be a number.
      */
     Quaternion.prototype.equalsEpsilon = function(right, epsilon) {
         return Quaternion.equalsEpsilon(this, right, epsilon);
@@ -1186,7 +1101,6 @@ define(['Core/Cartesian3', 'Core/defaultValue', 'Core/defined', 'Core/DeveloperE
 
     /**
      * Returns a string representing this quaternion in the format (x, y, z, w).
-     * @memberof Quaternion
      *
      * @returns {String} A string representing this Quaternion.
      */

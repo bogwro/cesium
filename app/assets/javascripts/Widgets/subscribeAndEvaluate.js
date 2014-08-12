@@ -1,5 +1,7 @@
 /*global define*/
-define(['ThirdParty/knockout'], function(
+define([
+        '../ThirdParty/knockout'
+    ], function(
         knockout) {
     "use strict";
 
@@ -15,8 +17,7 @@ define(['ThirdParty/knockout'], function(
      * @param {String} observablePropertyName The name of the observable property.
      * @param {Function} callback The callback function.
      * @param {Object} [target] The value of this in the callback function.
-     * @param {Function} [event='change'] The name of the event to receive notification for.
-     *
+     * @param {String} [event='change'] The name of the event to receive notification for.
      * @returns The subscription object from Knockout which can be used to dispose the subscription later.
      */
     var subscribeAndEvaluate = function(owner, observablePropertyName, callback, target, event) {

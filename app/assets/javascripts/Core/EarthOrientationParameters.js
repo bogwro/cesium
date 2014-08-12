@@ -1,39 +1,52 @@
 /*global define*/
-define(['Core/binarySearch', 'Core/defaultValue', 'Core/defined', 'Core/freezeObject', 'Core/loadJson', 'Core/EarthOrientationParametersSample', 'Core/JulianDate', 'Core/LeapSecond', 'Core/RuntimeError', 'Core/TimeConstants', 'Core/TimeStandard', 'ThirdParty/when'],
-    function(
+define([
+        '../ThirdParty/when',
+        './binarySearch',
+        './defaultValue',
+        './defined',
+        './EarthOrientationParametersSample',
+        './freezeObject',
+        './JulianDate',
+        './LeapSecond',
+        './loadJson',
+        './RuntimeError',
+        './TimeConstants',
+        './TimeStandard'
+    ], function(
+        when,
         binarySearch,
         defaultValue,
         defined,
-        freezeObject,
-        loadJson,
         EarthOrientationParametersSample,
+        freezeObject,
         JulianDate,
         LeapSecond,
+        loadJson,
         RuntimeError,
         TimeConstants,
-        TimeStandard,
-        when) {
+        TimeStandard) {
     "use strict";
 
     /**
      * Specifies Earth polar motion coordinates and the difference between UT1 and UTC.
      * These Earth Orientation Parameters (EOP) are primarily used in the transformation from
-     * the International Celestial Reference Frame (ITRF) to the International Terrestrial
+     * the International Celestial Reference Frame (ICRF) to the International Terrestrial
      * Reference Frame (ITRF).
      *
      * @alias EarthOrientationParameters
      * @constructor
      *
-     * @param {String} [description.url] The URL from which to obtain EOP data.  If neither this
-     *                 parameter nor description.data is specified, all EOP values are assumed
-     *                 to be 0.0.  If description.data is specified, this parameter is
+     * @param {Object} [options] Object with the following properties:
+     * @param {String} [options.url] The URL from which to obtain EOP data.  If neither this
+     *                 parameter nor options.data is specified, all EOP values are assumed
+     *                 to be 0.0.  If options.data is specified, this parameter is
      *                 ignored.
-     * @param {Object} [description.data] The actual EOP data.  If neither this
-     *                 parameter nor description.data is specified, all EOP values are assumed
+     * @param {Object} [options.data] The actual EOP data.  If neither this
+     *                 parameter nor options.data is specified, all EOP values are assumed
      *                 to be 0.0.
-     * @param {Boolean} [description.addNewLeapSeconds=true] True if leap seconds that
-     *                  are specified in the EOP data but not in {@link LeapSecond#getLeapSeconds}
-     *                  should be added to {@link LeapSecond#getLeapSeconds}.  False if
+     * @param {Boolean} [options.addNewLeapSeconds=true] True if leap seconds that
+     *                  are specified in the EOP data but not in {@link JulianDate.leapSeconds}
+     *                  should be added to {@link JulianDate.leapSeconds}.  False if
      *                  new leap seconds should be handled correctly in the context
      *                  of the EOP data but otherwise ignored.
      *
@@ -52,9 +65,11 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/defined', 'Core/freezeOb
      * // Loading the EOP data
      * var eop = new Cesium.EarthOrientationParameters({ url : 'Data/EOP.json' });
      * Cesium.Transforms.earthOrientationParameters = eop;
+     *
+     * @private
      */
-    var EarthOrientationParameters = function EarthOrientationParameters(description) {
-        description = defaultValue(description, defaultValue.EMPTY_OBJECT);
+    var EarthOrientationParameters = function EarthOrientationParameters(options) {
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
 
         this._dates = undefined;
         this._samples = undefined;
@@ -73,18 +88,18 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/defined', 'Core/freezeOb
         this._downloadPromise = undefined;
         this._dataError = undefined;
 
-        this._addNewLeapSeconds = defaultValue(description.addNewLeapSeconds, true);
+        this._addNewLeapSeconds = defaultValue(options.addNewLeapSeconds, true);
 
-        if (defined(description.data)) {
+        if (defined(options.data)) {
             // Use supplied EOP data.
-            onDataReady(this, description.data);
-        } else if (defined(description.url)) {
+            onDataReady(this, options.data);
+        } else if (defined(options.url)) {
             // Download EOP data.
             var that = this;
-            this._downloadPromise = when(loadJson(description.url), function(eopData) {
+            this._downloadPromise = when(loadJson(options.url), function(eopData) {
                 onDataReady(that, eopData);
             }, function() {
-                that._dataError = 'An error occurred while retrieving the EOP data from the URL ' + description.url + '.';
+                that._dataError = 'An error occurred while retrieving the EOP data from the URL ' + options.url + '.';
             });
         } else {
             // Use all zeros for EOP data.
@@ -120,8 +135,6 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/defined', 'Core/freezeOb
      * Gets a promise that, when resolved, indicates that the EOP data has been loaded and is
      * ready to use.
      *
-     * @memberof EarthOrientationParameters
-     *
      * @returns {Promise} The promise.
      *
      * @see when
@@ -133,8 +146,6 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/defined', 'Core/freezeOb
     /**
      * Computes the Earth Orientation Parameters (EOP) for a given date by interpolating.
      * If the EOP data has not yet been download, this method returns undefined.
-     *
-     * @memberof EarthOrientationParameters
      *
      * @param {JulianDate} date The date for each to evaluate the EOP.
      * @param {EarthOrientationParametersSample} [result] The instance to which to copy the result.
@@ -178,9 +189,9 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/defined', 'Core/freezeOb
         if (defined(lastIndex)) {
             var previousIndexDate = dates[lastIndex];
             var nextIndexDate = dates[lastIndex + 1];
-            var isAfterPrevious = previousIndexDate.lessThanOrEquals(date);
+            var isAfterPrevious = JulianDate.lessThanOrEquals(previousIndexDate, date);
             var isAfterLastSample = !defined(nextIndexDate);
-            var isBeforeNext = isAfterLastSample || nextIndexDate.greaterThanOrEquals(date);
+            var isBeforeNext = isAfterLastSample || JulianDate.greaterThanOrEquals(nextIndexDate, date);
 
             if (isAfterPrevious && isBeforeNext) {
                 before = lastIndex;
@@ -279,7 +290,7 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/defined', 'Core/freezeOb
                 if (taiMinusUtc !== lastTaiMinusUtc && defined(lastTaiMinusUtc)) {
                     // We crossed a leap second boundary, so add the leap second
                     // if it does not already exist.
-                    var leapSeconds = LeapSecond.getLeapSeconds();
+                    var leapSeconds = JulianDate.leapSeconds;
                     var leapSecondIndex = binarySearch(leapSeconds, date, compareLeapSecondDates);
                     if (leapSecondIndex < 0) {
                         var leapSecond = new LeapSecond(date, taiMinusUtc);
@@ -329,7 +340,7 @@ define(['Core/binarySearch', 'Core/defaultValue', 'Core/defined', 'Core/freezeOb
             return result;
         }
 
-        var factor = beforeDate.getSecondsDifference(date) / beforeDate.getSecondsDifference(afterDate);
+        var factor = JulianDate.secondsDifference(date, beforeDate) / JulianDate.secondsDifference(afterDate, beforeDate);
 
         var startBefore = before * columnCount;
         var startAfter = after * columnCount;

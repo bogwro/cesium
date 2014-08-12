@@ -1,5 +1,8 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/QuadraticRealPolynomial'], function(
+define([
+        './DeveloperError',
+        './QuadraticRealPolynomial'
+    ], function(
         DeveloperError,
         QuadraticRealPolynomial) {
     "use strict";
@@ -7,26 +10,21 @@ define(['Core/DeveloperError', 'Core/QuadraticRealPolynomial'], function(
     /**
      * Defines functions for 3rd order polynomial functions of one variable with only real coefficients.
      *
-     * @exports CubicRealPolynomial
+     * @namespace
+     * @alias CubicRealPolynomial
      */
     var CubicRealPolynomial = {};
 
     /**
      * Provides the discriminant of the cubic equation from the supplied coefficients.
-     * @memberof CubicRealPolynomial
      *
      * @param {Number} a The coefficient of the 3rd order monomial.
      * @param {Number} b The coefficient of the 2nd order monomial.
      * @param {Number} c The coefficient of the 1st order monomial.
      * @param {Number} d The coefficient of the 0th order monomial.
      * @returns {Number} The value of the discriminant.
-     *
-     * @exception {DeveloperError} a is a required number.
-     * @exception {DeveloperError} b is a required number.
-     * @exception {DeveloperError} c is a required number.
-     * @exception {DeveloperError} d is a required number.
      */
-    CubicRealPolynomial.discriminant = function(a, b, c, d) {
+    CubicRealPolynomial.computeDiscriminant = function(a, b, c, d) {
         //>>includeStart('debug', pragmas.debug);
         if (typeof a !== 'number') {
             throw new DeveloperError('a is a required number.');
@@ -158,20 +156,14 @@ define(['Core/DeveloperError', 'Core/QuadraticRealPolynomial'], function(
 
     /**
      * Provides the real valued roots of the cubic polynomial with the provided coefficients.
-     * @memberof CubicRealPolynomial
      *
      * @param {Number} a The coefficient of the 3rd order monomial.
      * @param {Number} b The coefficient of the 2nd order monomial.
      * @param {Number} c The coefficient of the 1st order monomial.
      * @param {Number} d The coefficient of the 0th order monomial.
-     * @returns {Array} The real valued roots.
-     *
-     * @exception {DeveloperError} a is a required number.
-     * @exception {DeveloperError} b is a required number.
-     * @exception {DeveloperError} c is a required number.
-     * @exception {DeveloperError} d is a required number.
+     * @returns {Number[]} The real valued roots.
      */
-    CubicRealPolynomial.realRoots = function(a, b, c, d) {
+    CubicRealPolynomial.computeRealRoots = function(a, b, c, d) {
         //>>includeStart('debug', pragmas.debug);
         if (typeof a !== 'number') {
             throw new DeveloperError('a is a required number.');
@@ -191,7 +183,7 @@ define(['Core/DeveloperError', 'Core/QuadraticRealPolynomial'], function(
         var ratio;
         if (a === 0.0) {
             // Quadratic function: b * x^2 + c * x + d = 0.
-            return QuadraticRealPolynomial.realRoots(b, c, d);
+            return QuadraticRealPolynomial.computeRealRoots(b, c, d);
         } else if (b === 0.0) {
             if (c === 0.0) {
                 if (d === 0.0) {
@@ -205,7 +197,7 @@ define(['Core/DeveloperError', 'Core/QuadraticRealPolynomial'], function(
                 return [root, root, root];
             } else if (d === 0.0) {
                 // x * (a * x^2 + c) = 0.
-                roots = QuadraticRealPolynomial.realRoots(a, 0, c);
+                roots = QuadraticRealPolynomial.computeRealRoots(a, 0, c);
 
                 // Return the roots in ascending order.
                 if (roots.Length === 0) {
@@ -229,7 +221,7 @@ define(['Core/DeveloperError', 'Core/QuadraticRealPolynomial'], function(
             return computeRealRoots(a, b, 0, d);
         } else if (d === 0.0) {
             // x * (a * x^2 + b * x + c) = 0
-            roots = QuadraticRealPolynomial.realRoots(a, b, c);
+            roots = QuadraticRealPolynomial.computeRealRoots(a, b, c);
 
             // Return the roots in ascending order.
             if (roots.length === 0) {

@@ -1,5 +1,9 @@
 /*global define*/
-define(['Core/defined', 'Core/destroyObject', 'Scene/ImageryState'], function(
+define([
+        '../Core/defined',
+        '../Core/destroyObject',
+        './ImageryState'
+    ], function(
         defined,
         destroyObject,
         ImageryState) {
@@ -11,7 +15,7 @@ define(['Core/defined', 'Core/destroyObject', 'Scene/ImageryState'], function(
      * @alias Imagery
      * @private
      */
-    var Imagery = function(imageryLayer, x, y, level, extent) {
+    var Imagery = function(imageryLayer, x, y, level, rectangle) {
         this.imageryLayer = imageryLayer;
         this.x = x;
         this.y = y;
@@ -28,14 +32,15 @@ define(['Core/defined', 'Core/destroyObject', 'Scene/ImageryState'], function(
         this.imageUrl = undefined;
         this.image = undefined;
         this.texture = undefined;
+        this.credits = undefined;
         this.referenceCount = 0;
 
-        if (!defined(extent) && imageryLayer.getImageryProvider().isReady()) {
-            var tilingScheme = imageryLayer.getImageryProvider().getTilingScheme();
-            extent = tilingScheme.tileXYToExtent(x, y, level);
+        if (!defined(rectangle) && imageryLayer.imageryProvider.ready) {
+            var tilingScheme = imageryLayer.imageryProvider.tilingScheme;
+            rectangle = tilingScheme.tileXYToRectangle(x, y, level);
         }
 
-        this.extent = extent;
+        this.rectangle = rectangle;
     };
 
     Imagery.createPlaceholder = function(imageryLayer) {
@@ -63,7 +68,7 @@ define(['Core/defined', 'Core/destroyObject', 'Scene/ImageryState'], function(
                 this.image.destroy();
             }
 
-            if (defined(this.texture) && defined(this.texture.destroy)) {
+            if (defined(this.texture)) {
                 this.texture.destroy();
             }
 

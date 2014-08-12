@@ -1,28 +1,45 @@
 /*global define*/
-define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/CornerType', 'Core/CorridorGeometryLibrary', 'Core/ComponentDatatype', 'Core/Ellipsoid', 'Core/Geometry', 'Core/IndexDatatype', 'Core/Math', 'Core/PolylinePipeline', 'Core/PrimitiveType', 'Core/defaultValue', 'Core/BoundingSphere', 'Core/GeometryAttribute', 'Core/GeometryAttributes'], function(
-        defined,
-        DeveloperError,
+define([
+        './BoundingSphere',
+        './Cartesian3',
+        './ComponentDatatype',
+        './CornerType',
+        './CorridorGeometryLibrary',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './Ellipsoid',
+        './Geometry',
+        './GeometryAttribute',
+        './GeometryAttributes',
+        './IndexDatatype',
+        './Math',
+        './PolylinePipeline',
+        './PrimitiveType'
+    ], function(
+        BoundingSphere,
         Cartesian3,
+        ComponentDatatype,
         CornerType,
         CorridorGeometryLibrary,
-        ComponentDatatype,
+        defaultValue,
+        defined,
+        DeveloperError,
         Ellipsoid,
         Geometry,
+        GeometryAttribute,
+        GeometryAttributes,
         IndexDatatype,
         CesiumMath,
         PolylinePipeline,
-        PrimitiveType,
-        defaultValue,
-        BoundingSphere,
-        GeometryAttribute,
-        GeometryAttributes) {
+        PrimitiveType) {
     "use strict";
 
     var cartesian1 = new Cartesian3();
     var cartesian2 = new Cartesian3();
     var cartesian3 = new Cartesian3();
 
-    function combine(computedPositions, ellipsoid, cornerType) {
+    function combine(computedPositions, cornerType) {
         var wallIndices = [];
         var positions = computedPositions.positions;
         var corners = computedPositions.corners;
@@ -144,7 +161,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/CornerTy
                     back -= 3;
                 }
                 wallIndices.push(start - Math.floor(l.length / 6));
-                if (cornerType.value === CornerType.BEVELED.value) {
+                if (cornerType === CornerType.BEVELED) {
                     wallIndices.push((back - 2) / 3 + 1);
                 }
                 front += 3;
@@ -160,7 +177,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/CornerTy
                     front += 3;
                 }
                 wallIndices.push(start + Math.floor(r.length / 6));
-                if (cornerType.value === CornerType.BEVELED.value) {
+                if (cornerType === CornerType.BEVELED) {
                     wallIndices.push(front / 3 - 1);
                 }
                 back -= 3;
@@ -238,7 +255,7 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/CornerTy
     function computePositionsExtruded(params) {
         var ellipsoid = params.ellipsoid;
         var computedPositions = CorridorGeometryLibrary.computePositions(params);
-        var attr = combine(computedPositions, ellipsoid, params.cornerType);
+        var attr = combine(computedPositions, params.cornerType);
         var wallIndices = attr.wallIndices;
         var height = params.height;
         var extrudedHeight = params.extrudedHeight;
@@ -250,8 +267,8 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/CornerTy
         extrudedPositions.set(positions);
         var newPositions = new Float64Array(length * 2);
 
-        positions = PolylinePipeline.scaleToGeodeticHeight(positions, height, ellipsoid, positions);
-        extrudedPositions = PolylinePipeline.scaleToGeodeticHeight(extrudedPositions, extrudedHeight, ellipsoid, extrudedPositions);
+        positions = CorridorGeometryLibrary.scaleToGeodeticHeight(positions, height, ellipsoid, positions);
+        extrudedPositions = CorridorGeometryLibrary.scaleToGeodeticHeight(extrudedPositions, extrudedHeight, ellipsoid, extrudedPositions);
         newPositions.set(positions);
         newPositions.set(extrudedPositions, length);
         attributes.position.values = newPositions;
@@ -289,25 +306,22 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/CornerTy
      * @alias CorridorOutlineGeometry
      * @constructor
      *
-     * @param {Array} options.positions An array of {Cartesain3} positions that define the center of the corridor outline.
+     * @param {Object} options Object with the following properties:
+     * @param {Cartesian3[]} options.positions An array of positions that define the center of the corridor outline.
      * @param {Number} options.width The distance between the edges of the corridor outline.
      * @param {Ellipsoid} [options.ellipsoid=Ellipsoid.WGS84] The ellipsoid to be used as a reference.
      * @param {Number} [options.granularity=CesiumMath.RADIANS_PER_DEGREE] The distance, in radians, between each latitude and longitude. Determines the number of positions in the buffer.
      * @param {Number} [options.height=0] The distance between the ellipsoid surface and the positions.
      * @param {Number} [options.extrudedHeight] The distance between the ellipsoid surface and the extrusion.
-     * @param {Boolean} [options.cornerType = CornerType.ROUNDED] Determines the style of the corners.
+     * @param {CornerType} [options.cornerType=CornerType.ROUNDED] Determines the style of the corners.
      *
-     * @exception {DeveloperError} options.positions is required.
-     * @exception {DeveloperError} options.width is required.
+     * @see CorridorOutlineGeometry.createGeometry
      *
-     * @see CorridorOutlineGeometry#createGeometry
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Corridor%20Outline.html|Cesium Sandcastle Corridor Outline Demo}
      *
      * @example
      * var corridor = new Cesium.CorridorOutlineGeometry({
-     *   positions : ellipsoid.cartographicArrayToCartesianArray([
-     *         Cesium.Cartographic.fromDegrees(-72.0, 40.0),
-     *         Cesium.Cartographic.fromDegrees(-70.0, 35.0)
-     *     ]),
+     *   positions : Cesium.Cartesian3.fromDegreesArray([-72.0, 40.0, -70.0, 35.0]),
      *   width : 100000
      * });
      */
@@ -337,10 +351,8 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/CornerTy
 
     /**
      * Computes the geometric representation of a corridor, including its vertices, indices, and a bounding sphere.
-     * @memberof CorridorOutlineGeometry
      *
      * @param {CorridorOutlineGeometry} corridorOutlineGeometry A description of the corridor.
-     *
      * @returns {Geometry} The computed vertices and indices.
      *
      * @exception {DeveloperError} Count of unique positions must be greater than 1.
@@ -377,8 +389,8 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/CornerTy
             attr = computePositionsExtruded(params);
         } else {
             var computedPositions = CorridorGeometryLibrary.computePositions(params);
-            attr = combine(computedPositions, ellipsoid, params.cornerType);
-            attr.attributes.position.values = PolylinePipeline.scaleToGeodeticHeight(attr.attributes.position.values, height, ellipsoid, attr.attributes.position.values);
+            attr = combine(computedPositions, params.cornerType);
+            attr.attributes.position.values = CorridorGeometryLibrary.scaleToGeodeticHeight(attr.attributes.position.values, height, ellipsoid, attr.attributes.position.values);
         }
         var attributes = attr.attributes;
         var boundingSphere = BoundingSphere.fromVertices(attributes.position.values, undefined, 3);

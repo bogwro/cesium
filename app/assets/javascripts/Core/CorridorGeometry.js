@@ -1,21 +1,39 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/CornerType', 'Core/CorridorGeometryLibrary', 'Core/ComponentDatatype', 'Core/Ellipsoid', 'Core/Geometry', 'Core/IndexDatatype', 'Core/Math', 'Core/PolylinePipeline', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/VertexFormat'], function(
+define([
+        './BoundingSphere',
+        './Cartesian3',
+        './ComponentDatatype',
+        './CornerType',
+        './CorridorGeometryLibrary',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './Ellipsoid',
+        './Geometry',
+        './GeometryAttribute',
+        './GeometryAttributes',
+        './IndexDatatype',
+        './Math',
+        './PolylinePipeline',
+        './PrimitiveType',
+        './VertexFormat'
+    ], function(
+        BoundingSphere,
+        Cartesian3,
+        ComponentDatatype,
+        CornerType,
+        CorridorGeometryLibrary,
         defaultValue,
         defined,
         DeveloperError,
-        Cartesian3,
-        CornerType,
-        CorridorGeometryLibrary,
-        ComponentDatatype,
         Ellipsoid,
         Geometry,
+        GeometryAttribute,
+        GeometryAttributes,
         IndexDatatype,
         CesiumMath,
         PolylinePipeline,
         PrimitiveType,
-        BoundingSphere,
-        GeometryAttribute,
-        GeometryAttributes,
         VertexFormat) {
     "use strict";
 
@@ -555,9 +573,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
         extrudedPositions.set(positions);
         var wallPositions = new Float64Array(length * 4);
 
-        positions = PolylinePipeline.scaleToGeodeticHeight(positions, height, ellipsoid, positions);
+        positions = CorridorGeometryLibrary.scaleToGeodeticHeight(positions, height, ellipsoid, positions);
         wallPositions = addWallPositions(positions, 0, wallPositions);
-        extrudedPositions = PolylinePipeline.scaleToGeodeticHeight(extrudedPositions, extrudedHeight, ellipsoid, extrudedPositions);
+        extrudedPositions = CorridorGeometryLibrary.scaleToGeodeticHeight(extrudedPositions, extrudedHeight, ellipsoid, extrudedPositions);
         wallPositions = addWallPositions(extrudedPositions, length * 2, wallPositions);
         newPositions.set(positions);
         newPositions.set(extrudedPositions, length);
@@ -608,27 +626,24 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * @alias CorridorGeometry
      * @constructor
      *
-     * @param {Array} options.positions An array of {Cartesain3} positions that define the center of the corridor.
+     * @param {Object} options Object with the following properties:
+     * @param {Cartesian3[]} options.positions An array of positions that define the center of the corridor.
      * @param {Number} options.width The distance between the edges of the corridor in meters.
      * @param {Ellipsoid} [options.ellipsoid=Ellipsoid.WGS84] The ellipsoid to be used as a reference.
      * @param {Number} [options.granularity=CesiumMath.RADIANS_PER_DEGREE] The distance, in radians, between each latitude and longitude. Determines the number of positions in the buffer.
      * @param {Number} [options.height=0] The distance in meters between the ellipsoid surface and the positions.
      * @param {Number} [options.extrudedHeight] The distance in meters between the ellipsoid surface and the extrusion.
      * @param {VertexFormat} [options.vertexFormat=VertexFormat.DEFAULT] The vertex attributes to be computed.
-     * @param {Boolean} [options.cornerType = CornerType.ROUNDED] Determines the style of the corners.
+     * @param {CornerType} [options.cornerType=CornerType.ROUNDED] Determines the style of the corners.
      *
-     * @exception {DeveloperError} options.positions is required.
-     * @exception {DeveloperError} options.width is required.
+     * @see CorridorGeometry.createGeometry
      *
-     * @see CorridorGeometry#createGeometry
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Corridor.html|Cesium Sandcastle Corridor Demo}
      *
      * @example
      * var corridor = new Cesium.CorridorGeometry({
      *   vertexFormat : Cesium.VertexFormat.POSITION_ONLY,
-     *   positions : ellipsoid.cartographicArrayToCartesianArray([
-     *         Cesium.Cartographic.fromDegrees(-72.0, 40.0),
-     *         Cesium.Cartographic.fromDegrees(-70.0, 35.0)
-     *     ]),
+     *   positions : Cesium.Cartesian3.fromDegreesArray([-72.0, 40.0, -70.0, 35.0]),
      *   width : 100000
      * });
      */
@@ -659,10 +674,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
 
     /**
      * Computes the geometric representation of a corridor, including its vertices, indices, and a bounding sphere.
-     * @memberof CorridorGeometry
      *
      * @param {CorridorGeometry} corridorGeometry A description of the corridor.
-     *
      * @returns {Geometry} The computed vertices and indices.
      *
      * @exception {DeveloperError} Count of unique positions must be greater than 1.
@@ -701,7 +714,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
         } else {
             var computedPositions = CorridorGeometryLibrary.computePositions(params);
             attr = combine(computedPositions, vertexFormat, ellipsoid);
-            attr.attributes.position.values = PolylinePipeline.scaleToGeodeticHeight(attr.attributes.position.values, height, ellipsoid, attr.attributes.position.values);
+            attr.attributes.position.values = CorridorGeometryLibrary.scaleToGeodeticHeight(attr.attributes.position.values, height, ellipsoid, attr.attributes.position.values);
         }
         var attributes = attr.attributes;
         var boundingSphere = BoundingSphere.fromVertices(attributes.position.values, undefined, 3);

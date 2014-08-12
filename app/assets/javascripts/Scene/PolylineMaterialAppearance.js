@@ -1,14 +1,26 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/VertexFormat', 'Scene/Material', 'Scene/Appearance', 'Renderer/createShaderSource', 'Shaders/Appearances/PolylineMaterialAppearanceVS', 'Shaders/PolylineFS', 'Shaders/PolylineCommon'], function(
+define([
+        '../Core/defaultValue',
+        '../Core/defined',
+        '../Core/defineProperties',
+        '../Core/VertexFormat',
+        '../Renderer/createShaderSource',
+        '../Shaders/Appearances/PolylineMaterialAppearanceVS',
+        '../Shaders/PolylineCommon',
+        '../Shaders/PolylineFS',
+        './Appearance',
+        './Material'
+    ], function(
         defaultValue,
         defined,
+        defineProperties,
         VertexFormat,
-        Material,
-        Appearance,
         createShaderSource,
         PolylineMaterialAppearanceVS,
+        PolylineCommon,
         PolylineFS,
-        PolylineCommon) {
+        Appearance,
+        Material) {
     "use strict";
 
     /**
@@ -17,19 +29,23 @@ define(['Core/defaultValue', 'Core/defined', 'Core/VertexFormat', 'Scene/Materia
      * @alias PolylineMaterialAppearance
      * @constructor
      *
+     * @param {Object} [options] Object with the following properties:
      * @param {Boolean} [options.translucent=true] When <code>true</code>, the geometry is expected to appear translucent so {@link PolylineMaterialAppearance#renderState} has alpha blending enabled.
      * @param {Material} [options.material=Material.ColorType] The material used to determine the fragment color.
-     * @param {String} [options.vertexShaderSource=undefined] Optional GLSL vertex shader source to override the default vertex shader.
-     * @param {String} [options.fragmentShaderSource=undefined] Optional GLSL fragment shader source to override the default fragment shader.
-     * @param {RenderState} [options.renderState=undefined] Optional render state to override the default render state.
+     * @param {String} [options.vertexShaderSource] Optional GLSL vertex shader source to override the default vertex shader.
+     * @param {String} [options.fragmentShaderSource] Optional GLSL fragment shader source to override the default fragment shader.
+     * @param {RenderState} [options.renderState] Optional render state to override the default render state.
+     *
+     * @see {@link https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric|Fabric}
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Polyline%20Material.html|Cesium Sandcastle Polyline Material Appearance Demo}
      *
      * @example
      * var primitive = new Cesium.Primitive({
      *   geometryInstances : new Cesium.GeometryInstance({
      *     geometry : new Cesium.PolylineGeometry({
-     *       positions : ellipsoid.cartographicArrayToCartesianArray([
-     *         Cesium.Cartographic.fromDegrees(0.0, 0.0),
-     *         Cesium.Cartographic.fromDegrees(5.0, 0.0)
+     *       positions : Cesium.Cartesian3.fromDegreesArray([
+     *         0.0, 0.0,
+     *         5.0, 0.0
      *       ]),
      *       width : 10.0,
      *       vertexFormat : Cesium.PolylineMaterialAppearance.VERTEX_FORMAT
@@ -39,8 +55,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/VertexFormat', 'Scene/Materia
      *     material : Cesium.Material.fromType('Color')
      *   })
      * }));
-     *
-     * @see <a href='https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric'>Fabric</a>
      */
     var PolylineMaterialAppearance = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
@@ -57,81 +71,116 @@ define(['Core/defaultValue', 'Core/defined', 'Core/VertexFormat', 'Scene/Materia
          *
          * @type Material
          *
-         * @default Material.ColorType
+         * @default {@link Material.ColorType}
          *
-         * @see <a href='https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric'>Fabric</a>
+         * @see {@link https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric|Fabric}
          */
         this.material = defined(options.material) ? options.material : Material.fromType(Material.ColorType);
 
         /**
+         * When <code>true</code>, the geometry is expected to appear translucent so
+         * {@link PolylineMaterialAppearance#renderState} has alpha blending enabled.
+         *
+         * @type {Boolean}
+         *
+         * @default true
+         */
+        this.translucent = translucent;
+
+        this._vertexShaderSource = defaultValue(options.vertexShaderSource, vs);
+        this._fragmentShaderSource = defaultValue(options.fragmentShaderSource, fs);
+        this._renderState = defaultValue(options.renderState, Appearance.getDefaultRenderState(translucent, closed));
+        this._closed = closed;
+
+        // Non-derived members
+
+        this._vertexFormat = vertexFormat;
+    };
+
+    defineProperties(PolylineMaterialAppearance.prototype, {
+        /**
          * The GLSL source code for the vertex shader.
          *
-         * @type String
+         * @memberof PolylineMaterialAppearance.prototype
          *
+         * @type {String}
          * @readonly
          */
-        this.vertexShaderSource = defaultValue(options.vertexShaderSource, vs);
+        vertexShaderSource : {
+            get : function() {
+                return this._vertexShaderSource;
+            }
+        },
 
         /**
-         * The GLSL source code for the fragment shader.  The full fragment shader
-         * source is built procedurally taking into account {@link PolylineMaterialAppearance#material}.
-         * Use {@link PolylineMaterialAppearance#getFragmentShaderSource} to get the full source.
+         * The GLSL source code for the fragment shader.
          *
-         * @type String
+         * @memberof PolylineMaterialAppearance.prototype
          *
+         * @type {String}
          * @readonly
          */
-        this.fragmentShaderSource = defaultValue(options.fragmentShaderSource, fs);
+        fragmentShaderSource : {
+            get : function() {
+                return this._fragmentShaderSource;
+            }
+        },
 
         /**
-         * The render state.  This is not the final {@link RenderState} instance; instead,
-         * it can contain a subset of render state properties identical to <code>renderState</code>
-         * passed to {@link Context#createRenderState}.
+         * The WebGL fixed-function state to use when rendering the geometry.
          * <p>
          * The render state can be explicitly defined when constructing a {@link PolylineMaterialAppearance}
          * instance, or it is set implicitly via {@link PolylineMaterialAppearance#translucent}
          * and {@link PolylineMaterialAppearance#closed}.
          * </p>
          *
-         * @type Object
+         * @memberof PolylineMaterialAppearance.prototype
          *
+         * @type {Object}
          * @readonly
          */
-        this.renderState = defaultValue(options.renderState, Appearance.getDefaultRenderState(translucent, closed));
+        renderState : {
+            get : function() {
+                return this._renderState;
+            }
+        },
 
-        // Non-derived members
+        /**
+         * When <code>true</code>, the geometry is expected to be closed so
+         * {@link PolylineMaterialAppearance#renderState} has backface culling enabled.
+         * This is always <code>false</code> for <code>PolylineMaterialAppearance</code>.
+         *
+         * @memberof PolylineMaterialAppearance.prototype
+         *
+         * @type {Boolean}
+         * @readonly
+         *
+         * @default false
+         */
+        closed : {
+            get : function() {
+                return this._closed;
+            }
+        },
 
         /**
          * The {@link VertexFormat} that this appearance instance is compatible with.
          * A geometry can have more vertex attributes and still be compatible - at a
          * potential performance cost - but it can't have less.
          *
+         * @memberof PolylineMaterialAppearance.prototype
+         *
          * @type VertexFormat
-         *
-         * @readonly
-         */
-        this.vertexFormat = vertexFormat;
-
-        /**
-         * When <code>true</code>, the geometry is expected to appear translucent so
-         * {@link PolylineMaterialAppearance#renderState} has alpha blending enabled.
-         *
          * @readonly
          *
-         * @default true
+         * @default {@link PolylineMaterialAppearance.VERTEX_FORMAT}
          */
-        this.translucent = translucent;
-
-        /**
-         * When <code>true</code>, the geometry is expected to be closed so
-         * {@link PolylineMaterialAppearance#renderState} has backface culling enabled.
-         *
-         * @readonly
-         *
-         * @default false
-         */
-        this.closed = closed;
-    };
+        vertexFormat : {
+            get : function() {
+                return this._vertexFormat;
+            }
+        }
+    });
 
     /**
      * The {@link VertexFormat} that all {@link PolylineMaterialAppearance} instances
@@ -147,7 +196,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/VertexFormat', 'Scene/Materia
      * Procedurally creates the full GLSL fragment shader source.  For {@link PolylineMaterialAppearance},
      * this is derived from {@link PolylineMaterialAppearance#fragmentShaderSource} and {@link PolylineMaterialAppearance#material}.
      *
-     * @memberof PolylineMaterialAppearance
+     * @function
      *
      * @returns String The full GLSL fragment shader source.
      */
@@ -156,18 +205,18 @@ define(['Core/defaultValue', 'Core/defined', 'Core/VertexFormat', 'Scene/Materia
     /**
      * Determines if the geometry is translucent based on {@link PolylineMaterialAppearance#translucent} and {@link Material#isTranslucent}.
      *
-     * @memberof PolylineMaterialAppearance
+     * @function
      *
      * @returns {Boolean} <code>true</code> if the appearance is translucent.
      */
     PolylineMaterialAppearance.prototype.isTranslucent = Appearance.prototype.isTranslucent;
 
     /**
-     * Creates a render state.  This is not the final {@link RenderState} instance; instead,
-     * it can contain a subset of render state properties identical to <code>renderState</code>
-     * passed to {@link Context#createRenderState}.
+     * Creates a render state.  This is not the final render state instance; instead,
+     * it can contain a subset of render state properties identical to the render state
+     * created in the context.
      *
-     * @memberof PolylineMaterialAppearance
+     * @function
      *
      * @returns {Object} The render state.
      */

@@ -1,13 +1,22 @@
 /*global define*/
-define(['Core/buildModuleUrl', 'Core/defaultValue', 'Core/defined', 'Core/Iau2006XysSample', 'Core/JulianDate', 'Core/loadJson', 'Core/TimeStandard', 'ThirdParty/when'], function(
+define([
+        '../ThirdParty/when',
+        './buildModuleUrl',
+        './defaultValue',
+        './defined',
+        './Iau2006XysSample',
+        './JulianDate',
+        './loadJson',
+        './TimeStandard'
+    ], function(
+        when,
         buildModuleUrl,
         defaultValue,
         defined,
         Iau2006XysSample,
         JulianDate,
         loadJson,
-        TimeStandard,
-        when) {
+        TimeStandard) {
     "use strict";
 
     /**
@@ -17,25 +26,28 @@ define(['Core/buildModuleUrl', 'Core/defaultValue', 'Core/defined', 'Core/Iau200
      * @alias Iau2006XysData
      * @constructor
      *
-     * @param {String} [description.xysFileUrlTemplate='Assets/IAU2006_XYS/IAU2006_XYS_{0}.json'] A template URL for obtaining the XYS data.  In the template,
+     * @param {Object} [options] Object with the following properties:
+     * @param {String} [options.xysFileUrlTemplate='Assets/IAU2006_XYS/IAU2006_XYS_{0}.json'] A template URL for obtaining the XYS data.  In the template,
      *                 `{0}` will be replaced with the file index.
-     * @param {Number} [description.interpolationOrder=9] The order of interpolation to perform on the XYS data.
-     * @param {Number} [description.sampleZeroJulianEphemerisDate=2442396.5] The Julian ephemeris date (JED) of the
+     * @param {Number} [options.interpolationOrder=9] The order of interpolation to perform on the XYS data.
+     * @param {Number} [options.sampleZeroJulianEphemerisDate=2442396.5] The Julian ephemeris date (JED) of the
      *                 first XYS sample.
-     * @param {Number} [description.stepSizeDays=1.0] The step size, in days, between successive XYS samples.
-     * @param {Number} [description.samplesPerXysFile=1000] The number of samples in each XYS file.
-     * @param {Number} [description.totalSamples=27426] The total number of samples in all XYS files.
+     * @param {Number} [options.stepSizeDays=1.0] The step size, in days, between successive XYS samples.
+     * @param {Number} [options.samplesPerXysFile=1000] The number of samples in each XYS file.
+     * @param {Number} [options.totalSamples=27426] The total number of samples in all XYS files.
+     *
+     * @private
      */
-    var Iau2006XysData = function Iau2006XysData(description) {
-        description = defaultValue(description, defaultValue.EMPTY_OBJECT);
+    var Iau2006XysData = function Iau2006XysData(options) {
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
 
-        this._xysFileUrlTemplate = description.xysFileUrlTemplate;
-        this._interpolationOrder = defaultValue(description.interpolationOrder, 9);
-        this._sampleZeroJulianEphemerisDate = defaultValue(description.sampleZeroJulianEphemerisDate, 2442396.5);
+        this._xysFileUrlTemplate = options.xysFileUrlTemplate;
+        this._interpolationOrder = defaultValue(options.interpolationOrder, 9);
+        this._sampleZeroJulianEphemerisDate = defaultValue(options.sampleZeroJulianEphemerisDate, 2442396.5);
         this._sampleZeroDateTT = new JulianDate(this._sampleZeroJulianEphemerisDate, 0.0, TimeStandard.TAI);
-        this._stepSizeDays = defaultValue(description.stepSizeDays, 1.0);
-        this._samplesPerXysFile = defaultValue(description.samplesPerXysFile, 1000);
-        this._totalSamples = defaultValue(description.totalSamples, 27426);
+        this._stepSizeDays = defaultValue(options.stepSizeDays, 1.0);
+        this._samplesPerXysFile = defaultValue(options.samplesPerXysFile, 1000);
+        this._totalSamples = defaultValue(options.totalSamples, 27426);
         this._samples = new Array(this._totalSamples * 3);
         this._chunkDownloadsInProgress = [];
 
@@ -69,15 +81,13 @@ define(['Core/buildModuleUrl', 'Core/defaultValue', 'Core/defined', 'Core/Iau200
 
     function getDaysSinceEpoch(xys, dayTT, secondTT) {
         var dateTT = julianDateScratch;
-        dateTT._julianDayNumber = dayTT;
-        dateTT._secondsOfDay = secondTT;
-        return xys._sampleZeroDateTT.getDaysDifference(dateTT);
+        dateTT.dayNumber = dayTT;
+        dateTT.secondsOfDay = secondTT;
+        return JulianDate.daysDifference(dateTT, xys._sampleZeroDateTT);
     }
 
     /**
      * Preloads XYS data for a specified date range.
-     *
-     * @memberof Iau2006XysData
      *
      * @param {Number} startDayTT The Julian day number of the beginning of the interval to preload, expressed in
      *                 the Terrestrial Time (TT) time standard.
@@ -87,7 +97,6 @@ define(['Core/buildModuleUrl', 'Core/defaultValue', 'Core/defined', 'Core/Iau200
      *                 the Terrestrial Time (TT) time standard.
      * @param {Number} stopSecondTT The seconds past noon of the end of the interval to preload, expressed in
      *                 the Terrestrial Time (TT) time standard.
-
      * @returns {Promise} A promise that, when resolved, indicates that the requested interval has been
      *                    preloaded.
      */
@@ -119,8 +128,6 @@ define(['Core/buildModuleUrl', 'Core/defaultValue', 'Core/defined', 'Core/Iau200
     /**
      * Computes the XYS values for a given date by interpolating.  If the required data is not yet downloaded,
      * this method will return undefined.
-     *
-     * @memberof Iau2006XysData
      *
      * @param {Number} dayTT The Julian day number for which to compute the XYS value, expressed in
      *                 the Terrestrial Time (TT) time standard.

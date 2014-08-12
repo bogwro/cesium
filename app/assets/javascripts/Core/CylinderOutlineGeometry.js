@@ -1,19 +1,32 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/CylinderGeometryLibrary', 'Core/Math', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/GeometryAttributes'], function(
+define([
+        './BoundingSphere',
+        './Cartesian2',
+        './Cartesian3',
+        './ComponentDatatype',
+        './CylinderGeometryLibrary',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './Geometry',
+        './GeometryAttribute',
+        './GeometryAttributes',
+        './IndexDatatype',
+        './PrimitiveType'
+    ], function(
+        BoundingSphere,
+        Cartesian2,
+        Cartesian3,
+        ComponentDatatype,
+        CylinderGeometryLibrary,
         defaultValue,
         defined,
         DeveloperError,
-        Cartesian2,
-        Cartesian3,
-        CylinderGeometryLibrary,
-        CesiumMath,
-        ComponentDatatype,
-        IndexDatatype,
-        PrimitiveType,
-        BoundingSphere,
         Geometry,
         GeometryAttribute,
-        GeometryAttributes) {
+        GeometryAttributes,
+        IndexDatatype,
+        PrimitiveType) {
     "use strict";
 
     var radiusScratch = new Cartesian2();
@@ -21,14 +34,15 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
     /**
      * A description of the outline of a cylinder.
      *
-     * @alias CylinderGeometryOutline
+     * @alias CylinderOutlineGeometry
      * @constructor
      *
+     * @param {Object} options Object with the following properties:
      * @param {Number} options.length The length of the cylinder.
      * @param {Number} options.topRadius The radius of the top of the cylinder.
      * @param {Number} options.bottomRadius The radius of the bottom of the cylinder.
-     * @param {Number} [options.slices = 128] The number of edges around perimeter of the cylinder.
-     * @param {Number} [options.numberOfVerticalLines = 16] Number of lines to draw between the top and bottom surfaces of the cylinder.
+     * @param {Number} [options.slices=128] The number of edges around perimeter of the cylinder.
+     * @param {Number} [options.numberOfVerticalLines=16] Number of lines to draw between the top and bottom surfaces of the cylinder.
      *
      * @exception {DeveloperError} options.length must be greater than 0.
      * @exception {DeveloperError} options.topRadius must be greater than 0.
@@ -36,7 +50,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * @exception {DeveloperError} bottomRadius and topRadius cannot both equal 0.
      * @exception {DeveloperError} options.slices must be greater that 3.
      *
-     * @see CylinderOutlineGeometry#createGeometry
+     * @see CylinderOutlineGeometry.createGeometry
+     *
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Cylinder%20Outline.html|Cesium Sandcastle Cylinder Outline Demo}
      *
      * @example
      * // create cylinder geometry
@@ -71,7 +87,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
         }
         if (slices < 3) {
             throw new DeveloperError('options.slices must be greater that 3.');
-       }
+        }
         //>>includeEnd('debug');
 
         this._length = length;
@@ -84,7 +100,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
 
     /**
      * Computes the geometric representation of an outline of a cylinder, including its vertices, indices, and a bounding sphere.
-     * @memberof CylinderOutlineGeometry
      *
      * @param {CylinderOutlineGeometry} cylinderGeometry A description of the cylinder outline.
      * @returns {Geometry} The computed vertices and indices.
@@ -109,7 +124,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
 
         var indices = IndexDatatype.createTypedArray(numVertices, numIndices * 2);
         var index = 0;
-        for ( var i = 0; i < slices - 1; i++) {
+        for (var i = 0; i < slices - 1; i++) {
             indices[index++] = i;
             indices[index++] = i + 1;
             indices[index++] = i + slices;
@@ -130,9 +145,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
 
         var attributes = new GeometryAttributes();
         attributes.position = new GeometryAttribute({
-            componentDatatype: ComponentDatatype.DOUBLE,
-            componentsPerAttribute: 3,
-            values: positions
+            componentDatatype : ComponentDatatype.DOUBLE,
+            componentsPerAttribute : 3,
+            values : positions
         });
 
         radiusScratch.x = length * 0.5;

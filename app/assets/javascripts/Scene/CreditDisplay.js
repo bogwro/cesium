@@ -1,16 +1,22 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Scene/Credit'], function (
+define([
+        '../Core/Credit',
+        '../Core/defaultValue',
+        '../Core/defined',
+        '../Core/destroyObject',
+        '../Core/DeveloperError'
+    ], function(
+        Credit,
         defaultValue,
         defined,
         destroyObject,
-        DeveloperError,
-        Credit) {
+        DeveloperError) {
     "use strict";
 
     function displayTextCredit(credit, container, delimiter) {
         if (!defined(credit.element)) {
-            var text = credit.getText();
-            var link = credit.getLink();
+            var text = credit.text;
+            var link = credit.link;
             var span = document.createElement('span');
             if (credit.hasLink()) {
                 var a = document.createElement('a');
@@ -35,11 +41,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
 
     function displayImageCredit(credit, container) {
         if (!defined(credit.element)) {
-            var text = credit.getText();
-            var link = credit.getLink();
+            var text = credit.text;
+            var link = credit.link;
             var span = document.createElement('span');
             var content = document.createElement('img');
-            content.src = credit.getImageUrl();
+            content.src = credit.imageUrl;
             content.style['vertical-align'] = 'bottom';
             if (defined(text)) {
                 content.alt = text;
@@ -142,7 +148,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
      * @example
      * var creditDisplay = new Cesium.CreditDisplay(creditContainer);
      */
-
     var CreditDisplay = function(container, delimiter) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(container)) {
@@ -177,8 +182,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
     /**
      * Adds a credit to the list of current credits to be displayed in the credit container
      *
-     * @memberof CreditDisplay
-     *
      * @param {Credit} credit The credit to display
      */
     CreditDisplay.prototype.addCredit = function(credit) {
@@ -204,8 +207,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
     /**
      * Adds credits that will persist until they are removed
      *
-     * @memberof CreditDisplay
-     *
      * @param {Credit} credit The credit to added to defaults
      */
     CreditDisplay.prototype.addDefaultCredit = function(credit) {
@@ -230,8 +231,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
 
     /**
      * Removes a default credit
-     *
-     * @memberof CreditDisplay
      *
      * @param {Credit} credit The credit to be removed from defaults
      */
@@ -259,8 +258,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
     /**
      * Resets the credit display to a beginning of frame state, clearing out current credits.
      *
-     * @memberof CreditDisplay
-     *
      * @param {Credit} credit The credit to display
      */
     CreditDisplay.prototype.beginFrame = function() {
@@ -270,8 +267,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
 
     /**
      * Sets the credit display to the end of frame state, displaying current credits in the credit container
-     *
-     * @memberof CreditDisplay
      *
      * @param {Credit} credit The credit to display
      */
@@ -293,8 +288,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/Develop
      * Once an object is destroyed, it should not be used; calling any function other than
      * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.  Therefore,
      * assign the return value (<code>undefined</code>) to the object as done in the example.
-     *
-     * @memberof CreditDisplay
      *
      * @returns {undefined}
      *

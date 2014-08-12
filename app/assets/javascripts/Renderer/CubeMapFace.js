@@ -1,17 +1,18 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Renderer/PixelDatatype'], function(
+define([
+        '../Core/defaultValue',
+        '../Core/defineProperties',
+        '../Core/DeveloperError',
+        './PixelDatatype'
+    ], function(
         defaultValue,
+        defineProperties,
         DeveloperError,
         PixelDatatype) {
     "use strict";
 
     /**
-     * A face of a cube map (+x, -x, +y, -y, +z, or -z) that can be modified and rendered to.
-     *
-     * @alias CubeMapFace
-     * @internalConstructor
-     *
-     * @see CubeMap
+     * @private
      */
     var CubeMapFace = function(gl, texture, textureTarget, targetFace, pixelFormat, pixelDatatype, size, preMultiplyAlpha, flipY) {
         this._gl = gl;
@@ -25,20 +26,35 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Renderer/PixelDatatype'], f
         this._flipY = flipY;
     };
 
+    defineProperties(CubeMapFace.prototype, {
+        pixelFormat : {
+            get : function() {
+                return this._pixelFormat;
+            }
+        },
+        pixelDatatype : {
+            get : function() {
+                return this._pixelDatatype;
+            }
+        },
+        _target : {
+            get : function() {
+                return this._targetFace;
+            }
+        }
+    });
+
     /**
      * Copies texels from the source to the cubemap's face.
-     *
-     * @memberof CubeMapFace
      *
      * @param {Object} source The source ImageData, HTMLImageElement, HTMLCanvasElement, HTMLVideoElement, or an object with a width, height, and typed array as shown in the example.
      * @param {Number} [xOffset=0] An offset in the x direction in the cubemap where copying begins.
      * @param {Number} [yOffset=0] An offset in the y direction in the cubemap where copying begins.
      *
-     * @exception {DeveloperError} source is required.
      * @exception {DeveloperError} xOffset must be greater than or equal to zero.
      * @exception {DeveloperError} yOffset must be greater than or equal to zero.
-     * @exception {DeveloperError} xOffset + source.width must be less than or equal to getWidth().
-     * @exception {DeveloperError} yOffset + source.height must be less than or equal to getHeight().
+     * @exception {DeveloperError} xOffset + source.width must be less than or equal to width.
+     * @exception {DeveloperError} yOffset + source.height must be less than or equal to height.
      * @exception {DeveloperError} This CubeMap was destroyed, i.e., destroy() was called.
      *
      * @example
@@ -47,7 +63,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Renderer/PixelDatatype'], f
      *   width : 1,
      *   height : 1
      * });
-     * cubeMap.getPositiveX().copyFrom({
+     * cubeMap.positiveX.copyFrom({
      *   width : 1,
      *   height : 1,
      *   arrayBufferView : new Uint8Array([255, 0, 0, 255])
@@ -68,10 +84,10 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Renderer/PixelDatatype'], f
             throw new DeveloperError('yOffset must be greater than or equal to zero.');
         }
         if (xOffset + source.width > this._size) {
-            throw new DeveloperError('xOffset + source.width must be less than or equal to getWidth().');
+            throw new DeveloperError('xOffset + source.width must be less than or equal to width.');
         }
         if (yOffset + source.height > this._size) {
-            throw new DeveloperError('yOffset + source.height must be less than or equal to getHeight().');
+            throw new DeveloperError('yOffset + source.height must be less than or equal to height.');
         }
         //>>includeEnd('debug');
 
@@ -84,11 +100,10 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Renderer/PixelDatatype'], f
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(target, this._texture);
 
-        //Firefox bug: texSubImage2D has overloads and can't resolve our enums, so we use + to explicitly convert to a number.
         if (source.arrayBufferView) {
-            gl.texSubImage2D(this._targetFace, 0, xOffset, yOffset, source.width, source.height, this._pixelFormat, +this._pixelDatatype, source.arrayBufferView);
+            gl.texSubImage2D(this._targetFace, 0, xOffset, yOffset, source.width, source.height, this._pixelFormat, this._pixelDatatype, source.arrayBufferView);
         } else {
-            gl.texSubImage2D(this._targetFace, 0, xOffset, yOffset, this._pixelFormat, +this._pixelDatatype, source);
+            gl.texSubImage2D(this._targetFace, 0, xOffset, yOffset, this._pixelFormat, this._pixelDatatype, source);
         }
 
         gl.bindTexture(target, null);
@@ -96,8 +111,6 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Renderer/PixelDatatype'], f
 
     /**
      * Copies texels from the framebuffer to the cubemap's face.
-     *
-     * @memberof CubeMapFace
      *
      * @param {Number} [xOffset=0] An offset in the x direction in the cubemap where copying begins.
      * @param {Number} [yOffset=0] An offset in the y direction in the cubemap where copying begins.
@@ -112,13 +125,13 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Renderer/PixelDatatype'], f
      * @exception {DeveloperError} yOffset must be greater than or equal to zero.
      * @exception {DeveloperError} framebufferXOffset must be greater than or equal to zero.
      * @exception {DeveloperError} framebufferYOffset must be greater than or equal to zero.
-     * @exception {DeveloperError} xOffset + source.width must be less than or equal to getWidth().
-     * @exception {DeveloperError} yOffset + source.height must be less than or equal to getHeight().
+     * @exception {DeveloperError} xOffset + source.width must be less than or equal to width.
+     * @exception {DeveloperError} yOffset + source.height must be less than or equal to height.
      * @exception {DeveloperError} This CubeMap was destroyed, i.e., destroy() was called.
      *
      * @example
      * // Copy the framebuffer contents to the +x cube map face.
-     * cubeMap.getPositiveX().copyFromFramebuffer();
+     * cubeMap.positiveX.copyFromFramebuffer();
      */
     CubeMapFace.prototype.copyFromFramebuffer = function(xOffset, yOffset, framebufferXOffset, framebufferYOffset, width, height) {
         xOffset = defaultValue(xOffset, 0);
@@ -142,10 +155,10 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Renderer/PixelDatatype'], f
             throw new DeveloperError('framebufferYOffset must be greater than or equal to zero.');
         }
         if (xOffset + width > this._size) {
-            throw new DeveloperError('xOffset + source.width must be less than or equal to getWidth().');
+            throw new DeveloperError('xOffset + source.width must be less than or equal to width.');
         }
         if (yOffset + height > this._size) {
-            throw new DeveloperError('yOffset + source.height must be less than or equal to getHeight().');
+            throw new DeveloperError('yOffset + source.height must be less than or equal to height.');
         }
         if (this._pixelDatatype === PixelDatatype.FLOAT) {
             throw new DeveloperError('Cannot call copyFromFramebuffer when the texture pixel data type is FLOAT.');
@@ -159,40 +172,6 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Renderer/PixelDatatype'], f
         gl.bindTexture(target, this._texture);
         gl.copyTexSubImage2D(this._targetFace, 0, xOffset, yOffset, framebufferXOffset, framebufferYOffset, width, height);
         gl.bindTexture(target, null);
-    };
-
-    /**
-     * Returns the pixel format of this cube map face.  All faces in the same cube map have the same pixel format.
-     *
-     * @memberof CubeMapFace
-     *
-     * @returns {PixelFormat} The pixel format of this cubemap face.
-     *
-     * @exception {DeveloperError} This CubeMap was destroyed, i.e., destroy() was called.
-     */
-    CubeMapFace.prototype.getPixelFormat = function() {
-        return this._pixelFormat;
-    };
-
-    /**
-     * Returns the pixel data type of this cube map face.  All faces in the same cube map have the same pixel data type.
-     *
-     * @memberof CubeMapFace
-     *
-     * @returns {PixelFormat} The pixel data type of this cubemap face.
-     *
-     * @exception {DeveloperError} This CubeMap was destroyed, i.e., destroy() was called.
-     */
-    CubeMapFace.prototype.getPixelDatatype = function() {
-        return this._pixelDatatype;
-    };
-
-    CubeMapFace.prototype._getTexture = function() {
-        return this._texture;
-    };
-
-    CubeMapFace.prototype._getTarget = function() {
-        return this._targetFace;
     };
 
     return CubeMapFace;

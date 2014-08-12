@@ -5,15 +5,30 @@ require [
 
   $ ->
 
-    canvas = $('#globe')[0]
-    @scene = new Cesium.Scene canvas
+    window.cesium = Cesium
 
-    primitives = @scene.getPrimitives()
+    canvas = $('#globe')[0]
+
+    sceneParams =
+      webgl:
+        alpha: false
+        depth: true
+        stencil: false
+        antialias: true
+        premultipliedAlpha: true
+        preserveDrawingBuffer: true
+        failIfMajorPerformanceCaveat: true
+      allowTextureFilterAnisotropic: true
+
+    @scene = new Cesium.Scene
+      canvas: canvas
+      contextOptions: sceneParams
+
+    primitives = @scene.primitives
 
     bing = new Cesium.BingMapsImageryProvider(
       url: 'http://dev.virtualearth.net'
       mapStyle: Cesium.BingMapsStyle.AERIAL
-      proxy: if Cesium.FeatureDetection.supportsCrossOriginImagery() then undefined else new Cesium.DefaultProxy('/proxy/')
     )
 
     terrainProvider = new Cesium.CesiumTerrainProvider(
@@ -21,10 +36,10 @@ require [
     )
 
     ellipsoid = Cesium.Ellipsoid.WGS84
-    centralBody = new Cesium.CentralBody(ellipsoid)
-    centralBody.getImageryLayers().addImageryProvider(bing)
+    centralBody = new Cesium.Globe(ellipsoid)
+    centralBody.imageryLayers.addImageryProvider(bing)
     centralBody.terrainProvider = terrainProvider
-    primitives.setCentralBody(centralBody)
+    primitives.centralBody = centralBody
 
     #    transitioner = new Cesium.SceneTransitioner(@scene, ellipsoid)
     new Cesium.SceneTransitioner(@scene, ellipsoid)
@@ -53,7 +68,7 @@ require [
       return if canvas.width == width and canvas.height == height
       canvas.width = width
       canvas.height = height
-      @scene.getCamera().frustum.aspectRatio = width / height
+      @scene.camera.frustum.aspectRatio = width / height
 
 
     $(window).on('resize', onResize)

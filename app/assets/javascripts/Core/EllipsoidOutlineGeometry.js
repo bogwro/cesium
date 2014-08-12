@@ -1,17 +1,30 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Math', 'Core/Ellipsoid', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/GeometryAttributes'], function(
+define([
+        './BoundingSphere',
+        './Cartesian3',
+        './ComponentDatatype',
+        './defaultValue',
+        './DeveloperError',
+        './Ellipsoid',
+        './Geometry',
+        './GeometryAttribute',
+        './GeometryAttributes',
+        './IndexDatatype',
+        './Math',
+        './PrimitiveType'
+    ], function(
+        BoundingSphere,
+        Cartesian3,
+        ComponentDatatype,
         defaultValue,
         DeveloperError,
-        Cartesian3,
-        CesiumMath,
         Ellipsoid,
-        ComponentDatatype,
-        IndexDatatype,
-        PrimitiveType,
-        BoundingSphere,
         Geometry,
         GeometryAttribute,
-        GeometryAttributes) {
+        GeometryAttributes,
+        IndexDatatype,
+        CesiumMath,
+        PrimitiveType) {
     "use strict";
 
     var defaultRadii = new Cartesian3(1.0, 1.0, 1.0);
@@ -24,6 +37,7 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Mat
      * @alias EllipsoidOutlineGeometry
      * @constructor
      *
+     * @param {Object} [options] Object with the following properties:
      * @param {Cartesian3} [options.radii=Cartesian3(1.0, 1.0, 1.0)] The radii of the ellipsoid in the x, y, and z directions.
      * @param {Number} [options.stackPartitions=10] The count of stacks for the ellipsoid (1 greater than the number of parallel lines).
      * @param {Number} [options.slicePartitions=8] The count of slices for the ellipsoid (Equal to the number of radial lines).
@@ -32,6 +46,8 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Mat
      * @exception {DeveloperError} options.stackPartitions must be greater than or equal to one.
      * @exception {DeveloperError} options.slicePartitions must be greater than or equal to zero.
      * @exception {DeveloperError} options.subdivisions must be greater than or equal to zero.
+     *
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Ellipsoid%20Outline.html|Cesium Sandcastle Ellipsoid Outline Demo}
      *
      * @example
      * var ellipsoid = new Cesium.EllipsoidOutlineGeometry({
@@ -70,7 +86,6 @@ define(['Core/defaultValue', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Mat
 
     /**
      * Computes the geometric representation of an outline of an ellipsoid, including its vertices, indices, and a bounding sphere.
-     * @memberof EllipsoidOutlineGeometry
      *
      * @param {EllipsoidOutlineGeometry} ellipsoidGeometry A description of the ellipsoid outline.
      * @returns {Geometry} The computed vertices and indices.

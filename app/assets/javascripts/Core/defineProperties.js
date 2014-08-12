@@ -1,5 +1,8 @@
 /*global define*/
-define(['Core/defined'], function(defined) {
+define([
+        './defined'
+    ], function(
+        defined) {
     "use strict";
 
     var definePropertyWorks = (function() {

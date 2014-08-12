@@ -1,5 +1,8 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/freezeObject'], function(
+define([
+        './defaultValue',
+        './freezeObject'
+    ], function(
         defaultValue,
         freezeObject) {
     "use strict";
@@ -9,10 +12,12 @@ define(['Core/defaultValue', 'Core/freezeObject'], function(
      * to a {@link Geometry} to request that certain properties be computed, e.g., just position,
      * position and normal, etc.
      *
-     * @param {Object} [options=undefined] An object with boolean properties corresponding to VertexFormat properties as shown in the code example.
+     * @param {Object} [options] An object with boolean properties corresponding to VertexFormat properties as shown in the code example.
      *
      * @alias VertexFormat
      * @constructor
+     *
+     * @see Geometry#attributes
      *
      * @example
      * // Create a vertex format with position and 2D texture coordinate attributes.
@@ -20,8 +25,6 @@ define(['Core/defaultValue', 'Core/freezeObject'], function(
      *   position : true,
      *   st : true
      * });
-     *
-     * @see Geometry#attributes
      */
     var VertexFormat = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
@@ -90,7 +93,8 @@ define(['Core/defaultValue', 'Core/freezeObject'], function(
     /**
      * An immutable vertex format with only a position attribute.
      *
-     * @memberof VertexFormat
+     * @type {VertexFormat}
+     * @constant
      *
      * @see VertexFormat#position
      */
@@ -102,7 +106,8 @@ define(['Core/defaultValue', 'Core/freezeObject'], function(
      * An immutable vertex format with position and normal attributes.
      * This is compatible with per-instance color appearances like {@link PerInstanceColorAppearance}.
      *
-     * @memberof VertexFormat
+     * @type {VertexFormat}
+     * @constant
      *
      * @see VertexFormat#position
      * @see VertexFormat#normal
@@ -117,7 +122,8 @@ define(['Core/defaultValue', 'Core/freezeObject'], function(
      * This is compatible with {@link MaterialAppearance} when {@link MaterialAppearance#materialSupport}
      * is <code>TEXTURED/code>.
      *
-     * @memberof VertexFormat
+     * @type {VertexFormat}
+     * @constant
      *
      * @see VertexFormat#position
      * @see VertexFormat#normal
@@ -133,7 +139,8 @@ define(['Core/defaultValue', 'Core/freezeObject'], function(
      * An immutable vertex format with position and st attributes.
      * This is compatible with {@link EllipsoidSurfaceAppearance}.
      *
-     * @memberof VertexFormat
+     * @type {VertexFormat}
+     * @constant
      *
      * @see VertexFormat#position
      * @see VertexFormat#st
@@ -146,7 +153,8 @@ define(['Core/defaultValue', 'Core/freezeObject'], function(
     /**
      * An immutable vertex format with all well-known attributes: position, normal, st, binormal, and tangent.
      *
-     * @memberof VertexFormat
+     * @type {VertexFormat}
+     * @constant
      *
      * @see VertexFormat#position
      * @see VertexFormat#normal
@@ -168,7 +176,8 @@ define(['Core/defaultValue', 'Core/freezeObject'], function(
      * normal and st attributes are not always required.  When this is
      * known in advance, another <code>VertexFormat</code> should be used.
      *
-     * @memberof VertexFormat
+     * @type {VertexFormat}
+     * @constant
      *
      * @see VertexFormat#position
      * @see VertexFormat#normal

@@ -1,22 +1,26 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/QuadraticRealPolynomial'],
-    function(
+define([
+        './CubicRealPolynomial',
+        './DeveloperError',
+        './Math',
+        './QuadraticRealPolynomial'
+    ], function(
+        CubicRealPolynomial,
         DeveloperError,
         CesiumMath,
-        CubicRealPolynomial,
         QuadraticRealPolynomial) {
     "use strict";
 
     /**
      * Defines functions for 4th order polynomial functions of one variable with only real coefficients.
      *
-     * @exports QuarticRealPolynomial
+     * @namespace
+     * @alias QuarticRealPolynomial
      */
     var QuarticRealPolynomial = {};
 
     /**
      * Provides the discriminant of the quartic equation from the supplied coefficients.
-     * @memberof QuarticRealPolynomial
      *
      * @param {Number} a The coefficient of the 4th order monomial.
      * @param {Number} b The coefficient of the 3rd order monomial.
@@ -24,14 +28,8 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/Qu
      * @param {Number} d The coefficient of the 1st order monomial.
      * @param {Number} e The coefficient of the 0th order monomial.
      * @returns {Number} The value of the discriminant.
-     *
-     * @exception {DeveloperError} a is a required number.
-     * @exception {DeveloperError} b is a required number.
-     * @exception {DeveloperError} c is a required number.
-     * @exception {DeveloperError} d is a required number.
-     * @exception {DeveloperError} e is a required number.
      */
-    QuarticRealPolynomial.discriminant = function(a, b, c, d, e) {
+    QuarticRealPolynomial.computeDiscriminant = function(a, b, c, d, e) {
         //>>includeStart('debug', pragmas.debug);
         if (typeof a !== 'number') {
             throw new DeveloperError('a is a required number.');
@@ -75,7 +73,7 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/Qu
         var r = a0 - a1 * a3 / 4.0 + a2 * a3Squared / 16.0 - 3.0 * a3Squared * a3Squared / 256.0;
 
         // Find the roots of the cubic equations:  h^6 + 2 p h^4 + (p^2 - 4 r) h^2 - q^2 = 0.
-        var cubicRoots = CubicRealPolynomial.realRoots(1.0, 2.0 * p, p * p - 4.0 * r, -q * q);
+        var cubicRoots = CubicRealPolynomial.computeRealRoots(1.0, 2.0 * p, p * p - 4.0 * r, -q * q);
 
         if (cubicRoots.length > 0) {
             var temp = -a3 / 4.0;
@@ -85,7 +83,7 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/Qu
 
             if (Math.abs(hSquared) < CesiumMath.EPSILON14) {
                 // y^4 + p y^2 + r = 0.
-                var roots = QuadraticRealPolynomial.realRoots(1.0, p, r);
+                var roots = QuadraticRealPolynomial.computeRealRoots(1.0, p, r);
 
                 if (roots.length === 2) {
                     var root0 = roots[0];
@@ -113,8 +111,8 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/Qu
                 var n = (p + hSquared + q / h) / 2.0;
 
                 // Now solve the two quadratic factors:  (y^2 + h y + m)(y^2 - h y + n);
-                var roots1 = QuadraticRealPolynomial.realRoots(1.0, h, m);
-                var roots2 = QuadraticRealPolynomial.realRoots(1.0, -h, n);
+                var roots1 = QuadraticRealPolynomial.computeRealRoots(1.0, h, m);
+                var roots2 = QuadraticRealPolynomial.computeRealRoots(1.0, -h, n);
 
                 if (roots1.length !== 0) {
                     roots1[0] += temp;
@@ -161,7 +159,7 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/Qu
         var q = a1 * a3 + a2Squared - 4.0 * a0;
         var r = a3Squared * a0 - a1 * a2 * a3 + a1Squared;
 
-        var cubicRoots = CubicRealPolynomial.realRoots(1.0, p, q, r);
+        var cubicRoots = CubicRealPolynomial.computeRealRoots(1.0, p, q, r);
 
         if (cubicRoots.length > 0) {
             // Use the most positive root
@@ -219,8 +217,8 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/Qu
             }
 
             // Now solve the two quadratic factors:  (y^2 + G y + H)(y^2 + g y + h);
-            var roots1 = QuadraticRealPolynomial.realRoots(1.0, G, H);
-            var roots2 = QuadraticRealPolynomial.realRoots(1.0, g, h);
+            var roots1 = QuadraticRealPolynomial.computeRealRoots(1.0, G, H);
+            var roots2 = QuadraticRealPolynomial.computeRealRoots(1.0, g, h);
 
             if (roots1.length !== 0) {
                 if (roots2.length !== 0) {
@@ -249,22 +247,15 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/Qu
 
     /**
      * Provides the real valued roots of the quartic polynomial with the provided coefficients.
-     * @memberof QuarticRealPolynomial
      *
      * @param {Number} a The coefficient of the 4th order monomial.
      * @param {Number} b The coefficient of the 3rd order monomial.
      * @param {Number} c The coefficient of the 2nd order monomial.
      * @param {Number} d The coefficient of the 1st order monomial.
      * @param {Number} e The coefficient of the 0th order monomial.
-     * @returns {Array} The real valued roots.
-     *
-     * @exception {DeveloperError} a is a required number.
-     * @exception {DeveloperError} b is a required number.
-     * @exception {DeveloperError} c is a required number.
-     * @exception {DeveloperError} d is a required number.
-     * @exception {DeveloperError} e is a required number.
+     * @returns {Number[]} The real valued roots.
      */
-    QuarticRealPolynomial.realRoots = function(a, b, c, d, e) {
+    QuarticRealPolynomial.computeRealRoots = function(a, b, c, d, e) {
         //>>includeStart('debug', pragmas.debug);
         if (typeof a !== 'number') {
             throw new DeveloperError('a is a required number.');
@@ -284,7 +275,7 @@ define(['Core/DeveloperError', 'Core/Math', 'Core/CubicRealPolynomial', 'Core/Qu
         //>>includeEnd('debug');
 
         if (Math.abs(a) < CesiumMath.EPSILON15) {
-            return CubicRealPolynomial.realRoots(b, c, d, e);
+            return CubicRealPolynomial.computeRealRoots(b, c, d, e);
         }
         var a3 = b / a;
         var a2 = c / a;

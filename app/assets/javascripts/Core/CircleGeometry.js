@@ -1,5 +1,10 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/EllipseGeometry'], function(
+define([
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './EllipseGeometry'
+    ], function(
         defaultValue,
         defined,
         DeveloperError,
@@ -12,6 +17,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Ellips
      * @alias CircleGeometry
      * @constructor
      *
+     * @param {Object} options Object with the following properties:
      * @param {Cartesian3} options.center The circle's center point in the fixed frame.
      * @param {Number} options.radius The radius in meters.
      * @param {Ellipsoid} [options.ellipsoid=Ellipsoid.WGS84] The ellipsoid the circle will be on.
@@ -21,19 +27,17 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Ellips
      * @param {Number} [options.extrudedHeight=0.0] The height of the extrusion relative to the ellipsoid.
      * @param {Number} [options.stRotation=0.0] The rotation of the texture coordinates, in radians. A positive rotation is counter-clockwise.
      *
-     * @exception {DeveloperError} center is required.
-     * @exception {DeveloperError} radius is required.
      * @exception {DeveloperError} radius must be greater than zero.
      * @exception {DeveloperError} granularity must be greater than zero.
      *
-     * @see CircleGeometry#createGeometry
+     * @see CircleGeometry.createGeometry
+     *
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Circle.html|Cesium Sandcastle Circle Demo}
      *
      * @example
      * // Create a circle.
-     * var ellipsoid = Cesium.Ellipsoid.WGS84;
      * var circle = new Cesium.CircleGeometry({
-     *   ellipsoid : ellipsoid,
-     *   center : ellipsoid.cartographicToCartesian(Cesium.Cartographic.fromDegrees(-75.59777, 40.03883)),
+     *   center : Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883),
      *   radius : 100000.0
      * });
      * var geometry = Cesium.CircleGeometry.createGeometry(circle);
@@ -68,7 +72,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Ellips
 
     /**
      * Computes the geometric representation of a circle on an ellipsoid, including its vertices, indices, and a bounding sphere.
-     * @memberof CircleGeometry
      *
      * @param {CircleGeometry} circleGeometry A description of the circle.
      * @returns {Geometry} The computed vertices and indices.

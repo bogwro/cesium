@@ -1,47 +1,56 @@
 /*global define*/
-define(['Core/Enumeration'], function(Enumeration) {
+define([
+        './freezeObject'
+    ], function(
+        freezeObject) {
     "use strict";
 
     /**
-     * @exports CornerType
+     * Style options for corners.
+     *
+     * @namespace
+     * @alias CornerType
      */
     var CornerType = {
         /**
-         *   ___
+         * <pre>
+         *  _____
          * (  ___
          * | |
+         * </pre>
          *
          * Corner is circular.
-         * @type {Enumeration}
+         * @type {Number}
          * @constant
-         * @default 0
          */
-        ROUNDED : new Enumeration(0, 'ROUNDED'),
+        ROUNDED : 0,
 
         /**
+         * <pre>
          *  ______
-         * |  ___
+         * |  ____
          * | |
+         * </pre>
          *
          * Corner point is the intersection of adjacent edges.
-         * @type {Enumeration}
+         * @type {Number}
          * @constant
-         * @default 1
          */
-        MITERED : new Enumeration(1, 'MITERED'),
+        MITERED : 1,
 
         /**
-         *   ___
+         * <pre>
+         *  _____
          * /  ___
          * | |
+         * </pre>
          *
          * Corner is clipped.
-         * @type {Enumeration}
+         * @type {Number}
          * @constant
-         * @default 2
          */
-        BEVELED : new Enumeration(2, 'BEVELED')
+        BEVELED : 2
     };
 
-    return CornerType;
+    return freezeObject(CornerType);
 });

@@ -1,9 +1,14 @@
 /*global define*/
-define(['Core/clone', 'Core/defined', 'Core/loadText', 'Core/DeveloperError'], function(
+define([
+        './clone',
+        './defined',
+        './DeveloperError',
+        './loadText'
+    ], function(
         clone,
         defined,
-        loadText,
-        DeveloperError) {
+        DeveloperError,
+        loadText) {
     "use strict";
 
     var defaultHeaders = {
@@ -27,18 +32,16 @@ define(['Core/clone', 'Core/defined', 'Core/loadText', 'Core/DeveloperError'], f
      * if not specified.
      * @returns {Promise} a promise that will resolve to the requested data when loaded.
      *
-     * @exception {DeveloperError} url is required.
+     * @see loadText
+     * @see {@link http://www.w3.org/TR/cors/|Cross-Origin Resource Sharing}
+     * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      *
      * @example
      * Cesium.loadJson('http://someUrl.com/someJson.txt').then(function(jsonData) {
-     *     //Do something with the JSON object
-     * }, function() {
+     *     // Do something with the JSON object
+     * }.otherwise(function(error) {
      *     // an error occurred
      * });
-     *
-     * @see loadText
-     * @see <a href='http://www.w3.org/TR/cors/'>Cross-Origin Resource Sharing</a>
-     * @see <a href='http://wiki.commonjs.org/wiki/Promises/A'>CommonJS Promises/A</a>
      */
     var loadJson = function loadJson(url, headers) {
         //>>includeStart('debug', pragmas.debug);

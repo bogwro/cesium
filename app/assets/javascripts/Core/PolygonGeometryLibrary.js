@@ -1,8 +1,13 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/Cartesian3', 'Core/Ellipsoid'], function(
+define([
+        './Cartesian3',
+        './defaultValue',
+        './defined',
+        './Ellipsoid'
+    ], function(
+        Cartesian3,
         defaultValue,
         defined,
-        Cartesian3,
         Ellipsoid) {
     "use strict";
 

@@ -1,15 +1,19 @@
 /*global define*/
-define(['Core/Enumeration'], function(Enumeration) {
+define([
+        '../Core/freezeObject'
+    ], function(
+        freezeObject) {
     "use strict";
 
     /**
      * @private
      */
     var TileState = {
-        START : new Enumeration(0, 'START'),
-        LOADING : new Enumeration(1, 'LOADING'),
-        READY : new Enumeration(2, 'READY')
+        START : 0,
+        LOADING : 1,
+        READY : 2,
+        UPSAMPLED_ONLY : 3
     };
 
-    return TileState;
+    return freezeObject(TileState);
 });

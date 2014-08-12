@@ -1,28 +1,47 @@
 /*global define*/
-define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/CornerType', 'Core/ComponentDatatype', 'Core/Ellipsoid', 'Core/Geometry', 'Core/GeometryPipeline', 'Core/IndexDatatype', 'Core/Math', 'Core/PolygonPipeline', 'Core/PolylineVolumeGeometryLibrary', 'Core/PrimitiveType', 'Core/defaultValue', 'Core/BoundingSphere', 'Core/BoundingRectangle', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/VertexFormat', 'Core/WindingOrder'], function(
+define([
+        './BoundingRectangle',
+        './BoundingSphere',
+        './ComponentDatatype',
+        './CornerType',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './Ellipsoid',
+        './Geometry',
+        './GeometryAttribute',
+        './GeometryAttributes',
+        './GeometryPipeline',
+        './IndexDatatype',
+        './Math',
+        './PolygonPipeline',
+        './PolylineVolumeGeometryLibrary',
+        './PrimitiveType',
+        './VertexFormat',
+        './WindingOrder'
+    ], function(
+        BoundingRectangle,
+        BoundingSphere,
+        ComponentDatatype,
+        CornerType,
+        defaultValue,
         defined,
         DeveloperError,
-        Cartesian3,
-        CornerType,
-        ComponentDatatype,
         Ellipsoid,
         Geometry,
+        GeometryAttribute,
+        GeometryAttributes,
         GeometryPipeline,
         IndexDatatype,
         CesiumMath,
         PolygonPipeline,
         PolylineVolumeGeometryLibrary,
         PrimitiveType,
-        defaultValue,
-        BoundingSphere,
-        BoundingRectangle,
-        GeometryAttribute,
-        GeometryAttributes,
         VertexFormat,
         WindingOrder) {
     "use strict";
 
-    function computeAttributes(combinedPositions, shape, boundingRectangle, vertexFormat, ellipsoid) {
+    function computeAttributes(combinedPositions, shape, boundingRectangle, vertexFormat) {
         var attributes = new GeometryAttributes();
         if (vertexFormat.position) {
             attributes.position = new GeometryAttribute({
@@ -159,27 +178,36 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/CornerTy
      * @alias PolylineVolumeGeometry
      * @constructor
      *
-     * @param {Array} options.polylinePositions An array of {@link Cartesain3} positions that define the center of the polyline volume.
+     * @param {Object} options Object with the following properties:
+     * @param {Cartesian3[]} options.polylinePositions An array of {@link Cartesain3} positions that define the center of the polyline volume.
      * @param {Number} options.shapePositions An array of {@link Cartesian2} positions that define the shape to be extruded along the polyline
      * @param {Ellipsoid} [options.ellipsoid=Ellipsoid.WGS84] The ellipsoid to be used as a reference.
      * @param {Number} [options.granularity=CesiumMath.RADIANS_PER_DEGREE] The distance, in radians, between each latitude and longitude. Determines the number of positions in the buffer.
      * @param {Number} [options.height=0] The distance between the ellipsoid surface and the positions.
      * @param {VertexFormat} [options.vertexFormat=VertexFormat.DEFAULT] The vertex attributes to be computed.
-     * @param {Boolean} [options.cornerType = CornerType.ROUNDED] Determines the style of the corners.
-     *
-     * @exception {DeveloperError} options.polylinePositions is required.
-     * @exception {DeveloperError} options.shapePositions is required.
+     * @param {CornerType} [options.cornerType=CornerType.ROUNDED] Determines the style of the corners.
      *
      * @see PolylineVolumeGeometry#createGeometry
      *
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Polyline%20Volume.html|Cesium Sandcastle Polyline Volume Demo}
+     *
      * @example
+     * function computeCircle(radius) {
+     *   var positions = [];
+     *   for (var i = 0; i < 360; i++) {
+     *     var radians = Cesium.Math.toRadians(i);
+     *     positions.push(new Cesium.Cartesian2(radius * Math.cos(radians), radius * Math.sin(radians)));
+     *   }
+     *   return positions;
+     * }
+     *
      * var volume = new Cesium.PolylineVolumeGeometry({
-     *     vertexFormat : Cesium.VertexFormat.POSITION_ONLY,
-     *     polylinePositions : ellipsoid.cartographicArrayToCartesianArray([
-     *         Cesium.Cartographic.fromDegrees(-72.0, 40.0),
-     *         Cesium.Cartographic.fromDegrees(-70.0, 35.0)
-     *     ]),
-     *     shapePositions : Cesium.Shapes.compute2DCircle(100000.0)
+     *   vertexFormat : Cesium.VertexFormat.POSITION_ONLY,
+     *   polylinePositions : Cesium.Cartesian3.fromDegreesArray([
+     *     -72.0, 40.0,
+     *     -70.0, 35.0
+     *   ]),
+     *   shapePositions : computeCircle(100000.0)
      * });
      */
     var PolylineVolumeGeometry = function(options) {
@@ -206,18 +234,17 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/CornerTy
         this._workerName = 'createPolylineVolumeGeometry';
     };
 
+    var brScratch = new BoundingRectangle();
+
     /**
      * Computes the geometric representation of a polyline with a volume, including its vertices, indices, and a bounding sphere.
-     * @memberof PolylineVolumeGeometry
      *
      * @param {PolylineVolumeGeometry} polylineVolumeGeometry A description of the polyline volume.
-     *
      * @returns {Geometry} The computed vertices and indices.
      *
      * @exception {DeveloperError} Count of unique polyline positions must be greater than 1.
      * @exception {DeveloperError} Count of unique shape positions must be at least 3.
      */
-    var brScratch = new BoundingRectangle();
     PolylineVolumeGeometry.createGeometry = function(polylineVolumeGeometry) {
         var positions = polylineVolumeGeometry._positions;
         var cleanPositions = PolylineVolumeGeometryLibrary.removeDuplicatesFromPositions(positions, polylineVolumeGeometry._ellipsoid);
@@ -233,13 +260,13 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/CornerTy
         }
         //>>includeEnd('debug');
 
-        if (PolygonPipeline.computeWindingOrder2D(shape2D).value === WindingOrder.CLOCKWISE.value) {
+        if (PolygonPipeline.computeWindingOrder2D(shape2D) === WindingOrder.CLOCKWISE) {
             shape2D.reverse();
         }
         var boundingRectangle = BoundingRectangle.fromPoints(shape2D, brScratch);
 
         var computedPositions = PolylineVolumeGeometryLibrary.computePositions(cleanPositions, shape2D, boundingRectangle, polylineVolumeGeometry, true);
-        return computeAttributes(computedPositions, shape2D, boundingRectangle, polylineVolumeGeometry._vertexFormat, polylineVolumeGeometry._ellipsoid);
+        return computeAttributes(computedPositions, shape2D, boundingRectangle, polylineVolumeGeometry._vertexFormat);
     };
 
     return PolylineVolumeGeometry;

@@ -1,9 +1,16 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freezeObject'], function(
+define([
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './freezeObject',
+        './Math'
+    ], function(
         defaultValue,
         defined,
         DeveloperError,
-        freezeObject) {
+        freezeObject,
+        CesiumMath) {
     "use strict";
 
     /**
@@ -44,13 +51,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Converts the provided Spherical into Cartesian3 coordinates.
-     * @memberof Cartesian3
      *
      * @param {Spherical} spherical The Spherical to be converted to Cartesian3.
      * @param {Cartesian3} [result] The object onto which to store the result.
      * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @exception {DeveloperError} spherical is required.
      */
     Cartesian3.fromSpherical = function(spherical, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -62,6 +66,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
         if (!defined(result)) {
             result = new Cartesian3();
         }
+
         var clock = spherical.clock;
         var cone = spherical.cone;
         var magnitude = defaultValue(spherical.magnitude, 1.0);
@@ -74,7 +79,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Creates a Cartesian3 instance from x, y and z coordinates.
-     * @memberof Cartesian3
      *
      * @param {Number} x The x coordinate.
      * @param {Number} y The y coordinate.
@@ -95,7 +99,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Duplicates a Cartesian3 instance.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} cartesian The Cartesian to duplicate.
      * @param {Cartesian3} [result] The object onto which to store the result.
@@ -105,7 +108,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
         if (!defined(cartesian)) {
             return undefined;
         }
-
         if (!defined(result)) {
             return new Cartesian3(cartesian.x, cartesian.y, cartesian.z);
         }
@@ -124,27 +126,21 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
      * @param {Cartesian4} cartesian The Cartesian4 instance to create a Cartesian3 instance from.
      * @param {Cartesian3} [result] The object onto which to store the result.
      * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @exception {DeveloperError} cartesian is required.
      */
     Cartesian3.fromCartesian4 = Cartesian3.clone;
 
     /**
      * The number of elements used to pack the object into an array.
-     * @Type {Number}
+     * @type {Number}
      */
     Cartesian3.packedLength = 3;
 
     /**
      * Stores the provided instance into the provided array.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} value The value to pack.
-     * @param {Array} array The array to pack into.
+     * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
-     *
-     * @exception {DeveloperError} value is required.
-     * @exception {DeveloperError} array is required.
      */
     Cartesian3.pack = function(value, array, startingIndex) {
         //>>includeStart('debug', pragmas.debug);
@@ -166,13 +162,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Retrieves an instance from a packed array.
-     * @memberof Cartesian3
      *
-     * @param {Array} array The packed array.
+     * @param {Number[]} array The packed array.
      * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
      * @param {Cartesian3} [result] The object into which to store the result.
-     *
-     * @exception {DeveloperError} array is required.
      */
     Cartesian3.unpack = function(array, startingIndex, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -194,15 +187,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Creates a Cartesian3 from three consecutive elements in an array.
-     * @memberof Cartesian3
+     * @function
      *
-     * @param {Array} array The array whose three consecutive elements correspond to the x, y, and z components, respectively.
+     * @param {Number[]} array The array whose three consecutive elements correspond to the x, y, and z components, respectively.
      * @param {Number} [startingIndex=0] The offset into the array of the first element, which corresponds to the x component.
      * @param {Cartesian3} [result] The object onto which to store the result.
-     *
      * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @exception {DeveloperError} array is required.
      *
      * @example
      * // Create a Cartesian3 with (1.0, 2.0, 3.0)
@@ -217,14 +207,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Computes the value of the maximum component for the supplied Cartesian.
-     * @memberof Cartesian3
      *
-     * @param {Cartesian3} The cartesian to use.
+     * @param {Cartesian3} cartesian The cartesian to use.
      * @returns {Number} The value of the maximum component.
-     *
-     * @exception {DeveloperError} cartesian is required.
      */
-    Cartesian3.getMaximumComponent = function(cartesian) {
+    Cartesian3.maximumComponent = function(cartesian) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
@@ -236,14 +223,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Computes the value of the minimum component for the supplied Cartesian.
-     * @memberof Cartesian3
      *
-     * @param {Cartesian3} The cartesian to use.
+     * @param {Cartesian3} cartesian The cartesian to use.
      * @returns {Number} The value of the minimum component.
-     *
-     * @exception {DeveloperError} cartesian is required.
      */
-    Cartesian3.getMinimumComponent = function(cartesian) {
+    Cartesian3.minimumComponent = function(cartesian) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
@@ -255,17 +239,13 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Compares two Cartesians and computes a Cartesian which contains the minimum components of the supplied Cartesians.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} first A cartesian to compare.
      * @param {Cartesian3} second A cartesian to compare.
-     * @param {Cartesian3} [result] The object into which to store the result.
+     * @param {Cartesian3} result The object into which to store the result.
      * @returns {Cartesian3} A cartesian with the minimum components.
-     *
-     * @exception {DeveloperError} first is required.
-     * @exception {DeveloperError} second is required.
      */
-    Cartesian3.getMinimumByComponent = function(first, second, result) {
+    Cartesian3.minimumByComponent = function(first, second, result) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(first)) {
             throw new DeveloperError('first is required.');
@@ -273,11 +253,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
         if (!defined(second)) {
             throw new DeveloperError('second is required.');
         }
-        //>>includeEnd('debug');
-
         if (!defined(result)) {
-            result = new Cartesian3();
+            throw new DeveloperError('result is required.');
         }
+        //>>includeEnd('debug');
 
         result.x = Math.min(first.x, second.x);
         result.y = Math.min(first.y, second.y);
@@ -288,17 +267,13 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Compares two Cartesians and computes a Cartesian which contains the maximum components of the supplied Cartesians.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} first A cartesian to compare.
      * @param {Cartesian3} second A cartesian to compare.
-     * @param {Cartesian3} [result] The object into which to store the result.
+     * @param {Cartesian3} result The object into which to store the result.
      * @returns {Cartesian3} A cartesian with the maximum components.
-     *
-     * @exception {DeveloperError} first is required.
-     * @exception {DeveloperError} second is required.
      */
-    Cartesian3.getMaximumByComponent = function(first, second, result) {
+    Cartesian3.maximumByComponent = function(first, second, result) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(first)) {
             throw new DeveloperError('first is required.');
@@ -306,11 +281,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
         if (!defined(second)) {
             throw new DeveloperError('second is required.');
         }
-        //>>includeEnd('debug');
-
         if (!defined(result)) {
-            result = new Cartesian3();
+            throw new DeveloperError('result is required.');
         }
+        //>>includeEnd('debug');
 
         result.x = Math.max(first.x, second.x);
         result.y = Math.max(first.y, second.y);
@@ -320,12 +294,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Computes the provided Cartesian's squared magnitude.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} cartesian The Cartesian instance whose squared magnitude is to be computed.
      * @returns {Number} The squared magnitude.
-     *
-     * @exception {DeveloperError} cartesian is required.
      */
     Cartesian3.magnitudeSquared = function(cartesian) {
         //>>includeStart('debug', pragmas.debug);
@@ -339,12 +310,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Computes the Cartesian's magnitude (length).
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} cartesian The Cartesian instance whose magnitude is to be computed.
      * @returns {Number} The magnitude.
-     *
-     * @exception {DeveloperError} cartesian is required.
      */
     Cartesian3.magnitude = function(cartesian) {
         return Math.sqrt(Cartesian3.magnitudeSquared(cartesian));
@@ -354,14 +322,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Computes the distance between two points
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} left The first point to compute the distance from.
      * @param {Cartesian3} right The second point to compute the distance to.
-     *
      * @returns {Number} The distance between two points.
-     *
-     * @exception {DeveloperError} left and right are required.
      *
      * @example
      * // Returns 1.0
@@ -380,25 +344,23 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Computes the normalized form of the supplied Cartesian.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} cartesian The Cartesian to be normalized.
-     * @param {Cartesian3} [result] The object onto which to store the result.
-     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @exception {DeveloperError} cartesian is required.
+     * @param {Cartesian3} result The object onto which to store the result.
+     * @returns {Cartesian3} The modified result parameter.
      */
     Cartesian3.normalize = function(cartesian, result) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
         var magnitude = Cartesian3.magnitude(cartesian);
-        if (!defined(result)) {
-            return new Cartesian3(cartesian.x / magnitude, cartesian.y / magnitude, cartesian.z / magnitude);
-        }
+
         result.x = cartesian.x / magnitude;
         result.y = cartesian.y / magnitude;
         result.z = cartesian.z / magnitude;
@@ -407,14 +369,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Computes the dot (scalar) product of two Cartesians.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} left The first Cartesian.
      * @param {Cartesian3} right The second Cartesian.
      * @returns {Number} The dot product.
-     *
-     * @exception {DeveloperError} left is required.
-     * @exception {DeveloperError} right is required.
      */
     Cartesian3.dot = function(left, right) {
         //>>includeStart('debug', pragmas.debug);
@@ -431,15 +389,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Computes the componentwise product of two Cartesians.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} left The first Cartesian.
      * @param {Cartesian3} right The second Cartesian.
-     * @param {Cartesian3} [result] The object onto which to store the result.
-     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @exception {DeveloperError} left is required.
-     * @exception {DeveloperError} right is required.
+     * @param {Cartesian3} result The object onto which to store the result.
+     * @returns {Cartesian3} The modified result parameter.
      */
     Cartesian3.multiplyComponents = function(left, right, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -449,11 +403,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
         if (!defined(right)) {
             throw new DeveloperError('right is required');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        if (!defined(result)) {
-            return new Cartesian3(left.x * right.x, left.y * right.y, left.z * right.z);
-        }
         result.x = left.x * right.x;
         result.y = left.y * right.y;
         result.z = left.z * right.z;
@@ -462,15 +416,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Computes the componentwise sum of two Cartesians.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} left The first Cartesian.
      * @param {Cartesian3} right The second Cartesian.
-     * @param {Cartesian3} [result] The object onto which to store the result.
-     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @exception {DeveloperError} left is required.
-     * @exception {DeveloperError} right is required.
+     * @param {Cartesian3} result The object onto which to store the result.
+     * @returns {Cartesian3} The modified result parameter.
      */
     Cartesian3.add = function(left, right, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -480,11 +430,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
         if (!defined(right)) {
             throw new DeveloperError('right is required');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        if (!defined(result)) {
-            return new Cartesian3(left.x + right.x, left.y + right.y, left.z + right.z);
-        }
         result.x = left.x + right.x;
         result.y = left.y + right.y;
         result.z = left.z + right.z;
@@ -493,15 +443,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Computes the componentwise difference of two Cartesians.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} left The first Cartesian.
      * @param {Cartesian3} right The second Cartesian.
-     * @param {Cartesian3} [result] The object onto which to store the result.
-     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @exception {DeveloperError} left is required.
-     * @exception {DeveloperError} right is required.
+     * @param {Cartesian3} result The object onto which to store the result.
+     * @returns {Cartesian3} The modified result parameter.
      */
     Cartesian3.subtract = function(left, right, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -511,11 +457,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
         if (!defined(right)) {
             throw new DeveloperError('right is required');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        if (!defined(result)) {
-            return new Cartesian3(left.x - right.x, left.y - right.y, left.z - right.z);
-        }
         result.x = left.x - right.x;
         result.y = left.y - right.y;
         result.z = left.z - right.z;
@@ -524,15 +470,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Multiplies the provided Cartesian componentwise by the provided scalar.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} cartesian The Cartesian to be scaled.
      * @param {Number} scalar The scalar to multiply with.
-     * @param {Cartesian3} [result] The object onto which to store the result.
-     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @exception {DeveloperError} cartesian is required.
-     * @exception {DeveloperError} scalar is required and must be a number.
+     * @param {Cartesian3} result The object onto which to store the result.
+     * @returns {Cartesian3} The modified result parameter.
      */
     Cartesian3.multiplyByScalar = function(cartesian, scalar, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -542,11 +484,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
         if (typeof scalar !== 'number') {
             throw new DeveloperError('scalar is required and must be a number.');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        if (!defined(result)) {
-            return new Cartesian3(cartesian.x * scalar, cartesian.y * scalar, cartesian.z * scalar);
-        }
         result.x = cartesian.x * scalar;
         result.y = cartesian.y * scalar;
         result.z = cartesian.z * scalar;
@@ -555,15 +497,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Divides the provided Cartesian componentwise by the provided scalar.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} cartesian The Cartesian to be divided.
      * @param {Number} scalar The scalar to divide by.
-     * @param {Cartesian3} [result] The object onto which to store the result.
-     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @exception {DeveloperError} cartesian is required.
-     * @exception {DeveloperError} scalar is required and must be a number.
+     * @param {Cartesian3} result The object onto which to store the result.
+     * @returns {Cartesian3} The modified result parameter.
      */
     Cartesian3.divideByScalar = function(cartesian, scalar, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -573,11 +511,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
         if (typeof scalar !== 'number') {
             throw new DeveloperError('scalar is required and must be a number.');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        if (!defined(result)) {
-            return new Cartesian3(cartesian.x / scalar, cartesian.y / scalar, cartesian.z / scalar);
-        }
         result.x = cartesian.x / scalar;
         result.y = cartesian.y / scalar;
         result.z = cartesian.z / scalar;
@@ -586,24 +524,21 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Negates the provided Cartesian.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} cartesian The Cartesian to be negated.
-     * @param {Cartesian3} [result] The object onto which to store the result.
-     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @exception {DeveloperError} cartesian is required.
+     * @param {Cartesian3} result The object onto which to store the result.
+     * @returns {Cartesian3} The modified result parameter.
      */
     Cartesian3.negate = function(cartesian, result) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        if (!defined(result)) {
-            return new Cartesian3(-cartesian.x, -cartesian.y, -cartesian.z);
-        }
         result.x = -cartesian.x;
         result.y = -cartesian.y;
         result.z = -cartesian.z;
@@ -612,24 +547,21 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Computes the absolute value of the provided Cartesian.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} cartesian The Cartesian whose absolute value is to be computed.
-     * @param {Cartesian3} [result] The object onto which to store the result.
-     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @exception {DeveloperError} cartesian is required.
+     * @param {Cartesian3} result The object onto which to store the result.
+     * @returns {Cartesian3} The modified result parameter.
      */
     Cartesian3.abs = function(cartesian, result) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
         //>>includeEnd('debug');
 
-        if (!defined(result)) {
-            return new Cartesian3(Math.abs(cartesian.x), Math.abs(cartesian.y), Math.abs(cartesian.z));
-        }
         result.x = Math.abs(cartesian.x);
         result.y = Math.abs(cartesian.y);
         result.z = Math.abs(cartesian.z);
@@ -639,17 +571,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
     var lerpScratch = new Cartesian3();
     /**
      * Computes the linear interpolation or extrapolation at t using the provided cartesians.
-     * @memberof Cartesian3
      *
-     * @param start The value corresponding to t at 0.0.
-     * @param end The value corresponding to t at 1.0.
-     * @param t The point along t at which to interpolate.
-     * @param {Cartesian3} [result] The object onto which to store the result.
-     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @exception {DeveloperError} start is required.
-     * @exception {DeveloperError} end is required.
-     * @exception {DeveloperError} t is required and must be a number.
+     * @param {Cartesian3} start The value corresponding to t at 0.0.
+     * @param {Cartesian3} end The value corresponding to t at 1.0.
+     * @param {Number} t The point along t at which to interpolate.
+     * @param {Cartesian3} result The object onto which to store the result.
+     * @returns {Cartesian3} The modified result parameter.
      */
     Cartesian3.lerp = function(start, end, t, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -662,6 +589,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
         if (typeof t !== 'number') {
             throw new DeveloperError('t is required and must be a number.');
         }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required.');
+        }
         //>>includeEnd('debug');
 
         Cartesian3.multiplyByScalar(end, t, lerpScratch);
@@ -673,14 +603,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
     var angleBetweenScratch2 = new Cartesian3();
     /**
      * Returns the angle, in radians, between the provided Cartesians.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} left The first Cartesian.
      * @param {Cartesian3} right The second Cartesian.
      * @returns {Number} The angle between the Cartesians.
-     *
-     * @exception {DeveloperError} left is required.
-     * @exception {DeveloperError} right is required.
      */
     Cartesian3.angleBetween = function(left, right) {
         //>>includeStart('debug', pragmas.debug);
@@ -702,18 +628,18 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
     var mostOrthogonalAxisScratch = new Cartesian3();
     /**
      * Returns the axis that is most orthogonal to the provided Cartesian.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} cartesian The Cartesian on which to find the most orthogonal axis.
-     * @param {Cartesian3} [result] The object onto which to store the result.
+     * @param {Cartesian3} result The object onto which to store the result.
      * @returns {Cartesian3} The most orthogonal axis.
-     *
-     * @exception {DeveloperError} cartesian is required.
      */
     Cartesian3.mostOrthogonalAxis = function(cartesian, result) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(cartesian)) {
             throw new DeveloperError('cartesian is required.');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required.');
         }
         //>>includeEnd('debug');
 
@@ -740,7 +666,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
     /**
      * Compares the provided Cartesians componentwise and returns
      * <code>true</code> if they are equal, <code>false</code> otherwise.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} [left] The first Cartesian.
      * @param {Cartesian3} [right] The second Cartesian.
@@ -759,14 +684,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
      * Compares the provided Cartesians componentwise and returns
      * <code>true</code> if they are within the provided epsilon,
      * <code>false</code> otherwise.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} [left] The first Cartesian.
      * @param {Cartesian3} [right] The second Cartesian.
      * @param {Number} epsilon The epsilon to use for equality testing.
      * @returns {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
-     *
-     * @exception {DeveloperError} epsilon is required and must be a number.
      */
     Cartesian3.equalsEpsilon = function(left, right, epsilon) {
         //>>includeStart('debug', pragmas.debug);
@@ -785,15 +707,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Computes the cross (outer) product of two Cartesians.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} left The first Cartesian.
      * @param {Cartesian3} right The second Cartesian.
-     * @param {Cartesian3} [result] The object onto which to store the result.
+     * @param {Cartesian3} result The object onto which to store the result.
      * @returns {Cartesian3} The cross product.
-     *
-     * @exception {DeveloperError} left is required.
-     * @exception {DeveloperError} right is required.
      */
     Cartesian3.cross = function(left, right, result) {
         //>>includeStart('debug', pragmas.debug);
@@ -802,6 +720,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
         }
         if (!defined(right)) {
             throw new DeveloperError('right is required');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
         }
         //>>includeEnd('debug');
 
@@ -816,9 +737,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
         var y = leftZ * rightX - leftX * rightZ;
         var z = leftX * rightY - leftY * rightX;
 
-        if (!defined(result)) {
-            return new Cartesian3(x, y, z);
-        }
         result.x = x;
         result.y = y;
         result.z = z;
@@ -826,32 +744,255 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
     };
 
     /**
+     * Returns a Cartesian3 position from longitude and latitude values given in degrees.
+     *
+     * @param {Number} longitude The longitude, in degrees
+     * @param {Number} latitude The latitude, in degrees
+     * @param {Number} [height=0.0] The height, in meters, above the ellipsoid.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid on which the position lies.
+     * @param {Cartesian3} [result] The object onto which to store the result.
+     * @returns {Cartesian3} The position
+     *
+     * @example
+     * var position = Cesium.Cartesian3.fromDegrees(-115.0, 37.0);
+     */
+    Cartesian3.fromDegrees = function(longitude, latitude, height, ellipsoid, result) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(longitude)) {
+            throw new DeveloperError('longitude is required');
+        }
+        if (!defined(latitude)) {
+            throw new DeveloperError('latitude is required');
+        }
+        //>>includeEnd('debug');
+
+        var lon = CesiumMath.toRadians(longitude);
+        var lat = CesiumMath.toRadians(latitude);
+        return Cartesian3.fromRadians(lon, lat, height, ellipsoid, result);
+    };
+
+    var scratchN = new Cartesian3();
+    var scratchK = new Cartesian3();
+    var wgs84RadiiSquared = new Cartesian3(6378137.0 * 6378137.0, 6378137.0 * 6378137.0, 6356752.3142451793 * 6356752.3142451793);
+
+    /**
+     * Returns a Cartesian3 position from longitude and latitude values given in radians.
+     *
+     * @param {Number} longitude The longitude, in radians
+     * @param {Number} latitude The latitude, in radians
+     * @param {Number} [height=0.0] The height, in meters, above the ellipsoid.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid on which the position lies.
+     * @param {Cartesian3} [result] The object onto which to store the result.
+     * @returns {Cartesian3} The position
+     *
+     * @example
+     * var position = Cesium.Cartesian3.fromRadians(-2.007, 0.645);
+     */
+    Cartesian3.fromRadians = function(longitude, latitude, height, ellipsoid, result) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(longitude)) {
+            throw new DeveloperError('longitude is required');
+        }
+        if (!defined(latitude)) {
+            throw new DeveloperError('latitude is required');
+        }
+        //>>includeEnd('debug');
+
+        height = defaultValue(height, 0.0);
+        var radiiSquared = defined(ellipsoid) ? ellipsoid.radiiSquared : wgs84RadiiSquared;
+
+        var cosLatitude = Math.cos(latitude);
+        scratchN.x = cosLatitude * Math.cos(longitude);
+        scratchN.y = cosLatitude * Math.sin(longitude);
+        scratchN.z = Math.sin(latitude);
+        scratchN = Cartesian3.normalize(scratchN, scratchN);
+
+        Cartesian3.multiplyComponents(radiiSquared, scratchN, scratchK);
+        var gamma = Math.sqrt(Cartesian3.dot(scratchN, scratchK));
+        scratchK = Cartesian3.divideByScalar(scratchK, gamma, scratchK);
+        scratchN = Cartesian3.multiplyByScalar(scratchN, height, scratchN);
+
+        if (!defined(result)) {
+            result = new Cartesian3();
+        }
+        return Cartesian3.add(scratchK, scratchN, result);
+    };
+
+    /**
+     * Returns an array of Cartesian3 positions given an array of longitude and latitude values given in degrees.
+     *
+     * @param {Number[]} coordinates A list of longitude and latitude values. Values alternate [longitude, latitude, longitude, latitude...].
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid on which the coordinates lie.
+     * @param {Cartesian3[]} [result] An array of Cartesian3 objects to store the result.
+     * @returns {Cartesian3[]} The array of positions.
+     *
+     * @example
+     * var positions = Cesium.Cartesian3.fromDegreesArray([-115.0, 37.0, -107.0, 33.0]);
+     */
+    Cartesian3.fromDegreesArray = function(coordinates, ellipsoid, result) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(coordinates)) {
+            throw new DeveloperError('positions is required.');
+        }
+        //>>includeEnd('debug');
+
+        var pos = new Array(coordinates.length);
+        for (var i = 0; i < coordinates.length; i++) {
+            pos[i] = CesiumMath.toRadians(coordinates[i]);
+        }
+
+        return Cartesian3.fromRadiansArray(pos, ellipsoid, result);
+    };
+
+    /**
+     * Returns an array of Cartesian3 positions given an array of longitude and latitude values given in radians.
+     *
+     * @param {Number[]} coordinates A list of longitude and latitude values. Values alternate [longitude, latitude, longitude, latitude...].
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid on which the coordinates lie.
+     * @param {Cartesian3[]} [result] An array of Cartesian3 objects to store the result.
+     * @returns {Cartesian3[]} The array of positions.
+     *
+     * @example
+     * var positions = Cesium.Cartesian3.fromRadiansArray([-2.007, 0.645, -1.867, .575]);
+     */
+    Cartesian3.fromRadiansArray = function(coordinates, ellipsoid, result) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(coordinates)) {
+            throw new DeveloperError('positions is required.');
+        }
+        if (coordinates.length < 2) {
+            throw new DeveloperError('positions length cannot be less than 2.');
+        }
+        if (coordinates.length % 2 !== 0) {
+            throw new DeveloperError('positions length must be a multiple of 2.');
+        }
+        //>>includeEnd('debug');
+
+        var length = coordinates.length;
+        if (!defined(result)) {
+            result = new Array(length/2);
+        } else {
+            result.length = length/2;
+        }
+
+        for ( var i = 0; i < length; i+=2) {
+            var lon = coordinates[i];
+            var lat = coordinates[i+1];
+            result[i/2] = Cartesian3.fromRadians(lon, lat, 0, ellipsoid, result[i/2]);
+        }
+
+        return result;
+    };
+
+    /**
+     * Returns an array of Cartesian3 positions given an array of longitude, latitude and height values where longitude and latitude are given in degrees.
+     *
+     * @param {Number[]} coordinates A list of longitude, latitude and height values. Values alternate [longitude, latitude, height,, longitude, latitude, height...].
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid on which the position lies.
+     * @param {Cartesian3[]} [result] An array of Cartesian3 objects to store the result.
+     * @returns {Cartesian3[]} The array of positions.
+     *
+     * @example
+     * var positions = Cesium.Cartesian3.fromDegreesArrayHeights([-115.0, 37.0, 100000.0, -107.0, 33.0, 150000.0]);
+     */
+    Cartesian3.fromDegreesArrayHeights = function(coordinates, ellipsoid, result) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(coordinates)) {
+            throw new DeveloperError('positions is required.');
+        }
+        if (coordinates.length < 3) {
+            throw new DeveloperError('positions length cannot be less than 3.');
+        }
+        if (coordinates.length % 3 !== 0) {
+            throw new DeveloperError('positions length must be a multiple of 3.');
+        }
+        //>>includeEnd('debug');
+
+        var pos = new Array(coordinates.length);
+        for (var i = 0; i < coordinates.length; i+=3) {
+            pos[i] = CesiumMath.toRadians(coordinates[i]);
+            pos[i+1] = CesiumMath.toRadians(coordinates[i+1]);
+            pos[i+2] = coordinates[i+2];
+        }
+
+        return Cartesian3.fromRadiansArrayHeights(pos, ellipsoid, result);
+    };
+
+    /**
+     * Returns an array of Cartesian3 positions given an array of longitude, latitude and height values where longitude and latitude are given in radians.
+     *
+     * @param {Number[]} coordinates A list of longitude, latitude and height values. Values alternate [longitude, latitude, height,, longitude, latitude, height...].
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid on which the position lies.
+     * @param {Cartesian3[]} [result] An array of Cartesian3 objects to store the result.
+     * @returns {Cartesian3[]} The array of positions.
+     *
+     * @example
+     * var positions = Cesium.Cartesian3.fromRadiansArrayHeights([-2.007, 0.645, 100000.0, -1.867, .575, 150000.0]);
+     */
+    Cartesian3.fromRadiansArrayHeights = function(coordinates, ellipsoid, result) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(coordinates)) {
+            throw new DeveloperError('positions is required.');
+        }
+        if (coordinates.length < 3) {
+            throw new DeveloperError('positions length cannot be less than 3.');
+        }
+        if (coordinates.length % 3 !== 0) {
+            throw new DeveloperError('positions length must be a multiple of 3.');
+        }
+        //>>includeEnd('debug');
+
+        var length = coordinates.length;
+        if (!defined(result)) {
+            result = new Array(length/3);
+        } else {
+            result.length = length/3;
+        }
+
+        for ( var i = 0; i < length; i+=3) {
+            var lon = coordinates[i];
+            var lat = coordinates[i+1];
+            var alt = coordinates[i+2];
+            result[i/3] = Cartesian3.fromRadians(lon, lat, alt, ellipsoid, result[i/3]);
+        }
+
+        return result;
+    };
+
+    /**
      * An immutable Cartesian3 instance initialized to (0.0, 0.0, 0.0).
-     * @memberof Cartesian3
+     *
+     * @type {Cartesian3}
+     * @constant
      */
     Cartesian3.ZERO = freezeObject(new Cartesian3(0.0, 0.0, 0.0));
 
     /**
      * An immutable Cartesian3 instance initialized to (1.0, 0.0, 0.0).
-     * @memberof Cartesian3
+     *
+     * @type {Cartesian3}
+     * @constant
      */
     Cartesian3.UNIT_X = freezeObject(new Cartesian3(1.0, 0.0, 0.0));
 
     /**
      * An immutable Cartesian3 instance initialized to (0.0, 1.0, 0.0).
-     * @memberof Cartesian3
+     *
+     * @type {Cartesian3}
+     * @constant
      */
     Cartesian3.UNIT_Y = freezeObject(new Cartesian3(0.0, 1.0, 0.0));
 
     /**
      * An immutable Cartesian3 instance initialized to (0.0, 0.0, 1.0).
-     * @memberof Cartesian3
+     *
+     * @type {Cartesian3}
+     * @constant
      */
     Cartesian3.UNIT_Z = freezeObject(new Cartesian3(0.0, 0.0, 1.0));
 
     /**
      * Duplicates this Cartesian3 instance.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} [result] The object onto which to store the result.
      * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
@@ -863,7 +1004,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
     /**
      * Compares this Cartesian against the provided Cartesian componentwise and returns
      * <code>true</code> if they are equal, <code>false</code> otherwise.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} [right] The right hand side Cartesian.
      * @returns {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.
@@ -876,13 +1016,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
      * Compares this Cartesian against the provided Cartesian componentwise and returns
      * <code>true</code> if they are within the provided epsilon,
      * <code>false</code> otherwise.
-     * @memberof Cartesian3
      *
      * @param {Cartesian3} [right] The right hand side Cartesian.
      * @param {Number} epsilon The epsilon to use for equality testing.
      * @returns {Boolean} <code>true</code> if they are within the provided epsilon, <code>false</code> otherwise.
-     *
-     * @exception {DeveloperError} epsilon is required and must be a number.
      */
     Cartesian3.prototype.equalsEpsilon = function(right, epsilon) {
         return Cartesian3.equalsEpsilon(this, right, epsilon);
@@ -890,7 +1027,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/freeze
 
     /**
      * Creates a string representing this Cartesian in the format '(x, y, z)'.
-     * @memberof Cartesian3
      *
      * @returns {String} A string representing this Cartesian in the format '(x, y, z)'.
      */

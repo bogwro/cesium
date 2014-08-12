@@ -1,19 +1,22 @@
 /*global define*/
-define(['Core/Enumeration'], function(Enumeration) {
+define([
+        '../Core/freezeObject'
+    ], function(
+        freezeObject) {
     "use strict";
 
     /**
      * @private
      */
     var PrimitiveState = {
-        READY : new Enumeration(0, 'READY'),
-        CREATING : new Enumeration(1, 'CREATING'),
-        CREATED : new Enumeration(2, 'CREATED'),
-        COMBINING : new Enumeration(3, 'COMBINING'),
-        COMBINED : new Enumeration(4, 'COMBINED'),
-        COMPLETE : new Enumeration(5, 'COMPLETE'),
-        FAILED : new Enumeration(6, 'FAILED')
+        READY : 0,
+        CREATING : 1,
+        CREATED : 2,
+        COMBINING : 3,
+        COMBINED : 4,
+        COMPLETE : 5,
+        FAILED : 6
     };
 
-    return PrimitiveState;
+    return freezeObject(PrimitiveState);
 });

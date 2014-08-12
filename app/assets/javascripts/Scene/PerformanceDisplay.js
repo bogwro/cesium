@@ -1,10 +1,19 @@
 /*global define*/
-define(['Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject', 'Core/DeveloperError', 'Widgets/getElement'], function(
+define([
+        '../Core/Color',
+        '../Core/defaultValue',
+        '../Core/defined',
+        '../Core/destroyObject',
+        '../Core/DeveloperError',
+        '../Core/getTimestamp',
+        '../Widgets/getElement'
+    ], function(
         Color,
         defaultValue,
         defined,
         destroyObject,
         DeveloperError,
+        getTimestamp,
         getElement) {
     "use strict";
 
@@ -15,19 +24,19 @@ define(['Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject',
     /**
      * @private
      */
-    var PerformanceDisplay = function(description) {
-        description = defaultValue(description, defaultValue.EMPTY_OBJECT);
+    var PerformanceDisplay = function(options) {
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
 
-        var container = getElement(description.container);
+        var container = getElement(options.container);
         if (!defined(container)) {
             throw new DeveloperError('container is required');
         }
 
         this._container = container;
-        this._fpsColor = defaultValue(description.fpsColor, defaultFpsColor).toCssColorString();
-        this._frameTimeColor = defaultValue(description.frameTimeColor, defaultFrameTimeColor).toCssColorString();
-        this._backgroundColor = defaultValue(description.backgroundColor, defaultBackgroundColor).toCssColorString();
-        this._font = defaultValue(description.font, 'bold 12px Helvetica,Arial,sans-serif');
+        this._fpsColor = defaultValue(options.fpsColor, defaultFpsColor).toCssColorString();
+        this._frameTimeColor = defaultValue(options.frameTimeColor, defaultFrameTimeColor).toCssColorString();
+        this._backgroundColor = defaultValue(options.backgroundColor, defaultBackgroundColor).toCssColorString();
+        this._font = defaultValue(options.font, 'bold 12px Helvetica,Arial,sans-serif');
 
         var display = document.createElement('div');
         var fpsElement = document.createElement('div');
@@ -44,7 +53,7 @@ define(['Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject',
         display.style['background-color'] = this._backgroundColor;
         display.style.font = this._font;
         display.style.padding = '7px';
-        display.style['border-radius']= '5px';
+        display.style['border-radius'] = '5px';
         display.style.border = '1px solid #444';
         this._container.appendChild(display);
 
@@ -62,13 +71,13 @@ define(['Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject',
     PerformanceDisplay.prototype.update = function() {
         if (!defined(this._time)) {
             //first update
-            this._lastFpsSampleTime = Date.now();
-            this._time = Date.now();
+            this._lastFpsSampleTime = getTimestamp();
+            this._time = getTimestamp();
             return;
         }
 
         var previousTime = this._time;
-        var time = Date.now();
+        var time = getTimestamp();
         this._time = time;
 
         var frameTime = time - previousTime;
@@ -89,7 +98,7 @@ define(['Core/Color', 'Core/defaultValue', 'Core/defined', 'Core/destroyObject',
         }
 
         if (frameTime !== this._frameTime) {
-            this._msText.nodeValue = frameTime + ' MS';
+            this._msText.nodeValue = frameTime.toFixed(2) + ' MS';
             this._frameTime = frameTime;
         }
 

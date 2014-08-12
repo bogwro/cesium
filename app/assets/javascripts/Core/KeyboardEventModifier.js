@@ -1,41 +1,42 @@
 /*global define*/
-define(['Core/Enumeration'], function(Enumeration) {
+define([
+        './freezeObject'
+    ], function(
+        freezeObject) {
     "use strict";
 
     /**
      * This enumerated type is for representing keyboard modifiers. These are keys
      * that are held down in addition to other event types.
      *
-     * @exports KeyboardEventModifier
+     * @namespace
+     * @alias KeyboardEventModifier
      */
     var KeyboardEventModifier = {
         /**
          * Represents the shift key being held down.
          *
-         * @type {Enumeration}
+         * @type {Number}
          * @constant
-         * @default 0
          */
-        SHIFT : new Enumeration(0, 'SHIFT'),
+        SHIFT : 0,
 
         /**
          * Represents the control key being held down.
          *
-         * @type {Enumeration}
+         * @type {Number}
          * @constant
-         * @default 1
          */
-        CTRL : new Enumeration(1, 'CTRL'),
+        CTRL : 1,
 
         /**
          * Represents the alt key being held down.
          *
-         * @type {Enumeration}
+         * @type {Number}
          * @constant
-         * @default 2
          */
-        ALT : new Enumeration(2, 'ALT')
+        ALT : 2
     };
 
-    return KeyboardEventModifier;
+    return freezeObject(KeyboardEventModifier);
 });

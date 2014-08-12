@@ -1,7 +1,11 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/Cartesian3', 'Core/EllipsoidOutlineGeometry'], function(
-        defaultValue,
+define([
+        './Cartesian3',
+        './defaultValue',
+        './EllipsoidOutlineGeometry'
+    ], function(
         Cartesian3,
+        defaultValue,
         EllipsoidOutlineGeometry) {
     "use strict";
 
@@ -11,6 +15,7 @@ define(['Core/defaultValue', 'Core/Cartesian3', 'Core/EllipsoidOutlineGeometry']
      * @alias SphereOutlineGeometry
      * @constructor
      *
+     * @param {Object} [options] Object with the following properties:
      * @param {Number} [options.radius=1.0] The radius of the sphere.
      * @param {Number} [options.stackPartitions=10] The count of stacks for the sphere (1 greater than the number of parallel lines).
      * @param {Number} [options.slicePartitions=8] The count of slices for the sphere (Equal to the number of radial lines).
@@ -19,6 +24,8 @@ define(['Core/defaultValue', 'Core/Cartesian3', 'Core/EllipsoidOutlineGeometry']
      * @exception {DeveloperError} options.stackPartitions must be greater than or equal to one.
      * @exception {DeveloperError} options.slicePartitions must be greater than or equal to zero.
      * @exception {DeveloperError} options.subdivisions must be greater than or equal to zero.
+     *
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Sphere%20Outline.html|Cesium Sandcastle Sphere Outline Demo}
      *
      * @example
      * var sphere = new Cesium.SphereOutlineGeometry({

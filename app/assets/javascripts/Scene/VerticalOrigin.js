@@ -1,5 +1,8 @@
 /*global define*/
-define(['Core/Enumeration'], function(Enumeration) {
+define([
+        '../Core/freezeObject'
+    ], function(
+        freezeObject) {
     "use strict";
 
     /**
@@ -7,36 +10,36 @@ define(['Core/Enumeration'], function(Enumeration) {
      * For example, the vertical origin is used to display a billboard above or below (in
      * screen space) of the actual position.
      *
-     * @exports VerticalOrigin
+     * @namespace
+     * @alias VerticalOrigin
      *
-     * @see Billboard#setVerticalOrigin
+     * @see Billboard#verticalOrigin
      */
     var VerticalOrigin = {
         /**
          * The origin is at the vertical center of the object.
          *
-         * @type {Enumeration}
+         * @type {Number}
          * @constant
-         * @default 0
          */
-        CENTER : new Enumeration(0, 'CENTER'),
+        CENTER : 0,
+
         /**
          * The origin is at the bottom of the object.
          *
-         * @type {Enumeration}
+         * @type {Number}
          * @constant
-         * @default 1
          */
-        BOTTOM : new Enumeration(1, 'BOTTOM'),
+        BOTTOM : 1,
+
         /**
          * The origin is at the top of the object.
          *
-         * @type {Enumeration}
+         * @type {Number}
          * @constant
-         * @default -1
          */
-        TOP : new Enumeration(-1, 'TOP')
+        TOP : -1
     };
 
-    return VerticalOrigin;
+    return freezeObject(VerticalOrigin);
 });

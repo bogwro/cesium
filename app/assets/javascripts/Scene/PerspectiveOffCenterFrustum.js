@@ -1,19 +1,29 @@
 /*global define*/
-define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/Cartesian4', 'Core/Matrix4', 'Scene/CullingVolume'], function(
-        DeveloperError,
-        defaultValue,
-        defined,
-        defineProperties,
+define([
+        '../Core/Cartesian2',
+        '../Core/Cartesian3',
+        '../Core/Cartesian4',
+        '../Core/defaultValue',
+        '../Core/defined',
+        '../Core/defineProperties',
+        '../Core/DeveloperError',
+        '../Core/Matrix4',
+        './CullingVolume'
+    ], function(
         Cartesian2,
         Cartesian3,
         Cartesian4,
+        defaultValue,
+        defined,
+        defineProperties,
+        DeveloperError,
         Matrix4,
         CullingVolume) {
     "use strict";
 
     /**
      * The viewing frustum is defined by 6 planes.
-     * Each plane is represented by a {Cartesian4} object, where the x, y, and z components
+     * Each plane is represented by a {@link Cartesian4} object, where the x, y, and z components
      * define the unit vector normal to the plane, and the w component is the distance of the
      * plane from the origin/camera position.
      *
@@ -81,8 +91,8 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
         this._far = this.far;
 
         this._cullingVolume = new CullingVolume();
-        this._perspectiveMatrix = undefined;
-        this._infinitePerspective = undefined;
+        this._perspectiveMatrix = new Matrix4();
+        this._infinitePerspective = new Matrix4();
     };
 
     function update(frustum) {
@@ -124,8 +134,8 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
 
     defineProperties(PerspectiveOffCenterFrustum.prototype, {
         /**
-         * The perspective projection matrix computed from the view frustum.
-         * @memberof PerspectiveOffCenterFrustum
+         * Gets the perspective projection matrix computed from the view frustum.
+         * @memberof PerspectiveOffCenterFrustum.prototype
          * @type {Matrix4}
          *
          * @see PerspectiveOffCenterFrustum#infiniteProjectionMatrix
@@ -138,8 +148,8 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
         },
 
         /**
-         * The perspective projection matrix computed from the view frustum with an infinite far plane.
-         * @memberof PerspectiveOffCenterFrustum
+         * Gets the perspective projection matrix computed from the view frustum with an infinite far plane.
+         * @memberof PerspectiveOffCenterFrustum.prototype
          * @type {Matrix4}
          *
          * @see PerspectiveOffCenterFrustum#projectionMatrix
@@ -159,22 +169,15 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
     /**
      * Creates a culling volume for this frustum.
      *
-     * @memberof PerspectiveOffCenterFrustum
-     *
      * @param {Cartesian3} position The eye position.
      * @param {Cartesian3} direction The view direction.
      * @param {Cartesian3} up The up direction.
-     *
-     * @exception {DeveloperError} position is required.
-     * @exception {DeveloperError} direction is required.
-     * @exception {DeveloperError} up is required.
-     *
      * @returns {CullingVolume} A culling volume at the given position and orientation.
      *
      * @example
      * // Check if a bounding volume intersects the frustum.
      * var cullingVolume = frustum.computeCullingVolume(cameraPosition, cameraDirection, cameraUp);
-     * var intersect = cullingVolume.getVisibility(boundingVolume);
+     * var intersect = cullingVolume.computeVisibility(boundingVolume);
      */
     PerspectiveOffCenterFrustum.prototype.computeCullingVolume = function(position, direction, up) {
         //>>includeStart('debug', pragmas.debug);
@@ -304,29 +307,27 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
     /**
      * Returns the pixel's width and height in meters.
      *
-     * @memberof PerspectiveOffCenterFrustum
-     *
      * @param {Cartesian2} drawingBufferDimensions A {@link Cartesian2} with width and height in the x and y properties, respectively.
      * @param {Number} [distance=near plane distance] The distance to the near plane in meters.
      * @param {Cartesian2} [result] The object onto which to store the result.
      * @returns {Cartesian2} The modified result parameter or a new instance of {@link Cartesian2} with the pixel's width and height in the x and y properties, respectively.
      *
-     * @exception {DeveloperError} drawingBufferDimensions is required.
      * @exception {DeveloperError} drawingBufferDimensions.x must be greater than zero.
      * @exception {DeveloperError} drawingBufferDimensions.y must be greater than zero.
      *
      * @example
      * // Example 1
      * // Get the width and height of a pixel.
-     * var pixelSize = camera.frustum.getPixelSize(new Cartesian2(canvas.clientWidth, canvas.clientHeight));
+     * var pixelSize = camera.frustum.getPixelSize(new Cesium.Cartesian2(canvas.clientWidth, canvas.clientHeight));
      *
+     * @example
      * // Example 2
      * // Get the width and height of a pixel if the near plane was set to 'distance'.
      * // For example, get the size of a pixel of an image on a billboard.
      * var position = camera.position;
      * var direction = camera.direction;
-     * var toCenter = Cesium.Cartesian3.subtract(primitive.boundingVolume.center, position);      // vector from camera to a primitive
-     * var toCenterProj = Cesium.Cartesian3.multiplyByScalar(direction, Cesium.Cartesian3.dot(direction, toCenter)); // project vector onto camera direction vector
+     * var toCenter = Cesium.Cartesian3.subtract(primitive.boundingVolume.center, position, new Cesium.Cartesian3());      // vector from camera to a primitive
+     * var toCenterProj = Cesium.Cartesian3.multiplyByScalar(direction, Cesium.Cartesian3.dot(direction, toCenter), new Cesium.Cartesian3()); // project vector onto camera direction vector
      * var distance = Cesium.Cartesian3.magnitude(toCenterProj);
      * var pixelSize = camera.frustum.getPixelSize(new Cesium.Cartesian2(canvas.clientWidth, canvas.clientHeight), distance);
      */
@@ -371,7 +372,6 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
 
     /**
      * Returns a duplicate of a PerspectiveOffCenterFrustum instance.
-     * @memberof PerspectiveOffCenterFrustum
      *
      * @param {PerspectiveOffCenterFrustum} [result] The object onto which to store the result.
      * @returns {PerspectiveOffCenterFrustum} The modified result parameter or a new PerspectiveFrustum instance if one was not provided.
@@ -402,8 +402,6 @@ define(['Core/DeveloperError', 'Core/defaultValue', 'Core/defined', 'Core/define
     /**
      * Compares the provided PerspectiveOffCenterFrustum componentwise and returns
      * <code>true</code> if they are equal, <code>false</code> otherwise.
-     *
-     * @memberof PerspectiveOffCenterFrustum
      *
      * @param {PerspectiveOffCenterFrustum} [other] The right hand side PerspectiveOffCenterFrustum.
      * @returns {Boolean} <code>true</code> if they are equal, <code>false</code> otherwise.

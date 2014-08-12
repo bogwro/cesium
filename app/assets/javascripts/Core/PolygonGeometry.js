@@ -1,11 +1,37 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/ComponentDatatype', 'Core/defined', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/EllipsoidTangentPlane', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/GeometryInstance', 'Core/GeometryPipeline', 'Core/IndexDatatype', 'Core/Math', 'Core/Matrix3', 'Core/PolygonGeometryLibrary', 'Core/PolygonPipeline', 'Core/PrimitiveType', 'Core/Quaternion', 'Core/Queue', 'Core/VertexFormat', 'Core/WindingOrder'], function(
-        defaultValue,
+define([
+        './BoundingRectangle',
+        './BoundingSphere',
+        './Cartesian2',
+        './Cartesian3',
+        './ComponentDatatype',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './Ellipsoid',
+        './EllipsoidTangentPlane',
+        './Geometry',
+        './GeometryAttribute',
+        './GeometryAttributes',
+        './GeometryInstance',
+        './GeometryPipeline',
+        './IndexDatatype',
+        './Math',
+        './Matrix3',
+        './PolygonGeometryLibrary',
+        './PolygonPipeline',
+        './PrimitiveType',
+        './Quaternion',
+        './Queue',
+        './VertexFormat',
+        './WindingOrder'
+    ], function(
         BoundingRectangle,
         BoundingSphere,
         Cartesian2,
         Cartesian3,
         ComponentDatatype,
+        defaultValue,
         defined,
         DeveloperError,
         Ellipsoid,
@@ -117,7 +143,6 @@ define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'C
     var scratchNormal = new Cartesian3();
     var scratchTangent = new Cartesian3();
     var scratchBinormal = new Cartesian3();
-    var scratchBoundingSphere = new BoundingSphere();
     var p1Scratch = new Cartesian3();
     var p2Scratch = new Cartesian3();
 
@@ -367,6 +392,8 @@ define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'C
         });
     }
 
+    var createGeometryFromPositionsExtrudedPositions = [];
+
     function createGeometryFromPositionsExtruded(ellipsoid, positions, granularity, hierarchy, perPositionHeight) {
         var topGeo = createGeometryFromPositions(ellipsoid, positions, granularity, perPositionHeight).geometry;
         var edgePoints = topGeo.attributes.position.values;
@@ -407,10 +434,14 @@ define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'C
 
         geos.walls = [];
         var outerRing = hierarchy.outerRing;
-        var windingOrder = PolygonPipeline.computeWindingOrder2D(outerRing);
+        var tangentPlane = EllipsoidTangentPlane.fromPoints(outerRing, ellipsoid);
+        var positions2D = tangentPlane.projectPointsOntoPlane(outerRing, createGeometryFromPositionsExtrudedPositions);
+
+        var windingOrder = PolygonPipeline.computeWindingOrder2D(positions2D);
         if (windingOrder === WindingOrder.CLOCKWISE) {
-            outerRing = outerRing.reverse();
+            outerRing.reverse();
         }
+
         var wallGeo = computeWallIndices(outerRing, granularity, perPositionHeight);
         geos.walls.push(new GeometryInstance({
             geometry : wallGeo
@@ -419,10 +450,15 @@ define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'C
         var holes = hierarchy.holes;
         for (i = 0; i < holes.length; i++) {
             var hole = holes[i];
-            windingOrder = PolygonPipeline.computeWindingOrder2D(hole);
-            if (windingOrder !== WindingOrder.CLOCKWISE) {
-                hole = hole.reverse();
+
+            tangentPlane = EllipsoidTangentPlane.fromPoints(hole, ellipsoid);
+            positions2D = tangentPlane.projectPointsOntoPlane(hole, createGeometryFromPositionsExtrudedPositions);
+
+            windingOrder = PolygonPipeline.computeWindingOrder2D(positions2D);
+            if (windingOrder === WindingOrder.CLOCKWISE) {
+                hole.reverse();
             }
+
             wallGeo = computeWallIndices(hole, granularity);
             geos.walls.push(new GeometryInstance({
                 geometry : wallGeo
@@ -438,6 +474,7 @@ define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'C
      * @alias PolygonGeometry
      * @constructor
      *
+     * @param {Object} options Object with the following properties:
      * @param {Object} options.polygonHierarchy A polygon hierarchy that can include holes.
      * @param {Number} [options.height=0.0] The height of the polygon.
      * @param {Number} [options.extrudedHeight] The height of the polygon.
@@ -447,75 +484,75 @@ define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'C
      * @param {Number} [options.granularity=CesiumMath.RADIANS_PER_DEGREE] The distance, in radians, between each latitude and longitude. Determines the number of positions in the buffer.
      * @param {Boolean} [options.perPositionHeight=false] Use the height of options.positions for each position instaed of using options.height to determine the height.
      *
-     * @exception {DeveloperError} polygonHierarchy is required.
-     *
      * @see PolygonGeometry#createGeometry
      * @see PolygonGeometry#fromPositions
+     *
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Polygon.html|Cesium Sandcastle Polygon Demo}
      *
      * @example
      * // 1. create a polygon from points
      * var polygon = new Cesium.PolygonGeometry({
-     *     polygonHierarchy : {
-     *         positions : ellipsoid.cartographicArrayToCartesianArray([
-     *             Cesium.Cartographic.fromDegrees(-72.0, 40.0),
-     *             Cesium.Cartographic.fromDegrees(-70.0, 35.0),
-     *             Cesium.Cartographic.fromDegrees(-75.0, 30.0),
-     *             Cesium.Cartographic.fromDegrees(-70.0, 30.0),
-     *             Cesium.Cartographic.fromDegrees(-68.0, 40.0)
-     *         ])
-     *     }
+     *   polygonHierarchy : {
+     *     positions : Cesium.Cartesian3.fromDegreesArray([
+     *       -72.0, 40.0,
+     *       -70.0, 35.0,
+     *       -75.0, 30.0,
+     *       -70.0, 30.0,
+     *       -68.0, 40.0
+     *     ])
+     *   }
      * });
      * var geometry = Cesium.PolygonGeometry.createGeometry(polygon);
      *
      * // 2. create a nested polygon with holes
      * var polygonWithHole = new Cesium.PolygonGeometry({
-     *     polygonHierarchy : {
-     *         positions : ellipsoid.cartographicArrayToCartesianArray([
-     *             Cesium.Cartographic.fromDegrees(-109.0, 30.0),
-     *             Cesium.Cartographic.fromDegrees(-95.0, 30.0),
-     *             Cesium.Cartographic.fromDegrees(-95.0, 40.0),
-     *             Cesium.Cartographic.fromDegrees(-109.0, 40.0)
+     *   polygonHierarchy : {
+     *     positions : Cesium.Cartesian3.fromDegreesArray([
+     *       -109.0, 30.0,
+     *       -95.0, 30.0,
+     *       -95.0, 40.0,
+     *       -109.0, 40.0
+     *     ]),
+     *     holes : [{
+     *       positions : Cesium.Cartesian3.fromDegreesArray([
+     *         -107.0, 31.0,
+     *         -107.0, 39.0,
+     *         -97.0, 39.0,
+     *         -97.0, 31.0
+     *       ]),
+     *       holes : [{
+     *         positions : Cesium.Cartesian3.fromDegreesArray([
+     *           -105.0, 33.0,
+     *           -99.0, 33.0,
+     *           -99.0, 37.0,
+     *           -105.0, 37.0
      *         ]),
      *         holes : [{
-     *             positions : ellipsoid.cartographicArrayToCartesianArray([
-     *                 Cesium.Cartographic.fromDegrees(-107.0, 31.0),
-     *                 Cesium.Cartographic.fromDegrees(-107.0, 39.0),
-     *                 Cesium.Cartographic.fromDegrees(-97.0, 39.0),
-     *                 Cesium.Cartographic.fromDegrees(-97.0, 31.0)
-     *             ]),
-     *             holes : [{
-     *                 positions : ellipsoid.cartographicArrayToCartesianArray([
-     *                     Cesium.Cartographic.fromDegrees(-105.0, 33.0),
-     *                     Cesium.Cartographic.fromDegrees(-99.0, 33.0),
-     *                     Cesium.Cartographic.fromDegrees(-99.0, 37.0),
-     *                     Cesium.Cartographic.fromDegrees(-105.0, 37.0)
-     *                     ]),
-     *                 holes : [{
-     *                     positions : ellipsoid.cartographicArrayToCartesianArray([
-     *                         Cesium.Cartographic.fromDegrees(-103.0, 34.0),
-     *                         Cesium.Cartographic.fromDegrees(-101.0, 34.0),
-     *                         Cesium.Cartographic.fromDegrees(-101.0, 36.0),
-     *                         Cesium.Cartographic.fromDegrees(-103.0, 36.0)
-     *                     ])
-     *                 }]
-     *              }]
+     *           positions : Cesium.Cartesian3.fromDegreesArray([
+     *             -103.0, 34.0,
+     *             -101.0, 34.0,
+     *             -101.0, 36.0,
+     *             -103.0, 36.0
+     *           ])
      *         }]
-     *     }
+     *       }]
+     *     }]
+     *   }
      * });
-     * var geometry = PolygonGeometry.createGeometry(polygonWithHole);
+     * var geometry = Cesium.PolygonGeometry.createGeometry(polygonWithHole);
      *
      * // 3. create extruded polygon
-     * var extrudedPolygon = new PolygonGeometry({
-     *     positions : ellipsoid.cartographicArrayToCartesianArray([
-     *         Cesium.Cartographic.fromDegrees(-72.0, 40.0),
-     *         Cesium.Cartographic.fromDegrees(-70.0, 35.0),
-     *         Cesium.Cartographic.fromDegrees(-75.0, 30.0),
-     *         Cesium.Cartographic.fromDegrees(-70.0, 30.0),
-     *         Cesium.Cartographic.fromDegrees(-68.0, 40.0)
-     *     ]),
-     *     extrudedHeight: 300000
+     * var extrudedPolygon = new Cesium.PolygonGeometry({
+     *   positions : Cesium.Cartesian3.fromDegreesArray([
+     *     -72.0, 40.0,
+     *     -70.0, 35.0,
+     *     -75.0, 30.0,
+     *     -70.0, 30.0,
+     *     -68.0, 40.0
+     *   ]),
+     *   extrudedHeight: 300000
      * });
-     * var geometry = PolygonGeometry.createGeometry(extrudedPolygon);
+     * var geometry = Cesium.PolygonGeometry.createGeometry(extrudedPolygon);
      */
     var PolygonGeometry = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
@@ -557,9 +594,7 @@ define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'C
     /**
      * A description of a polygon from an array of positions.
      *
-     * @memberof PolygonGeometry
-     *
-     * @param {Array} options.positions An array of positions that defined the corner points of the polygon.
+     * @param {Cartesian3[]} options.positions An array of positions that defined the corner points of the polygon.
      * @param {Number} [options.height=0.0] The height of the polygon.
      * @param {Number} [options.extrudedHeight] The height of the polygon extrusion.
      * @param {VertexFormat} [options.vertexFormat=VertexFormat.DEFAULT] The vertex attributes to be computed.
@@ -568,20 +603,18 @@ define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'C
      * @param {Number} [options.granularity=CesiumMath.RADIANS_PER_DEGREE] The distance, in radians, between each latitude and longitude. Determines the number of positions in the buffer.
      * @param {Boolean} [options.perPositionHeight=false] Use the height of options.positions for each position instead of using options.height to determine the height.
      *
-     * @exception {DeveloperError} options.positions is required.
-     *
      * @see PolygonGeometry#createGeometry
      *
      * @example
      * // create a polygon from points
      * var polygon = Cesium.PolygonGeometry.fromPositions({
-     *     positions : ellipsoid.cartographicArrayToCartesianArray([
-     *         Cesium.Cartographic.fromDegrees(-72.0, 40.0),
-     *         Cesium.Cartographic.fromDegrees(-70.0, 35.0),
-     *         Cesium.Cartographic.fromDegrees(-75.0, 30.0),
-     *         Cesium.Cartographic.fromDegrees(-70.0, 30.0),
-     *         Cesium.Cartographic.fromDegrees(-68.0, 40.0)
-     *     ])
+     *   positions : Cesium.Cartesian3.fromDegreesArray([
+     *     -72.0, 40.0,
+     *     -70.0, 35.0,
+     *     -75.0, 30.0,
+     *     -70.0, 30.0,
+     *     -68.0, 40.0
+     *   ])
      * });
      * var geometry = Cesium.PolygonGeometry.createGeometry(polygon);
      */
@@ -611,7 +644,6 @@ define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'C
 
     /**
      * Computes the geometric representation of a polygon, including its vertices, indices, and a bounding sphere.
-     * @memberof PolygonGeometry
      *
      * @param {PolygonGeometry} polygonGeometry A description of the polygon.
      * @returns {Geometry} The computed vertices and indices.
@@ -630,7 +662,6 @@ define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'C
         var polygonHierarchy = polygonGeometry._polygonHierarchy;
         var perPositionHeight = polygonGeometry._perPositionHeight;
 
-        var boundingSphere;
         var walls;
         var topAndBottom;
         var outerPositions;
@@ -689,10 +720,6 @@ define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'C
         }
 
         outerPositions = polygons[0];
-        // The bounding volume is just around the boundary points, so there could be cases for
-        // contrived polygons on contrived ellipsoids - very oblate ones - where the bounding
-        // volume doesn't cover the polygon.
-        boundingSphere = BoundingSphere.fromPoints(outerPositions);
 
         var geometry;
         var geometries = [];
@@ -727,24 +754,11 @@ define(['Core/defaultValue', 'Core/BoundingRectangle', 'Core/BoundingSphere', 'C
         }
 
         geometry = GeometryPipeline.combine(geometries);
-
-        var center = boundingSphere.center;
-        scratchNormal = ellipsoid.geodeticSurfaceNormal(center, scratchNormal);
-        scratchPosition = Cartesian3.multiplyByScalar(scratchNormal, height, scratchPosition);
-        center = Cartesian3.add(center, scratchPosition, center);
-
-        if (extrude) {
-            scratchBoundingSphere = BoundingSphere.clone(boundingSphere, scratchBoundingSphere);
-            center = scratchBoundingSphere.center;
-            scratchPosition = Cartesian3.multiplyByScalar(scratchNormal, extrudedHeight, scratchPosition);
-            center = Cartesian3.add(ellipsoid.scaleToGeodeticSurface(center, center), scratchPosition, center);
-            boundingSphere = BoundingSphere.union(boundingSphere, scratchBoundingSphere, boundingSphere);
-        }
-
         geometry.attributes.position.values = new Float64Array(geometry.attributes.position.values);
         geometry.indices = IndexDatatype.createTypedArray(geometry.attributes.position.values.length / 3, geometry.indices);
 
         var attributes = geometry.attributes;
+        var boundingSphere = BoundingSphere.fromVertices(attributes.position.values);
 
         if (!vertexFormat.position) {
             delete attributes.position;

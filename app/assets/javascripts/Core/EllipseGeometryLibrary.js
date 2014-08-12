@@ -1,7 +1,11 @@
 /*global define*/
-define(['Core/Cartesian3', 'Core/Ellipsoid', 'Core/Math', 'Core/Matrix3', 'Core/Quaternion'], function(
+define([
+        './Cartesian3',
+        './Math',
+        './Matrix3',
+        './Quaternion'
+    ], function(
         Cartesian3,
-        Ellipsoid,
         CesiumMath,
         Matrix3,
         Quaternion) {
@@ -59,7 +63,7 @@ define(['Core/Cartesian3', 'Core/Ellipsoid', 'Core/Math', 'Core/Matrix3', 'Core/
 
         var length = positions.length;
         var bottomOffset = (extrude) ? length : 0;
-        for ( var i = 0; i < length; i += 3) {
+        for (var i = 0; i < length; i += 3) {
             var i1 = i + 1;
             var i2 = i + 2;
             var position = Cartesian3.fromArray(positions, i, scratchCartesian1);

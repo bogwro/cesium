@@ -1,5 +1,8 @@
 /*global define*/
-define(['Core/Enumeration'], function(Enumeration) {
+define([
+        './freezeObject'
+    ], function(
+        freezeObject) {
     "use strict";
 
     /**
@@ -8,34 +11,34 @@ define(['Core/Enumeration'], function(Enumeration) {
      * it has no visibility, may partially block an occludee from view, or may not block it at all,
      * leading to full visibility.
      *
-     * @exports Visibility
+     * @namespace
+     * @alias Visibility
      */
     var Visibility = {
         /**
          * Represents that no part of an object is visible.
          *
-         * @type {Enumeration}
+         * @type {Number}
          * @constant
-         * @default -1
          */
-        NONE : new Enumeration(-1, 'NONE'),
+        NONE : -1,
+
         /**
         * Represents that part, but not all, of an object is visible
         *
-        * @type {Enumeration}
+        * @type {Number}
         * @constant
-        * @default 0
         */
-        PARTIAL : new Enumeration(0, 'PARTIAL'),
+        PARTIAL : 0,
+
         /**
         * Represents that an object is visible in its entirety.
         *
-        * @type {Enumeration}
+        * @type {Number}
         * @constant
-        * @default 1
         */
-        FULL : new Enumeration(1, 'FULL')
+        FULL : 1
     };
 
-    return Visibility;
+    return freezeObject(Visibility);
 });

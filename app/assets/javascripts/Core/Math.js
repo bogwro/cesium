@@ -1,14 +1,21 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/mersenne-twister'], function(
-         defaultValue,
-         defined,
-         DeveloperError,
-         MersenneTwister) {
+define([
+        '../ThirdParty/mersenne-twister',
+        './defaultValue',
+        './defined',
+        './DeveloperError'
+    ], function(
+        MersenneTwister,
+        defaultValue,
+        defined,
+        DeveloperError) {
     "use strict";
 
     /**
      * Math functions.
-     * @exports CesiumMath
+     *
+     * @namespace
+     * @alias CesiumMath
      */
     var CesiumMath = {};
 
@@ -187,7 +194,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * negative, or 0 if the value is 0.
      *
      * @param {Number} value The value to return the sign of.
-     *
      * @returns {Number} The sign of value.
      */
     CesiumMath.sign = function(value) {
@@ -202,7 +208,40 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
     };
 
     /**
-     * Returns the hyperbolic sine of a {@code Number}.
+     * Returns 1.0 if the given value is positive or zero, and -1.0 if it is negative.
+     * This is similar to {@link CesiumMath#sign} except that returns 1.0 instead of
+     * 0.0 when the input value is 0.0.
+     * @param {Number} value The value to return the sign of.
+     * @returns {Number} The sign of value.
+     */
+    CesiumMath.signNotZero = function(value) {
+        return value < 0.0 ? -1.0 : 1.0;
+    };
+
+    /**
+     * Converts a scalar value in the range [-1.0, 1.0] to a 8-bit 2's complement number.
+     * @param {Number} value The scalar value in the range [-1.0, 1.0]
+     * @returns {Number} The 8-bit 2's complement number, where 0 maps to -1.0 and 255 maps to 1.0.
+     *
+     * @see CesiumMath.fromSNorm
+     */
+    CesiumMath.toSNorm = function(value) {
+        return Math.round((CesiumMath.clamp(value, -1.0, 1.0) * 0.5 + 0.5) * 255.0);
+    };
+
+    /**
+     * Converts a SNORM value in the range [0, 255] to a scalar in the range [-1.0, 1.0].
+     * @param {Number} value SNORM value in the range [0, 255]
+     * @returns {Number} Scalar in the range [-1.0, 1.0].
+     *
+     * @see CesiumMath.toSNorm
+     */
+    CesiumMath.fromSNorm = function(value) {
+        return CesiumMath.clamp(value, 0.0, 255.0) / 255.0 * 2.0 - 1.0;
+    };
+
+    /**
+     * Returns the hyperbolic sine of a number.
      * The hyperbolic sine of <em>value</em> is defined to be
      * (<em>e<sup>x</sup>&nbsp;-&nbsp;e<sup>-x</sup></em>)/2.0
      * where <i>e</i> is Euler's number, approximately 2.71828183.
@@ -219,10 +258,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      *   </ul>
      *</p>
      *
-     * @param value The number whose hyperbolic sine is to be returned.
-     *
-     * @returns The hyperbolic sine of {@code value}.
-     *
+     * @param {Number} value The number whose hyperbolic sine is to be returned.
+     * @returns The hyperbolic sine of <code>value</code>.
      */
     CesiumMath.sinh = function(value) {
         var part1 = Math.pow(Math.E, value);
@@ -232,7 +269,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
     };
 
     /**
-     * Returns the hyperbolic cosine of a {@code Number}.
+     * Returns the hyperbolic cosine of a number.
      * The hyperbolic cosine of <strong>value</strong> is defined to be
      * (<em>e<sup>x</sup>&nbsp;+&nbsp;e<sup>-x</sup></em>)/2.0
      * where <i>e</i> is Euler's number, approximately 2.71828183.
@@ -243,13 +280,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      *
      *     <li>If the argument is infinite, then the result is positive infinity.</li>
      *
-     *     <li>If the argument is zero, then the result is {@code 1.0}.</li>
+     *     <li>If the argument is zero, then the result is 1.0.</li>
      *   </ul>
      *</p>
      *
-     * @param value The number whose hyperbolic cosine is to be returned.
-     *
-     * @returns The hyperbolic cosine of {@code value}.
+     * @param {Number} value The number whose hyperbolic cosine is to be returned.
+     * @returns The hyperbolic cosine of <code>value</code>.
      */
     CesiumMath.cosh = function(value) {
         var part1 = Math.pow(Math.E, value);
@@ -259,7 +295,15 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
     };
 
     /**
-     * DOC_TBA
+     * Computes the linear interpolation of two values.
+     *
+     * @param {Number} p The start value to interpolate.
+     * @param {Number} q The end value to interpolate.
+     * @param {Number} time The time of interpolation generally in the range <code>[0.0, 1.0]</code>.
+     * @returns {Number} The linearly interpolated value.
+     *
+     * @example
+     * var n = Cesium.Math.lerp(0.0, 2.0, 0.5); // returns 1.0
      */
     CesiumMath.lerp = function(p, q, time) {
         return ((1.0 - time) * p) + (time * q);
@@ -270,7 +314,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      *
      * @type {Number}
      * @constant
-     * @see czm_pi
      */
     CesiumMath.PI = Math.PI;
 
@@ -279,7 +322,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      *
      * @type {Number}
      * @constant
-     * @see czm_oneOverPi
      */
     CesiumMath.ONE_OVER_PI = 1.0 / Math.PI;
 
@@ -288,7 +330,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      *
      * @type {Number}
      * @constant
-     * @see czm_piOverTwo
      */
     CesiumMath.PI_OVER_TWO = Math.PI * 0.5;
 
@@ -297,7 +338,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      *
      * @type {Number}
      * @constant
-     * @see czm_piOverThree
      */
     CesiumMath.PI_OVER_THREE = Math.PI / 3.0;
 
@@ -306,7 +346,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      *
      * @type {Number}
      * @constant
-     * @see czm_piOverFour
      */
     CesiumMath.PI_OVER_FOUR = Math.PI / 4.0;
 
@@ -315,7 +354,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      *
      * @type {Number}
      * @constant
-     * @see czm_piOverSix
      */
     CesiumMath.PI_OVER_SIX = Math.PI / 6.0;
 
@@ -324,7 +362,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      *
      * @type {Number}
      * @constant
-     * @see czm_threePiOver2
      */
     CesiumMath.THREE_PI_OVER_TWO = (3.0 * Math.PI) * 0.5;
 
@@ -333,7 +370,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      *
      * @type {Number}
      * @constant
-     * @see czm_twoPi
      */
     CesiumMath.TWO_PI = 2.0 * Math.PI;
 
@@ -342,7 +378,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      *
      * @type {Number}
      * @constant
-     * @see czm_oneOverTwoPi
      */
     CesiumMath.ONE_OVER_TWO_PI = 1.0 / (2.0 * Math.PI);
 
@@ -352,7 +387,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * @type {Number}
      * @constant
      * @default Math.PI / 180.0
-     * @see czm_radiansPerDegree
      */
     CesiumMath.RADIANS_PER_DEGREE = Math.PI / 180.0;
 
@@ -362,7 +396,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * @type {Number}
      * @constant
      * @default 180.0 / Math.PI
-     * @see czm_degreesPerRadian
      */
     CesiumMath.DEGREES_PER_RADIAN = 180.0 / Math.PI;
 
@@ -372,7 +405,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * @type {Number}
      * @constant
      * @default {@link CesiumMath.RADIANS_PER_DEGREE} / 3600.0
-     * @see czm_radiansPerArcSecond
      */
     CesiumMath.RADIANS_PER_ARCSECOND = CesiumMath.RADIANS_PER_DEGREE / 3600.0;
 
@@ -382,6 +414,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * @returns {Number} The corresponding angle in radians.
      */
     CesiumMath.toRadians = function(degrees) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(degrees)) {
+            throw new DeveloperError('degrees is required.');
+        }
+        //>>includeEnd('debug');
         return degrees * CesiumMath.RADIANS_PER_DEGREE;
     };
 
@@ -391,6 +428,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * @returns {Number} The corresponding angle in degrees.
      */
     CesiumMath.toDegrees = function(radians) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(radians)) {
+            throw new DeveloperError('radians is required.');
+        }
+        //>>includeEnd('debug');
         return radians * CesiumMath.DEGREES_PER_RADIAN;
     };
 
@@ -398,7 +440,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * Converts a longitude value, in radians, to the range [<code>-Math.PI</code>, <code>Math.PI</code>).
      *
      * @param {Number} angle The longitude value, in radians, to convert to the range [<code>-Math.PI</code>, <code>Math.PI</code>).
-     *
      * @returns {Number} The equivalent longitude value in the range [<code>-Math.PI</code>, <code>Math.PI</code>).
      *
      * @example
@@ -406,6 +447,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * var longitude = Cesium.Math.convertLongitudeRange(Cesium.Math.toRadians(270.0));
      */
     CesiumMath.convertLongitudeRange = function(angle) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(angle)) {
+            throw new DeveloperError('angle is required.');
+        }
+        //>>includeEnd('debug');
         var twoPi = CesiumMath.TWO_PI;
 
         var simplified = angle - Math.floor(angle / twoPi) * twoPi;
@@ -421,11 +467,17 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
     };
 
     /**
-     * Produces an angle in the range 0 <= angle <= 2Pi which is equivalent to the provided angle.
+     * Produces an angle in the range -Pi <= angle <= Pi which is equivalent to the provided angle.
+     *
      * @param {Number} angle in radians
-     * @returns {Number} The angle in the range ()<code>-CesiumMath.PI</code>, <code>CesiumMath.PI</code>).
+     * @returns {Number} The angle in the range [<code>-CesiumMath.PI</code>, <code>CesiumMath.PI</code>].
      */
     CesiumMath.negativePiToPi = function(x) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(x)) {
+            throw new DeveloperError('x is required.');
+        }
+        //>>includeEnd('debug');
         var epsilon10 = CesiumMath.EPSILON10;
         var pi = CesiumMath.PI;
         var two_pi = CesiumMath.TWO_PI;
@@ -442,11 +494,17 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
     };
 
     /**
-     * Produces an angle in the range -Pi <= angle <= Pi which is equivalent to the provided angle.
+     * Produces an angle in the range 0 <= angle <= 2Pi which is equivalent to the provided angle.
+     *
      * @param {Number} angle in radians
-     * @returns {Number} The angle in the range (0 , <code>CesiumMath.TWO_PI</code>).
+     * @returns {Number} The angle in the range [0, <code>CesiumMath.TWO_PI</code>].
      */
     CesiumMath.zeroToTwoPi = function(x) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(x)) {
+            throw new DeveloperError('x is required.');
+        }
+        //>>includeEnd('debug');
         var value = x % CesiumMath.TWO_PI;
         // We do a second modules here if we add 2Pi to ensure that we don't have any numerical issues with very
         // small negative values.
@@ -454,9 +512,28 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
     };
 
     /**
-     * DOC_TBA
+     * Determines if two values are equal within the provided epsilon.  This is useful
+     * to avoid problems due to roundoff error when comparing floating-point values directly.
+     *
+     * @param {Number} left The first value to compare.
+     * @param {Number} right The other value to compare.
+     * @param {Number} [epsilon=0.0] The maximum inclusive delta between <code>left</code> and <code>right</code> where they will be considered equal.
+     * @returns {Boolean} <code>true</code> if the values are equal within the epsilon; otherwise, <code>false</code>.
+     *
+     * @example
+     * var b = Cesium.Math.equalsEpsilon(0.0, 0.01, Cesium.Math.EPSILON2); // true
+     * var b = Cesium.Math.equalsEpsilon(0.0, 0.1, Cesium.Math.EPSILON2);  // false
      */
     CesiumMath.equalsEpsilon = function(left, right, epsilon) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(left)) {
+            throw new DeveloperError('left is required.');
+        }
+
+        if (!defined(right)) {
+            throw new DeveloperError('right is required.');
+        }
+        //>>includeEnd('debug');
         epsilon = defaultValue(epsilon, 0.0);
         return Math.abs(left - right) <= epsilon;
     };
@@ -466,19 +543,16 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
     /**
      * Computes the factorial of the provided number.
      *
-     * @memberof CesiumMath
-     *
      * @param {Number} n The number whose factorial is to be computed.
-     *
      * @returns {Number} The factorial of the provided number or undefined if the number is less than 0.
      *
-     * @see <a href='http://en.wikipedia.org/wiki/Factorial'>Factorial on Wikipedia</a>.
+     * @exception {DeveloperError} A number greater than or equal to 0 is required.
+     *
+     * @see {@link http://en.wikipedia.org/wiki/Factorial|Factorial on Wikipedia}
      *
      * @example
      * //Compute 7!, which is equal to 5040
      * var computedFactorial = Cesium.Math.factorial(7);
-     *
-     * @exception {DeveloperError} A number greater than or equal to 0 is required.
      */
     CesiumMath.factorial = function(n) {
         //>>includeStart('debug', pragmas.debug);
@@ -490,7 +564,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
         var length = factorials.length;
         if (n >= length) {
             var sum = factorials[length - 1];
-            for ( var i = length; i <= n; i++) {
+            for (var i = length; i <= n; i++) {
                 factorials.push(sum * i);
             }
         }
@@ -500,26 +574,26 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
     /**
      * Increments a number with a wrapping to a minimum value if the number exceeds the maximum value.
      *
-     * @memberof CesiumMath
-     *
      * @param {Number} [n] The number to be incremented.
      * @param {Number} [maximumValue] The maximum incremented value before rolling over to the minimum value.
      * @param {Number} [minimumValue=0.0] The number reset to after the maximum value has been exceeded.
-     *
      * @returns {Number} The incremented number.
+     *
+     * @exception {DeveloperError} Maximum value must be greater than minimum value.
      *
      * @example
      * var n = Cesium.Math.incrementWrap(5, 10, 0); // returns 6
      * var n = Cesium.Math.incrementWrap(10, 10, 0); // returns 0
-     *
-     * @exception {DeveloperError} Maximum value must be greater than minimum value.
      */
     CesiumMath.incrementWrap = function(n, maximumValue, minimumValue) {
         minimumValue = defaultValue(minimumValue, 0.0);
 
         //>>includeStart('debug', pragmas.debug);
+        if (!defined(n)) {
+            throw new DeveloperError('n is required.');
+        }
         if (maximumValue <= minimumValue) {
-            throw new DeveloperError('Maximum value must be greater than minimum value.');
+            throw new DeveloperError('maximumValue must be greater than minimumValue.');
         }
         //>>includeEnd('debug');
 
@@ -533,10 +607,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
     /**
      * Determines if a positive integer is a power of two.
      *
-     * @memberof CesiumMath
-     *
      * @param {Number} n The positive integer to test.
-     *
      * @returns {Boolean} <code>true</code> if the number if a power of two; otherwise, <code>false</code>.
      *
      * @exception {DeveloperError} A number greater than or equal to 0 is required.
@@ -558,10 +629,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
     /**
      * Computes the next power-of-two integer greater than or equal to the provided positive integer.
      *
-     * @memberof CesiumMath
-     *
      * @param {Number} n The positive integer to test.
-     *
      * @returns {Number} The next power-of-two integer.
      *
      * @exception {DeveloperError} A number greater than or equal to 0 is required.
@@ -592,14 +660,23 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
     /**
      * Constraint a value to lie between two values.
      *
-     * @memberof CesiumMath
-     *
      * @param {Number} value The value to constrain.
      * @param {Number} min The minimum value.
      * @param {Number} max The maximum value.
      * @returns The value clamped so that min <= value <= max.
      */
     CesiumMath.clamp = function(value, min, max) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(value)) {
+            throw new DeveloperError('value is required');
+        }
+        if (!defined(min)) {
+            throw new DeveloperError('min is required.');
+        }
+        if (!defined(max)) {
+            throw new DeveloperError('max is required.');
+        }
+        //>>includeEnd('debug');
         return value < min ? min : value > max ? max : value;
     };
 
@@ -609,11 +686,7 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * Sets the seed used by the random number generator
      * in {@link CesiumMath#nextRandomNumber}.
      *
-     * @memberof CesiumMath
-     *
      * @param {Number} seed An integer used as the seed.
-     *
-     * @exception {DeveloperError} seed is required.
      */
     CesiumMath.setRandomNumberSeed = function(seed) {
         //>>includeStart('debug', pragmas.debug);
@@ -629,15 +702,37 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'ThirdParty/
      * Generates a random number in the range of [0.0, 1.0)
      * using a Mersenne twister.
      *
-     * @memberof CesiumMath
-     *
      * @returns A random number in the range of [0.0, 1.0).
      *
-     * @see CesiumMath#setRandomNumberSeed
-     * @see http://en.wikipedia.org/wiki/Mersenne_twister
+     * @see CesiumMath.setRandomNumberSeed
+     * @see {@link http://en.wikipedia.org/wiki/Mersenne_twister|Mersenne twister on Wikipedia}
      */
     CesiumMath.nextRandomNumber = function() {
         return randomNumberGenerator.random();
+    };
+
+    /**
+     * Computes <code>Math.acos(value)</acode>, but first clamps <code>value</code> to the range [-1.0, 1.0]
+     * so that the function will never return NaN.
+     *
+     * @param value The value for which to compute acos.
+     * @returns {number} The acos of the value if the value is in the range [-1.0, 1.0], or the acos of -1.0 or 1.0,
+     *          whichever is closer, if the value is outside the range.
+     */
+    CesiumMath.acosClamped = function(value) {
+        return Math.acos(CesiumMath.clamp(value, -1.0, 1.0));
+    };
+
+    /**
+     * Computes <code>Math.asin(value)</acode>, but first clamps <code>value</code> to the range [-1.0, 1.0]
+     * so that the function will never return NaN.
+     *
+     * @param value The value for which to compute asin.
+     * @returns {number} The asin of the value if the value is in the range [-1.0, 1.0], or the asin of -1.0 or 1.0,
+     *          whichever is closer, if the value is outside the range.
+     */
+    CesiumMath.asinClamped = function(value) {
+        return Math.asin(CesiumMath.clamp(value, -1.0, 1.0));
     };
 
     return CesiumMath;

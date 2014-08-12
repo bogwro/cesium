@@ -1,44 +1,73 @@
 /*global define*/
-define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/createGuid', 'Core/clone', 'Core/Color', 'Core/combine', 'Core/defaultValue', 'Core/defined', 'Core/defineProperties', 'Core/destroyObject', 'Core/Cartesian2', 'Core/Matrix2', 'Core/Matrix3', 'Core/Matrix4', 'Renderer/Texture', 'Renderer/CubeMap', 'Shaders/Materials/BumpMapMaterial', 'Shaders/Materials/CheckerboardMaterial', 'Shaders/Materials/DotMaterial', 'Shaders/Materials/FresnelMaterial', 'Shaders/Materials/GridMaterial', 'Shaders/Materials/NormalMapMaterial', 'Shaders/Materials/ReflectionMaterial', 'Shaders/Materials/RefractionMaterial', 'Shaders/Materials/StripeMaterial', 'Shaders/Materials/Water', 'Shaders/Materials/RimLightingMaterial', 'Shaders/Materials/FadeMaterial', 'Shaders/Materials/PolylineArrowMaterial', 'Shaders/Materials/PolylineGlowMaterial', 'Shaders/Materials/PolylineOutlineMaterial'], function(
-        when,
-        loadImage,
-        DeveloperError,
-        createGuid,
+define([
+        '../Core/Cartesian2',
+        '../Core/clone',
+        '../Core/Color',
+        '../Core/combine',
+        '../Core/createGuid',
+        '../Core/defaultValue',
+        '../Core/defined',
+        '../Core/defineProperties',
+        '../Core/destroyObject',
+        '../Core/DeveloperError',
+        '../Core/isArray',
+        '../Core/loadImage',
+        '../Core/Matrix2',
+        '../Core/Matrix3',
+        '../Core/Matrix4',
+        '../Renderer/CubeMap',
+        '../Renderer/Texture',
+        '../Shaders/Materials/BumpMapMaterial',
+        '../Shaders/Materials/CheckerboardMaterial',
+        '../Shaders/Materials/DotMaterial',
+        '../Shaders/Materials/FadeMaterial',
+        '../Shaders/Materials/GridMaterial',
+        '../Shaders/Materials/NormalMapMaterial',
+        '../Shaders/Materials/PolylineArrowMaterial',
+        '../Shaders/Materials/PolylineGlowMaterial',
+        '../Shaders/Materials/PolylineOutlineMaterial',
+        '../Shaders/Materials/RimLightingMaterial',
+        '../Shaders/Materials/StripeMaterial',
+        '../Shaders/Materials/Water',
+        '../ThirdParty/when'
+    ], function(
+        Cartesian2,
         clone,
         Color,
         combine,
+        createGuid,
         defaultValue,
         defined,
         defineProperties,
         destroyObject,
-        Cartesian2,
+        DeveloperError,
+        isArray,
+        loadImage,
         Matrix2,
         Matrix3,
         Matrix4,
-        Texture,
         CubeMap,
+        Texture,
         BumpMapMaterial,
         CheckerboardMaterial,
         DotMaterial,
-        FresnelMaterial,
+        FadeMaterial,
         GridMaterial,
         NormalMapMaterial,
-        ReflectionMaterial,
-        RefractionMaterial,
-        StripeMaterial,
-        WaterMaterial,
-        RimLightingMaterial,
-        FadeMaterial,
         PolylineArrowMaterial,
         PolylineGlowMaterial,
-        PolylineOutlineMaterial) {
+        PolylineOutlineMaterial,
+        RimLightingMaterial,
+        StripeMaterial,
+        WaterMaterial,
+        when) {
     "use strict";
 
     /**
      * A Material defines surface appearance through a combination of diffuse, specular,
      * normal, emission, and alpha components. These values are specified using a
      * JSON schema called Fabric which gets parsed and assembled into glsl shader code
-     * behind-the-scenes. Check out the <a href='https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric'>wiki page</a>
+     * behind-the-scenes. Check out the {@link https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric|wiki page}
      * for more details on Fabric.
      * <br /><br />
      * <style type="text/css">
@@ -115,35 +144,20 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
      *      <li><code>repeat</code>:  Object with x and y values specifying the number of times to repeat the image.</li>
      *      <li><code>strength</code>:  Bump strength value between 0.0 and 1.0 where 0.0 is small bumps and 1.0 is large bumps.</li>
      *  </ul>
-     *  <li>Reflection</li>
-     *  <ul>
-     *      <li><code>cubeMap</code>:  Object with positiveX, negativeX, positiveY, negativeY, positiveZ, and negativeZ image paths. </li>
-     *      <li><code>channels</code>:  Three character string containing any combination of r, g, b, and a for selecting the desired image channels.</li>
-     *  </ul>
-     *  <li>Refraction</li>
-     *  <ul>
-     *      <li><code>cubeMap</code>:  Object with positiveX, negativeX, positiveY, negativeY, positiveZ, and negativeZ image paths. </li>
-     *      <li><code>channels</code>:  Three character string containing any combination of r, g, b, and a for selecting the desired image channels.</li>
-     *      <li><code>indexOfRefractionRatio</code>:  Number representing the refraction strength where 1.0 is the lowest and 0.0 is the highest.</li>
-     *  </ul>
-     *  <li>Fresnel</li>
-     *  <ul>
-     *      <li><code>reflection</code>:  Reflection Material.</li>
-     *      <li><code>refraction</code>:  Refraction Material.</li>
-     *  </ul>
      *  <li>Grid</li>
      *  <ul>
      *      <li><code>color</code>:  rgba color object for the whole material.</li>
      *      <li><code>cellAlpha</code>: Alpha value for the cells between grid lines.  This will be combined with color.alpha.</li>
      *      <li><code>lineCount</code>:  Object with x and y values specifying the number of columns and rows respectively.</li>
      *      <li><code>lineThickness</code>:  Object with x and y values specifying the thickness of grid lines (in pixels where available).</li>
+     *      <li><code>lineOffset</code>:  Object with x and y values specifying the offset of grid lines (range is 0 to 1).</li>
      *  </ul>
      *  <li>Stripe</li>
      *  <ul>
      *      <li><code>horizontal</code>:  Boolean that determines if the stripes are horizontal or vertical.</li>
-     *      <li><code>lightColor</code>:  rgba color object for the stripe's light alternating color.</li>
-     *      <li><code>darkColor</code>:  rgba color object for the stripe's dark alternating color.</li>
-     *      <li><code>offset</code>:  Number that controls the stripe offset from the edge.</li>
+     *      <li><code>evenColor</code>:  rgba color object for the stripe's first color.</li>
+     *      <li><code>oddColor</code>:  rgba color object for the stripe's second color.</li>
+     *      <li><code>offset</code>:  Number that controls at which point into the pattern to begin drawing; with 0.0 being the beginning of the even color, 1.0 the beginning of the odd color, 2.0 being the even color again, and any multiple or fractional values being in between.</li>
      *      <li><code>repeat</code>:  Number that controls the total number of stripes, half light and half dark.</li>
      *  </ul>
      *  <li>Checkerboard</li>
@@ -205,10 +219,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
      *
      * @alias Material
      *
-     * @param {Boolean} [description.strict=false] Throws errors for issues that would normally be ignored, including unused uniforms or materials.
-     * @param {Boolean|Function} [description.translucent=true] When <code>true</code> or a function that returns <code>true</code>, the geometry
+     * @param {Object} [options] Object with the following properties:
+     * @param {Boolean} [options.strict=false] Throws errors for issues that would normally be ignored, including unused uniforms or materials.
+     * @param {Boolean|Function} [options.translucent=true] When <code>true</code> or a function that returns <code>true</code>, the geometry
      *                           with this material is expected to appear translucent.
-     * @param {Object} description.fabric The fabric JSON used to generate the material.
+     * @param {Object} options.fabric The fabric JSON used to generate the material.
      *
      * @constructor
      *
@@ -220,6 +235,10 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
      * @exception {DeveloperError} strict: shader source does not use string.
      * @exception {DeveloperError} strict: shader source does not use uniform.
      * @exception {DeveloperError} strict: shader source does not use material.
+     *
+     * @see {@link https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric|Fabric wiki page} for a more detailed options of Fabric.
+     *
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Materials.html|Cesium Sandcastle Materials Demo}
      *
      * @example
      * // Create a color material with fromType:
@@ -238,12 +257,8 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
      *         }
      *     }
      * });
-     *
-     * @see <a href='https://github.com/AnalyticalGraphicsInc/cesium/wiki/Fabric'>Fabric wiki page</a> for a more detailed description of Fabric.
-     *
-     * @demo <a href="http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Materials.html">Cesium Sandcastle Materials Demo</a>
      */
-    var Material = function(description) {
+    var Material = function(options) {
         /**
          * The material type. Can be an existing type or a new type. If no type is specified in fabric, type is a GUID.
          * @type {String}
@@ -293,7 +308,7 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
 
         this._updateFunctions = [];
 
-        initializeMaterial(description, this);
+        initializeMaterial(options, this);
         defineProperties(this, {
             type : {
                 value : this.type,
@@ -316,29 +331,44 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
      * Shorthand for: new Material({fabric : {type : type}});
      *
      * @param {String} type The base material type.
-     *
+     * @param {Object} [uniforms] Overrides for the default uniforms.
      * @returns {Material} New material object.
      *
      * @exception {DeveloperError} material with that type does not exist.
      *
      * @example
-     * var material = Cesium.Material.fromType('Color');
-     * material.uniforms.color = vec4(1.0, 0.0, 0.0, 1.0);
+     * var material = Cesium.Material.fromType('Color', {
+     *     color : new Cesium.Color(1.0, 0.0, 0.0, 1.0)
+     * });
      */
-    Material.fromType = function(type) {
+    Material.fromType = function(type, uniforms) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(Material._materialCache.getMaterial(type))) {
             throw new DeveloperError('material with type \'' + type + '\' does not exist.');
         }
         //>>includeEnd('debug');
 
-        return new Material({
+        var material = new Material({
             fabric : {
                 type : type
             }
         });
+
+        if (defined(uniforms)) {
+            for (var name in uniforms) {
+                if (uniforms.hasOwnProperty(name)) {
+                    material.uniforms[name] = uniforms[name];
+                }
+            }
+        }
+
+        return material;
     };
 
+    /**
+     * Gets whether or not this material is translucent.
+     * @returns <code>true</code> if this material is translucent, <code>false</code> otherwise.
+     */
     Material.prototype.isTranslucent = function() {
         if (defined(this.translucent)) {
             if (typeof this.translucent === 'function') {
@@ -449,8 +479,6 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
     * If this object was destroyed, it should not be used; calling any function other than
     * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.
     *
-    * @memberof Material
-    *
     * @returns {Boolean} True if this object was destroyed; otherwise, false.
     *
     * @see Material#destroy
@@ -466,8 +494,6 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
      * Once an object is destroyed, it should not be used; calling any function other than
      * <code>isDestroyed</code> will result in a {@link DeveloperError} exception.  Therefore,
      * assign the return value (<code>undefined</code>) to the object as done in the example.
-     *
-     * @memberof Material
      *
      * @returns {undefined}
      *
@@ -495,11 +521,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         return destroyObject(this);
     };
 
-    function initializeMaterial(description, result) {
-        description = defaultValue(description, defaultValue.EMPTY_OBJECT);
-        result._strict = defaultValue(description.strict, false);
-        result._count = defaultValue(description.count, 0);
-        result._template = clone(defaultValue(description.fabric, defaultValue.EMPTY_OBJECT));
+    function initializeMaterial(options, result) {
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
+        result._strict = defaultValue(options.strict, false);
+        result._count = defaultValue(options.count, 0);
+        result._template = clone(defaultValue(options.fabric, defaultValue.EMPTY_OBJECT));
         result._template.uniforms = clone(defaultValue(result._template.uniforms, defaultValue.EMPTY_OBJECT));
         result._template.materials = clone(defaultValue(result._template.materials, defaultValue.EMPTY_OBJECT));
 
@@ -517,7 +543,7 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         var cachedMaterial = Material._materialCache.getMaterial(result.type);
         if (defined(cachedMaterial)) {
             var template = clone(cachedMaterial.fabric, true);
-            result._template = combine([result._template, template]);
+            result._template = combine(result._template, template, true);
             translucent = cachedMaterial.translucent;
         }
 
@@ -535,7 +561,7 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
 
         var defaultTranslucent = result._translucentFunctions.length === 0 ? true : undefined;
         translucent = defaultValue(translucent, defaultTranslucent);
-        translucent = defaultValue(description.translucent, translucent);
+        translucent = defaultValue(options.translucent, translucent);
 
         if (defined(translucent)) {
             if (typeof translucent === 'function') {
@@ -657,7 +683,7 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
 
             if (!defined(texture)) {
                 material._texturePaths[uniformId] = undefined;
-                texture = material._textures[uniformId] = context.getDefaultTexture();
+                texture = material._textures[uniformId] = context.defaultTexture;
 
                 uniformDimensionsName = uniformId + 'Dimensions';
                 if (uniforms.hasOwnProperty(uniformDimensionsName)) {
@@ -703,7 +729,7 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
 
             if (!defined(material._textures[uniformId])) {
                 material._texturePaths[uniformId] = undefined;
-                material._textures[uniformId] = context.getDefaultCubeMap();
+                material._textures[uniformId] = context.defaultCubeMap;
             }
 
             if (uniformValue === Material.DefaultCubeMapId) {
@@ -834,7 +860,7 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
                     uniformType = 'sampler2D';
                 }
             } else if (type === 'object') {
-                if (Array.isArray(uniformValue)) {
+                if (isArray(uniformValue)) {
                     if (uniformValue.length === 4 || uniformValue.length === 9 || uniformValue.length === 16) {
                         uniformType = 'mat' + Math.sqrt(uniformValue.length);
                     }
@@ -870,7 +896,7 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
                 });
 
                 material._count = subMaterial._count;
-                material._uniforms = combine([material._uniforms, subMaterial._uniforms]);
+                material._uniforms = combine(material._uniforms, subMaterial._uniforms, true);
                 material.materials[subMaterialId] = subMaterial;
                 material._translucentFunctions = material._translucentFunctions.concat(subMaterial._translucentFunctions);
 
@@ -953,9 +979,23 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         }
     };
 
+    /**
+     * Gets or sets the default texture uniform value.
+     * @type {String}
+     */
     Material.DefaultImageId = 'czm_defaultImage';
+
+    /**
+     * Gets or sets the default cube map texture uniform value.
+     * @type {String}
+     */
     Material.DefaultCubeMapId = 'czm_defaultCubeMap';
 
+    /**
+     * Gets the name of the color material.
+     * @type {String}
+     * @readonly
+     */
     Material.ColorType = 'Color';
     Material._materialCache.addMaterial(Material.ColorType, {
         fabric : {
@@ -973,6 +1013,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         }
     });
 
+    /**
+     * Gets the name of the image material.
+     * @type {String}
+     * @readonly
+     */
     Material.ImageType = 'Image';
     Material._materialCache.addMaterial(Material.ImageType, {
         fabric : {
@@ -989,6 +1034,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         translucent : true
     });
 
+    /**
+     * Gets the name of the diffuce map material.
+     * @type {String}
+     * @readonly
+     */
     Material.DiffuseMapType = 'DiffuseMap';
     Material._materialCache.addMaterial(Material.DiffuseMapType, {
         fabric : {
@@ -1005,6 +1055,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         translucent : false
     });
 
+    /**
+     * Gets the name of the alpha map material.
+     * @type {String}
+     * @readonly
+     */
     Material.AlphaMapType = 'AlphaMap';
     Material._materialCache.addMaterial(Material.AlphaMapType, {
         fabric : {
@@ -1021,6 +1076,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         translucent : true
     });
 
+    /**
+     * Gets the name of the specular map material.
+     * @type {String}
+     * @readonly
+     */
     Material.SpecularMapType = 'SpecularMap';
     Material._materialCache.addMaterial(Material.SpecularMapType, {
         fabric : {
@@ -1037,6 +1097,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         translucent : false
     });
 
+    /**
+     * Gets the name of the emmision map material.
+     * @type {String}
+     * @readonly
+     */
     Material.EmissionMapType = 'EmissionMap';
     Material._materialCache.addMaterial(Material.EmissionMapType, {
         fabric : {
@@ -1053,6 +1118,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         translucent : false
     });
 
+    /**
+     * Gets the name of the bump map material.
+     * @type {String}
+     * @readonly
+     */
     Material.BumpMapType = 'BumpMap';
     Material._materialCache.addMaterial(Material.BumpMapType, {
         fabric : {
@@ -1068,6 +1138,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         translucent : false
     });
 
+    /**
+     * Gets the name of the normal map material.
+     * @type {String}
+     * @readonly
+     */
     Material.NormalMapType = 'NormalMap';
     Material._materialCache.addMaterial(Material.NormalMapType, {
         fabric : {
@@ -1083,50 +1158,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         translucent : false
     });
 
-    Material.ReflectionType = 'Reflection';
-    Material._materialCache.addMaterial(Material.ReflectionType, {
-        fabric : {
-            type : Material.ReflectionType,
-            uniforms : {
-                cubeMap : Material.DefaultCubeMapId,
-                channels : 'rgb'
-            },
-            source : ReflectionMaterial
-        },
-        translucent : false
-    });
-
-    Material.RefractionType = 'Refraction';
-    Material._materialCache.addMaterial(Material.RefractionType, {
-        fabric : {
-            type : Material.RefractionType,
-            uniforms : {
-                cubeMap : Material.DefaultCubeMapId,
-                channels : 'rgb',
-                indexOfRefractionRatio : 0.9
-            },
-            source : RefractionMaterial
-        },
-        translucent : false
-    });
-
-    Material.FresnelType = 'Fresnel';
-    Material._materialCache.addMaterial(Material.FresnelType, {
-        fabric : {
-            type : Material.FresnelType,
-            materials : {
-                reflection : {
-                    type : Material.ReflectionType
-                },
-                refraction : {
-                    type : Material.RefractionType
-                }
-            },
-            source : FresnelMaterial
-        },
-        translucent : false
-    });
-
+    /**
+     * Gets the name of the grid material.
+     * @type {String}
+     * @readonly
+     */
     Material.GridType = 'Grid';
     Material._materialCache.addMaterial(Material.GridType, {
         fabric : {
@@ -1135,7 +1171,8 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
                 color : new Color(0.0, 1.0, 0.0, 1.0),
                 cellAlpha : 0.1,
                 lineCount : new Cartesian2(8.0, 8.0),
-                lineThickness : new Cartesian2(1.0, 1.0)
+                lineThickness : new Cartesian2(1.0, 1.0),
+                lineOffset : new Cartesian2(0.0, 0.0)
             },
             source : GridMaterial
         },
@@ -1145,14 +1182,19 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         }
     });
 
+    /**
+     * Gets the name of the stripe material.
+     * @type {String}
+     * @readonly
+     */
     Material.StripeType = 'Stripe';
     Material._materialCache.addMaterial(Material.StripeType, {
         fabric : {
             type : Material.StripeType,
             uniforms : {
                 horizontal : true,
-                lightColor : new Color(1.0, 1.0, 1.0, 0.5),
-                darkColor : new Color(0.0, 0.0, 1.0, 0.5),
+                evenColor : new Color(1.0, 1.0, 1.0, 0.5),
+                oddColor : new Color(0.0, 0.0, 1.0, 0.5),
                 offset : 0.0,
                 repeat : 5.0
             },
@@ -1160,10 +1202,15 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         },
         translucent : function(material) {
             var uniforms = material.uniforms;
-            return (uniforms.lightColor.alpha < 1.0) || (uniforms.darkColor.alpha < 0.0);
+            return (uniforms.evenColor.alpha < 1.0) || (uniforms.oddColor.alpha < 0.0);
         }
     });
 
+    /**
+     * Gets the name of the checkerboard material.
+     * @type {String}
+     * @readonly
+     */
     Material.CheckerboardType = 'Checkerboard';
     Material._materialCache.addMaterial(Material.CheckerboardType, {
         fabric : {
@@ -1181,6 +1228,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         }
     });
 
+    /**
+     * Gets the name of the dot material.
+     * @type {String}
+     * @readonly
+     */
     Material.DotType = 'Dot';
     Material._materialCache.addMaterial(Material.DotType, {
         fabric : {
@@ -1198,6 +1250,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         }
     });
 
+    /**
+     * Gets the name of the water material.
+     * @type {String}
+     * @readonly
+     */
     Material.WaterType = 'Water';
     Material._materialCache.addMaterial(Material.WaterType, {
         fabric : {
@@ -1221,6 +1278,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         }
     });
 
+    /**
+     * Gets the name of the rim lighting material.
+     * @type {String}
+     * @readonly
+     */
     Material.RimLightingType = 'RimLighting';
     Material._materialCache.addMaterial(Material.RimLightingType, {
         fabric : {
@@ -1238,6 +1300,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         }
     });
 
+    /**
+     * Gets the name of the fade material.
+     * @type {String}
+     * @readonly
+     */
     Material.FadeType = 'Fade';
     Material._materialCache.addMaterial(Material.FadeType, {
         fabric : {
@@ -1261,6 +1328,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         }
     });
 
+    /**
+     * Gets the name of the polyline arrow material.
+     * @type {String}
+     * @readonly
+     */
     Material.PolylineArrowType = 'PolylineArrow';
     Material._materialCache.addMaterial(Material.PolylineArrowType, {
         fabric : {
@@ -1273,6 +1345,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         translucent : true
     });
 
+    /**
+     * Gets the name of the polyline glow material.
+     * @type {String}
+     * @readonly
+     */
     Material.PolylineGlowType = 'PolylineGlow';
     Material._materialCache.addMaterial(Material.PolylineGlowType, {
         fabric : {
@@ -1286,6 +1363,11 @@ define(['ThirdParty/when', 'Core/loadImage', 'Core/DeveloperError', 'Core/create
         translucent : true
     });
 
+    /**
+     * Gets the name of the polyline outline material.
+     * @type {String}
+     * @readonly
+     */
     Material.PolylineOutlineType = 'PolylineOutline';
     Material._materialCache.addMaterial(Material.PolylineOutlineType, {
         fabric : {

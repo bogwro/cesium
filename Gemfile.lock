@@ -1,3 +1,11 @@
+GIT
+  remote: https://github.com/bogwro/requirejs-rails.git
+  revision: 0df661d2fc3e92dbffeab79375d7ebcf64dbfed7
+  branch: develop
+  specs:
+    requirejs-rails (1.0.0)
+      railties (>= 3.2.1)
+
 PATH
   remote: .
   specs:
@@ -103,8 +111,6 @@ GEM
     rake (10.1.1)
     rdoc (3.12.2)
       json (~> 1.4)
-    requirejs-rails (0.9.1)
-      railties (>= 3.1.1, < 3.3)
     sass (3.2.14)
     sass-rails (3.2.6)
       railties (~> 3.2.0)
@@ -139,7 +145,7 @@ DEPENDENCIES
   meta_request
   quiet_assets
   rails (~> 3.2.14)
-  requirejs-rails
+  requirejs-rails!
   sass-rails
   sqlite3
   thin

@@ -1,5 +1,8 @@
 /*global define*/
-define(['Core/Math'], function(CesiumMath) {
+define([
+        './Math'
+    ], function(
+        CesiumMath) {
     "use strict";
 
     /**

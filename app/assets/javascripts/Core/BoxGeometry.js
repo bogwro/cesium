@@ -1,16 +1,28 @@
 /*global define*/
-define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/ComponentDatatype', 'Core/PrimitiveType', 'Core/defaultValue', 'Core/BoundingSphere', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/VertexFormat', 'Core/Geometry'], function(
-        defined,
-        DeveloperError,
+define([
+        './BoundingSphere',
+        './Cartesian3',
+        './ComponentDatatype',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './Geometry',
+        './GeometryAttribute',
+        './GeometryAttributes',
+        './PrimitiveType',
+        './VertexFormat'
+    ], function(
+        BoundingSphere,
         Cartesian3,
         ComponentDatatype,
-        PrimitiveType,
         defaultValue,
-        BoundingSphere,
+        defined,
+        DeveloperError,
+        Geometry,
         GeometryAttribute,
         GeometryAttributes,
-        VertexFormat,
-        Geometry) {
+        PrimitiveType,
+        VertexFormat) {
     "use strict";
 
     var diffScratch = new Cartesian3();
@@ -21,15 +33,15 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Componen
      * @alias BoxGeometry
      * @constructor
      *
+     * @param {Object} options Object with the following properties:
      * @param {Cartesian3} options.minimumCorner The minimum x, y, and z coordinates of the box.
      * @param {Cartesian3} options.maximumCorner The maximum x, y, and z coordinates of the box.
      * @param {VertexFormat} [options.vertexFormat=VertexFormat.DEFAULT] The vertex attributes to be computed.
      *
-     * @exception {DeveloperError} options.minimumCorner is required.
-     * @exception {DeveloperError} options.maximumCorner is required.
+     * @see BoxGeometry.fromDimensions
+     * @see BoxGeometry.createGeometry
      *
-     * @see BoxGeometry#fromDimensions
-     * @see BoxGeometry#createGeometry
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Box.html|Cesium Sandcastle Box Demo}
      *
      * @example
      * var box = new Cesium.BoxGeometry({
@@ -63,15 +75,13 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Componen
 
     /**
      * Creates a cube centered at the origin given its dimensions.
-     * @memberof BoxGeometry
      *
      * @param {Cartesian3} options.dimensions The width, depth, and height of the box stored in the x, y, and z coordinates of the <code>Cartesian3</code>, respectively.
      * @param {VertexFormat} [options.vertexFormat=VertexFormat.DEFAULT] The vertex attributes to be computed.
      *
-     * @exception {DeveloperError} options.dimensions is required.
      * @exception {DeveloperError} All dimensions components must be greater than or equal to zero.
      *
-     * @see BoxGeometry#createGeometry
+     * @see BoxGeometry.createGeometry
      *
      * @example
      * var box = Cesium.BoxGeometry.fromDimensions({
@@ -93,8 +103,8 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Componen
         }
         //>>includeEnd('debug');
 
-        var corner = Cartesian3.multiplyByScalar(dimensions, 0.5);
-        var min = Cartesian3.negate(corner);
+        var corner = Cartesian3.multiplyByScalar(dimensions, 0.5, new Cartesian3());
+        var min = Cartesian3.negate(corner, new Cartesian3());
         var max = corner;
 
         var newOptions = {
@@ -107,7 +117,6 @@ define(['Core/defined', 'Core/DeveloperError', 'Core/Cartesian3', 'Core/Componen
 
     /**
      * Computes the geometric representation of a box, including its vertices, indices, and a bounding sphere.
-     * @memberof BoxGeometry
      *
      * @param {BoxGeometry} boxGeometry A description of the box.
      * @returns {Geometry} The computed vertices and indices.

@@ -1,10 +1,16 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/isCrossOriginUrl', 'ThirdParty/when'], function(
+define([
+        '../ThirdParty/when',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './isCrossOriginUrl'
+    ], function(
+        when,
         defaultValue,
         defined,
         DeveloperError,
-        isCrossOriginUrl,
-        when) {
+        isCrossOriginUrl) {
     "use strict";
 
     var dataUriRegex = /^data:/;
@@ -19,17 +25,16 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/isCros
      * @param {Boolean} [allowCrossOrigin=true] Whether to request the image using Cross-Origin
      *        Resource Sharing (CORS).  CORS is only actually used if the image URL is actually cross-origin.
      *        Data URIs are never requested using CORS.
-     *
      * @returns {Promise} a promise that will resolve to the requested data when loaded.
      *
-     * @see <a href='http://www.w3.org/TR/cors/'>Cross-Origin Resource Sharing</a>
-     * @see <a href='http://wiki.commonjs.org/wiki/Promises/A'>CommonJS Promises/A</a>
+     * @see {@link http://www.w3.org/TR/cors/|Cross-Origin Resource Sharing}
+     * @see {@link http://wiki.commonjs.org/wiki/Promises/A|CommonJS Promises/A}
      *
      * @example
      * // load a single image asynchronously
      * Cesium.loadImage('some/image/url.png').then(function(image) {
      *     // use the loaded image
-     * }, function() {
+     * }.otherwise(function(error) {
      *     // an error occurred
      * });
      *

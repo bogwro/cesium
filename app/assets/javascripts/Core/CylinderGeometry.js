@@ -1,19 +1,35 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartesian2', 'Core/Cartesian3', 'Core/CylinderGeometryLibrary', 'Core/Math', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/PrimitiveType', 'Core/BoundingSphere', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/VertexFormat'], function(
+define([
+        './BoundingSphere',
+        './Cartesian2',
+        './Cartesian3',
+        './ComponentDatatype',
+        './CylinderGeometryLibrary',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './Geometry',
+        './GeometryAttribute',
+        './GeometryAttributes',
+        './IndexDatatype',
+        './Math',
+        './PrimitiveType',
+        './VertexFormat'
+    ], function(
+        BoundingSphere,
+        Cartesian2,
+        Cartesian3,
+        ComponentDatatype,
+        CylinderGeometryLibrary,
         defaultValue,
         defined,
         DeveloperError,
-        Cartesian2,
-        Cartesian3,
-        CylinderGeometryLibrary,
-        CesiumMath,
-        ComponentDatatype,
-        IndexDatatype,
-        PrimitiveType,
-        BoundingSphere,
         Geometry,
         GeometryAttribute,
         GeometryAttributes,
+        IndexDatatype,
+        CesiumMath,
+        PrimitiveType,
         VertexFormat) {
     "use strict";
 
@@ -30,10 +46,11 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * @alias CylinderGeometry
      * @constructor
      *
+     * @param {Object} options Object with the following properties:
      * @param {Number} options.length The length of the cylinder.
      * @param {Number} options.topRadius The radius of the top of the cylinder.
      * @param {Number} options.bottomRadius The radius of the bottom of the cylinder.
-     * @param {Number} [options.slices = 128] The number of edges around perimeter of the cylinder.
+     * @param {Number} [options.slices=128] The number of edges around perimeter of the cylinder.
      * @param {VertexFormat} [options.vertexFormat=VertexFormat.DEFAULT] The vertex attributes to be computed.
      *
      * @exception {DeveloperError} options.length must be greater than 0.
@@ -42,7 +59,9 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
      * @exception {DeveloperError} bottomRadius and topRadius cannot both equal 0.
      * @exception {DeveloperError} options.slices must be greater that 3.
      *
-     * @see CylinderGeometry#createGeometry
+     * @see CylinderGeometry.createGeometry
+     *
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Cylinder.html|Cesium Sandcastle Cylinder Demo}
      *
      * @example
      * // create cylinder geometry
@@ -90,7 +109,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/Cartes
 
     /**
      * Computes the geometric representation of a cylinder, including its vertices, indices, and a bounding sphere.
-     * @memberof CylinderGeometry
      *
      * @param {CylinderGeometry} cylinderGeometry A description of the cylinder.
      * @returns {Geometry} The computed vertices and indices.

@@ -1,8 +1,12 @@
 /*global define*/
-define(['Core/defined', 'Core/DeveloperError', 'ThirdParty/Uri'], function(
+define([
+        '../ThirdParty/Uri',
+        './defined',
+        './DeveloperError'
+    ], function(
+        Uri,
         defined,
-        DeveloperError,
-        Uri) {
+        DeveloperError) {
     "use strict";
 
     /**
@@ -11,8 +15,6 @@ define(['Core/defined', 'Core/DeveloperError', 'ThirdParty/Uri'], function(
      *
      * @param {String} uri The Uri.
      * @returns {String} The last segment of the Uri.
-     *
-     * @exception {DeveloperError} uri is required.
      *
      * @example
      * //fileName will be"simple.czml";

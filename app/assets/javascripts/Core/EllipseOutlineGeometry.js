@@ -1,17 +1,32 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartesian3', 'Core/ComponentDatatype', 'Core/IndexDatatype', 'Core/DeveloperError', 'Core/Ellipsoid', 'Core/EllipseGeometryLibrary', 'Core/Geometry', 'Core/GeometryAttribute', 'Core/GeometryAttributes', 'Core/Math', 'Core/PrimitiveType'], function(
-        defaultValue,
-        defined,
+define([
+        './BoundingSphere',
+        './Cartesian3',
+        './ComponentDatatype',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './EllipseGeometryLibrary',
+        './Ellipsoid',
+        './Geometry',
+        './GeometryAttribute',
+        './GeometryAttributes',
+        './IndexDatatype',
+        './Math',
+        './PrimitiveType'
+    ], function(
         BoundingSphere,
         Cartesian3,
         ComponentDatatype,
-        IndexDatatype,
+        defaultValue,
+        defined,
         DeveloperError,
-        Ellipsoid,
         EllipseGeometryLibrary,
+        Ellipsoid,
         Geometry,
         GeometryAttribute,
         GeometryAttributes,
+        IndexDatatype,
         CesiumMath,
         PrimitiveType) {
     "use strict";
@@ -119,12 +134,12 @@ define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartes
     }
 
     /**
-     *
      * A description of the outline of an ellipse on an ellipsoid.
      *
      * @alias EllipseOutlineGeometry
      * @constructor
      *
+     * @param {Object} options Object with the following properties:
      * @param {Cartesian3} options.center The ellipse's center point in the fixed frame.
      * @param {Number} options.semiMajorAxis The length of the ellipse's semi-major axis in meters.
      * @param {Number} options.semiMinorAxis The length of the ellipse's semi-minor axis in meters.
@@ -133,22 +148,19 @@ define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartes
      * @param {Number} [options.extrudedHeight] The height of the extrusion.
      * @param {Number} [options.rotation=0.0] The angle from north (clockwise) in radians. The default is zero.
      * @param {Number} [options.granularity=0.02] The angular distance between points on the ellipse in radians.
-     * @param {Number} [options.numberOfVerticalLines = 16] Number of lines to draw between the top and bottom surface of an extruded ellipse.
+     * @param {Number} [options.numberOfVerticalLines=16] Number of lines to draw between the top and bottom surface of an extruded ellipse.
      *
-     * @exception {DeveloperError} center is required.
-     * @exception {DeveloperError} semiMajorAxis is required.
-     * @exception {DeveloperError} semiMinorAxis is required.
      * @exception {DeveloperError} semiMajorAxis and semiMinorAxis must be greater than zero.
      * @exception {DeveloperError} semiMajorAxis must be larger than the semiMajorAxis.
      * @exception {DeveloperError} granularity must be greater than zero.
      *
-     * @see EllipseOutlineGeometry#createGeometry
+     * @see EllipseOutlineGeometry.createGeometry
+     *
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Ellipse%20Outline.html|Cesium Sandcastle Ellipse Outline Demo}
      *
      * @example
-     * var ellipsoid = Cesium.Ellipsoid.WGS84;
      * var ellipse = new Cesium.EllipseOutlineGeometry({
-     *   ellipsoid : ellipsoid,
-     *   center : ellipsoid.cartographicToCartesian(Cesium.Cartographic.fromDegrees(-75.59777, 40.03883)),
+     *   center : Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883),
      *   semiMajorAxis : 500000.0,
      *   semiMinorAxis : 300000.0,
      *   rotation : Cesium.Math.toRadians(60.0)
@@ -202,7 +214,6 @@ define(['Core/defaultValue', 'Core/defined', 'Core/BoundingSphere', 'Core/Cartes
 
     /**
      * Computes the geometric representation of an outline of an ellipse on an ellipsoid, including its vertices, indices, and a bounding sphere.
-     * @memberof EllipseOutlineGeometry
      *
      * @param {EllipseOutlineGeometry} ellipseGeometry A description of the ellipse.
      * @returns {Geometry} The computed vertices and indices.

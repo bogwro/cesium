@@ -1,5 +1,9 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
+define([
+        '../Core/defaultValue',
+        '../Core/defined',
+        '../Core/DeveloperError'
+    ], function(
         defaultValue,
         defined,
         DeveloperError) {
@@ -20,10 +24,10 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
      *
      * @exports createShaderSource
      *
-     * @param {Array} [options.defines=undefined] An array of strings to combine containing GLSL identifiers to <code>#define</code>.
-     * @param {Array} [options.sources=undefined] An array of strings to combine containing GLSL code for the shader.
-     * @param {String} [options.pickColorQualifier=undefined] The GLSL qualifier, <code>uniform</code> or <code>varying</code>, for the input <code>czm_pickColor</code>.  When defined, a pick fragment shader is generated.
-     *
+     * @param {Object} [options] Object with the following properties:
+     * @param {String[]} [options.defines] An array of strings to combine containing GLSL identifiers to <code>#define</code>.
+     * @param {String[]} [options.sources] An array of strings to combine containing GLSL code for the shader.
+     * @param {String} [options.pickColorQualifier] The GLSL qualifier, <code>uniform</code> or <code>varying</code>, for the input <code>czm_pickColor</code>.  When defined, a pick fragment shader is generated.
      * @returns {String} The generated GLSL shader source.
      *
      * @exception {DeveloperError} options.pickColorQualifier must be 'uniform' or 'varying'.
@@ -40,6 +44,8 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError'], function(
      *   sources : ['void main() { gl_FragColor = vec4(1.0); }'],
      *   pickColorQualifier : 'uniform'
      * });
+     *
+     * @private
      */
     function createShaderSource(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);

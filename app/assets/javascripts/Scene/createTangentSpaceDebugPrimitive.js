@@ -1,14 +1,24 @@
 /*global define*/
-define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/ColorGeometryInstanceAttribute', 'Core/GeometryInstance', 'Core/GeometryPipeline', 'Core/Matrix4', 'Scene/Primitive', 'Scene/PerInstanceColorAppearance'], function(
+define([
+        '../Core/ColorGeometryInstanceAttribute',
+        '../Core/defaultValue',
+        '../Core/defined',
+        '../Core/DeveloperError',
+        '../Core/GeometryInstance',
+        '../Core/GeometryPipeline',
+        '../Core/Matrix4',
+        './PerInstanceColorAppearance',
+        './Primitive'
+    ], function(
+        ColorGeometryInstanceAttribute,
         defaultValue,
         defined,
         DeveloperError,
-        ColorGeometryInstanceAttribute,
         GeometryInstance,
         GeometryPipeline,
         Matrix4,
-        Primitive,
-        PerInstanceColorAppearance) {
+        PerInstanceColorAppearance,
+        Primitive) {
     "use strict";
 
     /**
@@ -19,17 +29,14 @@ define(['Core/defaultValue', 'Core/defined', 'Core/DeveloperError', 'Core/ColorG
      *
      * @exports createTangentSpaceDebugPrimitive
      *
+     * @param {Object} options Object with the following properties:
      * @param {Geometry} options.geometry The <code>Geometry</code> instance with the attribute.
      * @param {Number} [options.length=10000.0] The length of each line segment in meters.  This can be negative to point the vector in the opposite direction.
      * @param {Matrix4} [options.modelMatrix=Matrix4.IDENTITY] The model matrix that transforms to transform the geometry from model to world coordinates.
-     *
      * @returns {Primitive} A new <code>Primitive<code> instance with geometry for the vectors.
      *
-     * @exception {DeveloperError} options.geometry is required.
-     * @exception {DeveloperError} options.geometry.attributes.position is required.
-     *
      * @example
-     * scene.getPrimitives().add(Cesium.createTangentSpaceDebugPrimitive({
+     * scene.primitives.add(Cesium.createTangentSpaceDebugPrimitive({
      *    geometry : instance.geometry,
      *    length : 100000.0,
      *    modelMatrix : instance.modelMatrix
