@@ -1,0 +1,11 @@
+waitSeconds: 45
+shim:
+  'jquery_ujs': ['jquery']
+
+map:
+  '*':
+    'jquery': 'adapters/jquery-adapter'
+  'adapters/jquery-adapter':
+    'jquery': 'jquery'
+  'jquery_ujs':
+    'jquery': 'jquery'
