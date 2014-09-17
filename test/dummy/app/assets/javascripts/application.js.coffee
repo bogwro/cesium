@@ -1,10 +1,15 @@
-require ['jquery', 'Cesium'], ($) ->
+require [
+    'jquery'
+    'Cesium'
+], ($, Cesium) ->
 
-    getDefaultSkyBoxUrl = (suffix) -> "/assets/Assets/Textures/SkyBox/tycho2t3_80_#{suffix}.jpg"
+    console.debug "Loaded Cesium v#{Cesium.VERSION}"
 
-    $ ->
+    canvas = null
+    scene = null
 
-        canvas = $('#globe')[0]
+    init = ->
+        canvas = document.getElementById('globe')
 
         scene = new Cesium.Scene
             canvas: canvas
@@ -19,60 +24,64 @@ require ['jquery', 'Cesium'], ($) ->
                     failIfMajorPerformanceCaveat: true
                 allowTextureFilterAnisotropic: true
 
-        bing = new Cesium.BingMapsImageryProvider
-            url: 'http://dev.virtualearth.net'
-            mapStyle: Cesium.BingMapsStyle.AERIAL
-
-        terrainProvider = new Cesium.CesiumTerrainProvider
-            url: 'http://cesium.agi.com/smallterrain'
+        imagery = new Cesium.BingMapsImageryProvider url: '//dev.virtualearth.net'
+        terrain = new Cesium.CesiumTerrainProvider url: '//cesium.agi.com/smallterrain'
 
         ellipsoid = Cesium.Ellipsoid.WGS84
+
         globe = new Cesium.Globe(ellipsoid)
-        globe.imageryLayers.addImageryProvider(bing)
-        globe.terrainProvider = terrainProvider
+        globe.imageryLayers.addImageryProvider(imagery)
+        globe.terrainProvider = terrain
+
         scene.globe = globe
-
-        skyBox = new Cesium.SkyBox
-            sources:
-                positiveX: getDefaultSkyBoxUrl('px')
-                negativeX: getDefaultSkyBoxUrl('mx')
-                positiveY: getDefaultSkyBoxUrl('py')
-                negativeY: getDefaultSkyBoxUrl('my')
-                positiveZ: getDefaultSkyBoxUrl('pz')
-                negativeZ: getDefaultSkyBoxUrl('mz')
-
-        scene.skyBox = skyBox
         scene.skyAtmosphere = new Cesium.SkyAtmosphere(ellipsoid)
         scene.sun = new Cesium.Sun()
         scene.moon = new Cesium.Moon()
+        scene.skyBox = create_skybox()
 
         new Cesium.SceneTransitioner(scene, ellipsoid)
+
+
+    create_skybox = ->
+        new Cesium.SkyBox
+            sources:
+                positiveX: skybox_asset_url('px')
+                negativeX: skybox_asset_url('mx')
+                positiveY: skybox_asset_url('py')
+                negativeY: skybox_asset_url('my')
+                positiveZ: skybox_asset_url('pz')
+                negativeZ: skybox_asset_url('mz')
+
+    skybox_asset_url = (suffix) -> "/assets/Cesium-1.1/Assets/Textures/SkyBox/tycho2t3_80_#{suffix}.jpg"
+
+
+    animate = ->
+        scene.initializeFrame()
+
+        # INSERT CODE HERE to update primitives based on changes to animation time, camera parameters, etc.
+
+        scene.render()
+        Cesium.requestAnimationFrame(animate)
+
+
+    resize = ->
+        width = canvas.clientWidth
+        height = canvas.clientHeight
+        return if canvas.width == width and canvas.height == height
+        canvas.width = width
+        canvas.height = height
+        scene?.camera.frustum.aspectRatio = width / height
+
+
+    $ ->
+        init()
 
         ##################################################################
         #   INSERT CODE HERE to create graphics primitives in the scene.
         ##################################################################
 
-        animate = =>
-            # INSERT CODE HERE to update primitives based on changes to animation time, camera parameters, etc.
+        resize()
+        window.addEventListener 'resize', resize
+        animate()
 
-        tick = =>
-            scene.initializeFrame()
-            animate()
-            scene.render()
-            Cesium.requestAnimationFrame(tick)
-
-        tick()
-
-        canvas.oncontextmenu = => false
-
-        onResize = =>
-            width = canvas.clientWidth
-            height = canvas.clientHeight
-            return if canvas.width == width and canvas.height == height
-            canvas.width = width
-            canvas.height = height
-            scene.camera.frustum.aspectRatio = width / height
-
-        $(window).on('resize', onResize)
-        onResize()
 
