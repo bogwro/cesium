@@ -67,10 +67,10 @@ require [
     resize = ->
         width = canvas.clientWidth
         height = canvas.clientHeight
-        return if canvas.width == width and canvas.height == height
-        canvas.width = width
-        canvas.height = height
-        scene?.camera.frustum.aspectRatio = width / height
+        unless canvas.width is width and canvas.height is height
+            canvas.width = width
+            canvas.height = height
+            scene?.camera.frustum.aspectRatio = width / height
 
 
     $ ->
