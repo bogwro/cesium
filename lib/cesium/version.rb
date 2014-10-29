@@ -1,3 +1,3 @@
 module Cesium
-  VERSION = '0.25.0'
+  VERSION = '1.2'
 end

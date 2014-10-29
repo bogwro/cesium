@@ -25,13 +25,13 @@ require [
                 allowTextureFilterAnisotropic: true
 
         imagery = new Cesium.BingMapsImageryProvider url: '//dev.virtualearth.net'
-        terrain = new Cesium.CesiumTerrainProvider url: '//cesium.agi.com/smallterrain'
+        #terrain = new Cesium.CesiumTerrainProvider url: '//cesium.agi.com/smallterrain'
 
         ellipsoid = Cesium.Ellipsoid.WGS84
 
         globe = new Cesium.Globe(ellipsoid)
         globe.imageryLayers.addImageryProvider(imagery)
-        globe.terrainProvider = terrain
+        #globe.terrainProvider = terrain
 
         scene.globe = globe
         scene.skyAtmosphere = new Cesium.SkyAtmosphere(ellipsoid)

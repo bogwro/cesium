@@ -9,7 +9,7 @@ GIT
 PATH
   remote: .
   specs:
-    cesium (0.25.0)
+    cesium (1.2)
       jquery-rails
       railties (>= 3.1.1)
       requirejs-rails
