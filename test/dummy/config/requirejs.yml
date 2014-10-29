@@ -1,11 +1,22 @@
 waitSeconds: 45
+
 shim:
   'jquery_ujs': ['jquery']
 
 map:
   '*':
     'jquery': 'adapters/jquery-adapter'
+    'Cesium/Scene/Scene': 'my-scene'
+
+  'my-scene':
+      'Cesium/Scene/Scene': 'Cesium/Scene/Scene'
+
   'adapters/jquery-adapter':
     'jquery': 'jquery'
+
   'jquery_ujs':
     'jquery': 'jquery'
+
+paths:
+  'Cesium': 'Cesium-1.2'
+
