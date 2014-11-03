@@ -32,6 +32,7 @@ define([
         }
 
         var baseUrlString;
+        console.log("Cesium/Core/buildModuleUrl.js: CESIUM_BASE_URL", CESIUM_BASE_URL);
         if (typeof CESIUM_BASE_URL !== 'undefined') {
             baseUrlString = CESIUM_BASE_URL;
         } else {
