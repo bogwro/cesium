@@ -32,7 +32,7 @@ define([
         }
 
         var baseUrlString;
-        console.log("Cesium/Core/buildModuleUrl.js: CESIUM_BASE_URL", CESIUM_BASE_URL);
+        //console.log("Cesium/Core/buildModuleUrl.js: CESIUM_BASE_URL", CESIUM_BASE_URL);
         if (typeof CESIUM_BASE_URL !== 'undefined') {
             baseUrlString = CESIUM_BASE_URL;
         } else {
@@ -70,11 +70,11 @@ define([
     var buildModuleUrl = function(moduleID) {
         if (!defined(implementation)) {
             //select implementation
-            if (defined(require.toUrl)) {
-                implementation = buildModuleUrlFromRequireToUrl;
-            } else {
+            //if (defined(require.toUrl)) {
+                //implementation = buildModuleUrlFromRequireToUrl;
+            //} else {
                 implementation = buildModuleUrlFromBaseUrl;
-            }
+            //}
         }
 
         if (!defined(a)) {

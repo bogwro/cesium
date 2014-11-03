@@ -84,6 +84,8 @@ define([
     function getWorkerUrl(moduleID) {
         var url = buildModuleUrl(moduleID);
 
+        console.debug("Cesium: getWorkerUrl", moduleID, "=>", url);
+
         if (isCrossOriginUrl(url)) {
             //to load cross-origin, create a shim worker from a blob URL
             var script = 'importScripts("' + url + '");';
