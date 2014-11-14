@@ -52,7 +52,7 @@ require [
                 positiveZ: skybox_asset_url('pz')
                 negativeZ: skybox_asset_url('mz')
 
-    skybox_asset_url = (suffix) -> "/assets/Cesium-1.2/Assets/Textures/SkyBox/tycho2t3_80_#{suffix}.jpg"
+    skybox_asset_url = (suffix) -> "#{window.CESIUM_BASE_URL}Assets/Textures/SkyBox/tycho2t3_80_#{suffix}.jpg"
 
 
     animate = ->

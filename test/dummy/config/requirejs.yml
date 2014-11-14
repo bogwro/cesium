@@ -17,6 +17,6 @@ map:
   'jquery_ujs':
     'jquery': 'jquery'
 
-paths:
-  'Cesium': 'Cesium-1.2'
+#paths:
+  #'Cesium': 'Cesium-1.3'
 
