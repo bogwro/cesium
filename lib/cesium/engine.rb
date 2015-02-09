@@ -3,8 +3,6 @@ module Cesium
 
     initializer 'cesium.assets_path' do |app|
 
-      # XXX don't ask man!!
-      # otherwise we have to use the minified vesion of cesium..
       cesium_sources = %w(
         Cesium/Assets/Assets.profile.js
         Cesium/Cesium.js
