@@ -10,6 +10,7 @@ define([
         '../Core/defaultValue',
         '../Core/defined',
         '../Core/defineProperties',
+        '../Core/deprecationWarning',
         '../Core/DeveloperError',
         '../Core/Ellipsoid',
         '../Core/Event',
@@ -42,6 +43,7 @@ define([
         './CompositeProperty',
         './ConstantPositionProperty',
         './ConstantProperty',
+        './DataSource',
         './DataSourceClock',
         './EllipseGraphics',
         './EllipsoidGraphics',
@@ -77,6 +79,7 @@ define([
         defaultValue,
         defined,
         defineProperties,
+        deprecationWarning,
         DeveloperError,
         Ellipsoid,
         Event,
@@ -109,6 +112,7 @@ define([
         CompositeProperty,
         ConstantPositionProperty,
         ConstantProperty,
+        DataSource,
         DataSourceClock,
         EllipseGraphics,
         EllipsoidGraphics,
@@ -307,6 +311,34 @@ define([
         return result;
     }
 
+    function normalizePackedQuaternionArray(array, startingIndex) {
+        var x = array[startingIndex];
+        var y = array[startingIndex + 1];
+        var z = array[startingIndex + 2];
+        var w = array[startingIndex + 3];
+
+        var inverseMagnitude = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w);
+        array[startingIndex] = x * inverseMagnitude;
+        array[startingIndex + 1] = y * inverseMagnitude;
+        array[startingIndex + 2] = z * inverseMagnitude;
+        array[startingIndex + 3] = w * inverseMagnitude;
+    }
+
+    function unwrapQuaternionInterval(czmlInterval) {
+        var unitQuaternion = czmlInterval.unitQuaternion;
+        if (defined(unitQuaternion)) {
+            if (unitQuaternion.length === 4) {
+                normalizePackedQuaternionArray(unitQuaternion, 0);
+                return unitQuaternion;
+            }
+
+            for (var i = 1; i < unitQuaternion.length; i += 5) {
+                normalizePackedQuaternionArray(unitQuaternion, i);
+            }
+        }
+        return unitQuaternion;
+    }
+
     function unwrapInterval(type, czmlInterval, sourceUri) {
         /*jshint sub:true*/
         switch (type) {
@@ -335,7 +367,7 @@ define([
         case Array:
             return czmlInterval.array;
         case Quaternion:
-            return czmlInterval.unitQuaternion;
+            return unwrapQuaternionInterval(czmlInterval);
         case Rectangle:
             return unwrapRectangleInterval(czmlInterval);
         case Uri:
@@ -343,7 +375,7 @@ define([
         case VerticalOrigin:
             return VerticalOrigin[defaultValue(czmlInterval.verticalOrigin, czmlInterval)];
         default:
-            throw new DeveloperError(type);
+            throw new RuntimeError(type);
         }
     }
 
@@ -848,7 +880,7 @@ define([
         }
     }
 
-    function processVertexData(object, positionsData, entityCollection) {
+    function processVertexData(object, propertyName, positionsData, entityCollection) {
         var i;
         var len;
         var references = positionsData.references;
@@ -861,13 +893,14 @@ define([
             var iso8601Interval = positionsData.interval;
             if (defined(iso8601Interval)) {
                 iso8601Interval = TimeInterval.fromIso8601(iso8601Interval);
-                if (!(object.positions instanceof CompositePositionProperty)) {
-                    object.positions = new CompositePositionProperty();
+                if (!(object[propertyName] instanceof CompositePositionProperty)) {
                     iso8601Interval.data = new PositionPropertyArray(properties);
-                    object.positions.intervals.addInterval(iso8601Interval);
+                    var property = new CompositePositionProperty();
+                    property.intervals.addInterval(iso8601Interval);
+                    object[propertyName] = property;
                 }
             } else {
-                object.positions = new PositionPropertyArray(properties);
+                object[propertyName] = new PositionPropertyArray(properties);
             }
         } else {
             var values = [];
@@ -898,12 +931,12 @@ define([
                 }
             }
             if (defined(positionsData.array)) {
-                processPacketData(Array, object, 'positions', positionsData, undefined, undefined, entityCollection);
+                processPacketData(Array, object, propertyName, positionsData, undefined, undefined, entityCollection);
             }
         }
     }
 
-    function processPositions(object, positionsData, entityCollection) {
+    function processPositions(object, propertyName, positionsData, entityCollection) {
         if (!defined(positionsData)) {
             return;
         }
@@ -911,10 +944,10 @@ define([
         if (isArray(positionsData)) {
             var length = positionsData.length;
             for (var i = 0; i < length; i++) {
-                processVertexData(object, positionsData[i], entityCollection);
+                processVertexData(object, propertyName, positionsData[i], entityCollection);
             }
         } else {
-            processVertexData(object, positionsData, entityCollection);
+            processVertexData(object, propertyName, positionsData, entityCollection);
         }
     }
 
@@ -1054,6 +1087,7 @@ define([
         processPacketData(Boolean, ellipse, 'fill', ellipseData.fill, interval, sourceUri, entityCollection);
         processPacketData(Boolean, ellipse, 'outline', ellipseData.outline, interval, sourceUri, entityCollection);
         processPacketData(Color, ellipse, 'outlineColor', ellipseData.outlineColor, interval, sourceUri, entityCollection);
+        processPacketData(Number, ellipse, 'outlineWidth', ellipseData.outlineWidth, interval, sourceUri, entityCollection);
         processPacketData(Number, ellipse, 'numberOfVerticalLines', ellipseData.numberOfVerticalLines, interval, sourceUri, entityCollection);
     }
 
@@ -1081,6 +1115,7 @@ define([
         processPacketData(Boolean, ellipsoid, 'fill', ellipsoidData.fill, interval, sourceUri, entityCollection);
         processPacketData(Boolean, ellipsoid, 'outline', ellipsoidData.outline, interval, sourceUri, entityCollection);
         processPacketData(Color, ellipsoid, 'outlineColor', ellipsoidData.outlineColor, interval, sourceUri, entityCollection);
+        processPacketData(Number, ellipsoid, 'outlineWidth', ellipsoidData.outlineWidth, interval, sourceUri, entityCollection);
     }
 
     function processLabel(entity, packet, entityCollection, sourceUri) {
@@ -1217,8 +1252,9 @@ define([
         processPacketData(Boolean, polygon, 'fill', polygonData.fill, interval, sourceUri, entityCollection);
         processPacketData(Boolean, polygon, 'outline', polygonData.outline, interval, sourceUri, entityCollection);
         processPacketData(Color, polygon, 'outlineColor', polygonData.outlineColor, interval, sourceUri, entityCollection);
+        processPacketData(Number, polygon, 'outlineWidth', polygonData.outlineWidth, interval, sourceUri, entityCollection);
         processPacketData(Boolean, polygon, 'perPositionHeight', polygonData.perPositionHeight, interval, sourceUri, entityCollection);
-        processPositions(polygon, polygonData.positions, entityCollection);
+        processPositions(polygon, 'hierarchy', polygonData.positions, entityCollection);
     }
 
     function processRectangle(entity, packet, entityCollection, sourceUri) {
@@ -1250,6 +1286,7 @@ define([
         processPacketData(Boolean, rectangle, 'fill', rectangleData.fill, interval, sourceUri, entityCollection);
         processPacketData(Boolean, rectangle, 'outline', rectangleData.outline, interval, sourceUri, entityCollection);
         processPacketData(Color, rectangle, 'outlineColor', rectangleData.outlineColor, interval, sourceUri, entityCollection);
+        processPacketData(Number, rectangle, 'outlineWidth', rectangleData.outlineWidth, interval, sourceUri, entityCollection);
         processPacketData(Boolean, rectangle, 'closeBottom', rectangleData.closeBottom, interval, sourceUri, entityCollection);
         processPacketData(Boolean, rectangle, 'closeTop', rectangleData.closeTop, interval, sourceUri, entityCollection);
     }
@@ -1280,7 +1317,8 @@ define([
         processPacketData(Boolean, wall, 'fill', wallData.fill, interval, sourceUri, entityCollection);
         processPacketData(Boolean, wall, 'outline', wallData.outline, interval, sourceUri, entityCollection);
         processPacketData(Color, wall, 'outlineColor', wallData.outlineColor, interval, sourceUri, entityCollection);
-        processPositions(wall, wallData.positions, entityCollection);
+        processPacketData(Number, wall, 'outlineWidth', wallData.outlineWidth, interval, sourceUri, entityCollection);
+        processPositions(wall, 'positions', wallData.positions, entityCollection);
     }
 
     function processPolyline(entity, packet, entityCollection, sourceUri) {
@@ -1306,7 +1344,7 @@ define([
         processMaterialPacketData(polyline, 'material', polylineData.material, interval, sourceUri, entityCollection);
         processPacketData(Boolean, polyline, 'followSurface', polylineData.followSurface, interval, sourceUri, entityCollection);
         processPacketData(Number, polyline, 'granularity', polylineData.granularity, interval, sourceUri, entityCollection);
-        processPositions(polyline, polylineData.positions, entityCollection);
+        processPositions(polyline, 'positions', polylineData.positions, entityCollection);
     }
 
     function processCzmlPacket(packet, entityCollection, updaterFunctions, sourceUri, dataSource) {
@@ -1405,9 +1443,37 @@ define([
         return false;
     }
 
+    function load(dataSource, czml, options, clear) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(czml)) {
+            throw new DeveloperError('czml is required.');
+        }
+        //>>includeEnd('debug');
+
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
+
+        var promise = czml;
+        var sourceUri = options.sourceUri;
+        if (typeof czml === 'string') {
+            promise = loadJson(czml);
+            sourceUri = defaultValue(sourceUri, czml);
+        }
+
+        DataSource.setLoading(dataSource, true);
+
+        return when(promise, function(czml) {
+            return loadCzml(dataSource, czml, sourceUri, clear);
+        }).otherwise(function(error) {
+            DataSource.setLoading(dataSource, false);
+            dataSource._error.raiseEvent(dataSource, error);
+            window.console.log(error);
+            return when.reject(error);
+        });
+    }
+
     function loadCzml(dataSource, czml, sourceUri, clear) {
+        DataSource.setLoading(dataSource, true);
         var entityCollection = dataSource._entityCollection;
-        entityCollection.suspendEvents();
 
         if (clear) {
             dataSource._version = undefined;
@@ -1428,17 +1494,12 @@ define([
             raiseChangedEvent = true;
         }
 
-        entityCollection.resumeEvents();
+        DataSource.setLoading(dataSource, false);
         if (raiseChangedEvent) {
             dataSource._changed.raiseEvent(dataSource);
         }
-    }
 
-    function setLoading(dataSource, isLoading) {
-        if (dataSource._isLoading !== isLoading) {
-            dataSource._isLoading = isLoading;
-            dataSource._loading.raiseEvent(dataSource, isLoading);
-        }
+        return dataSource;
     }
 
     var DocumentPacket = function() {
@@ -1447,7 +1508,7 @@ define([
     };
 
     /**
-     * A {@link DataSource} which processes CZML.
+     * A {@link DataSource} which processes {@link https://github.com/AnalyticalGraphicsInc/cesium/wiki/CZML-Guide|CZML}.
      * @alias CzmlDataSource
      * @constructor
      *
@@ -1465,6 +1526,18 @@ define([
         this._documentPacket = new DocumentPacket();
         this._version = undefined;
         this._entityCollection = new EntityCollection();
+    };
+
+    /**
+     * Creates a Promise to a new instance loaded with the provided CZML data.
+     *
+     * @param {String|Object} data A url or CZML object to be processed.
+     * @param {Object} [options] An object with the following properties:
+     * @param {String} [options.sourceUri] Overrides the url to use for resolving relative links.
+     * @returns {Promise} A promise that resolves to the new instance once the data is processed.
+     */
+    CzmlDataSource.load = function(czml, options) {
+        return new CzmlDataSource().load(czml, options);
     };
 
     defineProperties(CzmlDataSource.prototype, {
@@ -1567,87 +1640,49 @@ define([
     processAvailability];
 
     /**
-     * Processes the provided CZML without clearing any existing data.
+     * Processes the provided url or CZML object without clearing any existing data.
      *
-     * @param {Object} czml The CZML to be processed.
-     * @param {String} sourceUri The source URI of the CZML.
+     * @param {String|Object} data A url or CZML object to be processed.
+     * @param {Object} [options] An object with the following properties:
+     * @param {String} [options.sourceUri] Overrides the url to use for resolving relative links.
+     * @returns {Promise} A promise that resolves to this instances once the data is processed.
      */
-    CzmlDataSource.prototype.process = function(czml, sourceUri) {
-        //>>includeStart('debug', pragmas.debug);
-        if (!defined(czml)) {
-            throw new DeveloperError('czml is required.');
+    CzmlDataSource.prototype.process = function(czml, options) {
+        if (typeof options === 'string') {
+            options = {
+                sourceUri : options
+            };
+            deprecationWarning('CzmlDataSource.process.options', 'Passing a sourceUri string as the second paraameter to CzmlDataSource.process has been deprecated. Pass an options object instead.');
         }
-        //>>includeEnd('debug');
-
-        loadCzml(this, czml, sourceUri, false);
+        return load(this, czml, options, false);
     };
 
     /**
-     * Replaces any existing data with the provided CZML.
+     * Loads the provided url or CZML object, replacing any existing data.
      *
-     * @param {Object} czml The CZML to be processed.
-     * @param {String} source The source URI of the CZML.
+     * @param {String|Object} data A url or CZML object to be processed.
+     * @param {Object} [options] An object with the following properties:
+     * @param {String} [options.sourceUri] Overrides the url to use for resolving relative links.
+     * @returns {Promise} A promise that resolves to this instances once the data is processed.
      */
-    CzmlDataSource.prototype.load = function(czml, sourceUri) {
-        //>>includeStart('debug', pragmas.debug);
-        if (!defined(czml)) {
-            throw new DeveloperError('czml is required.');
+    CzmlDataSource.prototype.load = function(czml, options) {
+        if (typeof options === 'string') {
+            options = {
+                sourceUri : options
+            };
+            deprecationWarning('CzmlDataSource.process.load', 'Passing a sourceUri string as the second paraameter to CzmlDataSource.load has been deprecated. Pass an options object instead.');
         }
-        //>>includeEnd('debug');
-
-        loadCzml(this, czml, sourceUri, true);
+        return load(this, czml, options, true);
     };
 
-    /**
-     * Asynchronously processes the CZML at the provided url without clearing any existing data.
-     *
-     * @param {Object} url The url to be processed.
-     * @returns {Promise} a promise that will resolve when the CZML is processed.
-     */
     CzmlDataSource.prototype.processUrl = function(url) {
-        //>>includeStart('debug', pragmas.debug);
-        if (!defined(url)) {
-            throw new DeveloperError('url is required.');
-        }
-        //>>includeEnd('debug');
-
-        setLoading(this, true);
-
-        var dataSource = this;
-        return when(loadJson(url), function(czml) {
-            dataSource.process(czml, url);
-            setLoading(dataSource, false);
-        }).otherwise(function(error) {
-            setLoading(dataSource, false);
-            dataSource._error.raiseEvent(dataSource, error);
-            return when.reject(error);
-        });
+        deprecationWarning('CzmlDataSource.prototype.processUrl', 'CzmlDataSource.processUrl has been deprecated.  Use CzmlDataSource.process instead.');
+        return this.process(url);
     };
 
-    /**
-     * Asynchronously loads the CZML at the provided url, replacing any existing data.
-     *
-     * @param {Object} url The url to be processed.
-     * @returns {Promise} a promise that will resolve when the CZML is processed.
-     */
     CzmlDataSource.prototype.loadUrl = function(url) {
-        //>>includeStart('debug', pragmas.debug);
-        if (!defined(url)) {
-            throw new DeveloperError('url is required.');
-        }
-        //>>includeEnd('debug');
-
-        setLoading(this, true);
-
-        var dataSource = this;
-        return when(loadJson(url), function(czml) {
-            dataSource.load(czml, url);
-            setLoading(dataSource, false);
-        }).otherwise(function(error) {
-            setLoading(dataSource, false);
-            dataSource._error.raiseEvent(dataSource, error);
-            return when.reject(error);
-        });
+        deprecationWarning('CzmlDataSource.prototype.loadUrl', 'CzmlDataSource.loadUrl has been deprecated.  Use CzmlDataSource.load instead.');
+        return this.load(url);
     };
 
     /**

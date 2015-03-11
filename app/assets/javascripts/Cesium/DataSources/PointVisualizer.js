@@ -8,6 +8,7 @@ define([
         '../Core/DeveloperError',
         '../Core/NearFarScalar',
         '../Scene/BillboardCollection',
+        './BoundingSphereState',
         './Property'
     ], function(
         AssociativeArray,
@@ -18,6 +19,7 @@ define([
         DeveloperError,
         NearFarScalar,
         BillboardCollection,
+        BoundingSphereState,
         Property) {
     "use strict";
 
@@ -34,10 +36,10 @@ define([
     var EntityData = function(entity) {
         this.entity = entity;
         this.billboard = undefined;
-        this.visualizerColor = undefined;
-        this.visualizerOutlineColor = undefined;
-        this.visualizerPixelSize = undefined;
-        this.visualizerOutlineWidth = undefined;
+        this.color = undefined;
+        this.outlineColor = undefined;
+        this.pixelSize = undefined;
+        this.outlineWidth = undefined;
     };
 
     /**
@@ -65,7 +67,7 @@ define([
         this._entityCollection = entityCollection;
         this._billboardCollection = undefined;
         this._items = new AssociativeArray();
-        this._onCollectionChanged(entityCollection, entityCollection.entities, [], []);
+        this._onCollectionChanged(entityCollection, entityCollection.values, [], []);
     };
 
     /**
@@ -99,8 +101,10 @@ define([
                 continue;
             }
 
+            var init = false;
             var needRedraw = false;
             if (!defined(billboard)) {
+                init = true;
                 var billboardCollection = this._billboardCollection;
                 if (!defined(billboardCollection)) {
                     billboardCollection = new BillboardCollection();
@@ -117,10 +121,6 @@ define([
 
                 billboard.id = entity;
                 billboard.image = undefined;
-                item.color = Color.clone(Color.WHITE, item.color);
-                item.outlineColor = Color.clone(Color.BLACK, item.outlineColor);
-                item.outlineWidth = 0;
-                item.pixelSize = 1;
                 item.billboard = billboard;
                 needRedraw = true;
             }
@@ -129,33 +129,76 @@ define([
             billboard.position = position;
             billboard.scaleByDistance = Property.getValueOrUndefined(pointGraphics._scaleByDistance, time, scaleByDistance);
 
-            var newColor = Property.getValueOrDefault(pointGraphics._color, time, defaultColor, color);
-            var newOutlineColor = Property.getValueOrDefault(pointGraphics._outlineColor, time, defaultOutlineColor, outlineColor);
-            var newOutlineWidth = Property.getValueOrDefault(pointGraphics._outlineWidth, time, defaultOutlineWidth);
-            var newPixelSize = Property.getValueOrDefault(pointGraphics._pixelSize, time, defaultPixelSize);
+            var colorProperty = pointGraphics._color;
+            var outlineColorProperty = pointGraphics._outlineColor;
 
-            needRedraw = needRedraw || //
-                         newOutlineWidth !== item.outlineWidth || //
-                         newPixelSize !== item.pixelSize || //
-                         !Color.equals(newColor, item.color) || //
-                         !Color.equals(newOutlineColor, item.outlineColor);
+            var newColor = Property.getValueOrDefault(colorProperty, time, defaultColor, color);
+            var newOutlineColor = Property.getValueOrDefault(outlineColorProperty, time, defaultOutlineColor, outlineColor);
+            var newOutlineWidth = Math.round(Property.getValueOrDefault(pointGraphics._outlineWidth, time, defaultOutlineWidth));
+            var newPixelSize = Math.max(1, Math.round(Property.getValueOrDefault(pointGraphics._pixelSize, time, defaultPixelSize)));
+
+            if (newOutlineWidth > 0) {
+                billboard.scale = 1.0;
+                needRedraw = needRedraw || //
+                             newOutlineWidth !== item.outlineWidth || //
+                             newPixelSize !== item.pixelSize || //
+                             !Color.equals(newColor, item.color) || //
+                             !Color.equals(newOutlineColor, item.outlineColor);
+            } else {
+                billboard.scale = newPixelSize / 50.0;
+                newPixelSize = 50.0;
+                needRedraw = needRedraw || //
+                             newOutlineWidth !== item.outlineWidth || //
+                             !Color.equals(newColor, item.color) || //
+                             !Color.equals(newOutlineColor, item.outlineColor);
+            }
 
             if (needRedraw) {
                 item.color = Color.clone(newColor, item.color);
-                item.cotlineColor = Color.clone(newOutlineColor, item.outlineColor);
+                item.outlineColor = Color.clone(newOutlineColor, item.outlineColor);
                 item.pixelSize = newPixelSize;
                 item.outlineWidth = newOutlineWidth;
 
                 var centerAlpha = newColor.alpha;
                 var cssColor = newColor.toCssColorString();
                 var cssOutlineColor = newOutlineColor.toCssColorString();
-                var cssOutlineWidth = newOutlineWidth;
-                var textureId = JSON.stringify([cssColor, newPixelSize, cssOutlineColor, cssOutlineWidth]);
+                var textureId = JSON.stringify([cssColor, newPixelSize, cssOutlineColor, newOutlineWidth]);
 
-                billboard.setImage(textureId, createCallback(centerAlpha, cssColor, cssOutlineColor, cssOutlineWidth, newPixelSize));
+                billboard.setImage(textureId, createCallback(centerAlpha, cssColor, cssOutlineColor, newOutlineWidth, newPixelSize));
             }
         }
         return true;
+    };
+
+    /**
+     * Computes a bounding sphere which encloses the visualization produced for the specified entity.
+     * The bounding sphere is in the fixed frame of the scene's globe.
+     *
+     * @param {Entity} entity The entity whose bounding sphere to compute.
+     * @param {BoundingSphere} result The bounding sphere onto which to store the result.
+     * @returns {BoundingSphereState} BoundingSphereState.DONE if the result contains the bounding sphere,
+     *                       BoundingSphereState.PENDING if the result is still being computed, or
+     *                       BoundingSphereState.FAILED if the entity has no visualization in the current scene.
+     * @private
+     */
+    PointVisualizer.prototype.getBoundingSphere = function(entity, result) {
+        //>>includeStart('debug', pragmas.debug);
+        if (!defined(entity)) {
+            throw new DeveloperError('entity is required.');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required.');
+        }
+        //>>includeEnd('debug');
+
+        var item = this._items.get(entity.id);
+        if (!defined(item) || !defined(item.billboard)) {
+            return BoundingSphereState.FAILED;
+        }
+
+        result.center = Cartesian3.clone(item.billboard.position, result.center);
+        result.radius = 0;
+        return BoundingSphereState.DONE;
     };
 
     /**
@@ -222,7 +265,7 @@ define([
         }
     }
 
-    function createCallback(centerAlpha, cssColor, cssOutlineColor, cssOutlineWidth, newPixelSize){
+    function createCallback(centerAlpha, cssColor, cssOutlineColor, cssOutlineWidth, newPixelSize) {
         return function(id) {
             var canvas = document.createElement('canvas');
 

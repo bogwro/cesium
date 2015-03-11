@@ -503,11 +503,26 @@ define([
          * @type {Number}
          * @readonly
          *
-         * @see {@link http://www.khronos.org/opengles/sdk/2.0/docs/man/glGet.xml|glGet} with <code>ALIASED_LINE_WIDTH_RANGE</code>.
+         * @see {@link https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGet.xml|glGet} with <code>ALIASED_LINE_WIDTH_RANGE</code>.
          */
         maximumAliasedLineWidth : {
             get : function() {
                 return this._context.maximumAliasedLineWidth;
+            }
+        },
+
+        /**
+         * The maximum length in pixels of one edge of a cube map, supported by this WebGL implementation.  It will be at least 16.
+         * @memberof Scene.prototype
+         *
+         * @type {Number}
+         * @readonly
+         *
+         * @see {@link https://www.khronos.org/opengles/sdk/docs/man/xhtml/glGet.xml|glGet} with <code>GL_MAX_CUBE_MAP_TEXTURE_SIZE</code>.
+         */
+        maximumCubeMapSize : {
+            get : function() {
+                return this._context.maximumCubeMapSize;
             }
         },
 
@@ -632,7 +647,6 @@ define([
          * @memberof Scene.prototype
          *
          * @type {TerrainProvider}
-         * @readonly
          */
         terrainProvider : {
             get : function() {
@@ -690,6 +704,7 @@ define([
         /**
          * @memberof Scene.prototype
          * @private
+         * @readonly
          */
         context : {
             get : function() {
@@ -725,6 +740,7 @@ define([
          * Gets whether or not the scene is optimized for 3D only viewing.
          * @memberof Scene.prototype
          * @type {Boolean}
+         * @readonly
          */
         scene3DOnly : {
             get : function() {
@@ -738,6 +754,7 @@ define([
          * other factors that could prevent OIT from functioning on a given system configuration.
          * @memberof Scene.prototype
          * @type {Boolean}
+         * @readonly
          */
         orderIndependentTranslucency : {
             get : function() {
@@ -749,6 +766,7 @@ define([
          * Gets the unique identifier for this scene.
          * @memberof Scene.prototype
          * @type {String}
+         * @readonly
          */
         id : {
             get : function() {
@@ -809,7 +827,6 @@ define([
         frameState.camera = camera;
         frameState.cullingVolume = camera.frustum.computeCullingVolume(camera.positionWC, camera.directionWC, camera.upWC);
         frameState.occluder = getOccluder(scene);
-        frameState.afterRender.length = 0;
 
         clearPasses(frameState.passes);
     }
@@ -851,11 +868,9 @@ define([
                 break;
             }
 
-            if (command.pass === Pass.OPAQUE || command instanceof ClearCommand) {
-                frustumCommands.opaqueCommands[frustumCommands.opaqueIndex++] = command;
-            } else if (command.pass === Pass.TRANSLUCENT){
-                frustumCommands.translucentCommands[frustumCommands.translucentIndex++] = command;
-            }
+            var pass = command instanceof ClearCommand ? Pass.OPAQUE : command.pass;
+            var index = frustumCommands.indices[pass]++;
+            frustumCommands.commands[pass][index] = command;
 
             if (scene.debugShowFrustums) {
                 command.debugOverlappingFrustums |= (1 << i);
@@ -895,9 +910,11 @@ define([
 
         var frustumCommandsList = scene._frustumCommandsList;
         var numberOfFrustums = frustumCommandsList.length;
+        var numberOfPasses = Pass.NUMBER_OF_PASSES;
         for (var n = 0; n < numberOfFrustums; ++n) {
-            frustumCommandsList[n].opaqueIndex = 0;
-            frustumCommandsList[n].translucentIndex = 0;
+            for (var p = 0; p < numberOfPasses; ++p) {
+                frustumCommandsList[n].indices[p] = 0;
+            }
         }
 
         var near = Number.MAX_VALUE;
@@ -1036,6 +1053,7 @@ define([
                                         0.0, 1.0, 0.0, 0.0,
                                         0.0, 0.0, 0.0, 1.0);
     transformFrom2D = Matrix4.inverseTransformation(transformFrom2D, transformFrom2D);
+
     function executeCommand(command, scene, context, passState, renderState, shaderProgram, debugFramebuffer) {
         if ((defined(scene.debugCommandFilter)) && !scene.debugCommandFilter(command)) {
             return;
@@ -1152,6 +1170,9 @@ define([
         var context = scene.context;
         var us = context.uniformState;
 
+        var i;
+        var j;
+
         var frustum;
         if (defined(camera.frustum.fov)) {
             frustum = camera.frustum.clone(scratchPerspectiveFrustum);
@@ -1184,7 +1205,6 @@ define([
         clear.execute(context, passState);
 
         var renderTranslucentCommands = false;
-        var i;
         var frustumCommandsList = scene._frustumCommandsList;
         var numFrustums = frustumCommandsList.length;
         for (i = 0; i < numFrustums; ++i) {
@@ -1256,6 +1276,7 @@ define([
             executeTranslucentCommands = executeTranslucentCommandsSorted;
         }
 
+        // Execute commands in each frustum in back to front order
         for (i = 0; i < numFrustums; ++i) {
             var index = numFrustums - i - 1;
             var frustumCommands = frustumCommandsList[index];
@@ -1270,17 +1291,25 @@ define([
             us.updateFrustum(frustum);
             clearDepth.execute(context, passState);
 
-            var commands = frustumCommands.opaqueCommands;
-            var length = frustumCommands.opaqueIndex;
-            for (var j = 0; j < length; ++j) {
-                executeCommand(commands[j], scene, context, passState);
+            var commands;
+            var length;
+
+            // Execute commands in order by pass up to the translucent pass.
+            // Translucent geometry needs special handling (sorting/OIT).
+            var numPasses = Pass.TRANSLUCENT;
+            for (var pass = 0; pass < numPasses; ++pass) {
+                commands = frustumCommands.commands[pass];
+                length = frustumCommands.indices[pass];
+                for (j = 0; j < length; ++j) {
+                    executeCommand(commands[j], scene, context, passState);
+                }
             }
 
             frustum.near = frustumCommands.near;
             us.updateFrustum(frustum);
 
-            commands = frustumCommands.translucentCommands;
-            commands.length = frustumCommands.translucentIndex;
+            commands = frustumCommands.commands[Pass.TRANSLUCENT];
+            commands.length = frustumCommands.indices[Pass.TRANSLUCENT];
             executeTranslucentCommands(scene, executeCommand, passState, commands);
         }
 
@@ -1417,11 +1446,20 @@ define([
         }
     };
 
+    /**
+     * @private
+     */
+    Scene.prototype.clampLineWidth = function(width) {
+        var context = this._context;
+        return Math.max(context.minimumAliasedLineWidth, Math.min(width, context.maximumAliasedLineWidth));
+    };
+
     var orthoPickingFrustum = new OrthographicFrustum();
     var scratchOrigin = new Cartesian3();
     var scratchDirection = new Cartesian3();
     var scratchBufferDimensions = new Cartesian2();
     var scratchPixelSize = new Cartesian2();
+    var scratchPickVolumeMatrix4 = new Matrix4();
 
     function getPickOrthographicCullingVolume(scene, drawingBufferPosition, width, height) {
         var camera = scene._camera;
@@ -1435,11 +1473,16 @@ define([
         var y = (2.0 / drawingBufferHeight) * (drawingBufferHeight - drawingBufferPosition.y) - 1.0;
         y *= (frustum.top - frustum.bottom) * 0.5;
 
+        var transform = Matrix4.clone(camera.transform, scratchPickVolumeMatrix4);
+        camera._setTransform(Matrix4.IDENTITY);
+
         var origin = Cartesian3.clone(camera.position, scratchOrigin);
         Cartesian3.multiplyByScalar(camera.right, x, scratchDirection);
         Cartesian3.add(scratchDirection, origin, origin);
         Cartesian3.multiplyByScalar(camera.up, y, scratchDirection);
         Cartesian3.add(scratchDirection, origin, origin);
+
+        camera._setTransform(transform);
 
         Cartesian3.fromElements(origin.z, origin.x, origin.y, origin);
 
@@ -1584,40 +1627,51 @@ define([
         }
         //>>includeEnd('debug');
 
-        var pickedObjects = [];
+        var i;
+        var attributes;
+        var result = [];
+        var pickedPrimitives = [];
+        var pickedAttributes = [];
 
         var pickedResult = this.pick(windowPosition);
         while (defined(pickedResult) && defined(pickedResult.primitive)) {
-            var primitive = pickedResult.primitive;
-            pickedObjects.push(pickedResult);
+            result.push(pickedResult);
 
-            // hide the picked primitive and call picking again to get the next primitive
-            if (defined(primitive.show)) {
-                primitive.show = false;
-            } else if (typeof primitive.getGeometryInstanceAttributes === 'function') {
-                var attributes = primitive.getGeometryInstanceAttributes(pickedResult.id);
-                if (defined(attributes) && defined(attributes.show)) {
-                    attributes.show = ShowGeometryInstanceAttribute.toValue(false);
+            var primitive = pickedResult.primitive;
+            var hasShowAttribute = false;
+
+            //If the picked object has a show attribute, use it.
+            if (typeof primitive.getGeometryInstanceAttributes === 'function') {
+                if (defined(pickedResult.id)) {
+                    attributes = primitive.getGeometryInstanceAttributes(pickedResult.id);
+                    if (defined(attributes) && defined(attributes.show)) {
+                        hasShowAttribute = true;
+                        attributes.show = ShowGeometryInstanceAttribute.toValue(false, attributes.show);
+                        pickedAttributes.push(attributes);
+                    }
                 }
+            }
+
+            //Otherwise, hide the entire primitive
+            if (!hasShowAttribute) {
+                primitive.show = false;
+                pickedPrimitives.push(primitive);
             }
 
             pickedResult = this.pick(windowPosition);
         }
 
-        // unhide the picked primitives
-        for (var i = 0; i < pickedObjects.length; ++i) {
-            var p = pickedObjects[i].primitive;
-            if (defined(p.show)) {
-                p.show = true;
-            } else if (typeof p.getGeometryInstanceAttributes === 'function') {
-                var attr = p.getGeometryInstanceAttributes(pickedObjects[i].id);
-                if (defined(attr) && defined(attr.show)) {
-                    attr.show = ShowGeometryInstanceAttribute.toValue(true);
-                }
-            }
+        // unhide everything we hid while drill picking
+        for (i = 0; i < pickedPrimitives.length; ++i) {
+            pickedPrimitives[i].show = true;
         }
 
-        return pickedObjects;
+        for (i = 0; i < pickedAttributes.length; ++i) {
+            attributes = pickedAttributes[i];
+            attributes.show = ShowGeometryInstanceAttribute.toValue(true, attributes.show);
+        }
+
+        return result;
     };
 
     /**

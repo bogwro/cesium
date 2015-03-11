@@ -116,7 +116,7 @@ void main() \n\
 #endif\n\
 \n\
 #ifdef ALIGNED_AXIS\n\
-    vec3 alignedAxis = czm_octDecode(floor(temp));\n\
+    vec3 alignedAxis = czm_octDecode(floor(compressedAttribute1.y * SHIFT_RIGHT8));\n\
 #else\n\
     vec3 alignedAxis = vec3(0.0);\n\
 #endif\n\

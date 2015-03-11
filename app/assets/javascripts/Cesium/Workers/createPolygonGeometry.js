@@ -1,7 +1,7 @@
 /**
  * Cesium - https://github.com/AnalyticalGraphicsInc/cesium
  *
- * Copyright 2011-2014 Cesium Contributors
+ * Copyright 2011-2015 Cesium Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -850,19 +850,7 @@ define('Core/Math',[
                 if (!defined(x)) {
             throw new DeveloperError('x is required.');
         }
-                var epsilon10 = CesiumMath.EPSILON10;
-        var pi = CesiumMath.PI;
-        var two_pi = CesiumMath.TWO_PI;
-        while (x < -(pi + epsilon10)) {
-            x += two_pi;
-        }
-        if (x < -pi) {
-            return -pi;
-        }
-        while (x > pi + epsilon10) {
-            x -= two_pi;
-        }
-        return x > pi ? pi : x;
+                return CesiumMath.zeroToTwoPi(x + CesiumMath.PI) - CesiumMath.PI;
     };
 
     /**
@@ -875,35 +863,61 @@ define('Core/Math',[
                 if (!defined(x)) {
             throw new DeveloperError('x is required.');
         }
-                var value = x % CesiumMath.TWO_PI;
-        // We do a second modules here if we add 2Pi to ensure that we don't have any numerical issues with very
-        // small negative values.
-        return (value < 0.0) ? (value + CesiumMath.TWO_PI) % CesiumMath.TWO_PI : value;
+                var mod = CesiumMath.mod(x, CesiumMath.TWO_PI);
+        if (Math.abs(mod) < CesiumMath.EPSILON14 && Math.abs(x) > CesiumMath.EPSILON14) {
+            return CesiumMath.TWO_PI;
+        }
+        return mod;
     };
 
     /**
-     * Determines if two values are equal within the provided epsilon.  This is useful
-     * to avoid problems due to roundoff error when comparing floating-point values directly.
+     * The modulo operation that also works for negative dividends.
+     *
+     * @param {Number} m The dividend.
+     * @param {Number} n The divisor.
+     * @returns {Number} The remainder.
+     */
+    CesiumMath.mod = function(m, n) {
+                if (!defined(m)) {
+            throw new DeveloperError('m is required.');
+        }
+        if (!defined(n)) {
+            throw new DeveloperError('n is required.');
+        }
+                return ((m % n) + n) % n;
+    };
+
+    /**
+     * Determines if two values are equal using an absolute or relative tolerance test. This is useful
+     * to avoid problems due to roundoff error when comparing floating-point values directly. The values are
+     * first compared using an absolute tolerance test. If that fails, a relative tolerance test is performed.
+     * Use this test if you are unsure of the magnitudes of left and right.
      *
      * @param {Number} left The first value to compare.
      * @param {Number} right The other value to compare.
-     * @param {Number} [epsilon=0.0] The maximum inclusive delta between <code>left</code> and <code>right</code> where they will be considered equal.
+     * @param {Number} relativeEpsilon The maximum inclusive delta between <code>left</code> and <code>right</code> for the relative tolerance test.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The maximum inclusive delta between <code>left</code> and <code>right</code> for the absolute tolerance test.
      * @returns {Boolean} <code>true</code> if the values are equal within the epsilon; otherwise, <code>false</code>.
      *
      * @example
-     * var b = Cesium.Math.equalsEpsilon(0.0, 0.01, Cesium.Math.EPSILON2); // true
+     * var a = Cesium.Math.equalsEpsilon(0.0, 0.01, Cesium.Math.EPSILON2); // true
      * var b = Cesium.Math.equalsEpsilon(0.0, 0.1, Cesium.Math.EPSILON2);  // false
+     * var c = Cesium.Math.equalsEpsilon(3699175.1634344, 3699175.2, Cesium.Math.EPSILON7); // true
+     * var d = Cesium.Math.equalsEpsilon(3699175.1634344, 3699175.2, Cesium.Math.EPSILON9); // false
      */
-    CesiumMath.equalsEpsilon = function(left, right, epsilon) {
+    CesiumMath.equalsEpsilon = function(left, right, relativeEpsilon, absoluteEpsilon) {
                 if (!defined(left)) {
             throw new DeveloperError('left is required.');
         }
-
         if (!defined(right)) {
             throw new DeveloperError('right is required.');
         }
-                epsilon = defaultValue(epsilon, 0.0);
-        return Math.abs(left - right) <= epsilon;
+        if (!defined(relativeEpsilon)) {
+            throw new DeveloperError('relativeEpsilon is required.');
+        }
+                absoluteEpsilon = defaultValue(absoluteEpsilon, relativeEpsilon);
+        var absDiff = Math.abs(left - right);
+        return absDiff <= absoluteEpsilon || absDiff <= relativeEpsilon * Math.max(Math.abs(left), Math.abs(right));
     };
 
     var factorials = [1];
@@ -1023,7 +1037,7 @@ define('Core/Math',[
      * @param {Number} value The value to constrain.
      * @param {Number} min The minimum value.
      * @param {Number} max The maximum value.
-     * @returns The value clamped so that min <= value <= max.
+     * @returns {Number} The value clamped so that min <= value <= max.
      */
     CesiumMath.clamp = function(value, min, max) {
                 if (!defined(value)) {
@@ -1058,7 +1072,7 @@ define('Core/Math',[
      * Generates a random number in the range of [0.0, 1.0)
      * using a Mersenne twister.
      *
-     * @returns A random number in the range of [0.0, 1.0).
+     * @returns {Number} A random number in the range of [0.0, 1.0).
      *
      * @see CesiumMath.setRandomNumberSeed
      * @see {@link http://en.wikipedia.org/wiki/Mersenne_twister|Mersenne twister on Wikipedia}
@@ -1071,24 +1085,47 @@ define('Core/Math',[
      * Computes <code>Math.acos(value)</acode>, but first clamps <code>value</code> to the range [-1.0, 1.0]
      * so that the function will never return NaN.
      *
-     * @param value The value for which to compute acos.
-     * @returns {number} The acos of the value if the value is in the range [-1.0, 1.0], or the acos of -1.0 or 1.0,
+     * @param {Number} value The value for which to compute acos.
+     * @returns {Number} The acos of the value if the value is in the range [-1.0, 1.0], or the acos of -1.0 or 1.0,
      *          whichever is closer, if the value is outside the range.
      */
     CesiumMath.acosClamped = function(value) {
-        return Math.acos(CesiumMath.clamp(value, -1.0, 1.0));
+                if (!defined(value)) {
+            throw new DeveloperError('value is required.');
+        }
+                return Math.acos(CesiumMath.clamp(value, -1.0, 1.0));
     };
 
     /**
      * Computes <code>Math.asin(value)</acode>, but first clamps <code>value</code> to the range [-1.0, 1.0]
      * so that the function will never return NaN.
      *
-     * @param value The value for which to compute asin.
-     * @returns {number} The asin of the value if the value is in the range [-1.0, 1.0], or the asin of -1.0 or 1.0,
+     * @param {Number} value The value for which to compute asin.
+     * @returns {Number} The asin of the value if the value is in the range [-1.0, 1.0], or the asin of -1.0 or 1.0,
      *          whichever is closer, if the value is outside the range.
      */
     CesiumMath.asinClamped = function(value) {
-        return Math.asin(CesiumMath.clamp(value, -1.0, 1.0));
+                if (!defined(value)) {
+            throw new DeveloperError('value is required.');
+        }
+                return Math.asin(CesiumMath.clamp(value, -1.0, 1.0));
+    };
+
+    /**
+     * Finds the chord length between two points given the circle's radius and the angle between the points.
+     *
+     * @param {Number} angle The angle between the two points.
+     * @param {Number} radius The radius of the circle.
+     * @returns {Number} The chord length.
+     */
+    CesiumMath.chordLength = function(angle, radius) {
+                if (!defined(angle)) {
+            throw new DeveloperError('angle is required.');
+        }
+        if (!defined(radius)) {
+            throw new DeveloperError('radius is required.');
+        }
+                return 2.0 * radius * Math.sin(angle * 0.5);
     };
 
     return CesiumMath;
@@ -1401,7 +1438,7 @@ define('Core/Cartesian3',[
     var distanceScratch = new Cartesian3();
 
     /**
-     * Computes the distance between two points
+     * Computes the distance between two points.
      *
      * @param {Cartesian3} left The first point to compute the distance from.
      * @param {Cartesian3} right The second point to compute the distance to.
@@ -1418,6 +1455,27 @@ define('Core/Cartesian3',[
         
         Cartesian3.subtract(left, right, distanceScratch);
         return Cartesian3.magnitude(distanceScratch);
+    };
+
+    /**
+     * Computes the squared distance between two points.  Comparing squared distances
+     * using this function is more efficient than comparing distances using {@link Cartesian3#distance}.
+     *
+     * @param {Cartesian3} left The first point to compute the distance from.
+     * @param {Cartesian3} right The second point to compute the distance to.
+     * @returns {Number} The distance between two points.
+     *
+     * @example
+     * // Returns 4.0, not 2.0
+     * var d = Cesium.Cartesian3.distance(new Cesium.Cartesian3(1.0, 0.0, 0.0), new Cesium.Cartesian3(3.0, 0.0, 0.0));
+     */
+    Cartesian3.distanceSquared = function(left, right) {
+                if (!defined(left) || !defined(right)) {
+            throw new DeveloperError('left and right are required.');
+        }
+        
+        Cartesian3.subtract(left, right, distanceScratch);
+        return Cartesian3.magnitudeSquared(distanceScratch);
     };
 
     /**
@@ -1735,26 +1793,32 @@ define('Core/Cartesian3',[
     };
 
     /**
+     * @private
+     */
+    Cartesian3.equalsArray = function(cartesian, array, offset) {
+        return cartesian.x === array[offset] &&
+               cartesian.y === array[offset + 1] &&
+               cartesian.z === array[offset + 2];
+    };
+
+    /**
      * Compares the provided Cartesians componentwise and returns
-     * <code>true</code> if they are within the provided epsilon,
+     * <code>true</code> if they pass an absolute or relative tolerance test,
      * <code>false</code> otherwise.
      *
      * @param {Cartesian3} [left] The first Cartesian.
      * @param {Cartesian3} [right] The second Cartesian.
-     * @param {Number} epsilon The epsilon to use for equality testing.
+     * @param {Number} relativeEpsilon The relative epsilon tolerance to use for equality testing.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The absolute epsilon tolerance to use for equality testing.
      * @returns {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
      */
-    Cartesian3.equalsEpsilon = function(left, right, epsilon) {
-                if (typeof epsilon !== 'number') {
-            throw new DeveloperError('epsilon is required and must be a number.');
-        }
-        
+    Cartesian3.equalsEpsilon = function(left, right, relativeEpsilon, absoluteEpsilon) {
         return (left === right) ||
-               ((defined(left)) &&
-                (defined(right)) &&
-                (Math.abs(left.x - right.x) <= epsilon) &&
-                (Math.abs(left.y - right.y) <= epsilon) &&
-                (Math.abs(left.z - right.z) <= epsilon));
+               (defined(left) &&
+                defined(right) &&
+                CesiumMath.equalsEpsilon(left.x, right.x, relativeEpsilon, absoluteEpsilon) &&
+                CesiumMath.equalsEpsilon(left.y, right.y, relativeEpsilon, absoluteEpsilon) &&
+                CesiumMath.equalsEpsilon(left.z, right.z, relativeEpsilon, absoluteEpsilon));
     };
 
     /**
@@ -2052,15 +2116,16 @@ define('Core/Cartesian3',[
 
     /**
      * Compares this Cartesian against the provided Cartesian componentwise and returns
-     * <code>true</code> if they are within the provided epsilon,
+     * <code>true</code> if they pass an absolute or relative tolerance test,
      * <code>false</code> otherwise.
      *
      * @param {Cartesian3} [right] The right hand side Cartesian.
-     * @param {Number} epsilon The epsilon to use for equality testing.
+     * @param {Number} relativeEpsilon The relative epsilon tolerance to use for equality testing.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The absolute epsilon tolerance to use for equality testing.
      * @returns {Boolean} <code>true</code> if they are within the provided epsilon, <code>false</code> otherwise.
      */
-    Cartesian3.prototype.equalsEpsilon = function(right, epsilon) {
-        return Cartesian3.equalsEpsilon(this, right, epsilon);
+    Cartesian3.prototype.equalsEpsilon = function(right, relativeEpsilon, absoluteEpsilon) {
+        return Cartesian3.equalsEpsilon(this, right, relativeEpsilon, absoluteEpsilon);
     };
 
     /**
@@ -2574,6 +2639,51 @@ define('Core/Ellipsoid',[
      */
     Ellipsoid.prototype.clone = function(result) {
         return Ellipsoid.clone(this, result);
+    };
+
+    /**
+     * The number of elements used to pack the object into an array.
+     * @type {Number}
+     */
+    Ellipsoid.packedLength = Cartesian3.packedLength;
+
+    /**
+     * Stores the provided instance into the provided array.
+     * @function
+     *
+     * @param {Object} value The value to pack.
+     * @param {Number[]} array The array to pack into.
+     * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     */
+    Ellipsoid.pack = function(value, array, startingIndex) {
+                if (!defined(value)) {
+            throw new DeveloperError('value is required');
+        }
+        if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        Cartesian3.pack(value._radii, array, startingIndex);
+    };
+
+    /**
+     * Retrieves an instance from a packed array.
+     *
+     * @param {Number[]} array The packed array.
+     * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
+     * @param {Ellipsoid} [result] The object into which to store the result.
+     */
+    Ellipsoid.unpack = function(array, startingIndex, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        var radii = Cartesian3.unpack(array, startingIndex);
+        return Ellipsoid.fromCartesian3(radii, result);
     };
 
     /**
@@ -3236,7 +3346,7 @@ define('Core/Cartesian2',[
     var distanceScratch = new Cartesian2();
 
     /**
-     * Computes the distance between two points
+     * Computes the distance between two points.
      *
      * @param {Cartesian2} left The first point to compute the distance from.
      * @param {Cartesian2} right The second point to compute the distance to.
@@ -3253,6 +3363,27 @@ define('Core/Cartesian2',[
         
         Cartesian2.subtract(left, right, distanceScratch);
         return Cartesian2.magnitude(distanceScratch);
+    };
+
+    /**
+     * Computes the squared distance between two points.  Comparing squared distances
+     * using this function is more efficient than comparing distances using {@link Cartesian2#distance}.
+     *
+     * @param {Cartesian2} left The first point to compute the distance from.
+     * @param {Cartesian2} right The second point to compute the distance to.
+     * @returns {Number} The distance between two points.
+     *
+     * @example
+     * // Returns 4.0, not 2.0
+     * var d = Cesium.Cartesian2.distance(new Cesium.Cartesian2(1.0, 0.0), new Cesium.Cartesian2(3.0, 0.0));
+     */
+    Cartesian2.distanceSquared = function(left, right) {
+                if (!defined(left) || !defined(right)) {
+            throw new DeveloperError('left and right are required.');
+        }
+        
+        Cartesian2.subtract(left, right, distanceScratch);
+        return Cartesian2.magnitudeSquared(distanceScratch);
     };
 
     /**
@@ -3551,25 +3682,30 @@ define('Core/Cartesian2',[
     };
 
     /**
+     * @private
+     */
+    Cartesian2.equalsArray = function(cartesian, array, offset) {
+        return cartesian.x === array[offset] &&
+               cartesian.y === array[offset + 1];
+    };
+
+    /**
      * Compares the provided Cartesians componentwise and returns
-     * <code>true</code> if they are within the provided epsilon,
+     * <code>true</code> if they pass an absolute or relative tolerance test,
      * <code>false</code> otherwise.
      *
      * @param {Cartesian2} [left] The first Cartesian.
      * @param {Cartesian2} [right] The second Cartesian.
-     * @param {Number} epsilon The epsilon to use for equality testing.
+     * @param {Number} relativeEpsilon The relative epsilon tolerance to use for equality testing.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The absolute epsilon tolerance to use for equality testing.
      * @returns {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
      */
-    Cartesian2.equalsEpsilon = function(left, right, epsilon) {
-                if (typeof epsilon !== 'number') {
-            throw new DeveloperError('epsilon is required and must be a number.');
-        }
-        
+    Cartesian2.equalsEpsilon = function(left, right, relativeEpsilon, absoluteEpsilon) {
         return (left === right) ||
-               ((defined(left)) &&
-                (defined(right)) &&
-                (Math.abs(left.x - right.x) <= epsilon) &&
-                (Math.abs(left.y - right.y) <= epsilon));
+               (defined(left) &&
+                defined(right) &&
+                CesiumMath.equalsEpsilon(left.x, right.x, relativeEpsilon, absoluteEpsilon) &&
+                CesiumMath.equalsEpsilon(left.y, right.y, relativeEpsilon, absoluteEpsilon));
     };
 
     /**
@@ -3619,15 +3755,16 @@ define('Core/Cartesian2',[
 
     /**
      * Compares this Cartesian against the provided Cartesian componentwise and returns
-     * <code>true</code> if they are within the provided epsilon,
+     * <code>true</code> if they pass an absolute or relative tolerance test,
      * <code>false</code> otherwise.
      *
      * @param {Cartesian2} [right] The right hand side Cartesian.
-     * @param {Number} epsilon The epsilon to use for equality testing.
+     * @param {Number} relativeEpsilon The relative epsilon tolerance to use for equality testing.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The absolute epsilon tolerance to use for equality testing.
      * @returns {Boolean} <code>true</code> if they are within the provided epsilon, <code>false</code> otherwise.
      */
-    Cartesian2.prototype.equalsEpsilon = function(right, epsilon) {
-        return Cartesian2.equalsEpsilon(this, right, epsilon);
+    Cartesian2.prototype.equalsEpsilon = function(right, relativeEpsilon, absoluteEpsilon) {
+        return Cartesian2.equalsEpsilon(this, right, relativeEpsilon, absoluteEpsilon);
     };
 
     /**
@@ -3809,6 +3946,7 @@ define('Core/Rectangle',[
         './Cartographic',
         './defaultValue',
         './defined',
+        './defineProperties',
         './DeveloperError',
         './Ellipsoid',
         './freezeObject',
@@ -3817,6 +3955,7 @@ define('Core/Rectangle',[
         Cartographic,
         defaultValue,
         defined,
+        defineProperties,
         DeveloperError,
         Ellipsoid,
         freezeObject,
@@ -3868,6 +4007,114 @@ define('Core/Rectangle',[
          * @default 0.0
          */
         this.north = defaultValue(north, 0.0);
+    };
+
+    defineProperties(Rectangle.prototype, {
+        /**
+         * Gets the width of the rectangle in radians.
+         * @memberof Rectangle.prototype
+         * @type {Number}
+         */
+        width : {
+            get : function() {
+                return Rectangle.computeWidth(this);
+            }
+        },
+
+        /**
+         * Gets the height of the rectangle in radians.
+         * @memberof Rectangle.prototype
+         * @type {Number}
+         */
+        height : {
+            get : function() {
+                return Rectangle.computeHeight(this);
+            }
+        }
+    });
+
+    /**
+     * The number of elements used to pack the object into an array.
+     * @type {Number}
+     */
+    Rectangle.packedLength = 4;
+
+    /**
+     * Stores the provided instance into the provided array.
+     *
+     * @param {BoundingSphere} value The value to pack.
+     * @param {Number[]} array The array to pack into.
+     * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     */
+    Rectangle.pack = function(value, array, startingIndex) {
+                if (!defined(value)) {
+            throw new DeveloperError('value is required');
+        }
+
+        if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        array[startingIndex++] = value.west;
+        array[startingIndex++] = value.south;
+        array[startingIndex++] = value.east;
+        array[startingIndex] = value.north;
+    };
+
+    /**
+     * Retrieves an instance from a packed array.
+     *
+     * @param {Number[]} array The packed array.
+     * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
+     * @param {Rectangle} [result] The object into which to store the result.
+     */
+    Rectangle.unpack = function(array, startingIndex, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        if (!defined(result)) {
+            result = new Rectangle();
+        }
+
+        result.west = array[startingIndex++];
+        result.south = array[startingIndex++];
+        result.east = array[startingIndex++];
+        result.north = array[startingIndex];
+        return result;
+    };
+
+    /**
+     * Computes the width of a rectangle in radians.
+     * @param {Rectangle} rectangle The rectangle to compute the width of.
+     * @returns {Number} The width.
+     */
+    Rectangle.computeWidth = function(rectangle) {
+                if (!defined(rectangle)) {
+            throw new DeveloperError('rectangle is required.');
+        }
+                var east = rectangle.east;
+        var west = rectangle.west;
+        if (east < west) {
+            east += CesiumMath.TWO_PI;
+        }
+        return east - west;
+    };
+
+    /**
+     * Computes the height of a rectangle in radians.
+     * @param {Rectangle} rectangle The rectangle to compute the height of.
+     * @returns {Number} The height.
+     */
+    Rectangle.computeHeight = function(rectangle) {
+                if (!defined(rectangle)) {
+            throw new DeveloperError('rectangle is required.');
+        }
+                return rectangle.north - rectangle.south;
     };
 
     /**
@@ -4225,17 +4472,19 @@ define('Core/Rectangle',[
         var east = rectangle.east;
         var west = rectangle.west;
 
-        var longitude = (west + east) * 0.5;
         if (east < west) {
-            longitude = CesiumMath.negativePiToPi(longitude + CesiumMath.PI);
+            east += CesiumMath.TWO_PI;
         }
 
+        var longitude = CesiumMath.negativePiToPi((west + east) * 0.5);
+        var latitude = (rectangle.south + rectangle.north) * 0.5;
+
         if (!defined(result)) {
-            return new Cartographic(longitude, (rectangle.south + rectangle.north) * 0.5);
+            return new Cartographic(longitude, latitude);
         }
 
         result.longitude = longitude;
-        result.latitude = (rectangle.south + rectangle.north) * 0.5;
+        result.latitude = latitude;
         result.height = 0.0;
         return result;
     };
@@ -4246,9 +4495,9 @@ define('Core/Rectangle',[
      * @param {Rectangle} rectangle On rectangle to find an intersection
      * @param {Rectangle} otherRectangle Another rectangle to find an intersection
      * @param {Rectangle} [result] The object onto which to store the result.
-     * @returns {Rectangle} The modified result parameter or a new Rectangle instance if none was provided.
+     * @returns {Rectangle|undefined} The modified result parameter, a new Rectangle instance if none was provided or undefined if there is no intersection.
      */
-    Rectangle.intersectWith = function(rectangle, otherRectangle, result) {
+    Rectangle.intersection = function(rectangle, otherRectangle, result) {
                 if (!defined(rectangle)) {
             throw new DeveloperError('rectangle is required');
         }
@@ -4256,10 +4505,38 @@ define('Core/Rectangle',[
             throw new DeveloperError('otherRectangle is required.');
         }
         
-        var west = Math.max(rectangle.west, otherRectangle.west);
+        var rectangleEast = rectangle.east;
+        var rectangleWest = rectangle.west;
+
+        var otherRectangleEast = otherRectangle.east;
+        var otherRectangleWest = otherRectangle.west;
+
+        if (rectangleEast < rectangleWest && otherRectangleEast > 0.0) {
+            rectangleEast += CesiumMath.TWO_PI;
+        } else if (otherRectangleEast < otherRectangleWest && rectangleEast > 0.0) {
+            otherRectangleEast += CesiumMath.TWO_PI;
+        }
+
+        if (rectangleEast < rectangleWest && otherRectangleWest < 0.0) {
+            otherRectangleWest += CesiumMath.TWO_PI;
+        } else if (otherRectangleEast < otherRectangleWest && rectangleWest < 0.0) {
+            rectangleWest += CesiumMath.TWO_PI;
+        }
+
+        var west = CesiumMath.negativePiToPi(Math.max(rectangleWest, otherRectangleWest));
+        var east = CesiumMath.negativePiToPi(Math.min(rectangleEast, otherRectangleEast));
+
+        if ((rectangle.west < rectangle.east || otherRectangle.west < otherRectangle.east) && east <= west) {
+            return undefined;
+        }
+
         var south = Math.max(rectangle.south, otherRectangle.south);
-        var east = Math.min(rectangle.east, otherRectangle.east);
         var north = Math.min(rectangle.north, otherRectangle.north);
+
+        if (south >= north) {
+            return undefined;
+        }
+
         if (!defined(result)) {
             return new Rectangle(west, south, east, north);
         }
@@ -4285,25 +4562,22 @@ define('Core/Rectangle',[
             throw new DeveloperError('cartographic is required.');
         }
         
-        return cartographic.longitude >= rectangle.west &&
-               cartographic.longitude <= rectangle.east &&
-               cartographic.latitude >= rectangle.south &&
-               cartographic.latitude <= rectangle.north;
-    };
+        var longitude = cartographic.longitude;
+        var latitude = cartographic.latitude;
 
-    /**
-     * Determines if the rectangle is empty, i.e., if <code>west >= east</code>
-     * or <code>south >= north</code>.
-     *
-     * @param {Rectangle} rectangle The rectangle
-     * @returns {Boolean} True if the rectangle is empty; otherwise, false.
-     */
-    Rectangle.isEmpty = function(rectangle) {
-                if (!defined(rectangle)) {
-            throw new DeveloperError('rectangle is required');
+        var west = rectangle.west;
+        var east = rectangle.east;
+
+        if (east < west) {
+            east += CesiumMath.TWO_PI;
+            if (longitude < 0.0) {
+                longitude += CesiumMath.TWO_PI;
+            }
         }
-        
-        return rectangle.west >= rectangle.east || rectangle.south >= rectangle.north;
+        return (longitude > west || CesiumMath.equalsEpsilon(longitude, west, CesiumMath.EPSILON14)) &&
+               (longitude < east || CesiumMath.equalsEpsilon(longitude, east, CesiumMath.EPSILON14)) &&
+               latitude >= rectangle.south &&
+               latitude <= rectangle.north;
     };
 
     var subsampleLlaScratch = new Cartographic();
@@ -4365,9 +4639,8 @@ define('Core/Rectangle',[
         }
 
         for ( var i = 1; i < 8; ++i) {
-            var temp = -Math.PI + i * CesiumMath.PI_OVER_TWO;
-            if (west < temp && temp < east) {
-                lla.longitude = temp;
+            lla.longitude = -Math.PI + i * CesiumMath.PI_OVER_TWO;
+            if (Rectangle.contains(rectangle, lla)) {
                 result[length] = ellipsoid.cartographicToCartesian(lla, result[length]);
                 length++;
             }
@@ -4756,12 +5029,14 @@ define('Core/Cartesian4',[
         './defaultValue',
         './defined',
         './DeveloperError',
-        './freezeObject'
+        './freezeObject',
+        './Math'
     ], function(
         defaultValue,
         defined,
         DeveloperError,
-        freezeObject) {
+        freezeObject,
+        CesiumMath) {
     "use strict";
 
     /**
@@ -5060,7 +5335,7 @@ define('Core/Cartesian4',[
     var distanceScratch = new Cartesian4();
 
     /**
-     * Computes the 4-space distance between two points
+     * Computes the 4-space distance between two points.
      *
      * @param {Cartesian4} left The first point to compute the distance from.
      * @param {Cartesian4} right The second point to compute the distance to.
@@ -5068,7 +5343,9 @@ define('Core/Cartesian4',[
      *
      * @example
      * // Returns 1.0
-     * var d = Cesium.Cartesian4.distance(new Cesium.Cartesian4(1.0, 0.0, 0.0, 0.0), new Cesium.Cartesian4(2.0, 0.0, 0.0, 0.0));
+     * var d = Cesium.Cartesian4.distance(
+     *   new Cesium.Cartesian4(1.0, 0.0, 0.0, 0.0),
+     *   new Cesium.Cartesian4(2.0, 0.0, 0.0, 0.0));
      */
     Cartesian4.distance = function(left, right) {
                 if (!defined(left) || !defined(right)) {
@@ -5077,6 +5354,29 @@ define('Core/Cartesian4',[
         
         Cartesian4.subtract(left, right, distanceScratch);
         return Cartesian4.magnitude(distanceScratch);
+    };
+
+    /**
+     * Computes the squared distance between two points.  Comparing squared distances
+     * using this function is more efficient than comparing distances using {@link Cartesian4#distance}.
+     *
+     * @param {Cartesian4} left The first point to compute the distance from.
+     * @param {Cartesian4} right The second point to compute the distance to.
+     * @returns {Number} The distance between two points.
+     *
+     * @example
+     * // Returns 4.0, not 2.0
+     * var d = Cesium.Cartesian4.distance(
+     *   new Cesium.Cartesian4(1.0, 0.0, 0.0, 0.0),
+     *   new Cesium.Cartesian4(3.0, 0.0, 0.0, 0.0));
+     */
+    Cartesian4.distanceSquared = function(left, right) {
+                if (!defined(left) || !defined(right)) {
+            throw new DeveloperError('left and right are required.');
+        }
+        
+        Cartesian4.subtract(left, right, distanceScratch);
+        return Cartesian4.magnitudeSquared(distanceScratch);
     };
 
     /**
@@ -5389,27 +5689,34 @@ define('Core/Cartesian4',[
     };
 
     /**
+     * @private
+     */
+    Cartesian4.equalsArray = function(cartesian, array, offset) {
+        return cartesian.x === array[offset] &&
+               cartesian.y === array[offset + 1] &&
+               cartesian.z === array[offset + 2] &&
+               cartesian.w === array[offset + 3];
+    };
+
+    /**
      * Compares the provided Cartesians componentwise and returns
-     * <code>true</code> if they are within the provided epsilon,
+     * <code>true</code> if they pass an absolute or relative tolerance test,
      * <code>false</code> otherwise.
      *
      * @param {Cartesian4} [left] The first Cartesian.
      * @param {Cartesian4} [right] The second Cartesian.
-     * @param {Number} epsilon The epsilon to use for equality testing.
+     * @param {Number} relativeEpsilon The relative epsilon tolerance to use for equality testing.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The absolute epsilon tolerance to use for equality testing.
      * @returns {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
      */
-    Cartesian4.equalsEpsilon = function(left, right, epsilon) {
-                if (typeof epsilon !== 'number') {
-            throw new DeveloperError('epsilon is required and must be a number.');
-        }
-        
+    Cartesian4.equalsEpsilon = function(left, right, relativeEpsilon, absoluteEpsilon) {
         return (left === right) ||
-               ((defined(left)) &&
-                (defined(right)) &&
-                (Math.abs(left.x - right.x) <= epsilon) &&
-                (Math.abs(left.y - right.y) <= epsilon) &&
-                (Math.abs(left.z - right.z) <= epsilon) &&
-                (Math.abs(left.w - right.w) <= epsilon));
+               (defined(left) &&
+                defined(right) &&
+                CesiumMath.equalsEpsilon(left.x, right.x, relativeEpsilon, absoluteEpsilon) &&
+                CesiumMath.equalsEpsilon(left.y, right.y, relativeEpsilon, absoluteEpsilon) &&
+                CesiumMath.equalsEpsilon(left.z, right.z, relativeEpsilon, absoluteEpsilon) &&
+                CesiumMath.equalsEpsilon(left.w, right.w, relativeEpsilon, absoluteEpsilon));
     };
 
     /**
@@ -5475,15 +5782,16 @@ define('Core/Cartesian4',[
 
     /**
      * Compares this Cartesian against the provided Cartesian componentwise and returns
-     * <code>true</code> if they are within the provided epsilon,
+     * <code>true</code> if they pass an absolute or relative tolerance test,
      * <code>false</code> otherwise.
      *
      * @param {Cartesian4} [right] The right hand side Cartesian.
-     * @param {Number} epsilon The epsilon to use for equality testing.
+     * @param {Number} relativeEpsilon The relative epsilon tolerance to use for equality testing.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The absolute epsilon tolerance to use for equality testing.
      * @returns {Boolean} <code>true</code> if they are within the provided epsilon, <code>false</code> otherwise.
      */
-    Cartesian4.prototype.equalsEpsilon = function(right, epsilon) {
-        return Cartesian4.equalsEpsilon(this, right, epsilon);
+    Cartesian4.prototype.equalsEpsilon = function(right, relativeEpsilon, absoluteEpsilon) {
+        return Cartesian4.equalsEpsilon(this, right, relativeEpsilon, absoluteEpsilon);
     };
 
     /**
@@ -5551,6 +5859,71 @@ define('Core/Matrix3',[
         this[6] = defaultValue(column2Row0, 0.0);
         this[7] = defaultValue(column2Row1, 0.0);
         this[8] = defaultValue(column2Row2, 0.0);
+    };
+
+    /**
+     * The number of elements used to pack the object into an array.
+     * @type {Number}
+     */
+    Matrix3.packedLength = 9;
+
+    /**
+     * Stores the provided instance into the provided array.
+     *
+     * @param {Matrix3} value The value to pack.
+     * @param {Number[]} array The array to pack into.
+     * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     */
+    Matrix3.pack = function(value, array, startingIndex) {
+                if (!defined(value)) {
+            throw new DeveloperError('value is required');
+        }
+
+        if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        array[startingIndex++] = value[0];
+        array[startingIndex++] = value[1];
+        array[startingIndex++] = value[2];
+        array[startingIndex++] = value[3];
+        array[startingIndex++] = value[4];
+        array[startingIndex++] = value[5];
+        array[startingIndex++] = value[6];
+        array[startingIndex++] = value[7];
+        array[startingIndex++] = value[8];
+    };
+
+    /**
+     * Retrieves an instance from a packed array.
+     *
+     * @param {Number[]} array The packed array.
+     * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
+     * @param {Matrix3} [result] The object into which to store the result.
+     */
+    Matrix3.unpack = function(array, startingIndex, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        if (!defined(result)) {
+            result = new Matrix3();
+        }
+
+        result[0] = array[startingIndex++];
+        result[1] = array[startingIndex++];
+        result[2] = array[startingIndex++];
+        result[3] = array[startingIndex++];
+        result[4] = array[startingIndex++];
+        result[5] = array[startingIndex++];
+        result[6] = array[startingIndex++];
+        result[7] = array[startingIndex++];
+        result[8] = array[startingIndex++];
+        return result;
     };
 
     /**
@@ -6821,6 +7194,21 @@ define('Core/Matrix3',[
     };
 
     /**
+     * @private
+     */
+    Matrix3.equalsArray = function(matrix, array, offset) {
+        return matrix[0] === array[offset] &&
+               matrix[1] === array[offset + 1] &&
+               matrix[2] === array[offset + 2] &&
+               matrix[3] === array[offset + 3] &&
+               matrix[4] === array[offset + 4] &&
+               matrix[5] === array[offset + 5] &&
+               matrix[6] === array[offset + 6] &&
+               matrix[7] === array[offset + 7] &&
+               matrix[8] === array[offset + 8];
+    };
+
+    /**
      * Compares this matrix to the provided matrix componentwise and returns
      * <code>true</code> if they are within the provided epsilon,
      * <code>false</code> otherwise.
@@ -7198,7 +7586,7 @@ define('Core/Matrix4',[
      * and a Cartesian3 representing the translation.
      *
      * @param {Matrix3} rotation The upper left portion of the matrix representing the rotation.
-     * @param {Cartesian3} translation The upper right portion of the matrix representing the translation.
+     * @param {Cartesian3} [translation=Cartesian3.ZERO] The upper right portion of the matrix representing the translation.
      * @param {Matrix4} [result] The object in which the result will be stored, if undefined a new instance will be created.
      * @returns The modified result parameter, or a new Matrix4 instance if one was not provided.
      */
@@ -7206,10 +7594,9 @@ define('Core/Matrix4',[
                 if (!defined(rotation)) {
             throw new DeveloperError('rotation is required.');
         }
-        if (!defined(translation)) {
-            throw new DeveloperError('translation is required.');
-        }
         
+        translation = defaultValue(translation, Cartesian3.ZERO);
+
         if (!defined(result)) {
             return new Matrix4(rotation[0], rotation[3], rotation[6], translation.x,
                                rotation[1], rotation[4], rotation[7], translation.y,
@@ -7325,6 +7712,10 @@ define('Core/Matrix4',[
      * @see Matrix4.multiplyByTranslation
      */
     Matrix4.fromTranslation = function(translation, result) {
+                if (!defined(translation)) {
+            throw new DeveloperError('translation is required.');
+        }
+        
         return Matrix4.fromRotationTranslation(Matrix3.IDENTITY, translation, result);
     };
 
@@ -8394,6 +8785,82 @@ define('Core/Matrix4',[
 
     /**
      * Multiplies a transformation matrix (with a bottom row of <code>[0.0, 0.0, 0.0, 1.0]</code>)
+     * by a 3x3 rotation matrix.  This is an optimization
+     * for <code>Matrix4.multiply(m, Matrix4.fromRotationTranslation(rotation), m);</code> with less allocations and arithmetic operations.
+     *
+     * @param {Matrix4} matrix The matrix on the left-hand side.
+     * @param {Matrix3} rotation The 3x3 rotation matrix on the right-hand side.
+     * @param {Matrix4} result The object onto which to store the result.
+     * @returns {Matrix4} The modified result parameter.
+     *
+     * @example
+     * // Instead of Cesium.Matrix4.multiply(m, Cesium.Matrix4.fromRotationTranslation(rotation), m);
+     * Cesium.Matrix4.multiplyByMatrix3(m, rotation, m);
+     */
+    Matrix4.multiplyByMatrix3 = function(matrix, rotation, result) {
+                if (!defined(matrix)) {
+            throw new DeveloperError('matrix is required');
+        }
+        if (!defined(rotation)) {
+            throw new DeveloperError('rotation is required');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required,');
+        }
+        
+        var left0 = matrix[0];
+        var left1 = matrix[1];
+        var left2 = matrix[2];
+        var left4 = matrix[4];
+        var left5 = matrix[5];
+        var left6 = matrix[6];
+        var left8 = matrix[8];
+        var left9 = matrix[9];
+        var left10 = matrix[10];
+
+        var right0 = rotation[0];
+        var right1 = rotation[1];
+        var right2 = rotation[2];
+        var right4 = rotation[3];
+        var right5 = rotation[4];
+        var right6 = rotation[5];
+        var right8 = rotation[6];
+        var right9 = rotation[7];
+        var right10 = rotation[8];
+
+        var column0Row0 = left0 * right0 + left4 * right1 + left8 * right2;
+        var column0Row1 = left1 * right0 + left5 * right1 + left9 * right2;
+        var column0Row2 = left2 * right0 + left6 * right1 + left10 * right2;
+
+        var column1Row0 = left0 * right4 + left4 * right5 + left8 * right6;
+        var column1Row1 = left1 * right4 + left5 * right5 + left9 * right6;
+        var column1Row2 = left2 * right4 + left6 * right5 + left10 * right6;
+
+        var column2Row0 = left0 * right8 + left4 * right9 + left8 * right10;
+        var column2Row1 = left1 * right8 + left5 * right9 + left9 * right10;
+        var column2Row2 = left2 * right8 + left6 * right9 + left10 * right10;
+
+        result[0] = column0Row0;
+        result[1] = column0Row1;
+        result[2] = column0Row2;
+        result[3] = 0.0;
+        result[4] = column1Row0;
+        result[5] = column1Row1;
+        result[6] = column1Row2;
+        result[7] = 0.0;
+        result[8] = column2Row0;
+        result[9] = column2Row1;
+        result[10] = column2Row2;
+        result[11] = 0.0;
+        result[12] = matrix[12];
+        result[13] = matrix[13];
+        result[14] = matrix[14];
+        result[15] = matrix[15];
+        return result;
+    };
+
+    /**
+     * Multiplies a transformation matrix (with a bottom row of <code>[0.0, 0.0, 0.0, 1.0]</code>)
      * by an implicit translation matrix defined by a {@link Cartesian3}.  This is an optimization
      * for <code>Matrix4.multiply(m, Matrix4.fromTranslation(position), m);</code> with less allocations and arithmetic operations.
      *
@@ -8401,8 +8868,6 @@ define('Core/Matrix4',[
      * @param {Cartesian3} translation The translation on the right-hand side.
      * @param {Matrix4} result The object onto which to store the result.
      * @returns {Matrix4} The modified result parameter.
-     *
-     * @see Matrix4.fromTranslation
      *
      * @example
      * // Instead of Cesium.Matrix4.multiply(m, Cesium.Matrix4.fromTranslation(position), m);
@@ -8877,24 +9342,33 @@ define('Core/Matrix4',[
      * //Prints "Both matrices are equal" on the console
      */
     Matrix4.equals = function(left, right) {
+        // Given that most matrices will be transformation matrices, the elements
+        // are tested in order such that the test is likely to fail as early
+        // as possible.  I _think_ this is just as friendly to the L1 cache
+        // as testing in index order.  It is certainty faster in practice.
         return (left === right) ||
                (defined(left) &&
                 defined(right) &&
-                left[0] === right[0] &&
-                left[1] === right[1] &&
-                left[2] === right[2] &&
-                left[3] === right[3] &&
-                left[4] === right[4] &&
-                left[5] === right[5] &&
-                left[6] === right[6] &&
-                left[7] === right[7] &&
-                left[8] === right[8] &&
-                left[9] === right[9] &&
-                left[10] === right[10] &&
-                left[11] === right[11] &&
+                // Translation
                 left[12] === right[12] &&
                 left[13] === right[13] &&
                 left[14] === right[14] &&
+
+                // Rotation/scale
+                left[0] === right[0] &&
+                left[1] === right[1] &&
+                left[2] === right[2] &&
+                left[4] === right[4] &&
+                left[5] === right[5] &&
+                left[6] === right[6] &&
+                left[8] === right[8] &&
+                left[9] === right[9] &&
+                left[10] === right[10] &&
+
+                // Bottom row
+                left[3] === right[3] &&
+                left[7] === right[7] &&
+                left[11] === right[11] &&
                 left[15] === right[15]);
     };
 
@@ -9387,6 +9861,28 @@ define('Core/Matrix4',[
      */
     Matrix4.prototype.equals = function(right) {
         return Matrix4.equals(this, right);
+    };
+
+    /**
+     * @private
+     */
+    Matrix4.equalsArray = function(matrix, array, offset) {
+        return matrix[0] === array[offset] &&
+               matrix[1] === array[offset + 1] &&
+               matrix[2] === array[offset + 2] &&
+               matrix[3] === array[offset + 3] &&
+               matrix[4] === array[offset + 4] &&
+               matrix[5] === array[offset + 5] &&
+               matrix[6] === array[offset + 6] &&
+               matrix[7] === array[offset + 7] &&
+               matrix[8] === array[offset + 8] &&
+               matrix[9] === array[offset + 9] &&
+               matrix[10] === array[offset + 10] &&
+               matrix[11] === array[offset + 11] &&
+               matrix[12] === array[offset + 12] &&
+               matrix[13] === array[offset + 13] &&
+               matrix[14] === array[offset + 14] &&
+               matrix[15] === array[offset + 15];
     };
 
     /**
@@ -9953,6 +10449,53 @@ define('Core/BoundingSphere',[
         return result;
     };
 
+    var fromBoundingSpheresScratch = new Cartesian3();
+
+    /**
+     * Computes a tight-fitting bounding sphere enclosing the provided array of bounding spheres.
+     *
+     * @param {BoundingSphere[]} boundingSpheres The array of bounding spheres.
+     * @param {BoundingSphere} [result] The object onto which to store the result.
+     * @returns {BoundingSphere} The modified result parameter or a new BoundingSphere instance if none was provided.
+     */
+    BoundingSphere.fromBoundingSpheres = function(boundingSpheres, result) {
+        if (!defined(result)) {
+            result = new BoundingSphere();
+        }
+
+        if (!defined(boundingSpheres) || boundingSpheres.length === 0) {
+            result.center = Cartesian3.clone(Cartesian3.ZERO, result.center);
+            result.radius = 0.0;
+            return result;
+        }
+
+        var length = boundingSpheres.length;
+        if (length === 1) {
+            return BoundingSphere.clone(boundingSpheres[0], result);
+        }
+
+        if (length === 2) {
+            return BoundingSphere.union(boundingSpheres[0], boundingSpheres[1], result);
+        }
+
+        var positions = [];
+        for (var i = 0; i < length; i++) {
+            positions.push(boundingSpheres[i].center);
+        }
+
+        result = BoundingSphere.fromPoints(positions, result);
+
+        var center = result.center;
+        var radius = result.radius;
+        for (i = 0; i < length; i++) {
+            var tmp = boundingSpheres[i];
+            radius = Math.max(radius, Cartesian3.distance(center, tmp.center, fromBoundingSpheresScratch) + tmp.radius);
+        }
+        result.radius = radius;
+
+        return result;
+    };
+
     /**
      * Duplicates a BoundingSphere instance.
      *
@@ -10010,7 +10553,7 @@ define('Core/BoundingSphere',[
      *
      * @param {Number[]} array The packed array.
      * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
-     * @param {Cartesian3} [result] The object into which to store the result.
+     * @param {BoundingSphere} [result] The object into which to store the result.
      */
     BoundingSphere.unpack = function(array, startingIndex, result) {
                 if (!defined(array)) {
@@ -10800,6 +11343,15 @@ define('Core/FeatureDetection',[
         return isFirefoxResult;
     }
 
+    var isWindowsResult;
+    function isWindows() {
+        if (!defined(isWindowsResult)) {
+            isWindowsResult = /Windows/i.test(navigator.appVersion);
+        }
+        return isWindowsResult;
+    }
+
+
     function firefoxVersion() {
         return isFirefox() && firefoxVersionResult;
     }
@@ -10822,6 +11374,7 @@ define('Core/FeatureDetection',[
         internetExplorerVersion : internetExplorerVersion,
         isFirefox : isFirefox,
         firefoxVersion : firefoxVersion,
+        isWindows : isWindows,
         hardwareConcurrency : defaultValue(navigator.hardwareConcurrency, 3)
     };
 
@@ -12289,7 +12842,7 @@ define('Core/IntersectionTests',[
      * @param {Cartesian3} p0 The first vertex of the triangle.
      * @param {Cartesian3} p1 The second vertex of the triangle.
      * @param {Cartesian3} p2 The third vertex of the triangle.
-     * @param {Boolean} [cullBackFaces=false] If <code>true<code>, will only compute an intersection with the front face of the triangle
+     * @param {Boolean} [cullBackFaces=false] If <code>true</code>, will only compute an intersection with the front face of the triangle
      *                  and return undefined for intersections with the back face.
      * @param {Cartesian3} [result] The <code>Cartesian3</code> onto which to store the result.
      * @returns {Cartesian3} The intersection point or undefined if there is no intersections.
@@ -12319,7 +12872,7 @@ define('Core/IntersectionTests',[
      * @param {Cartesian3} p0 The first vertex of the triangle.
      * @param {Cartesian3} p1 The second vertex of the triangle.
      * @param {Cartesian3} p2 The third vertex of the triangle.
-     * @param {Boolean} [cullBackFaces=false] If <code>true<code>, will only compute an intersection with the front face of the triangle
+     * @param {Boolean} [cullBackFaces=false] If <code>true</code>, will only compute an intersection with the front face of the triangle
      *                  and return undefined for intersections with the back face.
      * @param {Cartesian3} [result] The <code>Cartesian3</code> onto which to store the result.
      * @returns {Cartesian3} The intersection point or undefined if there is no intersections.
@@ -12689,6 +13242,7 @@ define('Core/IntersectionTests',[
     var sScratch = new Cartesian3();
     var closestScratch = new Cartesian3();
     var surfPointScratch = new Cartographic();
+
     /**
      * Provides the point along the ray which is nearest to the ellipsoid.
      *
@@ -12707,8 +13261,7 @@ define('Core/IntersectionTests',[
         var position = ray.origin;
         var direction = ray.direction;
 
-        var normal = ellipsoid.geodeticSurfaceNormal(position);
-
+        var normal = ellipsoid.geodeticSurfaceNormal(position, firstAxisScratch);
         if (Cartesian3.dot(direction, normal) >= 0.0) { // The location provided is the closest point in altitude
             return position;
         }
@@ -12716,10 +13269,10 @@ define('Core/IntersectionTests',[
         var intersects = defined(this.rayEllipsoid(ray, ellipsoid));
 
         // Compute the scaled direction vector.
-        var f = ellipsoid.transformPositionToScaledSpace(direction);
+        var f = ellipsoid.transformPositionToScaledSpace(direction, firstAxisScratch);
 
         // Constructs a basis from the unit scaled direction vector. Construct its rotation and transpose.
-        var firstAxis = Cartesian3.normalize(f, firstAxisScratch);
+        var firstAxis = Cartesian3.normalize(f, f);
         var reference = Cartesian3.mostOrthogonalAxis(f, referenceScratch);
         var secondAxis = Cartesian3.normalize(Cartesian3.cross(reference, firstAxis, secondAxisScratch), secondAxisScratch);
         var thirdAxis  = Cartesian3.normalize(Cartesian3.cross(firstAxis, secondAxis, thirdAxisScratch), thirdAxisScratch);
@@ -12781,7 +13334,7 @@ define('Core/IntersectionTests',[
             altitude = Cartesian3.magnitude(Cartesian3.subtract(closest, position, referenceScratch)) * Math.sqrt(1.0 - maximumValue * maximumValue);
             altitude = intersects ? -altitude : altitude;
             surfacePoint.height = altitude;
-            return ellipsoid.cartographicToCartesian(surfacePoint);
+            return ellipsoid.cartographicToCartesian(surfacePoint, new Cartesian3());
         }
 
         return undefined;
@@ -14967,7 +15520,7 @@ define('Core/JulianDate',[
             }
         } else {
             //If no time is specified, it is considered the beginning of the day, local time.
-            minute = minute + new Date(Date.UTC(year, month - 1, day)).getTimezoneOffset();
+            minute = minute + new Date(year, month - 1, day).getTimezoneOffset();
         }
 
         //ISO8601 denotes a leap second by any time having a seconds component of 60 seconds.
@@ -15749,7 +16302,7 @@ define('Core/loadWithXhr',[
      *     responseType : 'blob'
      * }).then(function(blob) {
      *     // use the data
-     * }.otherwise(function(error) {
+     * }).otherwise(function(error) {
      *     // an error occurred
      * });
      */
@@ -15909,7 +16462,7 @@ define('Core/loadText',[
      *   'X-Custom-Header' : 'some value'
      * }).then(function(text) {
      *     // Do something with the text
-     * }.otherwise(function(error) {
+     * }).otherwise(function(error) {
      *     // an error occurred
      * });
      */
@@ -15963,7 +16516,7 @@ define('Core/loadJson',[
      * @example
      * Cesium.loadJson('http://someUrl.com/someJson.txt').then(function(jsonData) {
      *     // Do something with the JSON object
-     * }.otherwise(function(error) {
+     * }).otherwise(function(error) {
      *     // an error occurred
      * });
      */
@@ -17047,5955 +17600,6 @@ define('Core/Iau2006XysData',[
     return Iau2006XysData;
 });
 /*global define*/
-define('Core/Transforms',[
-        '../ThirdParty/when',
-        './Cartesian2',
-        './Cartesian3',
-        './Cartesian4',
-        './defaultValue',
-        './defined',
-        './DeveloperError',
-        './EarthOrientationParameters',
-        './EarthOrientationParametersSample',
-        './Ellipsoid',
-        './Iau2006XysData',
-        './Iau2006XysSample',
-        './JulianDate',
-        './Math',
-        './Matrix3',
-        './Matrix4',
-        './TimeConstants'
-    ], function(
-        when,
-        Cartesian2,
-        Cartesian3,
-        Cartesian4,
-        defaultValue,
-        defined,
-        DeveloperError,
-        EarthOrientationParameters,
-        EarthOrientationParametersSample,
-        Ellipsoid,
-        Iau2006XysData,
-        Iau2006XysSample,
-        JulianDate,
-        CesiumMath,
-        Matrix3,
-        Matrix4,
-        TimeConstants) {
-    "use strict";
-
-    /**
-     * Contains functions for transforming positions to various reference frames.
-     *
-     * @namespace
-     * @alias Transforms
-     */
-    var Transforms = {};
-
-    var eastNorthUpToFixedFrameNormal = new Cartesian3();
-    var eastNorthUpToFixedFrameTangent = new Cartesian3();
-    var eastNorthUpToFixedFrameBitangent = new Cartesian3();
-
-    /**
-     * Computes a 4x4 transformation matrix from a reference frame with an east-north-up axes
-     * centered at the provided origin to the provided ellipsoid's fixed reference frame.
-     * The local axes are defined as:
-     * <ul>
-     * <li>The <code>x</code> axis points in the local east direction.</li>
-     * <li>The <code>y</code> axis points in the local north direction.</li>
-     * <li>The <code>z</code> axis points in the direction of the ellipsoid surface normal which passes through the position.</li>
-     * </ul>
-     *
-     * @param {Cartesian3} origin The center point of the local reference frame.
-     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
-     * @param {Matrix4} [result] The object onto which to store the result.
-     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
-     *
-     * @example
-     * // Get the transform from local east-north-up at cartographic (0.0, 0.0) to Earth's fixed frame.
-     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
-     * var transform = Cesium.Transforms.eastNorthUpToFixedFrame(center);
-     */
-    Transforms.eastNorthUpToFixedFrame = function(origin, ellipsoid, result) {
-                if (!defined(origin)) {
-            throw new DeveloperError('origin is required.');
-        }
-        
-        // If x and y are zero, assume origin is at a pole, which is a special case.
-        if (CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
-            CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
-            var sign = CesiumMath.sign(origin.z);
-            if (!defined(result)) {
-                return new Matrix4(
-                        0.0, -sign,  0.0, origin.x,
-                        1.0,   0.0,  0.0, origin.y,
-                        0.0,   0.0, sign, origin.z,
-                        0.0,   0.0,  0.0, 1.0);
-            }
-            result[0] = 0.0;
-            result[1] = 1.0;
-            result[2] = 0.0;
-            result[3] = 0.0;
-            result[4] = -sign;
-            result[5] = 0.0;
-            result[6] = 0.0;
-            result[7] = 0.0;
-            result[8] = 0.0;
-            result[9] = 0.0;
-            result[10] = sign;
-            result[11] = 0.0;
-            result[12] = origin.x;
-            result[13] = origin.y;
-            result[14] = origin.z;
-            result[15] = 1.0;
-            return result;
-        }
-
-        var normal = eastNorthUpToFixedFrameNormal;
-        var tangent  = eastNorthUpToFixedFrameTangent;
-        var bitangent = eastNorthUpToFixedFrameBitangent;
-
-        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-        ellipsoid.geodeticSurfaceNormal(origin, normal);
-
-        tangent.x = -origin.y;
-        tangent.y = origin.x;
-        tangent.z = 0.0;
-        Cartesian3.normalize(tangent, tangent);
-
-        Cartesian3.cross(normal, tangent, bitangent);
-
-        if (!defined(result)) {
-            return new Matrix4(
-                    tangent.x, bitangent.x, normal.x, origin.x,
-                    tangent.y, bitangent.y, normal.y, origin.y,
-                    tangent.z, bitangent.z, normal.z, origin.z,
-                    0.0,       0.0,         0.0,      1.0);
-        }
-        result[0] = tangent.x;
-        result[1] = tangent.y;
-        result[2] = tangent.z;
-        result[3] = 0.0;
-        result[4] = bitangent.x;
-        result[5] = bitangent.y;
-        result[6] = bitangent.z;
-        result[7] = 0.0;
-        result[8] = normal.x;
-        result[9] = normal.y;
-        result[10] = normal.z;
-        result[11] = 0.0;
-        result[12] = origin.x;
-        result[13] = origin.y;
-        result[14] = origin.z;
-        result[15] = 1.0;
-        return result;
-    };
-
-    var northEastDownToFixedFrameNormal = new Cartesian3();
-    var northEastDownToFixedFrameTangent = new Cartesian3();
-    var northEastDownToFixedFrameBitangent = new Cartesian3();
-
-    /**
-     * Computes a 4x4 transformation matrix from a reference frame with an north-east-down axes
-     * centered at the provided origin to the provided ellipsoid's fixed reference frame.
-     * The local axes are defined as:
-     * <ul>
-     * <li>The <code>x</code> axis points in the local north direction.</li>
-     * <li>The <code>y</code> axis points in the local east direction.</li>
-     * <li>The <code>z</code> axis points in the opposite direction of the ellipsoid surface normal which passes through the position.</li>
-     * </ul>
-     *
-     * @param {Cartesian3} origin The center point of the local reference frame.
-     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
-     * @param {Matrix4} [result] The object onto which to store the result.
-     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
-     *
-     * @example
-     * // Get the transform from local north-east-down at cartographic (0.0, 0.0) to Earth's fixed frame.
-     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
-     * var transform = Cesium.Transforms.northEastDownToFixedFrame(center);
-     */
-    Transforms.northEastDownToFixedFrame = function(origin, ellipsoid, result) {
-                if (!defined(origin)) {
-            throw new DeveloperError('origin is required.');
-        }
-        
-        if (CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
-            CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
-            // The poles are special cases.  If x and y are zero, assume origin is at a pole.
-            var sign = CesiumMath.sign(origin.z);
-            if (!defined(result)) {
-                return new Matrix4(
-                  -sign, 0.0,   0.0, origin.x,
-                    0.0, 1.0,   0.0, origin.y,
-                    0.0, 0.0, -sign, origin.z,
-                    0.0, 0.0,   0.0, 1.0);
-            }
-            result[0] = -sign;
-            result[1] = 0.0;
-            result[2] = 0.0;
-            result[3] = 0.0;
-            result[4] = 0.0;
-            result[5] = 1.0;
-            result[6] = 0.0;
-            result[7] = 0.0;
-            result[8] = 0.0;
-            result[9] = 0.0;
-            result[10] = -sign;
-            result[11] = 0.0;
-            result[12] = origin.x;
-            result[13] = origin.y;
-            result[14] = origin.z;
-            result[15] = 1.0;
-            return result;
-        }
-
-        var normal = northEastDownToFixedFrameNormal;
-        var tangent = northEastDownToFixedFrameTangent;
-        var bitangent = northEastDownToFixedFrameBitangent;
-
-        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-        ellipsoid.geodeticSurfaceNormal(origin, normal);
-
-        tangent.x = -origin.y;
-        tangent.y = origin.x;
-        tangent.z = 0.0;
-        Cartesian3.normalize(tangent, tangent);
-
-        Cartesian3.cross(normal, tangent, bitangent);
-
-        if (!defined(result)) {
-            return new Matrix4(
-                    bitangent.x, tangent.x, -normal.x, origin.x,
-                    bitangent.y, tangent.y, -normal.y, origin.y,
-                    bitangent.z, tangent.z, -normal.z, origin.z,
-                    0.0,       0.0,         0.0,      1.0);
-        }
-        result[0] = bitangent.x;
-        result[1] = bitangent.y;
-        result[2] = bitangent.z;
-        result[3] = 0.0;
-        result[4] = tangent.x;
-        result[5] = tangent.y;
-        result[6] = tangent.z;
-        result[7] = 0.0;
-        result[8] = -normal.x;
-        result[9] = -normal.y;
-        result[10] = -normal.z;
-        result[11] = 0.0;
-        result[12] = origin.x;
-        result[13] = origin.y;
-        result[14] = origin.z;
-        result[15] = 1.0;
-        return result;
-    };
-
-    /**
-     * Computes a 4x4 transformation matrix from a reference frame with an north-up-east axes
-     * centered at the provided origin to the provided ellipsoid's fixed reference frame.
-     * The local axes are defined as:
-     * <ul>
-     * <li>The <code>x</code> axis points in the local north direction.</li>
-     * <li>The <code>y</code> axis points in the direction of the ellipsoid surface normal which passes through the position.</li>
-     * <li>The <code>z</code> axis points in the local east direction.</li>
-     * </ul>
-     *
-     * @param {Cartesian3} origin The center point of the local reference frame.
-     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
-     * @param {Matrix4} [result] The object onto which to store the result.
-     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
-     *
-     * @example
-     * // Get the transform from local north-up-east at cartographic (0.0, 0.0) to Earth's fixed frame.
-     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
-     * var transform = Cesium.Transforms.northUpEastToFixedFrame(center);
-     */
-    Transforms.northUpEastToFixedFrame = function(origin, ellipsoid, result) {
-                if (!defined(origin)) {
-            throw new DeveloperError('origin is required.');
-        }
-        
-        // If x and y are zero, assume origin is at a pole, which is a special case.
-        if (CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
-            CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
-            var sign = CesiumMath.sign(origin.z);
-            if (!defined(result)) {
-                return new Matrix4(
-                       -sign, 0.0,  0.0, origin.x,
-                        0.0,  0.0,  1.0, origin.y,
-                        0.0,  sign, 0.0, origin.z,
-                        0.0,  0.0,  0.0, 1.0);
-            }
-            result[0] = -sign;
-            result[1] = 0.0;
-            result[2] = 0.0;
-            result[3] = 0.0;
-            result[4] = 0.0;
-            result[5] = 0.0;
-            result[6] = sign;
-            result[7] = 0.0;
-            result[8] = 0.0;
-            result[9] = 1.0;
-            result[10] = 0.0;
-            result[11] = 0.0;
-            result[12] = origin.x;
-            result[13] = origin.y;
-            result[14] = origin.z;
-            result[15] = 1.0;
-            return result;
-        }
-
-        var normal = eastNorthUpToFixedFrameNormal;
-        var tangent  = eastNorthUpToFixedFrameTangent;
-        var bitangent = eastNorthUpToFixedFrameBitangent;
-
-        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-        ellipsoid.geodeticSurfaceNormal(origin, normal);
-
-        tangent.x = -origin.y;
-        tangent.y = origin.x;
-        tangent.z = 0.0;
-        Cartesian3.normalize(tangent, tangent);
-
-        Cartesian3.cross(normal, tangent, bitangent);
-
-        if (!defined(result)) {
-            return new Matrix4(
-                    bitangent.x, normal.x, tangent.x, origin.x,
-                    bitangent.y, normal.y, tangent.y, origin.y,
-                    bitangent.z, normal.z, tangent.z, origin.z,
-                    0.0,       0.0,         0.0,      1.0);
-        }
-        result[0] = bitangent.x;
-        result[1] = bitangent.y;
-        result[2] = bitangent.z;
-        result[3] = 0.0;
-        result[4] = normal.x;
-        result[5] = normal.y;
-        result[6] = normal.z;
-        result[7] = 0.0;
-        result[8] = tangent.x;
-        result[9] = tangent.y;
-        result[10] = tangent.z;
-        result[11] = 0.0;
-        result[12] = origin.x;
-        result[13] = origin.y;
-        result[14] = origin.z;
-        result[15] = 1.0;
-        return result;
-    };
-
-
-    var gmstConstant0 = 6 * 3600 + 41 * 60 + 50.54841;
-    var gmstConstant1 = 8640184.812866;
-    var gmstConstant2 = 0.093104;
-    var gmstConstant3 = -6.2E-6;
-    var rateCoef = 1.1772758384668e-19;
-    var wgs84WRPrecessing = 7.2921158553E-5;
-    var twoPiOverSecondsInDay = CesiumMath.TWO_PI / 86400.0;
-    var dateInUtc = new JulianDate();
-
-    /**
-     * Computes a rotation matrix to transform a point or vector from True Equator Mean Equinox (TEME) axes to the
-     * pseudo-fixed axes at a given time.  This method treats the UT1 time standard as equivalent to UTC.
-     *
-     * @param {JulianDate} date The time at which to compute the rotation matrix.
-     * @param {Matrix3} [result] The object onto which to store the result.
-     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if none was provided.
-     *
-     * @example
-     * //Set the view to in the inertial frame.
-     * scene.preRender.addEventListener(function(scene, time) {
-     *   var now = new Cesium.JulianDate();
-     *   scene.camera.transform = Cesium.Matrix4.fromRotationTranslation(Cesium.Transforms.computeTemeToPseudoFixedMatrix(now), Cesium.Cartesian3.ZERO);
-     * });
-     */
-    Transforms.computeTemeToPseudoFixedMatrix = function (date, result) {
-                if (!defined(date)) {
-            throw new DeveloperError('date is required.');
-        }
-        
-        // GMST is actually computed using UT1.  We're using UTC as an approximation of UT1.
-        // We do not want to use the function like convertTaiToUtc in JulianDate because
-        // we explicitly do not want to fail when inside the leap second.
-
-        dateInUtc = JulianDate.addSeconds(date, -JulianDate.computeTaiMinusUtc(date), dateInUtc);
-        var utcDayNumber = dateInUtc.dayNumber;
-        var utcSecondsIntoDay = dateInUtc.secondsOfDay;
-
-        var t;
-        var diffDays = utcDayNumber - 2451545;
-        if (utcSecondsIntoDay >= 43200.0) {
-            t = (diffDays + 0.5) / TimeConstants.DAYS_PER_JULIAN_CENTURY;
-        } else {
-            t = (diffDays - 0.5) / TimeConstants.DAYS_PER_JULIAN_CENTURY;
-        }
-
-        var gmst0 = gmstConstant0 + t * (gmstConstant1 + t * (gmstConstant2 + t * gmstConstant3));
-        var angle = (gmst0 * twoPiOverSecondsInDay) % CesiumMath.TWO_PI;
-        var ratio = wgs84WRPrecessing + rateCoef * (utcDayNumber - 2451545.5);
-        var secondsSinceMidnight = (utcSecondsIntoDay + TimeConstants.SECONDS_PER_DAY * 0.5) % TimeConstants.SECONDS_PER_DAY;
-        var gha = angle + (ratio * secondsSinceMidnight);
-        var cosGha = Math.cos(gha);
-        var sinGha = Math.sin(gha);
-
-        if (!defined(result)) {
-            return new Matrix3(cosGha, sinGha, 0.0,
-                              -sinGha, cosGha, 0.0,
-                                  0.0,    0.0, 1.0);
-        }
-        result[0] = cosGha;
-        result[1] = -sinGha;
-        result[2] = 0.0;
-        result[3] = sinGha;
-        result[4] = cosGha;
-        result[5] = 0.0;
-        result[6] = 0.0;
-        result[7] = 0.0;
-        result[8] = 1.0;
-        return result;
-    };
-
-    /**
-     * The source of IAU 2006 XYS data, used for computing the transformation between the
-     * Fixed and ICRF axes.
-     * @type {Iau2006XysData}
-     *
-     * @see Transforms.computeIcrfToFixedMatrix
-     * @see Transforms.computeFixedToIcrfMatrix
-     *
-     * @private
-     */
-    Transforms.iau2006XysData = new Iau2006XysData();
-
-    /**
-     * The source of Earth Orientation Parameters (EOP) data, used for computing the transformation
-     * between the Fixed and ICRF axes.  By default, zero values are used for all EOP values,
-     * yielding a reasonable but not completely accurate representation of the ICRF axes.
-     * @type {EarthOrientationParameters}
-     *
-     * @see Transforms.computeIcrfToFixedMatrix
-     * @see Transforms.computeFixedToIcrfMatrix
-     *
-     * @private
-     */
-    Transforms.earthOrientationParameters = EarthOrientationParameters.NONE;
-
-    var ttMinusTai = 32.184;
-    var j2000ttDays = 2451545.0;
-
-    /**
-     * Preloads the data necessary to transform between the ICRF and Fixed axes, in either
-     * direction, over a given interval.  This function returns a promise that, when resolved,
-     * indicates that the preload has completed.
-     *
-     * @param {TimeInterval} timeInterval The interval to preload.
-     * @returns {Promise} A promise that, when resolved, indicates that the preload has completed
-     *          and evaluation of the transformation between the fixed and ICRF axes will
-     *          no longer return undefined for a time inside the interval.
-     *
-     * @see Transforms.computeIcrfToFixedMatrix
-     * @see Transforms.computeFixedToIcrfMatrix
-     * @see when
-     *
-     * @example
-     * var interval = new Cesium.TimeInterval(...);
-     * when(preloadIcrfFixed(interval), function() {
-     *     // the data is now loaded
-     * });
-     */
-    Transforms.preloadIcrfFixed = function(timeInterval) {
-        var startDayTT = timeInterval.start.dayNumber;
-        var startSecondTT = timeInterval.start.secondsOfDay + ttMinusTai;
-        var stopDayTT = timeInterval.stop.dayNumber;
-        var stopSecondTT = timeInterval.stop.secondsOfDay + ttMinusTai;
-
-        var xysPromise = Transforms.iau2006XysData.preload(startDayTT, startSecondTT, stopDayTT, stopSecondTT);
-        var eopPromise = Transforms.earthOrientationParameters.getPromiseToLoad();
-
-        return when.all([xysPromise, eopPromise]);
-    };
-
-    /**
-     * Computes a rotation matrix to transform a point or vector from the International Celestial
-     * Reference Frame (GCRF/ICRF) inertial frame axes to the Earth-Fixed frame axes (ITRF)
-     * at a given time.  This function may return undefined if the data necessary to
-     * do the transformation is not yet loaded.
-     *
-     * @param {JulianDate} date The time at which to compute the rotation matrix.
-     * @param {Matrix3} [result] The object onto which to store the result.  If this parameter is
-     *                  not specified, a new instance is created and returned.
-     * @returns {Matrix3} The rotation matrix, or undefined if the data necessary to do the
-     *                   transformation is not yet loaded.
-     *
-     * @see Transforms.preloadIcrfFixed
-     *
-     * @example
-     * scene.preRender.addEventListener(function(scene, time) {
-     *   var icrfToFixed = Cesium.Transforms.computeIcrfToFixedMatrix(time);
-     *   if (Cesium.defined(icrfToFixed)) {
-     *     scene.camera.transform = Cesium.Matrix4.fromRotationTranslation(icrfToFixed, Cesium.Cartesian3.ZERO);
-     *   }
-     * });
-     */
-    Transforms.computeIcrfToFixedMatrix = function(date, result) {
-                if (!defined(date)) {
-            throw new DeveloperError('date is required.');
-        }
-                if (!defined(result)) {
-            result = new Matrix3();
-        }
-
-        var fixedToIcrfMtx = Transforms.computeFixedToIcrfMatrix(date, result);
-        if (!defined(fixedToIcrfMtx)) {
-            return undefined;
-        }
-
-        return Matrix3.transpose(fixedToIcrfMtx, result);
-    };
-
-    var xysScratch = new Iau2006XysSample(0.0, 0.0, 0.0);
-    var eopScratch = new EarthOrientationParametersSample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-    var rotation1Scratch = new Matrix3();
-    var rotation2Scratch = new Matrix3();
-
-    /**
-     * Computes a rotation matrix to transform a point or vector from the Earth-Fixed frame axes (ITRF)
-     * to the International Celestial Reference Frame (GCRF/ICRF) inertial frame axes
-     * at a given time.  This function may return undefined if the data necessary to
-     * do the transformation is not yet loaded.
-     *
-     * @param {JulianDate} date The time at which to compute the rotation matrix.
-     * @param {Matrix3} [result] The object onto which to store the result.  If this parameter is
-     *                  not specified, a new instance is created and returned.
-     * @returns {Matrix3} The rotation matrix, or undefined if the data necessary to do the
-     *                   transformation is not yet loaded.
-     *
-     * @see Transforms.preloadIcrfFixed
-     *
-     * @example
-     * // Transform a point from the ICRF axes to the Fixed axes.
-     * var now = new Cesium.JulianDate();
-     * var pointInFixed = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
-     * var fixedToIcrf = Cesium.Transforms.computeIcrfToFixedMatrix(now);
-     * var pointInInertial = new Cesium.Cartesian3();
-     * if (Cesium.defined(fixedToIcrf)) {
-     *     pointInInertial = Cesium.Matrix3.multiplyByVector(fixedToIcrf, pointInFixed, pointInInertial);
-     * }
-     */
-    Transforms.computeFixedToIcrfMatrix = function(date, result) {
-                if (!defined(date)) {
-            throw new DeveloperError('date is required.');
-        }
-        
-        if (!defined(result)) {
-            result = new Matrix3();
-        }
-
-        // Compute pole wander
-        var eop = Transforms.earthOrientationParameters.compute(date, eopScratch);
-        if (!defined(eop)) {
-            return undefined;
-        }
-
-        // There is no external conversion to Terrestrial Time (TT).
-        // So use International Atomic Time (TAI) and convert using offsets.
-        // Here we are assuming that dayTT and secondTT are positive
-        var dayTT = date.dayNumber;
-        // It's possible here that secondTT could roll over 86400
-        // This does not seem to affect the precision (unit tests check for this)
-        var secondTT = date.secondsOfDay + ttMinusTai;
-
-        var xys = Transforms.iau2006XysData.computeXysRadians(dayTT, secondTT, xysScratch);
-        if (!defined(xys)) {
-            return undefined;
-        }
-
-        var x = xys.x + eop.xPoleOffset;
-        var y = xys.y + eop.yPoleOffset;
-
-        // Compute XYS rotation
-        var a = 1.0 / (1.0 + Math.sqrt(1.0 - x * x - y * y));
-
-        var rotation1 = rotation1Scratch;
-        rotation1[0] = 1.0 - a * x * x;
-        rotation1[3] = -a * x * y;
-        rotation1[6] = x;
-        rotation1[1] = -a * x * y;
-        rotation1[4] = 1 - a * y * y;
-        rotation1[7] = y;
-        rotation1[2] = -x;
-        rotation1[5] = -y;
-        rotation1[8] = 1 - a * (x * x + y * y);
-
-        var rotation2 = Matrix3.fromRotationZ(-xys.s, rotation2Scratch);
-        var matrixQ = Matrix3.multiply(rotation1, rotation2, rotation1Scratch);
-
-        // Similar to TT conversions above
-        // It's possible here that secondTT could roll over 86400
-        // This does not seem to affect the precision (unit tests check for this)
-        var dateUt1day = date.dayNumber;
-        var dateUt1sec = date.secondsOfDay - JulianDate.computeTaiMinusUtc(date) + eop.ut1MinusUtc;
-
-        // Compute Earth rotation angle
-        // The IERS standard for era is
-        //    era = 0.7790572732640 + 1.00273781191135448 * Tu
-        // where
-        //    Tu = JulianDateInUt1 - 2451545.0
-        // However, you get much more precision if you make the following simplification
-        //    era = a + (1 + b) * (JulianDayNumber + FractionOfDay - 2451545)
-        //    era = a + (JulianDayNumber - 2451545) + FractionOfDay + b (JulianDayNumber - 2451545 + FractionOfDay)
-        //    era = a + FractionOfDay + b (JulianDayNumber - 2451545 + FractionOfDay)
-        // since (JulianDayNumber - 2451545) represents an integer number of revolutions which will be discarded anyway.
-        var daysSinceJ2000 = dateUt1day - 2451545;
-        var fractionOfDay = dateUt1sec / TimeConstants.SECONDS_PER_DAY;
-        var era = 0.7790572732640 + fractionOfDay + 0.00273781191135448 * (daysSinceJ2000 + fractionOfDay);
-        era = (era % 1.0) * CesiumMath.TWO_PI;
-
-        var earthRotation = Matrix3.fromRotationZ(era, rotation2Scratch);
-
-        // pseudoFixed to ICRF
-        var pfToIcrf = Matrix3.multiply(matrixQ, earthRotation, rotation1Scratch);
-
-        // Compute pole wander matrix
-        var cosxp = Math.cos(eop.xPoleWander);
-        var cosyp = Math.cos(eop.yPoleWander);
-        var sinxp = Math.sin(eop.xPoleWander);
-        var sinyp = Math.sin(eop.yPoleWander);
-
-        var ttt = (dayTT - j2000ttDays) + secondTT / TimeConstants.SECONDS_PER_DAY;
-        ttt /= 36525.0;
-
-        // approximate sp value in rad
-        var sp = -47.0e-6 * ttt * CesiumMath.RADIANS_PER_DEGREE / 3600.0;
-        var cossp = Math.cos(sp);
-        var sinsp = Math.sin(sp);
-
-        var fToPfMtx = rotation2Scratch;
-        fToPfMtx[0] = cosxp * cossp;
-        fToPfMtx[1] = cosxp * sinsp;
-        fToPfMtx[2] = sinxp;
-        fToPfMtx[3] = -cosyp * sinsp + sinyp * sinxp * cossp;
-        fToPfMtx[4] = cosyp * cossp + sinyp * sinxp * sinsp;
-        fToPfMtx[5] = -sinyp * cosxp;
-        fToPfMtx[6] = -sinyp * sinsp - cosyp * sinxp * cossp;
-        fToPfMtx[7] = sinyp * cossp - cosyp * sinxp * sinsp;
-        fToPfMtx[8] = cosyp * cosxp;
-
-        return Matrix3.multiply(pfToIcrf, fToPfMtx, result);
-    };
-
-    var pointToWindowCoordinatesTemp = new Cartesian4();
-
-    /**
-     * Transform a point from model coordinates to window coordinates.
-     *
-     * @param {Matrix4} modelViewProjectionMatrix The 4x4 model-view-projection matrix.
-     * @param {Matrix4} viewportTransformation The 4x4 viewport transformation.
-     * @param {Cartesian3} point The point to transform.
-     * @param {Cartesian2} [result] The object onto which to store the result.
-     * @returns {Cartesian2} The modified result parameter or a new Cartesian2 instance if none was provided.
-     */
-    Transforms.pointToWindowCoordinates = function (modelViewProjectionMatrix, viewportTransformation, point, result) {
-        result = Transforms.pointToGLWindowCoordinates(modelViewProjectionMatrix, viewportTransformation, point, result);
-        result.y = 2.0 * viewportTransformation[5] - result.y;
-        return result;
-    };
-
-    /**
-     * @private
-     */
-    Transforms.pointToGLWindowCoordinates = function(modelViewProjectionMatrix, viewportTransformation, point, result) {
-                if (!defined(modelViewProjectionMatrix)) {
-            throw new DeveloperError('modelViewProjectionMatrix is required.');
-        }
-
-        if (!defined(viewportTransformation)) {
-            throw new DeveloperError('viewportTransformation is required.');
-        }
-
-        if (!defined(point)) {
-            throw new DeveloperError('point is required.');
-        }
-        
-        if (!defined(result)) {
-            result = new Cartesian2();
-        }
-
-        var tmp = pointToWindowCoordinatesTemp;
-
-        Matrix4.multiplyByVector(modelViewProjectionMatrix, Cartesian4.fromElements(point.x, point.y, point.z, 1, tmp), tmp);
-        Cartesian4.multiplyByScalar(tmp, 1.0 / tmp.w, tmp);
-        Matrix4.multiplyByVector(viewportTransformation, tmp, tmp);
-        return Cartesian2.fromCartesian4(tmp, result);
-    };
-
-    return Transforms;
-});
-
-/*global define*/
-define('Core/EllipsoidTangentPlane',[
-        './AxisAlignedBoundingBox',
-        './Cartesian2',
-        './Cartesian3',
-        './Cartesian4',
-        './defaultValue',
-        './defined',
-        './defineProperties',
-        './DeveloperError',
-        './Ellipsoid',
-        './IntersectionTests',
-        './Matrix4',
-        './Plane',
-        './Ray',
-        './Transforms'
-    ], function(
-        AxisAlignedBoundingBox,
-        Cartesian2,
-        Cartesian3,
-        Cartesian4,
-        defaultValue,
-        defined,
-        defineProperties,
-        DeveloperError,
-        Ellipsoid,
-        IntersectionTests,
-        Matrix4,
-        Plane,
-        Ray,
-        Transforms) {
-    "use strict";
-
-    var scratchCart4 = new Cartesian4();
-    /**
-     * A plane tangent to the provided ellipsoid at the provided origin.
-     * If origin is not on the surface of the ellipsoid, it's surface projection will be used.
-     * If origin as at the center of the ellipsoid, an exception will be thrown.
-     * @alias EllipsoidTangentPlane
-     * @constructor
-     *
-     * @param {Ellipsoid} ellipsoid The ellipsoid to use.
-     * @param {Cartesian3} origin The point on the surface of the ellipsoid where the tangent plane touches.
-     *
-     * @exception {DeveloperError} origin must not be at the center of the ellipsoid.
-     */
-    var EllipsoidTangentPlane = function(origin, ellipsoid) {
-                if (!defined(origin)) {
-            throw new DeveloperError('origin is required.');
-        }
-        
-        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-        origin = ellipsoid.scaleToGeodeticSurface(origin);
-
-                if (!defined(origin)) {
-            throw new DeveloperError('origin must not be at the center of the ellipsoid.');
-        }
-        
-        var eastNorthUp = Transforms.eastNorthUpToFixedFrame(origin, ellipsoid);
-        this._ellipsoid = ellipsoid;
-        this._origin = origin;
-        this._xAxis = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 0, scratchCart4));
-        this._yAxis = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 1, scratchCart4));
-
-        var normal = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 2, scratchCart4));
-        this._plane = Plane.fromPointNormal(origin, normal);
-    };
-
-    defineProperties(EllipsoidTangentPlane.prototype, {
-        /**
-         * Gets the ellipsoid.
-         * @memberof EllipsoidTangentPlane.prototype
-         * @type {Ellipsoid}
-         */
-        ellipsoid : {
-            get : function() {
-                return this._ellipsoid;
-            }
-        },
-
-        /**
-         * Gets the origin.
-         * @memberof EllipsoidTangentPlane.prototype
-         * @type {Cartesian3}
-         */
-        origin : {
-            get : function() {
-                return this._origin;
-            }
-        }
-    });
-
-    var tmp = new AxisAlignedBoundingBox();
-    /**
-     * Creates a new instance from the provided ellipsoid and the center
-     * point of the provided Cartesians.
-     *
-     * @param {Ellipsoid} ellipsoid The ellipsoid to use.
-     * @param {Cartesian3} cartesians The list of positions surrounding the center point.
-     */
-    EllipsoidTangentPlane.fromPoints = function(cartesians, ellipsoid) {
-                if (!defined(cartesians)) {
-            throw new DeveloperError('cartesians is required.');
-        }
-        
-        var box = AxisAlignedBoundingBox.fromPoints(cartesians, tmp);
-        return new EllipsoidTangentPlane(box.center, ellipsoid);
-    };
-
-    var projectPointOntoPlaneRay = new Ray();
-    var projectPointOntoPlaneCartesian3 = new Cartesian3();
-
-    /**
-     * Computes the projection of the provided 3D position onto the 2D plane.
-     *
-     * @param {Cartesian3} cartesian The point to project.
-     * @param {Cartesian2} [result] The object onto which to store the result.
-     * @returns {Cartesian2} The modified result parameter or a new Cartesian2 instance if none was provided.
-     */
-    EllipsoidTangentPlane.prototype.projectPointOntoPlane = function(cartesian, result) {
-                if (!defined(cartesian)) {
-            throw new DeveloperError('cartesian is required.');
-        }
-        
-        var ray = projectPointOntoPlaneRay;
-        ray.origin = cartesian;
-        Cartesian3.normalize(cartesian, ray.direction);
-
-        var intersectionPoint = IntersectionTests.rayPlane(ray, this._plane, projectPointOntoPlaneCartesian3);
-        if (!defined(intersectionPoint)) {
-            Cartesian3.negate(ray.direction, ray.direction);
-            intersectionPoint = IntersectionTests.rayPlane(ray, this._plane, projectPointOntoPlaneCartesian3);
-        }
-
-        if (defined(intersectionPoint)) {
-            var v = Cartesian3.subtract(intersectionPoint, this._origin, intersectionPoint);
-            var x = Cartesian3.dot(this._xAxis, v);
-            var y = Cartesian3.dot(this._yAxis, v);
-
-            if (!defined(result)) {
-                return new Cartesian2(x, y);
-            }
-            result.x = x;
-            result.y = y;
-            return result;
-        }
-        return undefined;
-    };
-
-    /**
-     * Computes the projection of the provided 3D positions onto the 2D plane.
-     *
-     * @param {Cartesian3[]} cartesians The array of points to project.
-     * @param {Cartesian2[]} [result] The array of Cartesian2 instances onto which to store results.
-     * @returns {Cartesian2[]} The modified result parameter or a new array of Cartesian2 instances if none was provided.
-     */
-    EllipsoidTangentPlane.prototype.projectPointsOntoPlane = function(cartesians, result) {
-                if (!defined(cartesians)) {
-            throw new DeveloperError('cartesians is required.');
-        }
-        
-        if (!defined(result)) {
-            result = [];
-        }
-
-        var count = 0;
-        var length = cartesians.length;
-        for ( var i = 0; i < length; i++) {
-            var p = this.projectPointOntoPlane(cartesians[i], result[count]);
-            if (defined(p)) {
-                result[count] = p;
-                count++;
-            }
-        }
-        result.length = count;
-        return result;
-    };
-
-
-    var projectPointsOntoEllipsoidScratch = new Cartesian3();
-    /**
-     * Computes the projection of the provided 2D positions onto the 3D ellipsoid.
-     *
-     * @param {Cartesian2[]} cartesians The array of points to project.
-     * @param {Cartesian3[]} [result] The array of Cartesian3 instances onto which to store results.
-     * @returns {Cartesian3[]} The modified result parameter or a new array of Cartesian3 instances if none was provided.
-     */
-    EllipsoidTangentPlane.prototype.projectPointsOntoEllipsoid = function(cartesians, result) {
-                if (!defined(cartesians)) {
-            throw new DeveloperError('cartesians is required.');
-        }
-        
-        var length = cartesians.length;
-        if (!defined(result)) {
-            result = new Array(length);
-        } else {
-            result.length = length;
-        }
-
-        var ellipsoid = this._ellipsoid;
-        var origin = this._origin;
-        var xAxis = this._xAxis;
-        var yAxis = this._yAxis;
-        var tmp = projectPointsOntoEllipsoidScratch;
-
-        for ( var i = 0; i < length; ++i) {
-            var position = cartesians[i];
-            Cartesian3.multiplyByScalar(xAxis, position.x, tmp);
-            if (!defined(result[i])) {
-                result[i] = new Cartesian3();
-            }
-            var point = Cartesian3.add(origin, tmp, result[i]);
-            Cartesian3.multiplyByScalar(yAxis, position.y, tmp);
-            Cartesian3.add(point, tmp, point);
-            ellipsoid.scaleToGeocentricSurface(point, point);
-        }
-
-        return result;
-    };
-
-    return EllipsoidTangentPlane;
-});
-
-/*global define*/
-define('Core/PrimitiveType',[
-        './freezeObject'
-    ], function(
-        freezeObject) {
-    "use strict";
-
-    /**
-     * The type of a geometric primitive, i.e., points, lines, and triangles.
-     *
-     * @namespace
-     * @alias PrimitiveType
-     */
-    var PrimitiveType = {
-        /**
-         * 0x0000.  Points primitive where each vertex (or index) is a separate point.
-         *
-         * @type {Number}
-         * @constant
-         */
-        POINTS : 0x0000,
-
-        /**
-         * 0x0001.  Lines primitive where each two vertices (or indices) is a line segment.  Line segments are not necessarily connected.
-         *
-         * @type {Number}
-         * @constant
-         */
-        LINES : 0x0001,
-
-        /**
-         * 0x0002.  Line loop primitive where each vertex (or index) after the first connects a line to
-         * the previous vertex, and the last vertex implicitly connects to the first.
-         *
-         * @type {Number}
-         * @constant
-         */
-        LINE_LOOP : 0x0002,
-
-        /**
-         * 0x0003.  Line strip primitive where each vertex (or index) after the first connects a line to the previous vertex.
-         *
-         * @type {Number}
-         * @constant
-         */
-        LINE_STRIP : 0x0003,
-
-        /**
-         * 0x0004.  Triangles primitive where each three vertices (or indices) is a triangle.  Triangles do not necessarily share edges.
-         *
-         * @type {Number}
-         * @constant
-         */
-        TRIANGLES : 0x0004,
-
-        /**
-         * 0x0005.  Triangle strip primitive where each vertex (or index) after the first two connect to
-         * the previous two vertices forming a triangle.  For example, this can be used to model a wall.
-         *
-         * @type {Number}
-         * @constant
-         */
-        TRIANGLE_STRIP : 0x0005,
-
-        /**
-         * 0x0006.  Triangle fan primitive where each vertex (or index) after the first two connect to
-         * the previous vertex and the first vertex forming a triangle.  For example, this can be used
-         * to model a cone or circle.
-         *
-         * @type {Number}
-         * @constant
-         */
-        TRIANGLE_FAN : 0x0006,
-
-        /**
-         * @private
-         */
-        validate : function(primitiveType) {
-            return primitiveType === PrimitiveType.POINTS ||
-                   primitiveType === PrimitiveType.LINES ||
-                   primitiveType === PrimitiveType.LINE_LOOP ||
-                   primitiveType === PrimitiveType.LINE_STRIP ||
-                   primitiveType === PrimitiveType.TRIANGLES ||
-                   primitiveType === PrimitiveType.TRIANGLE_STRIP ||
-                   primitiveType === PrimitiveType.TRIANGLE_FAN;
-        }
-    };
-
-    return freezeObject(PrimitiveType);
-});
-
-/*global define*/
-define('Core/Geometry',[
-        './defaultValue',
-        './defined',
-        './DeveloperError',
-        './PrimitiveType'
-    ], function(
-        defaultValue,
-        defined,
-        DeveloperError,
-        PrimitiveType) {
-    "use strict";
-
-    /**
-     * A geometry representation with attributes forming vertices and optional index data
-     * defining primitives.  Geometries and an {@link Appearance}, which describes the shading,
-     * can be assigned to a {@link Primitive} for visualization.  A <code>Primitive</code> can
-     * be created from many heterogeneous - in many cases - geometries for performance.
-     * <p>
-     * Geometries can be transformed and optimized using functions in {@link GeometryPipeline}.
-     * </p>
-     *
-     * @alias Geometry
-     * @constructor
-     *
-     * @param {Object} options Object with the following properties:
-     * @param {GeometryAttributes} options.attributes Attributes, which make up the geometry's vertices.
-     * @param {PrimitiveType} [options.primitiveType=PrimitiveType.TRIANGLES] The type of primitives in the geometry.
-     * @param {Uint16Array|Uint32Array} [options.indices] Optional index data that determines the primitives in the geometry.
-     * @param {BoundingSphere} [options.boundingSphere] An optional bounding sphere that fully enclosed the geometry.
-     *
-     * @see PolygonGeometry
-     * @see RectangleGeometry
-     * @see EllipseGeometry
-     * @see CircleGeometry
-     * @see WallGeometry
-     * @see SimplePolylineGeometry
-     * @see BoxGeometry
-     * @see EllipsoidGeometry
-     *
-     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Geometry%20and%20Appearances.html|Geometry and Appearances Demo}
-     *
-     * @example
-     * // Create geometry with a position attribute and indexed lines.
-     * var positions = new Float64Array([
-     *   0.0, 0.0, 0.0,
-     *   7500000.0, 0.0, 0.0,
-     *   0.0, 7500000.0, 0.0
-     * ]);
-     *
-     * var geometry = new Cesium.Geometry({
-     *   attributes : {
-     *     position : new Cesium.GeometryAttribute({
-     *       componentDatatype : Cesium.ComponentDatatype.DOUBLE,
-     *       componentsPerAttribute : 3,
-     *       values : positions
-     *     })
-     *   },
-     *   indices : new Uint16Array([0, 1, 1, 2, 2, 0]),
-     *   primitiveType : Cesium.PrimitiveType.LINES,
-     *   boundingSphere : Cesium.BoundingSphere.fromVertices(positions)
-     * });
-     */
-    var Geometry = function(options) {
-        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
-
-                if (!defined(options.attributes)) {
-            throw new DeveloperError('options.attributes is required.');
-        }
-        
-        /**
-         * Attributes, which make up the geometry's vertices.  Each property in this object corresponds to a
-         * {@link GeometryAttribute} containing the attribute's data.
-         * <p>
-         * Attributes are always stored non-interleaved in a Geometry.
-         * </p>
-         * <p>
-         * There are reserved attribute names with well-known semantics.  The following attributes
-         * are created by a Geometry (depending on the provided {@link VertexFormat}.
-         * <ul>
-         *    <li><code>position</code> - 3D vertex position.  64-bit floating-point (for precision).  3 components per attribute.  See {@link VertexFormat#position}.</li>
-         *    <li><code>normal</code> - Normal (normalized), commonly used for lighting.  32-bit floating-point.  3 components per attribute.  See {@link VertexFormat#normal}.</li>
-         *    <li><code>st</code> - 2D texture coordinate.  32-bit floating-point.  2 components per attribute.  See {@link VertexFormat#st}.</li>
-         *    <li><code>binormal</code> - Binormal (normalized), used for tangent-space effects like bump mapping.  32-bit floating-point.  3 components per attribute.  See {@link VertexFormat#binormal}.</li>
-         *    <li><code>tangent</code> - Tangent (normalized), used for tangent-space effects like bump mapping.  32-bit floating-point.  3 components per attribute.  See {@link VertexFormat#tangent}.</li>
-         * </ul>
-         * </p>
-         * <p>
-         * The following attribute names are generally not created by a Geometry, but are added
-         * to a Geometry by a {@link Primitive} or {@link GeometryPipeline} functions to prepare
-         * the geometry for rendering.
-         * <ul>
-         *    <li><code>position3DHigh</code> - High 32 bits for encoded 64-bit position computed with {@link GeometryPipeline.encodeAttribute}.  32-bit floating-point.  4 components per attribute.</li>
-         *    <li><code>position3DLow</code> - Low 32 bits for encoded 64-bit position computed with {@link GeometryPipeline.encodeAttribute}.  32-bit floating-point.  4 components per attribute.</li>
-         *    <li><code>position3DHigh</code> - High 32 bits for encoded 64-bit 2D (Columbus view) position computed with {@link GeometryPipeline.encodeAttribute}.  32-bit floating-point.  4 components per attribute.</li>
-         *    <li><code>position2DLow</code> - Low 32 bits for encoded 64-bit 2D (Columbus view) position computed with {@link GeometryPipeline.encodeAttribute}.  32-bit floating-point.  4 components per attribute.</li>
-         *    <li><code>color</code> - RGBA color (normalized) usually from {@link GeometryInstance#color}.  32-bit floating-point.  4 components per attribute.</li>
-         *    <li><code>pickColor</code> - RGBA color used for picking.  32-bit floating-point.  4 components per attribute.</li>
-         * </ul>
-         * </p>
-         *
-         * @type GeometryAttributes
-         *
-         * @default undefined
-         *
-         * @see GeometryAttribute
-         * @see VertexFormat
-         *
-         * @example
-         * geometry.attributes.position = new Cesium.GeometryAttribute({
-         *   componentDatatype : Cesium.ComponentDatatype.FLOAT,
-         *   componentsPerAttribute : 3,
-         *   values : new Float32Array()
-         * });
-         */
-        this.attributes = options.attributes;
-
-        /**
-         * Optional index data that - along with {@link Geometry#primitiveType} -
-         * determines the primitives in the geometry.
-         *
-         * @type Array
-         *
-         * @default undefined
-         */
-        this.indices = options.indices;
-
-        /**
-         * The type of primitives in the geometry.  This is most often {@link PrimitiveType.TRIANGLES},
-         * but can varying based on the specific geometry.
-         *
-         * @type PrimitiveType
-         *
-         * @default undefined
-         */
-        this.primitiveType = defaultValue(options.primitiveType, PrimitiveType.TRIANGLES);
-
-        /**
-         * An optional bounding sphere that fully encloses the geometry.  This is
-         * commonly used for culling.
-         *
-         * @type BoundingSphere
-         *
-         * @default undefined
-         */
-        this.boundingSphere = options.boundingSphere;
-    };
-
-    /**
-     * Computes the number of vertices in a geometry.  The runtime is linear with
-     * respect to the number of attributes in a vertex, not the number of vertices.
-     *
-     * @param {Cartesian3} geometry The geometry.
-     * @returns {Number} The number of vertices in the geometry.
-     *
-     * @example
-     * var numVertices = Cesium.Geometry.computeNumberOfVertices(geometry);
-     */
-    Geometry.computeNumberOfVertices = function(geometry) {
-                if (!defined(geometry)) {
-            throw new DeveloperError('geometry is required.');
-        }
-        
-        var numberOfVertices = -1;
-        for ( var property in geometry.attributes) {
-            if (geometry.attributes.hasOwnProperty(property) &&
-                    defined(geometry.attributes[property]) &&
-                    defined(geometry.attributes[property].values)) {
-
-                var attribute = geometry.attributes[property];
-                var num = attribute.values.length / attribute.componentsPerAttribute;
-                if ((numberOfVertices !== num) && (numberOfVertices !== -1)) {
-                    throw new DeveloperError('All attribute lists must have the same number of attributes.');
-                }
-                numberOfVertices = num;
-            }
-        }
-
-        return numberOfVertices;
-    };
-
-    return Geometry;
-});
-
-/*global define*/
-define('Core/GeometryAttribute',[
-        './defaultValue',
-        './defined',
-        './DeveloperError'
-    ], function(
-        defaultValue,
-        defined,
-        DeveloperError) {
-    "use strict";
-
-    /**
-     * Values and type information for geometry attributes.  A {@link Geometry}
-     * generally contains one or more attributes.  All attributes together form
-     * the geometry's vertices.
-     *
-     * @alias GeometryAttribute
-     * @constructor
-     *
-     * @param {Object} [options] Object with the following properties:
-     * @param {ComponentDatatype} [options.componentDatatype] The datatype of each component in the attribute, e.g., individual elements in values.
-     * @param {Number} [options.componentsPerAttribute] A number between 1 and 4 that defines the number of components in an attributes.
-     * @param {Boolean} [options.normalize=false] When <code>true</code> and <code>componentDatatype</code> is an integer format, indicate that the components should be mapped to the range [0, 1] (unsigned) or [-1, 1] (signed) when they are accessed as floating-point for rendering.
-     * @param {Number[]} [options.values] The values for the attributes stored in a typed array.
-     *
-     * @exception {DeveloperError} options.componentsPerAttribute must be between 1 and 4.
-     *
-     * @see Geometry
-     *
-     * @example
-     * var geometry = new Cesium.Geometry({
-     *   attributes : {
-     *     position : new Cesium.GeometryAttribute({
-     *       componentDatatype : Cesium.ComponentDatatype.FLOAT,
-     *       componentsPerAttribute : 3,
-     *       values : [
-     *         0.0, 0.0, 0.0,
-     *         7500000.0, 0.0, 0.0,
-     *         0.0, 7500000.0, 0.0
-     *       ]
-     *     })
-     *   },
-     *   primitiveType : Cesium.PrimitiveType.LINE_LOOP
-     * });
-     */
-    var GeometryAttribute = function(options) {
-        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
-
-                if (!defined(options.componentDatatype)) {
-            throw new DeveloperError('options.componentDatatype is required.');
-        }
-        if (!defined(options.componentsPerAttribute)) {
-            throw new DeveloperError('options.componentsPerAttribute is required.');
-        }
-        if (options.componentsPerAttribute < 1 || options.componentsPerAttribute > 4) {
-            throw new DeveloperError('options.componentsPerAttribute must be between 1 and 4.');
-        }
-        if (!defined(options.values)) {
-            throw new DeveloperError('options.values is required.');
-        }
-        
-        /**
-         * The datatype of each component in the attribute, e.g., individual elements in
-         * {@link GeometryAttribute#values}.
-         *
-         * @type ComponentDatatype
-         *
-         * @default undefined
-         */
-        this.componentDatatype = options.componentDatatype;
-
-        /**
-         * A number between 1 and 4 that defines the number of components in an attributes.
-         * For example, a position attribute with x, y, and z components would have 3 as
-         * shown in the code example.
-         *
-         * @type Number
-         *
-         * @default undefined
-         *
-         * @example
-         * attribute.componentDatatype : Cesium.ComponentDatatype.FLOAT,
-         * attribute.componentsPerAttribute : 3,
-         * attribute.values = new Float32Array([
-         *   0.0, 0.0, 0.0,
-         *   7500000.0, 0.0, 0.0,
-         *   0.0, 7500000.0, 0.0
-         * ]);
-         */
-        this.componentsPerAttribute = options.componentsPerAttribute;
-
-        /**
-         * When <code>true</code> and <code>componentDatatype</code> is an integer format,
-         * indicate that the components should be mapped to the range [0, 1] (unsigned)
-         * or [-1, 1] (signed) when they are accessed as floating-point for rendering.
-         * <p>
-         * This is commonly used when storing colors using {@link ComponentDatatype.UNSIGNED_BYTE}.
-         * </p>
-         *
-         * @type Boolean
-         *
-         * @default false
-         *
-         * @example
-         * attribute.componentDatatype : Cesium.ComponentDatatype.UNSIGNED_BYTE,
-         * attribute.componentsPerAttribute : 4,
-         * attribute.normalize = true;
-         * attribute.values = new Uint8Array([
-         *   Cesium.Color.floatToByte(color.red)
-         *   Cesium.Color.floatToByte(color.green)
-         *   Cesium.Color.floatToByte(color.blue)
-         *   Cesium.Color.floatToByte(color.alpha)
-         * ]);
-         */
-        this.normalize = defaultValue(options.normalize, false);
-
-        /**
-         * The values for the attributes stored in a typed array.  In the code example,
-         * every three elements in <code>values</code> defines one attributes since
-         * <code>componentsPerAttribute</code> is 3.
-         *
-         * @type Array
-         *
-         * @default undefined
-         *
-         * @example
-         * attribute.componentDatatype : Cesium.ComponentDatatype.FLOAT,
-         * attribute.componentsPerAttribute : 3,
-         * attribute.values = new Float32Array([
-         *   0.0, 0.0, 0.0,
-         *   7500000.0, 0.0, 0.0,
-         *   0.0, 7500000.0, 0.0
-         * ]);
-         */
-        this.values = options.values;
-    };
-
-    return GeometryAttribute;
-});
-
-/*global define*/
-define('Core/GeometryAttributes',[
-        './defaultValue'
-    ], function(
-        defaultValue) {
-    "use strict";
-
-    /**
-     * Attributes, which make up a geometry's vertices.  Each property in this object corresponds to a
-     * {@link GeometryAttribute} containing the attribute's data.
-     * <p>
-     * Attributes are always stored non-interleaved in a Geometry.
-     * </p>
-     *
-     * @alias GeometryAttributes
-     * @constructor
-     */
-    var GeometryAttributes = function(options) {
-        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
-
-        /**
-         * The 3D position attribute.
-         * <p>
-         * 64-bit floating-point (for precision).  3 components per attribute.
-         * </p>
-         *
-         * @type GeometryAttribute
-         *
-         * @default undefined
-         */
-        this.position = options.position;
-
-        /**
-         * The normal attribute (normalized), which is commonly used for lighting.
-         * <p>
-         * 32-bit floating-point.  3 components per attribute.
-         * </p>
-         *
-         * @type GeometryAttribute
-         *
-         * @default undefined
-         */
-        this.normal = options.normal;
-
-        /**
-         * The 2D texture coordinate attribute.
-         * <p>
-         * 32-bit floating-point.  2 components per attribute
-         * </p>
-         *
-         * @type GeometryAttribute
-         *
-         * @default undefined
-         */
-        this.st = options.st;
-
-        /**
-         * The binormal attribute (normalized), which is used for tangent-space effects like bump mapping.
-         * <p>
-         * 32-bit floating-point.  3 components per attribute.
-         * </p>
-         *
-         * @type GeometryAttribute
-         *
-         * @default undefined
-         */
-        this.binormal = options.binormal;
-
-        /**
-         * The tangent attribute (normalized), which is used for tangent-space effects like bump mapping.
-         * <p>
-         * 32-bit floating-point.  3 components per attribute.
-         * </p>
-         *
-         * @type GeometryAttribute
-         *
-         * @default undefined
-         */
-        this.tangent = options.tangent;
-
-        /**
-         * The color attribute.
-         * <p>
-         * 8-bit unsigned integer. 4 components per attribute.
-         * </p>
-         *
-         * @type GeometryAttribute
-         *
-         * @default undefined
-         */
-        this.color = options.color;
-    };
-
-    return GeometryAttributes;
-});
-/*global define*/
-define('Core/GeometryInstance',[
-        './defaultValue',
-        './defined',
-        './DeveloperError',
-        './Matrix4'
-    ], function(
-        defaultValue,
-        defined,
-        DeveloperError,
-        Matrix4) {
-    "use strict";
-
-    /**
-     * Geometry instancing allows one {@link Geometry} object to be positions in several
-     * different locations and colored uniquely.  For example, one {@link BoxGeometry} can
-     * be instanced several times, each with a different <code>modelMatrix</code> to change
-     * its position, rotation, and scale.
-     *
-     * @alias GeometryInstance
-     * @constructor
-     *
-     * @param {Object} options Object with the following properties:
-     * @param {Geometry} options.geometry The geometry to instance.
-     * @param {Matrix4} [options.modelMatrix=Matrix4.IDENTITY] The model matrix that transforms to transform the geometry from model to world coordinates.
-     * @param {Object} [options.id] A user-defined object to return when the instance is picked with {@link Scene#pick} or get/set per-instance attributes with {@link Primitive#getGeometryInstanceAttributes}.
-     * @param {Object} [options.attributes] Per-instance attributes like a show or color attribute shown in the example below.
-     *
-     * @see Geometry
-     *
-     * @example
-     * // Create geometry for a box, and two instances that refer to it.
-     * // One instance positions the box on the bottom and colored aqua.
-     * // The other instance positions the box on the top and color white.
-     * var geometry = new Cesium.BoxGeometry({
-     *   vertexFormat : Cesium.VertexFormat.POSITION_AND_NORMAL,
-     *   dimensions : new Cesium.Cartesian3(1000000.0, 1000000.0, 500000.0)
-     * }),
-     * var instanceBottom = new Cesium.GeometryInstance({
-     *   geometry : geometry,
-     *   modelMatrix : Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(
-     *     Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883)), new Cesium.Cartesian3(0.0, 0.0, 1000000.0), new Cesium.Matrix4()),
-     *   attributes : {
-     *     color : new Cesium.ColorGeometryInstanceAttribute(Cesium.Color.AQUA)
-     *   }
-     *   id : 'bottom'
-     * });
-     * var instanceTop = new Cesium.GeometryInstance({
-     *   geometry : geometry,
-     *   modelMatrix : Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(
-     *     Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883)), new Cesium.Cartesian3(0.0, 0.0, 3000000.0), new Cesium.Matrix4()),
-     *   attributes : {
-     *     color : new Cesium.ColorGeometryInstanceAttribute(Cesium.Color.AQUA)
-     *   }
-     *   id : 'top'
-     * });
-     */
-    var GeometryInstance = function(options) {
-        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
-
-                if (!defined(options.geometry)) {
-            throw new DeveloperError('options.geometry is required.');
-        }
-        
-        /**
-         * The geometry being instanced.
-         *
-         * @type Geometry
-         *
-         * @default undefined
-         */
-        this.geometry = options.geometry;
-
-        /**
-         * The 4x4 transformation matrix that transforms the geometry from model to world coordinates.
-         * When this is the identity matrix, the geometry is drawn in world coordinates, i.e., Earth's WGS84 coordinates.
-         * Local reference frames can be used by providing a different transformation matrix, like that returned
-         * by {@link Transforms.eastNorthUpToFixedFrame}.
-         *
-         * @type Matrix4
-         *
-         * @default Matrix4.IDENTITY
-         */
-        this.modelMatrix = Matrix4.clone(defaultValue(options.modelMatrix, Matrix4.IDENTITY));
-
-        /**
-         * User-defined object returned when the instance is picked or used to get/set per-instance attributes.
-         *
-         * @type Object
-         *
-         * @default undefined
-         *
-         * @see Scene#pick
-         * @see Primitive#getGeometryInstanceAttributes
-         */
-        this.id = options.id;
-
-        /**
-         * Used for picking primitives that wrap geometry instances.
-         *
-         * @private
-         */
-        this.pickPrimitive = options.pickPrimitive;
-
-        /**
-         * Per-instance attributes like {@link ColorGeometryInstanceAttribute} or {@link ShowGeometryInstanceAttribute}.
-         * {@link Geometry} attributes varying per vertex; these attributes are constant for the entire instance.
-         *
-         * @type Object
-         *
-         * @default undefined
-         */
-        this.attributes = defaultValue(options.attributes, {});
-    };
-
-    return GeometryInstance;
-});
-
-/*global define*/
-define('Core/AttributeCompression',[
-        './Cartesian2',
-        './Cartesian3',
-        './defined',
-        './DeveloperError',
-        './Math'
-    ], function(
-        Cartesian2,
-        Cartesian3,
-        defined,
-        DeveloperError,
-        CesiumMath) {
-    "use strict";
-
-    /**
-     * Attribute compression and decompression functions.
-     *
-     * @namespace
-     * @alias AttributeCompression
-     *
-     * @private
-     */
-    var AttributeCompression = {};
-
-    /**
-     * Encodes a normalized vector into 2 SNORM values in the range of [0-255] following the 'oct' encoding.
-     *
-     * Oct encoding is a compact representation of unit length vectors.  The encoding and decoding functions are low cost, and represent the normalized vector within 1 degree of error.
-     * The 'oct' encoding is described in "A Survey of Efficient Representations of Independent Unit Vectors",
-     * Cigolle et al 2014: {@link http://jcgt.org/published/0003/02/01/}
-     *
-     * @param {Cartesian3} vector The normalized vector to be compressed into 2 byte 'oct' encoding.
-     * @param {Cartesian2} result The 2 byte oct-encoded unit length vector.
-     * @returns {Cartesian2} The 2 byte oct-encoded unit length vector.
-     *
-     * @exception {DeveloperError} vector must be defined.
-     * @exception {DeveloperError} result must be defined.
-     * @exception {DeveloperError} vector must be normalized.
-     *
-     * @see AttributeCompression.octDecode
-     */
-    AttributeCompression.octEncode = function(vector, result) {
-                if (!defined(vector)) {
-            throw new DeveloperError('vector is required.');
-        }
-        if (!defined(result)) {
-            throw new DeveloperError('result is required.');
-        }
-        var magSquared = Cartesian3.magnitudeSquared(vector);
-        if (Math.abs(magSquared - 1.0) > CesiumMath.EPSILON6) {
-            throw new DeveloperError('vector must be normalized.');
-        }
-        
-        result.x = vector.x / (Math.abs(vector.x) + Math.abs(vector.y) + Math.abs(vector.z));
-        result.y = vector.y / (Math.abs(vector.x) + Math.abs(vector.y) + Math.abs(vector.z));
-        if (vector.z < 0) {
-            var x = result.x;
-            var y = result.y;
-            result.x = (1.0 - Math.abs(y)) * CesiumMath.signNotZero(x);
-            result.y = (1.0 - Math.abs(x)) * CesiumMath.signNotZero(y);
-        }
-
-        result.x = CesiumMath.toSNorm(result.x);
-        result.y = CesiumMath.toSNorm(result.y);
-
-        return result;
-    };
-
-    /**
-     * Decodes a unit-length vector in 'oct' encoding to a normalized 3-component vector.
-     *
-     * @param {Number} x The x component of the oct-encoded unit length vector.
-     * @param {Number} y The y component of the oct-encoded unit length vector.
-     * @param {Cartesian3} result The decoded and normalized vector
-     * @returns {Cartesian3} The decoded and normalized vector.
-     *
-     * @exception {DeveloperError} result must be defined.
-     * @exception {DeveloperError} x and y must be a signed normalized integer between 0 and 255.
-     *
-     * @see AttributeCompression.octEncode
-     */
-    AttributeCompression.octDecode = function(x, y, result) {
-                if (!defined(result)) {
-            throw new DeveloperError('result is required.');
-        }
-        if (x < 0 || x > 255 || y < 0 || y > 255) {
-            throw new DeveloperError('x and y must be a signed normalized integer between 0 and 255');
-        }
-        
-        result.x = CesiumMath.fromSNorm(x);
-        result.y = CesiumMath.fromSNorm(y);
-        result.z = 1.0 - (Math.abs(result.x) + Math.abs(result.y));
-
-        if (result.z < 0.0)
-        {
-            var oldVX = result.x;
-            result.x = (1.0 - Math.abs(result.y)) * CesiumMath.signNotZero(oldVX);
-            result.y = (1.0 - Math.abs(oldVX)) * CesiumMath.signNotZero(result.y);
-        }
-
-        return Cartesian3.normalize(result, result);
-    };
-
-    /**
-     * Packs an oct encoded vector into a single floating-point number.
-     *
-     * @param {Cartesian2} encoded The oct encoded vector.
-     * @returns {Number} The oct encoded vector packed into a single float.
-     *
-     * @exception {DeveloperError} encoded is required.
-     */
-    AttributeCompression.octPackFloat = function(encoded) {
-                if (!defined(encoded)) {
-            throw new DeveloperError('encoded is required.');
-        }
-                return 256.0 * encoded.x + encoded.y;
-    };
-
-    var scratchEncodeCart2 = new Cartesian2();
-
-    /**
-     * Encodes a normalized vector into 2 SNORM values in the range of [0-255] following the 'oct' encoding and
-     * stores those values in a single float-point number.
-     *
-     * @param {Cartesian3} vector The normalized vector to be compressed into 2 byte 'oct' encoding.
-     * @returns {Number} The 2 byte oct-encoded unit length vector.
-     *
-     * @exception {DeveloperError} vector must be defined.
-     * @exception {DeveloperError} vector must be normalized.
-     */
-    AttributeCompression.octEncodeFloat = function(vector) {
-        AttributeCompression.octEncode(vector, scratchEncodeCart2);
-        return AttributeCompression.octPackFloat(scratchEncodeCart2);
-    };
-
-    /**
-     * Decodes a unit-length vector in 'oct' encoding packed in a floating-point number to a normalized 3-component vector.
-     *
-     * @param {Number} value The oct-encoded unit length vector stored as a single floating-point number.
-     * @param {Cartesian3} result The decoded and normalized vector
-     * @returns {Cartesian3} The decoded and normalized vector.
-     *
-     * @exception {DeveloperError} value must be defined.
-     * @exception {DeveloperError} result must be defined.
-     */
-    AttributeCompression.octDecodeFloat = function(value, result) {
-                if (!defined(value)) {
-            throw new DeveloperError('value is required.');
-        }
-        
-        var temp = value / 256.0;
-        var x = Math.floor(temp);
-        var y = (temp - x) * 256.0;
-
-        return AttributeCompression.octDecode(x, y, result);
-    };
-
-    /**
-     * Encodes three normalized vectors into 6 SNORM values in the range of [0-255] following the 'oct' encoding and
-     * packs those into two floating-point numbers.
-     *
-     * @param {Cartesian3} v1 A normalized vector to be compressed.
-     * @param {Cartesian3} v2 A normalized vector to be compressed.
-     * @param {Cartesian3} v3 A normalized vector to be compressed.
-     * @param {Cartesian2} result The 'oct' encoded vectors packed into two floating-point numbers.
-     * @returns {Cartesian2} The 'oct' encoded vectors packed into two floating-point numbers.
-     *
-     * @exception {DeveloperError} v1 must be defined.
-     * @exception {DeveloperError} v2 must be defined.
-     * @exception {DeveloperError} v3 must be defined.
-     * @exception {DeveloperError} result must be defined.
-     */
-    AttributeCompression.octPack = function(v1, v2, v3, result) {
-                if (!defined(v1)) {
-            throw new DeveloperError('v1 is required.');
-        }
-        if (!defined(v2)) {
-            throw new DeveloperError('v2 is required.');
-        }
-        if (!defined(v3)) {
-            throw new DeveloperError('v3 is required.');
-        }
-        if (!defined(result)) {
-            throw new DeveloperError('result is required.');
-        }
-        
-        var encoded1 = AttributeCompression.octEncodeFloat(v1);
-        var encoded2 = AttributeCompression.octEncodeFloat(v2);
-
-        var encoded3 = AttributeCompression.octEncode(v3, scratchEncodeCart2);
-        result.x = 65536.0 * encoded3.x + encoded1;
-        result.y = 65536.0 * encoded3.y + encoded2;
-        return result;
-    };
-
-    /**
-     * Decodes three unit-length vectors in 'oct' encoding packed into a floating-point number to a normalized 3-component vector.
-     *
-     * @param {Cartesian2} packed The three oct-encoded unit length vectors stored as two floating-point number.
-     * @param {Cartesian3} v1 One decoded and normalized vector.
-     * @param {Cartesian3} v2 One decoded and normalized vector.
-     * @param {Cartesian3} v3 One decoded and normalized vector.
-     *
-     * @exception {DeveloperError} packed must be defined.
-     * @exception {DeveloperError} v1 must be defined.
-     * @exception {DeveloperError} v2 must be defined.
-     * @exception {DeveloperError} v3 must be defined.
-     */
-    AttributeCompression.octUnpack = function(packed, v1, v2, v3) {
-                if (!defined(packed)) {
-            throw new DeveloperError('packed is required.');
-        }
-        if (!defined(v1)) {
-            throw new DeveloperError('v1 is required.');
-        }
-        if (!defined(v2)) {
-            throw new DeveloperError('v2 is required.');
-        }
-        if (!defined(v3)) {
-            throw new DeveloperError('v3 is required.');
-        }
-        
-        var temp = packed.x / 65536.0;
-        var x = Math.floor(temp);
-        var encodedFloat1 = (temp - x) * 65536.0;
-
-        temp = packed.y / 65536.0;
-        var y = Math.floor(temp);
-        var encodedFloat2 = (temp - y) * 65536.0;
-
-        AttributeCompression.octDecodeFloat(encodedFloat1, v1);
-        AttributeCompression.octDecodeFloat(encodedFloat2, v2);
-        AttributeCompression.octDecode(x, y, v3);
-    };
-
-    /**
-     * Pack texture coordinates into a single float. The texture coordinates will only preserve 12 bits of precision.
-     *
-     * @param {Cartesian2} textureCoordinates The texture coordinates to compress
-     * @returns {Number} The packed texture coordinates.
-     *
-     * @exception {DeveloperError} textureCoordinates is required.
-     */
-    AttributeCompression.compressTextureCoordinates = function(textureCoordinates) {
-                if (!defined(textureCoordinates)) {
-            throw new DeveloperError('textureCoordinates is required.');
-        }
-        
-        var x = textureCoordinates.x === 1.0 ? 4095.0 : (textureCoordinates.x * 4096.0) | 0;
-        var y = textureCoordinates.y === 1.0 ? 4095.0 : (textureCoordinates.y * 4096.0) | 0;
-        return 4096.0 * x + y;
-    };
-
-    /**
-     * Decompresses texture coordinates that were packed into a single float.
-     *
-     * @param {Number} compressed The compressed texture coordinates.
-     * @param {Cartesian2} result The decompressed texture coordinates.
-     * @returns {Cartesian2} The modified result parameter.
-     *
-     * @exception {DeveloperError} compressed is required.
-     * @exception {DeveloperError} result is required.
-     */
-    AttributeCompression.decompressTextureCoordinates = function(compressed, result) {
-                if (!defined(compressed)) {
-            throw new DeveloperError('compressed is required.');
-        }
-        if (!defined(result)) {
-            throw new DeveloperError('result is required.');
-        }
-        
-        var temp = compressed / 4096.0;
-        result.x = Math.floor(temp) / 4096.0;
-        result.y = temp - Math.floor(temp);
-        return result;
-    };
-
-    return AttributeCompression;
-});
-/*global define*/
-define('Core/barycentricCoordinates',[
-        './Cartesian2',
-        './Cartesian3',
-        './defined',
-        './DeveloperError'
-    ], function(
-        Cartesian2,
-        Cartesian3,
-        defined,
-        DeveloperError) {
-    "use strict";
-
-    var scratchCartesian1 = new Cartesian3();
-    var scratchCartesian2 = new Cartesian3();
-    var scratchCartesian3 = new Cartesian3();
-
-    /**
-     * Computes the barycentric coordinates for a point with respect to a triangle.
-     *
-     * @exports barycentricCoordinates
-     *
-     * @param {Cartesian2|Cartesian3} point The point to test.
-     * @param {Cartesian2|Cartesian3} p0 The first point of the triangle, corresponding to the barycentric x-axis.
-     * @param {Cartesian2|Cartesian3} p1 The second point of the triangle, corresponding to the barycentric y-axis.
-     * @param {Cartesian2|Cartesian3} p2 The third point of the triangle, corresponding to the barycentric z-axis.
-     * @param {Cartesian3} [result] The object onto which to store the result.
-     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
-     *
-     * @example
-     * // Returns Cartesian3.UNIT_X
-     * var p = new Cesium.Cartesian3(-1.0, 0.0, 0.0);
-     * var b = Cesium.barycentricCoordinates(p,
-     *   new Cesium.Cartesian3(-1.0, 0.0, 0.0),
-     *   new Cesium.Cartesian3( 1.0, 0.0, 0.0),
-     *   new Cesium.Cartesian3( 0.0, 1.0, 1.0));
-     */
-    var barycentricCoordinates = function(point, p0, p1, p2, result) {
-                if (!defined(point) || !defined(p0) || !defined(p1) || !defined(p2)) {
-            throw new DeveloperError('point, p0, p1, and p2 are required.');
-        }
-        
-
-        if (!defined(result)) {
-            result = new Cartesian3();
-        }
-
-        // Implementation based on http://www.blackpawn.com/texts/pointinpoly/default.html.
-        var v0, v1, v2;
-        var dot00, dot01, dot02, dot11, dot12;
-
-        if(!defined(p0.z)) {
-          v0 = Cartesian2.subtract(p1, p0, scratchCartesian1);
-          v1 = Cartesian2.subtract(p2, p0, scratchCartesian2);
-          v2 = Cartesian2.subtract(point, p0, scratchCartesian3);
-
-          dot00 = Cartesian2.dot(v0, v0);
-          dot01 = Cartesian2.dot(v0, v1);
-          dot02 = Cartesian2.dot(v0, v2);
-          dot11 = Cartesian2.dot(v1, v1);
-          dot12 = Cartesian2.dot(v1, v2);
-        } else {
-          v0 = Cartesian3.subtract(p1, p0, scratchCartesian1);
-          v1 = Cartesian3.subtract(p2, p0, scratchCartesian2);
-          v2 = Cartesian3.subtract(point, p0, scratchCartesian3);
-
-          dot00 = Cartesian3.dot(v0, v0);
-          dot01 = Cartesian3.dot(v0, v1);
-          dot02 = Cartesian3.dot(v0, v2);
-          dot11 = Cartesian3.dot(v1, v1);
-          dot12 = Cartesian3.dot(v1, v2);
-        }
-
-        var q = 1.0 / (dot00 * dot11 - dot01 * dot01);
-        result.y = (dot11 * dot02 - dot01 * dot12) * q;
-        result.z = (dot00 * dot12 - dot01 * dot02) * q;
-        result.x = 1.0 - result.y - result.z;
-        return result;
-    };
-
-    return barycentricCoordinates;
-});
-
-/*global define*/
-define('Core/EncodedCartesian3',[
-        './Cartesian3',
-        './defined',
-        './DeveloperError'
-    ], function(
-        Cartesian3,
-        defined,
-        DeveloperError) {
-    "use strict";
-
-    /**
-     * A fixed-point encoding of a {@link Cartesian3} with 64-bit floating-point components, as two {@link Cartesian3}
-     * values that, when converted to 32-bit floating-point and added, approximate the original input.
-     * <p>
-     * This is used to encode positions in vertex buffers for rendering without jittering artifacts
-     * as described in {@link http://blogs.agi.com/insight3d/index.php/2008/09/03/precisions-precisions/|Precisions, Precisions}.
-     * </p>
-     *
-     * @alias EncodedCartesian3
-     * @constructor
-     *
-     * @private
-     */
-    var EncodedCartesian3 = function() {
-        /**
-         * The high bits for each component.  Bits 0 to 22 store the whole value.  Bits 23 to 31 are not used.
-         * <p>
-         * The default is {@link Cartesian3.ZERO}.
-         * </p>
-         *
-         * @type {Cartesian3}
-         * @default {@link Cartesian3.ZERO}
-         */
-        this.high = Cartesian3.clone(Cartesian3.ZERO);
-
-        /**
-         * The low bits for each component.  Bits 7 to 22 store the whole value, and bits 0 to 6 store the fraction.  Bits 23 to 31 are not used.
-         * <p>
-         * The default is {@link Cartesian3.ZERO}.
-         * </p>
-         *
-         * @type {Cartesian3}
-         * @default {@link Cartesian3.ZERO}
-         */
-        this.low = Cartesian3.clone(Cartesian3.ZERO);
-    };
-
-    /**
-     * Encodes a 64-bit floating-point value as two floating-point values that, when converted to
-     * 32-bit floating-point and added, approximate the original input.  The returned object
-     * has <code>high</code> and <code>low</code> properties for the high and low bits, respectively.
-     * <p>
-     * The fixed-point encoding follows {@link http://blogs.agi.com/insight3d/index.php/2008/09/03/precisions-precisions/|Precisions, Precisions}.
-     * </p>
-     *
-     * @param {Number} value The floating-point value to encode.
-     * @param {Object} [result] The object onto which to store the result.
-     * @returns {Object} The modified result parameter or a new instance if one was not provided.
-     *
-     * @example
-     * var value = 1234567.1234567;
-     * var splitValue = Cesium.EncodedCartesian3.encode(value);
-     */
-    EncodedCartesian3.encode = function(value, result) {
-                if (!defined(value)) {
-            throw new DeveloperError('value is required');
-        }
-        
-        if (!defined(result)) {
-            result = {
-                high : 0.0,
-                low : 0.0
-            };
-        }
-
-        var doubleHigh;
-        if (value >= 0.0) {
-            doubleHigh = Math.floor(value / 65536.0) * 65536.0;
-            result.high = doubleHigh;
-            result.low = value - doubleHigh;
-        } else {
-            doubleHigh = Math.floor(-value / 65536.0) * 65536.0;
-            result.high = -doubleHigh;
-            result.low = value + doubleHigh;
-        }
-
-        return result;
-    };
-
-    var scratchEncode = {
-        high : 0.0,
-        low : 0.0
-    };
-
-    /**
-     * Encodes a {@link Cartesian3} with 64-bit floating-point components as two {@link Cartesian3}
-     * values that, when converted to 32-bit floating-point and added, approximate the original input.
-     * <p>
-     * The fixed-point encoding follows {@link http://blogs.agi.com/insight3d/index.php/2008/09/03/precisions-precisions/|Precisions, Precisions}.
-     * </p>
-     *
-     * @param {Cartesian3} cartesian The cartesian to encode.
-     * @param {EncodedCartesian3} [result] The object onto which to store the result.
-     * @returns {EncodedCartesian3} The modified result parameter or a new EncodedCartesian3 instance if one was not provided.
-     *
-     * @example
-     * var cart = new Cesium.Cartesian3(-10000000.0, 0.0, 10000000.0);
-     * var encoded = Cesium.EncodedCartesian3.fromCartesian(cart);
-     */
-    EncodedCartesian3.fromCartesian = function(cartesian, result) {
-                if (!defined(cartesian)) {
-            throw new DeveloperError('cartesian is required');
-        }
-        
-        if (!defined(result)) {
-            result = new EncodedCartesian3();
-        }
-
-        var high = result.high;
-        var low = result.low;
-
-        EncodedCartesian3.encode(cartesian.x, scratchEncode);
-        high.x = scratchEncode.high;
-        low.x = scratchEncode.low;
-
-        EncodedCartesian3.encode(cartesian.y, scratchEncode);
-        high.y = scratchEncode.high;
-        low.y = scratchEncode.low;
-
-        EncodedCartesian3.encode(cartesian.z, scratchEncode);
-        high.z = scratchEncode.high;
-        low.z = scratchEncode.low;
-
-        return result;
-    };
-
-    var encodedP = new EncodedCartesian3();
-
-    /**
-     * Encodes the provided <code>cartesian</code>, and writes it to an array with <code>high</code>
-     * components followed by <code>low</code> components, i.e. <code>[high.x, high.y, high.z, low.x, low.y, low.z]</code>.
-     * <p>
-     * This is used to create interleaved high-precision position vertex attributes.
-     * </p>
-     *
-     * @param {Cartesian3} cartesian The cartesian to encode.
-     * @param {Number[]} cartesianArray The array to write to.
-     * @param {Number} index The index into the array to start writing.  Six elements will be written.
-     *
-     * @exception {DeveloperError} index must be a number greater than or equal to 0.
-     *
-     * @example
-     * var positions = [
-     *    new Cesium.Cartesian3(),
-     *    // ...
-     * ];
-     * var encodedPositions = new Float32Array(2 * 3 * positions.length);
-     * var j = 0;
-     * for (var i = 0; i < positions.length; ++i) {
-     *   Cesium.EncodedCartesian3.writeElement(positions[i], encodedPositions, j);
-     *   j += 6;
-     * }
-     */
-    EncodedCartesian3.writeElements = function(cartesian, cartesianArray, index) {
-                if (!defined(cartesian)) {
-            throw new DeveloperError('cartesian is required');
-        }
-        if (!defined(cartesianArray)) {
-            throw new DeveloperError('cartesianArray is required');
-        }
-        if (typeof index !== 'number' || index < 0) {
-            throw new DeveloperError('index must be a number greater than or equal to 0.');
-        }
-        
-        EncodedCartesian3.fromCartesian(cartesian, encodedP);
-        var high = encodedP.high;
-        var low = encodedP.low;
-
-        cartesianArray[index] = high.x;
-        cartesianArray[index + 1] = high.y;
-        cartesianArray[index + 2] = high.z;
-        cartesianArray[index + 3] = low.x;
-        cartesianArray[index + 4] = low.y;
-        cartesianArray[index + 5] = low.z;
-    };
-
-    return EncodedCartesian3;
-});
-
-/*global define*/
-define('Core/IndexDatatype',[
-        './defined',
-        './DeveloperError',
-        './freezeObject',
-        './Math'
-    ], function(
-        defined,
-        DeveloperError,
-        freezeObject,
-        CesiumMath) {
-    "use strict";
-
-    /**
-     * Constants for WebGL index datatypes.  These corresponds to the
-     * <code>type</code> parameter of {@link http://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawElements.xml|drawElements}.
-     *
-     * @namespace
-     * @alias IndexDatatype
-     */
-    var IndexDatatype = {
-        /**
-         * 0x1401.  8-bit unsigned byte corresponding to <code>UNSIGNED_BYTE</code> and the type
-         * of an element in <code>Uint8Array</code>.
-         *
-         * @type {Number}
-         * @constant
-         */
-        UNSIGNED_BYTE : 0x1401,
-
-        /**
-         * 0x1403.  16-bit unsigned short corresponding to <code>UNSIGNED_SHORT</code> and the type
-         * of an element in <code>Uint16Array</code>.
-         *
-         * @type {Number}
-         * @constant
-         */
-        UNSIGNED_SHORT : 0x1403,
-
-        /**
-         * 0x1405.  32-bit unsigned int corresponding to <code>UNSIGNED_INT</code> and the type
-         * of an element in <code>Uint32Array</code>.
-         *
-         * @type {Number}
-         * @constant
-         */
-        UNSIGNED_INT : 0x1405
-    };
-
-    /**
-     * Returns the size, in bytes, of the corresponding datatype.
-     *
-     * @param {IndexDatatype} indexDatatype The index datatype to get the size of.
-     * @returns {Number} The size in bytes.
-     *
-     * @example
-     * // Returns 2
-     * var size = Cesium.IndexDatatype.getSizeInBytes(Cesium.IndexDatatype.UNSIGNED_SHORT);
-     */
-    IndexDatatype.getSizeInBytes = function(indexDatatype) {
-        switch(indexDatatype) {
-            case IndexDatatype.UNSIGNED_BYTE:
-                return Uint8Array.BYTES_PER_ELEMENT;
-            case IndexDatatype.UNSIGNED_SHORT:
-                return Uint16Array.BYTES_PER_ELEMENT;
-            case IndexDatatype.UNSIGNED_INT:
-                return Uint32Array.BYTES_PER_ELEMENT;
-        }
-
-                throw new DeveloperError('indexDatatype is required and must be a valid IndexDatatype constant.');
-            };
-
-    /**
-     * Validates that the provided index datatype is a valid {@link IndexDatatype}.
-     *
-     * @param {IndexDatatype} indexDatatype The index datatype to validate.
-     * @returns {Boolean} <code>true</code> if the provided index datatype is a valid value; otherwise, <code>false</code>.
-     *
-     * @example
-     * if (!Cesium.IndexDatatype.validate(indexDatatype)) {
-     *   throw new Cesium.DeveloperError('indexDatatype must be a valid value.');
-     * }
-     */
-    IndexDatatype.validate = function(indexDatatype) {
-        return defined(indexDatatype) &&
-               (indexDatatype === IndexDatatype.UNSIGNED_BYTE ||
-                indexDatatype === IndexDatatype.UNSIGNED_SHORT ||
-                indexDatatype === IndexDatatype.UNSIGNED_INT);
-    };
-
-    /**
-     * Creates a typed array that will store indices, using either <code><Uint16Array</code>
-     * or <code>Uint32Array</code> depending on the number of vertices.
-     *
-     * @param {Number} numberOfVertices Number of vertices that the indices will reference.
-     * @param {Any} indicesLengthOrArray Passed through to the typed array constructor.
-     * @returns {Uint16Aray|Uint32Array} A <code>Uint16Array</code> or <code>Uint32Array</code> constructed with <code>indicesLengthOrArray</code>.
-     *
-     * @example
-     * this.indices = Cesium.IndexDatatype.createTypedArray(positions.length / 3, numberOfIndices);
-     */
-    IndexDatatype.createTypedArray = function(numberOfVertices, indicesLengthOrArray) {
-                if (!defined(numberOfVertices)) {
-            throw new DeveloperError('numberOfVertices is required.');
-        }
-        
-        if (numberOfVertices > CesiumMath.SIXTY_FOUR_KILOBYTES) {
-            return new Uint32Array(indicesLengthOrArray);
-        }
-
-        return new Uint16Array(indicesLengthOrArray);
-    };
-
-    /**
-     * Creates a typed array from a source array buffer.  The resulting typed array will store indices, using either <code><Uint16Array</code>
-     * or <code>Uint32Array</code> depending on the number of vertices.
-     *
-     * @param {Number} numberOfVertices Number of vertices that the indices will reference.
-     * @param {ArrayBuffer} sourceArray Passed through to the typed array constructor.
-     * @param {byteOffset} byteOffset Passed through to the typed array constructor.
-     * @param {length} length Passed through to the typed array constructor.
-     * @returns {Uint16Aray|Uint32Array} A <code>Uint16Array</code> or <code>Uint32Array</code> constructed with <code>sourceArray</code>, <code>byteOffset</code>, and <code>length</code>.
-     *
-     */
-    IndexDatatype.createTypedArrayFromArrayBuffer = function(numberOfVertices, sourceArray, byteOffset, length) {
-                if (!defined(numberOfVertices)) {
-            throw new DeveloperError('numberOfVertices is required.');
-        }
-        if (!defined(sourceArray)) {
-            throw new DeveloperError('sourceArray is required.');
-        }
-        if (!defined(byteOffset)) {
-            throw new DeveloperError('byteOffset is required.');
-        }
-        
-        if (numberOfVertices > CesiumMath.SIXTY_FOUR_KILOBYTES) {
-            return new Uint32Array(sourceArray, byteOffset, length);
-        }
-
-        return new Uint16Array(sourceArray, byteOffset, length);
-    };
-
-    return freezeObject(IndexDatatype);
-});
-
-/*global define*/
-define('Core/Tipsify',[
-        './defaultValue',
-        './defined',
-        './DeveloperError'
-    ], function(
-        defaultValue,
-        defined,
-        DeveloperError) {
-    "use strict";
-
-    /**
-     * Encapsulates an algorithm to optimize triangles for the post
-     * vertex-shader cache.  This is based on the 2007 SIGGRAPH paper
-     * 'Fast Triangle Reordering for Vertex Locality and Reduced Overdraw.'
-     * The runtime is linear but several passes are made.
-     *
-     * @namespace
-     * @alias Tipsify
-     *
-     * @see <a href='http://gfx.cs.princeton.edu/pubs/Sander_2007_%3ETR/tipsy.pdf'>
-     * Fast Triangle Reordering for Vertex Locality and Reduced Overdraw</a>
-     * by Sander, Nehab, and Barczak
-     *
-     * @private
-     */
-    var Tipsify = {};
-
-    /**
-     * Calculates the average cache miss ratio (ACMR) for a given set of indices.
-     *
-     * @param {Object} options Object with the following properties:
-     * @param {Number[]} options.indices Lists triads of numbers corresponding to the indices of the vertices
-     *                        in the vertex buffer that define the geometry's triangles.
-     * @param {Number} [options.maximumIndex] The maximum value of the elements in <code>args.indices</code>.
-     *                                     If not supplied, this value will be computed.
-     * @param {Number} [options.cacheSize=24] The number of vertices that can be stored in the cache at any one time.
-     * @returns {Number} The average cache miss ratio (ACMR).
-     *
-     * @exception {DeveloperError} indices length must be a multiple of three.
-     * @exception {DeveloperError} cacheSize must be greater than two.
-     *
-     * @example
-     * var indices = [0, 1, 2, 3, 4, 5];
-     * var maxIndex = 5;
-     * var cacheSize = 3;
-     * var acmr = Cesium.Tipsify.calculateACMR({indices : indices, maxIndex : maxIndex, cacheSize : cacheSize});
-     */
-    Tipsify.calculateACMR = function(options) {
-        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
-        var indices = options.indices;
-        var maximumIndex = options.maximumIndex;
-        var cacheSize = defaultValue(options.cacheSize, 24);
-
-                if (!defined(indices)) {
-            throw new DeveloperError('indices is required.');
-        }
-        
-        var numIndices = indices.length;
-
-                if (numIndices < 3 || numIndices % 3 !== 0) {
-            throw new DeveloperError('indices length must be a multiple of three.');
-        }
-        if (maximumIndex <= 0) {
-            throw new DeveloperError('maximumIndex must be greater than zero.');
-        }
-        if (cacheSize < 3) {
-            throw new DeveloperError('cacheSize must be greater than two.');
-        }
-        
-        // Compute the maximumIndex if not given
-        if (!defined(maximumIndex)) {
-            maximumIndex = 0;
-            var currentIndex = 0;
-            var intoIndices = indices[currentIndex];
-            while (currentIndex < numIndices) {
-                if (intoIndices > maximumIndex) {
-                    maximumIndex = intoIndices;
-                }
-                ++currentIndex;
-                intoIndices = indices[currentIndex];
-            }
-        }
-
-        // Vertex time stamps
-        var vertexTimeStamps = [];
-        for ( var i = 0; i < maximumIndex + 1; i++) {
-            vertexTimeStamps[i] = 0;
-        }
-
-        // Cache processing
-        var s = cacheSize + 1;
-        for ( var j = 0; j < numIndices; ++j) {
-            if ((s - vertexTimeStamps[indices[j]]) > cacheSize) {
-                vertexTimeStamps[indices[j]] = s;
-                ++s;
-            }
-        }
-
-        return (s - cacheSize + 1) / (numIndices / 3);
-    };
-
-    /**
-     * Optimizes triangles for the post-vertex shader cache.
-     *
-     * @param {Number[]} options.indices Lists triads of numbers corresponding to the indices of the vertices
-     *                        in the vertex buffer that define the geometry's triangles.
-     * @param {Number} [options.maximumIndex] The maximum value of the elements in <code>args.indices</code>.
-     *                                     If not supplied, this value will be computed.
-     * @param {Number} [options.cacheSize=24] The number of vertices that can be stored in the cache at any one time.
-     * @returns {Number[]} A list of the input indices in an optimized order.
-     *
-     * @exception {DeveloperError} indices length must be a multiple of three.
-     * @exception {DeveloperError} cacheSize must be greater than two.
-     *
-     * @example
-     * var indices = [0, 1, 2, 3, 4, 5];
-     * var maxIndex = 5;
-     * var cacheSize = 3;
-     * var reorderedIndices = Cesium.Tipsify.tipsify({indices : indices, maxIndex : maxIndex, cacheSize : cacheSize});
-     */
-    Tipsify.tipsify = function(options) {
-        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
-        var indices = options.indices;
-        var maximumIndex = options.maximumIndex;
-        var cacheSize = defaultValue(options.cacheSize, 24);
-
-        var cursor;
-
-        function skipDeadEnd(vertices, deadEnd, indices, maximumIndexPlusOne) {
-            while (deadEnd.length >= 1) {
-                // while the stack is not empty
-                var d = deadEnd[deadEnd.length - 1]; // top of the stack
-                deadEnd.splice(deadEnd.length - 1, 1); // pop the stack
-
-                if (vertices[d].numLiveTriangles > 0) {
-                    return d;
-                }
-            }
-
-            while (cursor < maximumIndexPlusOne) {
-                if (vertices[cursor].numLiveTriangles > 0) {
-                    ++cursor;
-                    return cursor - 1;
-                }
-                ++cursor;
-            }
-            return -1;
-        }
-
-        function getNextVertex(indices, cacheSize, oneRing, vertices, s, deadEnd, maximumIndexPlusOne) {
-            var n = -1;
-            var p;
-            var m = -1;
-            var itOneRing = 0;
-            while (itOneRing < oneRing.length) {
-                var index = oneRing[itOneRing];
-                if (vertices[index].numLiveTriangles) {
-                    p = 0;
-                    if ((s - vertices[index].timeStamp + (2 * vertices[index].numLiveTriangles)) <= cacheSize) {
-                        p = s - vertices[index].timeStamp;
-                    }
-                    if ((p > m) || (m === -1)) {
-                        m = p;
-                        n = index;
-                    }
-                }
-                ++itOneRing;
-            }
-            if (n === -1) {
-                return skipDeadEnd(vertices, deadEnd, indices, maximumIndexPlusOne);
-            }
-            return n;
-        }
-
-                if (!defined(indices)) {
-            throw new DeveloperError('indices is required.');
-        }
-        
-        var numIndices = indices.length;
-
-                if (numIndices < 3 || numIndices % 3 !== 0) {
-            throw new DeveloperError('indices length must be a multiple of three.');
-        }
-        if (maximumIndex <= 0) {
-            throw new DeveloperError('maximumIndex must be greater than zero.');
-        }
-        if (cacheSize < 3) {
-            throw new DeveloperError('cacheSize must be greater than two.');
-        }
-        
-        // Determine maximum index
-        var maximumIndexPlusOne = 0;
-        var currentIndex = 0;
-        var intoIndices = indices[currentIndex];
-        var endIndex = numIndices;
-        if (defined(maximumIndex)) {
-            maximumIndexPlusOne = maximumIndex + 1;
-        } else {
-            while (currentIndex < endIndex) {
-                if (intoIndices > maximumIndexPlusOne) {
-                    maximumIndexPlusOne = intoIndices;
-                }
-                ++currentIndex;
-                intoIndices = indices[currentIndex];
-            }
-            if (maximumIndexPlusOne === -1) {
-                return 0;
-            }
-            ++maximumIndexPlusOne;
-        }
-
-        // Vertices
-        var vertices = [];
-        for ( var i = 0; i < maximumIndexPlusOne; i++) {
-            vertices[i] = {
-                numLiveTriangles : 0,
-                timeStamp : 0,
-                vertexTriangles : []
-            };
-        }
-        currentIndex = 0;
-        var triangle = 0;
-        while (currentIndex < endIndex) {
-            vertices[indices[currentIndex]].vertexTriangles.push(triangle);
-            ++(vertices[indices[currentIndex]]).numLiveTriangles;
-            vertices[indices[currentIndex + 1]].vertexTriangles.push(triangle);
-            ++(vertices[indices[currentIndex + 1]]).numLiveTriangles;
-            vertices[indices[currentIndex + 2]].vertexTriangles.push(triangle);
-            ++(vertices[indices[currentIndex + 2]]).numLiveTriangles;
-            ++triangle;
-            currentIndex += 3;
-        }
-
-        // Starting index
-        var f = 0;
-
-        // Time Stamp
-        var s = cacheSize + 1;
-        cursor = 1;
-
-        // Process
-        var oneRing = [];
-        var deadEnd = []; //Stack
-        var vertex;
-        var intoVertices;
-        var currentOutputIndex = 0;
-        var outputIndices = [];
-        var numTriangles = numIndices / 3;
-        var triangleEmitted = [];
-        for (i = 0; i < numTriangles; i++) {
-            triangleEmitted[i] = false;
-        }
-        var index;
-        var limit;
-        while (f !== -1) {
-            oneRing = [];
-            intoVertices = vertices[f];
-            limit = intoVertices.vertexTriangles.length;
-            for ( var k = 0; k < limit; ++k) {
-                triangle = intoVertices.vertexTriangles[k];
-                if (!triangleEmitted[triangle]) {
-                    triangleEmitted[triangle] = true;
-                    currentIndex = triangle + triangle + triangle;
-                    for ( var j = 0; j < 3; ++j) {
-                        // Set this index as a possible next index
-                        index = indices[currentIndex];
-                        oneRing.push(index);
-                        deadEnd.push(index);
-
-                        // Output index
-                        outputIndices[currentOutputIndex] = index;
-                        ++currentOutputIndex;
-
-                        // Cache processing
-                        vertex = vertices[index];
-                        --vertex.numLiveTriangles;
-                        if ((s - vertex.timeStamp) > cacheSize) {
-                            vertex.timeStamp = s;
-                            ++s;
-                        }
-                        ++currentIndex;
-                    }
-                }
-            }
-            f = getNextVertex(indices, cacheSize, oneRing, vertices, s, deadEnd, maximumIndexPlusOne);
-        }
-
-        return outputIndices;
-    };
-
-    return Tipsify;
-});
-
-/*global define*/
-define('Core/GeometryPipeline',[
-        './AttributeCompression',
-        './barycentricCoordinates',
-        './BoundingSphere',
-        './Cartesian2',
-        './Cartesian3',
-        './Cartesian4',
-        './Cartographic',
-        './ComponentDatatype',
-        './defaultValue',
-        './defined',
-        './DeveloperError',
-        './EncodedCartesian3',
-        './GeographicProjection',
-        './Geometry',
-        './GeometryAttribute',
-        './IndexDatatype',
-        './Intersect',
-        './IntersectionTests',
-        './Math',
-        './Matrix3',
-        './Matrix4',
-        './Plane',
-        './PrimitiveType',
-        './Tipsify'
-    ], function(
-        AttributeCompression,
-        barycentricCoordinates,
-        BoundingSphere,
-        Cartesian2,
-        Cartesian3,
-        Cartesian4,
-        Cartographic,
-        ComponentDatatype,
-        defaultValue,
-        defined,
-        DeveloperError,
-        EncodedCartesian3,
-        GeographicProjection,
-        Geometry,
-        GeometryAttribute,
-        IndexDatatype,
-        Intersect,
-        IntersectionTests,
-        CesiumMath,
-        Matrix3,
-        Matrix4,
-        Plane,
-        PrimitiveType,
-        Tipsify) {
-    "use strict";
-
-    /**
-     * Content pipeline functions for geometries.
-     *
-     * @namespace
-     * @alias GeometryPipeline
-     *
-     * @see Geometry
-     */
-    var GeometryPipeline = {};
-
-    function addTriangle(lines, index, i0, i1, i2) {
-        lines[index++] = i0;
-        lines[index++] = i1;
-
-        lines[index++] = i1;
-        lines[index++] = i2;
-
-        lines[index++] = i2;
-        lines[index] = i0;
-    }
-
-    function trianglesToLines(triangles) {
-        var count = triangles.length;
-        var size = (count / 3) * 6;
-        var lines = IndexDatatype.createTypedArray(count, size);
-
-        var index = 0;
-        for ( var i = 0; i < count; i += 3, index += 6) {
-            addTriangle(lines, index, triangles[i], triangles[i + 1], triangles[i + 2]);
-        }
-
-        return lines;
-    }
-
-    function triangleStripToLines(triangles) {
-        var count = triangles.length;
-        if (count >= 3) {
-            var size = (count - 2) * 6;
-            var lines = IndexDatatype.createTypedArray(count, size);
-
-            addTriangle(lines, 0, triangles[0], triangles[1], triangles[2]);
-            var index = 6;
-
-            for ( var i = 3; i < count; ++i, index += 6) {
-                addTriangle(lines, index, triangles[i - 1], triangles[i], triangles[i - 2]);
-            }
-
-            return lines;
-        }
-
-        return new Uint16Array();
-    }
-
-    function triangleFanToLines(triangles) {
-        if (triangles.length > 0) {
-            var count = triangles.length - 1;
-            var size = (count - 1) * 6;
-            var lines = IndexDatatype.createTypedArray(count, size);
-
-            var base = triangles[0];
-            var index = 0;
-            for ( var i = 1; i < count; ++i, index += 6) {
-                addTriangle(lines, index, base, triangles[i], triangles[i + 1]);
-            }
-
-            return lines;
-        }
-
-        return new Uint16Array();
-    }
-
-    /**
-     * Converts a geometry's triangle indices to line indices.  If the geometry has an <code>indices</code>
-     * and its <code>primitiveType</code> is <code>TRIANGLES</code>, <code>TRIANGLE_STRIP</code>,
-     * <code>TRIANGLE_FAN</code>, it is converted to <code>LINES</code>; otherwise, the geometry is not changed.
-     * <p>
-     * This is commonly used to create a wireframe geometry for visual debugging.
-     * </p>
-     *
-     * @param {Geometry} geometry The geometry to modify.
-     * @returns {Geometry} The modified <code>geometry</code> argument, with its triangle indices converted to lines.
-     *
-     * @exception {DeveloperError} geometry.primitiveType must be TRIANGLES, TRIANGLE_STRIP, or TRIANGLE_FAN.
-     *
-     * @example
-     * geometry = Cesium.GeometryPipeline.toWireframe(geometry);
-     */
-    GeometryPipeline.toWireframe = function(geometry) {
-                if (!defined(geometry)) {
-            throw new DeveloperError('geometry is required.');
-        }
-        
-        var indices = geometry.indices;
-        if (defined(indices)) {
-            switch (geometry.primitiveType) {
-                case PrimitiveType.TRIANGLES:
-                    geometry.indices = trianglesToLines(indices);
-                    break;
-                case PrimitiveType.TRIANGLE_STRIP:
-                    geometry.indices = triangleStripToLines(indices);
-                    break;
-                case PrimitiveType.TRIANGLE_FAN:
-                    geometry.indices = triangleFanToLines(indices);
-                    break;
-                default:
-                    throw new DeveloperError('geometry.primitiveType must be TRIANGLES, TRIANGLE_STRIP, or TRIANGLE_FAN.');
-            }
-
-            geometry.primitiveType = PrimitiveType.LINES;
-        }
-
-        return geometry;
-    };
-
-    /**
-     * Creates a new {@link Geometry} with <code>LINES</code> representing the provided
-     * attribute (<code>attributeName</code>) for the provided geometry.  This is used to
-     * visualize vector attributes like normals, binormals, and tangents.
-     *
-     * @param {Geometry} geometry The <code>Geometry</code> instance with the attribute.
-     * @param {String} [attributeName='normal'] The name of the attribute.
-     * @param {Number} [length=10000.0] The length of each line segment in meters.  This can be negative to point the vector in the opposite direction.
-     * @returns {Geometry} A new <code>Geometry<code> instance with line segments for the vector.
-     *
-     * @exception {DeveloperError} geometry.attributes must have an attribute with the same name as the attributeName parameter.
-     *
-     * @example
-     * var geometry = Cesium.GeometryPipeline.createLineSegmentsForVectors(instance.geometry, 'binormal', 100000.0),
-     */
-    GeometryPipeline.createLineSegmentsForVectors = function(geometry, attributeName, length) {
-        attributeName = defaultValue(attributeName, 'normal');
-
-                if (!defined(geometry)) {
-            throw new DeveloperError('geometry is required.');
-        }
-        if (!defined(geometry.attributes.position)) {
-            throw new DeveloperError('geometry.attributes.position is required.');
-        }
-        if (!defined(geometry.attributes[attributeName])) {
-            throw new DeveloperError('geometry.attributes must have an attribute with the same name as the attributeName parameter, ' + attributeName + '.');
-        }
-        
-        length = defaultValue(length, 10000.0);
-
-        var positions = geometry.attributes.position.values;
-        var vectors = geometry.attributes[attributeName].values;
-        var positionsLength = positions.length;
-
-        var newPositions = new Float64Array(2 * positionsLength);
-
-        var j = 0;
-        for (var i = 0; i < positionsLength; i += 3) {
-            newPositions[j++] = positions[i];
-            newPositions[j++] = positions[i + 1];
-            newPositions[j++] = positions[i + 2];
-
-            newPositions[j++] = positions[i] + (vectors[i] * length);
-            newPositions[j++] = positions[i + 1] + (vectors[i + 1] * length);
-            newPositions[j++] = positions[i + 2] + (vectors[i + 2] * length);
-        }
-
-        var newBoundingSphere;
-        var bs = geometry.boundingSphere;
-        if (defined(bs)) {
-            newBoundingSphere = new BoundingSphere(bs.center, bs.radius + length);
-        }
-
-        return new Geometry({
-            attributes : {
-                position : new GeometryAttribute({
-                    componentDatatype : ComponentDatatype.DOUBLE,
-                    componentsPerAttribute : 3,
-                    values : newPositions
-                })
-            },
-            primitiveType : PrimitiveType.LINES,
-            boundingSphere : newBoundingSphere
-        });
-    };
-
-    /**
-     * Creates an object that maps attribute names to unique locations (indices)
-     * for matching vertex attributes and shader programs.
-     *
-     * @param {Geometry} geometry The geometry, which is not modified, to create the object for.
-     * @returns {Object} An object with attribute name / index pairs.
-     *
-     * @example
-     * var attributeLocations = Cesium.GeometryPipeline.createAttributeLocations(geometry);
-     * // Example output
-     * // {
-     * //   'position' : 0,
-     * //   'normal' : 1
-     * // }
-     */
-    GeometryPipeline.createAttributeLocations = function(geometry) {
-                if (!defined(geometry)) {
-            throw new DeveloperError('geometry is required.');
-        }
-        
-        // There can be a WebGL performance hit when attribute 0 is disabled, so
-        // assign attribute locations to well-known attributes.
-        var semantics = [
-            'position',
-            'positionHigh',
-            'positionLow',
-
-            // From VertexFormat.position - after 2D projection and high-precision encoding
-            'position3DHigh',
-            'position3DLow',
-            'position2DHigh',
-            'position2DLow',
-
-            // From Primitive
-            'pickColor',
-
-            // From VertexFormat
-            'normal',
-            'st',
-            'binormal',
-            'tangent',
-
-            // From compressing texture coordinates and normals
-            'compressedAttributes'
-        ];
-
-        var attributes = geometry.attributes;
-        var indices = {};
-        var j = 0;
-        var i;
-        var len = semantics.length;
-
-        // Attribute locations for well-known attributes
-        for (i = 0; i < len; ++i) {
-            var semantic = semantics[i];
-
-            if (defined(attributes[semantic])) {
-                indices[semantic] = j++;
-            }
-        }
-
-        // Locations for custom attributes
-        for (var name in attributes) {
-            if (attributes.hasOwnProperty(name) && (!defined(indices[name]))) {
-                indices[name] = j++;
-            }
-        }
-
-        return indices;
-    };
-
-    /**
-     * Reorders a geometry's attributes and <code>indices</code> to achieve better performance from the GPU's pre-vertex-shader cache.
-     *
-     * @param {Geometry} geometry The geometry to modify.
-     * @returns {Geometry} The modified <code>geometry</code> argument, with its attributes and indices reordered for the GPU's pre-vertex-shader cache.
-     *
-     * @exception {DeveloperError} Each attribute array in geometry.attributes must have the same number of attributes.
-     *
-     * @see GeometryPipeline.reorderForPostVertexCache
-     *
-     * @example
-     * geometry = Cesium.GeometryPipeline.reorderForPreVertexCache(geometry);
-     */
-    GeometryPipeline.reorderForPreVertexCache = function(geometry) {
-                if (!defined(geometry)) {
-            throw new DeveloperError('geometry is required.');
-        }
-        
-        var numVertices = Geometry.computeNumberOfVertices(geometry);
-
-        var indices = geometry.indices;
-        if (defined(indices)) {
-            var indexCrossReferenceOldToNew = new Int32Array(numVertices);
-            for ( var i = 0; i < numVertices; i++) {
-                indexCrossReferenceOldToNew[i] = -1;
-            }
-
-            // Construct cross reference and reorder indices
-            var indicesIn = indices;
-            var numIndices = indicesIn.length;
-            var indicesOut = IndexDatatype.createTypedArray(numVertices, numIndices);
-
-            var intoIndicesIn = 0;
-            var intoIndicesOut = 0;
-            var nextIndex = 0;
-            var tempIndex;
-            while (intoIndicesIn < numIndices) {
-                tempIndex = indexCrossReferenceOldToNew[indicesIn[intoIndicesIn]];
-                if (tempIndex !== -1) {
-                    indicesOut[intoIndicesOut] = tempIndex;
-                } else {
-                    tempIndex = indicesIn[intoIndicesIn];
-                    indexCrossReferenceOldToNew[tempIndex] = nextIndex;
-
-                    indicesOut[intoIndicesOut] = nextIndex;
-                    ++nextIndex;
-                }
-                ++intoIndicesIn;
-                ++intoIndicesOut;
-            }
-            geometry.indices = indicesOut;
-
-            // Reorder attributes
-            var attributes = geometry.attributes;
-            for ( var property in attributes) {
-                if (attributes.hasOwnProperty(property) &&
-                        defined(attributes[property]) &&
-                        defined(attributes[property].values)) {
-
-                    var attribute = attributes[property];
-                    var elementsIn = attribute.values;
-                    var intoElementsIn = 0;
-                    var numComponents = attribute.componentsPerAttribute;
-                    var elementsOut = ComponentDatatype.createTypedArray(attribute.componentDatatype, nextIndex * numComponents);
-                    while (intoElementsIn < numVertices) {
-                        var temp = indexCrossReferenceOldToNew[intoElementsIn];
-                        if (temp !== -1) {
-                            for (i = 0; i < numComponents; i++) {
-                                elementsOut[numComponents * temp + i] = elementsIn[numComponents * intoElementsIn + i];
-                            }
-                        }
-                        ++intoElementsIn;
-                    }
-                    attribute.values = elementsOut;
-                }
-            }
-        }
-
-        return geometry;
-    };
-
-    /**
-     * Reorders a geometry's <code>indices</code> to achieve better performance from the GPU's
-     * post vertex-shader cache by using the Tipsify algorithm.  If the geometry <code>primitiveType</code>
-     * is not <code>TRIANGLES</code> or the geometry does not have an <code>indices</code>, this function has no effect.
-     *
-     * @param {Geometry} geometry The geometry to modify.
-     * @param {Number} [cacheCapacity=24] The number of vertices that can be held in the GPU's vertex cache.
-     * @returns {Geometry} The modified <code>geometry</code> argument, with its indices reordered for the post-vertex-shader cache.
-     *
-     * @exception {DeveloperError} cacheCapacity must be greater than two.
-     *
-     * @see GeometryPipeline.reorderForPreVertexCache
-     * @see {@link http://gfx.cs.princeton.edu/pubs/Sander_2007_%3ETR/tipsy.pdf|Fast Triangle Reordering for Vertex Locality and Reduced Overdraw}
-     * by Sander, Nehab, and Barczak
-     *
-     * @example
-     * geometry = Cesium.GeometryPipeline.reorderForPostVertexCache(geometry);
-     */
-    GeometryPipeline.reorderForPostVertexCache = function(geometry, cacheCapacity) {
-                if (!defined(geometry)) {
-            throw new DeveloperError('geometry is required.');
-        }
-        
-        var indices = geometry.indices;
-        if ((geometry.primitiveType === PrimitiveType.TRIANGLES) && (defined(indices))) {
-            var numIndices = indices.length;
-            var maximumIndex = 0;
-            for ( var j = 0; j < numIndices; j++) {
-                if (indices[j] > maximumIndex) {
-                    maximumIndex = indices[j];
-                }
-            }
-            geometry.indices = Tipsify.tipsify({
-                indices : indices,
-                maximumIndex : maximumIndex,
-                cacheSize : cacheCapacity
-            });
-        }
-
-        return geometry;
-    };
-
-    function copyAttributesDescriptions(attributes) {
-        var newAttributes = {};
-
-        for ( var attribute in attributes) {
-            if (attributes.hasOwnProperty(attribute) &&
-                    defined(attributes[attribute]) &&
-                    defined(attributes[attribute].values)) {
-
-                var attr = attributes[attribute];
-                newAttributes[attribute] = new GeometryAttribute({
-                    componentDatatype : attr.componentDatatype,
-                    componentsPerAttribute : attr.componentsPerAttribute,
-                    normalize : attr.normalize,
-                    values : []
-                });
-            }
-        }
-
-        return newAttributes;
-    }
-
-    function copyVertex(destinationAttributes, sourceAttributes, index) {
-        for ( var attribute in sourceAttributes) {
-            if (sourceAttributes.hasOwnProperty(attribute) &&
-                    defined(sourceAttributes[attribute]) &&
-                    defined(sourceAttributes[attribute].values)) {
-
-                var attr = sourceAttributes[attribute];
-
-                for ( var k = 0; k < attr.componentsPerAttribute; ++k) {
-                    destinationAttributes[attribute].values.push(attr.values[(index * attr.componentsPerAttribute) + k]);
-                }
-            }
-        }
-    }
-
-    /**
-     * Splits a geometry into multiple geometries, if necessary, to ensure that indices in the
-     * <code>indices</code> fit into unsigned shorts.  This is used to meet the WebGL requirements
-     * when unsigned int indices are not supported.
-     * <p>
-     * If the geometry does not have any <code>indices</code>, this function has no effect.
-     * </p>
-     *
-     * @param {Geometry} geometry The geometry to be split into multiple geometries.
-     * @returns {Geometry[]} An array of geometries, each with indices that fit into unsigned shorts.
-     *
-     * @exception {DeveloperError} geometry.primitiveType must equal to PrimitiveType.TRIANGLES, PrimitiveType.LINES, or PrimitiveType.POINTS
-     * @exception {DeveloperError} All geometry attribute lists must have the same number of attributes.
-     *
-     * @example
-     * var geometries = Cesium.GeometryPipeline.fitToUnsignedShortIndices(geometry);
-     */
-    GeometryPipeline.fitToUnsignedShortIndices = function(geometry) {
-                if (!defined(geometry)) {
-            throw new DeveloperError('geometry is required.');
-        }
-        if ((defined(geometry.indices)) &&
-            ((geometry.primitiveType !== PrimitiveType.TRIANGLES) &&
-             (geometry.primitiveType !== PrimitiveType.LINES) &&
-             (geometry.primitiveType !== PrimitiveType.POINTS))) {
-            throw new DeveloperError('geometry.primitiveType must equal to PrimitiveType.TRIANGLES, PrimitiveType.LINES, or PrimitiveType.POINTS.');
-        }
-        
-        var geometries = [];
-
-        // If there's an index list and more than 64K attributes, it is possible that
-        // some indices are outside the range of unsigned short [0, 64K - 1]
-        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
-        if (defined(geometry.indices) && (numberOfVertices > CesiumMath.SIXTY_FOUR_KILOBYTES)) {
-            var oldToNewIndex = [];
-            var newIndices = [];
-            var currentIndex = 0;
-            var newAttributes = copyAttributesDescriptions(geometry.attributes);
-
-            var originalIndices = geometry.indices;
-            var numberOfIndices = originalIndices.length;
-
-            var indicesPerPrimitive;
-
-            if (geometry.primitiveType === PrimitiveType.TRIANGLES) {
-                indicesPerPrimitive = 3;
-            } else if (geometry.primitiveType === PrimitiveType.LINES) {
-                indicesPerPrimitive = 2;
-            } else if (geometry.primitiveType === PrimitiveType.POINTS) {
-                indicesPerPrimitive = 1;
-            }
-
-            for ( var j = 0; j < numberOfIndices; j += indicesPerPrimitive) {
-                for (var k = 0; k < indicesPerPrimitive; ++k) {
-                    var x = originalIndices[j + k];
-                    var i = oldToNewIndex[x];
-                    if (!defined(i)) {
-                        i = currentIndex++;
-                        oldToNewIndex[x] = i;
-                        copyVertex(newAttributes, geometry.attributes, x);
-                    }
-                    newIndices.push(i);
-                }
-
-                if (currentIndex + indicesPerPrimitive > CesiumMath.SIXTY_FOUR_KILOBYTES) {
-                    geometries.push(new Geometry({
-                        attributes : newAttributes,
-                        indices : newIndices,
-                        primitiveType : geometry.primitiveType,
-                        boundingSphere : geometry.boundingSphere
-                    }));
-
-                    // Reset for next vertex-array
-                    oldToNewIndex = [];
-                    newIndices = [];
-                    currentIndex = 0;
-                    newAttributes = copyAttributesDescriptions(geometry.attributes);
-                }
-            }
-
-            if (newIndices.length !== 0) {
-                geometries.push(new Geometry({
-                    attributes : newAttributes,
-                    indices : newIndices,
-                    primitiveType : geometry.primitiveType,
-                    boundingSphere : geometry.boundingSphere
-                }));
-            }
-        } else {
-            // No need to split into multiple geometries
-            geometries.push(geometry);
-        }
-
-        return geometries;
-    };
-
-    var scratchProjectTo2DCartesian3 = new Cartesian3();
-    var scratchProjectTo2DCartographic = new Cartographic();
-
-    /**
-     * Projects a geometry's 3D <code>position</code> attribute to 2D, replacing the <code>position</code>
-     * attribute with separate <code>position3D</code> and <code>position2D</code> attributes.
-     * <p>
-     * If the geometry does not have a <code>position</code>, this function has no effect.
-     * </p>
-     *
-     * @param {Geometry} geometry The geometry to modify.
-     * @param {String} attributeName The name of the attribute.
-     * @param {String} attributeName3D The name of the attribute in 3D.
-     * @param {String} attributeName2D The name of the attribute in 2D.
-     * @param {Object} [projection=new GeographicProjection()] The projection to use.
-     * @returns {Geometry} The modified <code>geometry</code> argument with <code>position3D</code> and <code>position2D</code> attributes.
-     *
-     * @exception {DeveloperError} geometry must have attribute matching the attributeName argument.
-     * @exception {DeveloperError} The attribute componentDatatype must be ComponentDatatype.DOUBLE.
-     * @exception {DeveloperError} Could not project a point to 2D.
-     *
-     * @example
-     * geometry = Cesium.GeometryPipeline.projectTo2D(geometry, 'position', 'position3D', 'position2D');
-     */
-    GeometryPipeline.projectTo2D = function(geometry, attributeName, attributeName3D, attributeName2D, projection) {
-                if (!defined(geometry)) {
-            throw new DeveloperError('geometry is required.');
-        }
-        if (!defined(attributeName)) {
-            throw new DeveloperError('attributeName is required.');
-        }
-        if (!defined(attributeName3D)) {
-            throw new DeveloperError('attributeName3D is required.');
-        }
-        if (!defined(attributeName2D)) {
-            throw new DeveloperError('attributeName2D is required.');
-        }
-        if (!defined(geometry.attributes[attributeName])) {
-            throw new DeveloperError('geometry must have attribute matching the attributeName argument: ' + attributeName + '.');
-        }
-        if (geometry.attributes[attributeName].componentDatatype !== ComponentDatatype.DOUBLE) {
-            throw new DeveloperError('The attribute componentDatatype must be ComponentDatatype.DOUBLE.');
-        }
-        
-        var attribute = geometry.attributes[attributeName];
-        projection = (defined(projection)) ? projection : new GeographicProjection();
-        var ellipsoid = projection.ellipsoid;
-
-        // Project original values to 2D.
-        var values3D = attribute.values;
-        var projectedValues = new Float64Array(values3D.length);
-        var index = 0;
-
-        for ( var i = 0; i < values3D.length; i += 3) {
-            var value = Cartesian3.fromArray(values3D, i, scratchProjectTo2DCartesian3);
-
-            var lonLat = ellipsoid.cartesianToCartographic(value, scratchProjectTo2DCartographic);
-            if (!defined(lonLat)) {
-                throw new DeveloperError('Could not project point (' + value.x + ', ' + value.y + ', ' + value.z + ') to 2D.');
-            }
-
-            var projectedLonLat = projection.project(lonLat, scratchProjectTo2DCartesian3);
-
-            projectedValues[index++] = projectedLonLat.x;
-            projectedValues[index++] = projectedLonLat.y;
-            projectedValues[index++] = projectedLonLat.z;
-        }
-
-        // Rename original cartesians to WGS84 cartesians.
-        geometry.attributes[attributeName3D] = attribute;
-
-        // Replace original cartesians with 2D projected cartesians
-        geometry.attributes[attributeName2D] = new GeometryAttribute({
-            componentDatatype : ComponentDatatype.DOUBLE,
-            componentsPerAttribute : 3,
-            values : projectedValues
-        });
-        delete geometry.attributes[attributeName];
-
-        return geometry;
-    };
-
-    var encodedResult = {
-        high : 0.0,
-        low : 0.0
-    };
-
-    /**
-     * Encodes floating-point geometry attribute values as two separate attributes to improve
-     * rendering precision.
-     * <p>
-     * This is commonly used to create high-precision position vertex attributes.
-     * </p>
-     *
-     * @param {Geometry} geometry The geometry to modify.
-     * @param {String} attributeName The name of the attribute.
-     * @param {String} attributeHighName The name of the attribute for the encoded high bits.
-     * @param {String} attributeLowName The name of the attribute for the encoded low bits.
-     * @returns {Geometry} The modified <code>geometry</code> argument, with its encoded attribute.
-     *
-     * @exception {DeveloperError} geometry must have attribute matching the attributeName argument.
-     * @exception {DeveloperError} The attribute componentDatatype must be ComponentDatatype.DOUBLE.
-     *
-     * @example
-     * geometry = Cesium.GeometryPipeline.encodeAttribute(geometry, 'position3D', 'position3DHigh', 'position3DLow');
-     */
-    GeometryPipeline.encodeAttribute = function(geometry, attributeName, attributeHighName, attributeLowName) {
-                if (!defined(geometry)) {
-            throw new DeveloperError('geometry is required.');
-        }
-        if (!defined(attributeName)) {
-            throw new DeveloperError('attributeName is required.');
-        }
-        if (!defined(attributeHighName)) {
-            throw new DeveloperError('attributeHighName is required.');
-        }
-        if (!defined(attributeLowName)) {
-            throw new DeveloperError('attributeLowName is required.');
-        }
-        if (!defined(geometry.attributes[attributeName])) {
-            throw new DeveloperError('geometry must have attribute matching the attributeName argument: ' + attributeName + '.');
-        }
-        if (geometry.attributes[attributeName].componentDatatype !== ComponentDatatype.DOUBLE) {
-            throw new DeveloperError('The attribute componentDatatype must be ComponentDatatype.DOUBLE.');
-        }
-        
-        var attribute = geometry.attributes[attributeName];
-        var values = attribute.values;
-        var length = values.length;
-        var highValues = new Float32Array(length);
-        var lowValues = new Float32Array(length);
-
-        for (var i = 0; i < length; ++i) {
-            EncodedCartesian3.encode(values[i], encodedResult);
-            highValues[i] = encodedResult.high;
-            lowValues[i] = encodedResult.low;
-        }
-
-        var componentsPerAttribute = attribute.componentsPerAttribute;
-
-        geometry.attributes[attributeHighName] = new GeometryAttribute({
-            componentDatatype : ComponentDatatype.FLOAT,
-            componentsPerAttribute : componentsPerAttribute,
-            values : highValues
-        });
-        geometry.attributes[attributeLowName] = new GeometryAttribute({
-            componentDatatype : ComponentDatatype.FLOAT,
-            componentsPerAttribute : componentsPerAttribute,
-            values : lowValues
-        });
-        delete geometry.attributes[attributeName];
-
-        return geometry;
-    };
-
-    var scratchCartesian3 = new Cartesian3();
-
-    function transformPoint(matrix, attribute) {
-        if (defined(attribute)) {
-            var values = attribute.values;
-            var length = values.length;
-            for (var i = 0; i < length; i += 3) {
-                Cartesian3.unpack(values, i, scratchCartesian3);
-                Matrix4.multiplyByPoint(matrix, scratchCartesian3, scratchCartesian3);
-                Cartesian3.pack(scratchCartesian3, values, i);
-            }
-        }
-    }
-
-    function transformVector(matrix, attribute) {
-        if (defined(attribute)) {
-            var values = attribute.values;
-            var length = values.length;
-            for (var i = 0; i < length; i += 3) {
-                Cartesian3.unpack(values, i, scratchCartesian3);
-                Matrix3.multiplyByVector(matrix, scratchCartesian3, scratchCartesian3);
-                scratchCartesian3 = Cartesian3.normalize(scratchCartesian3, scratchCartesian3);
-                Cartesian3.pack(scratchCartesian3, values, i);
-            }
-        }
-    }
-
-    var inverseTranspose = new Matrix4();
-    var normalMatrix = new Matrix3();
-
-    /**
-     * Transforms a geometry instance to world coordinates.  This is used as a prerequisite
-     * to batch together several instances with {@link GeometryPipeline.combine}.  This changes
-     * the instance's <code>modelMatrix</code> to {@link Matrix4.IDENTITY} and transforms the
-     * following attributes if they are present: <code>position</code>, <code>normal</code>,
-     * <code>binormal</code>, and <code>tangent</code>.
-     *
-     * @param {GeometryInstance} instance The geometry instance to modify.
-     * @returns {GeometryInstance} The modified <code>instance</code> argument, with its attributes transforms to world coordinates.
-     *
-     * @see GeometryPipeline.combine
-     *
-     * @example
-     * for (var i = 0; i < instances.length; ++i) {
-     *   Cesium.GeometryPipeline.transformToWorldCoordinates(instances[i]);
-     * }
-     * var geometry = Cesium.GeometryPipeline.combine(instances);
-     */
-    GeometryPipeline.transformToWorldCoordinates = function(instance) {
-                if (!defined(instance)) {
-            throw new DeveloperError('instance is required.');
-        }
-        
-        var modelMatrix = instance.modelMatrix;
-
-        if (Matrix4.equals(modelMatrix, Matrix4.IDENTITY)) {
-            // Already in world coordinates
-            return instance;
-        }
-
-        var attributes = instance.geometry.attributes;
-
-        // Transform attributes in known vertex formats
-        transformPoint(modelMatrix, attributes.position);
-        transformPoint(modelMatrix, attributes.prevPosition);
-        transformPoint(modelMatrix, attributes.nextPosition);
-
-        if ((defined(attributes.normal)) ||
-            (defined(attributes.binormal)) ||
-            (defined(attributes.tangent))) {
-
-            Matrix4.inverse(modelMatrix, inverseTranspose);
-            Matrix4.transpose(inverseTranspose, inverseTranspose);
-            Matrix4.getRotation(inverseTranspose, normalMatrix);
-
-            transformVector(normalMatrix, attributes.normal);
-            transformVector(normalMatrix, attributes.binormal);
-            transformVector(normalMatrix, attributes.tangent);
-        }
-
-        var boundingSphere = instance.geometry.boundingSphere;
-
-        if (defined(boundingSphere)) {
-            instance.geometry.boundingSphere = BoundingSphere.transform(boundingSphere, modelMatrix, boundingSphere);
-        }
-
-        instance.modelMatrix = Matrix4.clone(Matrix4.IDENTITY);
-
-        return instance;
-    };
-
-    function findAttributesInAllGeometries(instances) {
-        var length = instances.length;
-
-        var attributesInAllGeometries = {};
-
-        var attributes0 = instances[0].geometry.attributes;
-        var name;
-
-        for (name in attributes0) {
-            if (attributes0.hasOwnProperty(name) &&
-                    defined(attributes0[name]) &&
-                    defined(attributes0[name].values)) {
-
-                var attribute = attributes0[name];
-                var numberOfComponents = attribute.values.length;
-                var inAllGeometries = true;
-
-                // Does this same attribute exist in all geometries?
-                for (var i = 1; i < length; ++i) {
-                    var otherAttribute = instances[i].geometry.attributes[name];
-
-                    if ((!defined(otherAttribute)) ||
-                        (attribute.componentDatatype !== otherAttribute.componentDatatype) ||
-                        (attribute.componentsPerAttribute !== otherAttribute.componentsPerAttribute) ||
-                        (attribute.normalize !== otherAttribute.normalize)) {
-
-                        inAllGeometries = false;
-                        break;
-                    }
-
-                    numberOfComponents += otherAttribute.values.length;
-                }
-
-                if (inAllGeometries) {
-                    attributesInAllGeometries[name] = new GeometryAttribute({
-                        componentDatatype : attribute.componentDatatype,
-                        componentsPerAttribute : attribute.componentsPerAttribute,
-                        normalize : attribute.normalize,
-                        values : ComponentDatatype.createTypedArray(attribute.componentDatatype, numberOfComponents)
-                    });
-                }
-            }
-        }
-
-        return attributesInAllGeometries;
-    }
-
-    var tempScratch = new Cartesian3();
-    /**
-     * Combines geometry from several {@link GeometryInstance} objects into one geometry.
-     * This concatenates the attributes, concatenates and adjusts the indices, and creates
-     * a bounding sphere encompassing all instances.
-     * <p>
-     * If the instances do not have the same attributes, a subset of attributes common
-     * to all instances is used, and the others are ignored.
-     * </p>
-     * <p>
-     * This is used by {@link Primitive} to efficiently render a large amount of static data.
-     * </p>
-     *
-     * @param {GeometryInstance[]} [instances] The array of {@link GeometryInstance} objects whose geometry will be combined.
-     * @returns {Geometry} A single geometry created from the provided geometry instances.
-     *
-     * @exception {DeveloperError} All instances must have the same modelMatrix.
-     * @exception {DeveloperError} All instance geometries must have an indices or not have one.
-     * @exception {DeveloperError} All instance geometries must have the same primitiveType.
-     *
-     * @see GeometryPipeline.transformToWorldCoordinates
-     *
-     * @example
-     * for (var i = 0; i < instances.length; ++i) {
-     *   Cesium.GeometryPipeline.transformToWorldCoordinates(instances[i]);
-     * }
-     * var geometry = Cesium.GeometryPipeline.combine(instances);
-     */
-    GeometryPipeline.combine = function(instances) {
-                if ((!defined(instances)) || (instances.length < 1)) {
-            throw new DeveloperError('instances is required and must have length greater than zero.');
-        }
-        
-        var length = instances.length;
-
-        var name;
-        var i;
-        var j;
-        var k;
-
-        var m = instances[0].modelMatrix;
-        var haveIndices = (defined(instances[0].geometry.indices));
-        var primitiveType = instances[0].geometry.primitiveType;
-
-                for (i = 1; i < length; ++i) {
-            if (!Matrix4.equals(instances[i].modelMatrix, m)) {
-                throw new DeveloperError('All instances must have the same modelMatrix.');
-            }
-            if ((defined(instances[i].geometry.indices)) !== haveIndices) {
-                throw new DeveloperError('All instance geometries must have an indices or not have one.');
-            }
-            if (instances[i].geometry.primitiveType !== primitiveType) {
-                throw new DeveloperError('All instance geometries must have the same primitiveType.');
-            }
-        }
-        
-        // Find subset of attributes in all geometries
-        var attributes = findAttributesInAllGeometries(instances);
-        var values;
-        var sourceValues;
-        var sourceValuesLength;
-
-        // Combine attributes from each geometry into a single typed array
-        for (name in attributes) {
-            if (attributes.hasOwnProperty(name)) {
-                values = attributes[name].values;
-
-                k = 0;
-                for (i = 0; i < length; ++i) {
-                    sourceValues = instances[i].geometry.attributes[name].values;
-                    sourceValuesLength = sourceValues.length;
-
-                    for (j = 0; j < sourceValuesLength; ++j) {
-                        values[k++] = sourceValues[j];
-                    }
-                }
-            }
-        }
-
-        // Combine index lists
-        var indices;
-
-        if (haveIndices) {
-            var numberOfIndices = 0;
-            for (i = 0; i < length; ++i) {
-                numberOfIndices += instances[i].geometry.indices.length;
-            }
-
-            var numberOfVertices = Geometry.computeNumberOfVertices(new Geometry({
-                attributes : attributes,
-                primitiveType : PrimitiveType.POINTS
-            }));
-            var destIndices = IndexDatatype.createTypedArray(numberOfVertices, numberOfIndices);
-
-            var destOffset = 0;
-            var offset = 0;
-
-            for (i = 0; i < length; ++i) {
-                var sourceIndices = instances[i].geometry.indices;
-                var sourceIndicesLen = sourceIndices.length;
-
-                for (k = 0; k < sourceIndicesLen; ++k) {
-                    destIndices[destOffset++] = offset + sourceIndices[k];
-                }
-
-                offset += Geometry.computeNumberOfVertices(instances[i].geometry);
-            }
-
-            indices = destIndices;
-        }
-
-        // Create bounding sphere that includes all instances
-        var center = new Cartesian3();
-        var radius = 0.0;
-        var bs;
-
-        for (i = 0; i < length; ++i) {
-            bs = instances[i].geometry.boundingSphere;
-            if (!defined(bs)) {
-                // If any geometries have an undefined bounding sphere, then so does the combined geometry
-                center = undefined;
-                break;
-            }
-
-            Cartesian3.add(bs.center, center, center);
-        }
-
-        if (defined(center)) {
-            Cartesian3.divideByScalar(center, length, center);
-
-            for (i = 0; i < length; ++i) {
-                bs = instances[i].geometry.boundingSphere;
-                var tempRadius = Cartesian3.magnitude(Cartesian3.subtract(bs.center, center, tempScratch)) + bs.radius;
-
-                if (tempRadius > radius) {
-                    radius = tempRadius;
-                }
-            }
-        }
-
-        return new Geometry({
-            attributes : attributes,
-            indices : indices,
-            primitiveType : primitiveType,
-            boundingSphere : (defined(center)) ? new BoundingSphere(center, radius) : undefined
-        });
-    };
-
-    var normal = new Cartesian3();
-    var v0 = new Cartesian3();
-    var v1 = new Cartesian3();
-    var v2 = new Cartesian3();
-
-    /**
-     * Computes per-vertex normals for a geometry containing <code>TRIANGLES</code> by averaging the normals of
-     * all triangles incident to the vertex.  The result is a new <code>normal</code> attribute added to the geometry.
-     * This assumes a counter-clockwise winding order.
-     *
-     * @param {Geometry} geometry The geometry to modify.
-     * @returns {Geometry} The modified <code>geometry</code> argument with the computed <code>normal</code> attribute.
-     *
-     * @exception {DeveloperError} geometry.indices length must be greater than 0 and be a multiple of 3.
-     * @exception {DeveloperError} geometry.primitiveType must be {@link PrimitiveType.TRIANGLES}.
-     *
-     * @example
-     * Cesium.GeometryPipeline.computeNormal(geometry);
-     */
-    GeometryPipeline.computeNormal = function(geometry) {
-                if (!defined(geometry)) {
-            throw new DeveloperError('geometry is required.');
-        }
-        if (!defined(geometry.attributes.position) || !defined(geometry.attributes.position.values)) {
-            throw new DeveloperError('geometry.attributes.position.values is required.');
-        }
-        if (!defined(geometry.indices)) {
-            throw new DeveloperError('geometry.indices is required.');
-        }
-        if (geometry.indices.length < 2 || geometry.indices.length % 3 !== 0) {
-            throw new DeveloperError('geometry.indices length must be greater than 0 and be a multiple of 3.');
-        }
-        if (geometry.primitiveType !== PrimitiveType.TRIANGLES) {
-            throw new DeveloperError('geometry.primitiveType must be PrimitiveType.TRIANGLES.');
-        }
-        
-        var indices = geometry.indices;
-        var attributes = geometry.attributes;
-        var vertices = attributes.position.values;
-        var numVertices = attributes.position.values.length / 3;
-        var numIndices = indices.length;
-        var normalsPerVertex = new Array(numVertices);
-        var normalsPerTriangle = new Array(numIndices / 3);
-        var normalIndices = new Array(numIndices);
-
-        for ( var i = 0; i < numVertices; i++) {
-            normalsPerVertex[i] = {
-                indexOffset : 0,
-                count : 0,
-                currentCount : 0
-            };
-        }
-
-        var j = 0;
-        for (i = 0; i < numIndices; i += 3) {
-            var i0 = indices[i];
-            var i1 = indices[i + 1];
-            var i2 = indices[i + 2];
-            var i03 = i0 * 3;
-            var i13 = i1 * 3;
-            var i23 = i2 * 3;
-
-            v0.x = vertices[i03];
-            v0.y = vertices[i03 + 1];
-            v0.z = vertices[i03 + 2];
-            v1.x = vertices[i13];
-            v1.y = vertices[i13 + 1];
-            v1.z = vertices[i13 + 2];
-            v2.x = vertices[i23];
-            v2.y = vertices[i23 + 1];
-            v2.z = vertices[i23 + 2];
-
-            normalsPerVertex[i0].count++;
-            normalsPerVertex[i1].count++;
-            normalsPerVertex[i2].count++;
-
-            Cartesian3.subtract(v1, v0, v1);
-            Cartesian3.subtract(v2, v0, v2);
-            normalsPerTriangle[j] = Cartesian3.cross(v1, v2, new Cartesian3());
-            j++;
-        }
-
-        var indexOffset = 0;
-        for (i = 0; i < numVertices; i++) {
-            normalsPerVertex[i].indexOffset += indexOffset;
-            indexOffset += normalsPerVertex[i].count;
-        }
-
-        j = 0;
-        var vertexNormalData;
-        for (i = 0; i < numIndices; i += 3) {
-            vertexNormalData = normalsPerVertex[indices[i]];
-            var index = vertexNormalData.indexOffset + vertexNormalData.currentCount;
-            normalIndices[index] = j;
-            vertexNormalData.currentCount++;
-
-            vertexNormalData = normalsPerVertex[indices[i + 1]];
-            index = vertexNormalData.indexOffset + vertexNormalData.currentCount;
-            normalIndices[index] = j;
-            vertexNormalData.currentCount++;
-
-            vertexNormalData = normalsPerVertex[indices[i + 2]];
-            index = vertexNormalData.indexOffset + vertexNormalData.currentCount;
-            normalIndices[index] = j;
-            vertexNormalData.currentCount++;
-
-            j++;
-        }
-
-        var normalValues = new Float32Array(numVertices * 3);
-        for (i = 0; i < numVertices; i++) {
-            var i3 = i * 3;
-            vertexNormalData = normalsPerVertex[i];
-            if (vertexNormalData.count > 0) {
-                Cartesian3.clone(Cartesian3.ZERO, normal);
-                for (j = 0; j < vertexNormalData.count; j++) {
-                    Cartesian3.add(normal, normalsPerTriangle[normalIndices[vertexNormalData.indexOffset + j]], normal);
-                }
-                Cartesian3.normalize(normal, normal);
-                normalValues[i3] = normal.x;
-                normalValues[i3 + 1] = normal.y;
-                normalValues[i3 + 2] = normal.z;
-            } else {
-                normalValues[i3] = 0.0;
-                normalValues[i3 + 1] = 0.0;
-                normalValues[i3 + 2] = 1.0;
-            }
-        }
-
-        geometry.attributes.normal = new GeometryAttribute({
-            componentDatatype : ComponentDatatype.FLOAT,
-            componentsPerAttribute : 3,
-            values : normalValues
-        });
-
-        return geometry;
-    };
-
-    var normalScratch = new Cartesian3();
-    var normalScale = new Cartesian3();
-    var tScratch = new Cartesian3();
-
-    /**
-     * Computes per-vertex binormals and tangents for a geometry containing <code>TRIANGLES</code>.
-     * The result is new <code>binormal</code> and <code>tangent</code> attributes added to the geometry.
-     * This assumes a counter-clockwise winding order.
-     * <p>
-     * Based on <a href="http://www.terathon.com/code/tangent.html">Computing Tangent Space Basis Vectors
-     * for an Arbitrary Mesh</a> by Eric Lengyel.
-     * </p>
-     *
-     * @param {Geometry} geometry The geometry to modify.
-     * @returns {Geometry} The modified <code>geometry</code> argument with the computed <code>binormal</code> and <code>tangent</code> attributes.
-     *
-     * @exception {DeveloperError} geometry.indices length must be greater than 0 and be a multiple of 3.
-     * @exception {DeveloperError} geometry.primitiveType must be {@link PrimitiveType.TRIANGLES}.
-     *
-     * @example
-     * Cesium.GeometryPipeline.computeBinormalAndTangent(geometry);
-     */
-    GeometryPipeline.computeBinormalAndTangent = function(geometry) {
-                if (!defined(geometry)) {
-            throw new DeveloperError('geometry is required.');
-        }
-        
-        var attributes = geometry.attributes;
-        var indices = geometry.indices;
-
-                if (!defined(attributes.position) || !defined(attributes.position.values)) {
-            throw new DeveloperError('geometry.attributes.position.values is required.');
-        }
-        if (!defined(attributes.normal) || !defined(attributes.normal.values)) {
-            throw new DeveloperError('geometry.attributes.normal.values is required.');
-        }
-        if (!defined(attributes.st) || !defined(attributes.st.values)) {
-            throw new DeveloperError('geometry.attributes.st.values is required.');
-        }
-        if (!defined(indices)) {
-            throw new DeveloperError('geometry.indices is required.');
-        }
-        if (indices.length < 2 || indices.length % 3 !== 0) {
-            throw new DeveloperError('geometry.indices length must be greater than 0 and be a multiple of 3.');
-        }
-        if (geometry.primitiveType !== PrimitiveType.TRIANGLES) {
-            throw new DeveloperError('geometry.primitiveType must be PrimitiveType.TRIANGLES.');
-        }
-        
-        var vertices = geometry.attributes.position.values;
-        var normals = geometry.attributes.normal.values;
-        var st = geometry.attributes.st.values;
-
-        var numVertices = geometry.attributes.position.values.length / 3;
-        var numIndices = indices.length;
-        var tan1 = new Array(numVertices * 3);
-
-        for ( var i = 0; i < tan1.length; i++) {
-            tan1[i] = 0;
-        }
-
-        var i03;
-        var i13;
-        var i23;
-        for (i = 0; i < numIndices; i += 3) {
-            var i0 = indices[i];
-            var i1 = indices[i + 1];
-            var i2 = indices[i + 2];
-            i03 = i0 * 3;
-            i13 = i1 * 3;
-            i23 = i2 * 3;
-            var i02 = i0 * 2;
-            var i12 = i1 * 2;
-            var i22 = i2 * 2;
-
-            var ux = vertices[i03];
-            var uy = vertices[i03 + 1];
-            var uz = vertices[i03 + 2];
-
-            var wx = st[i02];
-            var wy = st[i02 + 1];
-            var t1 = st[i12 + 1] - wy;
-            var t2 = st[i22 + 1] - wy;
-
-            var r = 1.0 / ((st[i12] - wx) * t2 - (st[i22] - wx) * t1);
-            var sdirx = (t2 * (vertices[i13] - ux) - t1 * (vertices[i23] - ux)) * r;
-            var sdiry = (t2 * (vertices[i13 + 1] - uy) - t1 * (vertices[i23 + 1] - uy)) * r;
-            var sdirz = (t2 * (vertices[i13 + 2] - uz) - t1 * (vertices[i23 + 2] - uz)) * r;
-
-            tan1[i03] += sdirx;
-            tan1[i03 + 1] += sdiry;
-            tan1[i03 + 2] += sdirz;
-
-            tan1[i13] += sdirx;
-            tan1[i13 + 1] += sdiry;
-            tan1[i13 + 2] += sdirz;
-
-            tan1[i23] += sdirx;
-            tan1[i23 + 1] += sdiry;
-            tan1[i23 + 2] += sdirz;
-        }
-
-        var binormalValues = new Float32Array(numVertices * 3);
-        var tangentValues = new Float32Array(numVertices * 3);
-
-        for (i = 0; i < numVertices; i++) {
-            i03 = i * 3;
-            i13 = i03 + 1;
-            i23 = i03 + 2;
-
-            var n = Cartesian3.fromArray(normals, i03, normalScratch);
-            var t = Cartesian3.fromArray(tan1, i03, tScratch);
-            var scalar = Cartesian3.dot(n, t);
-            Cartesian3.multiplyByScalar(n, scalar, normalScale);
-            Cartesian3.normalize(Cartesian3.subtract(t, normalScale, t), t);
-
-            tangentValues[i03] = t.x;
-            tangentValues[i13] = t.y;
-            tangentValues[i23] = t.z;
-
-            Cartesian3.normalize(Cartesian3.cross(n, t, t), t);
-
-            binormalValues[i03] = t.x;
-            binormalValues[i13] = t.y;
-            binormalValues[i23] = t.z;
-        }
-
-        geometry.attributes.tangent = new GeometryAttribute({
-            componentDatatype : ComponentDatatype.FLOAT,
-            componentsPerAttribute : 3,
-            values : tangentValues
-        });
-
-        geometry.attributes.binormal = new GeometryAttribute({
-            componentDatatype : ComponentDatatype.FLOAT,
-            componentsPerAttribute : 3,
-            values : binormalValues
-        });
-
-        return geometry;
-    };
-
-    var scratchCartesian2 = new Cartesian2();
-    var toEncode1 = new Cartesian3();
-    var toEncode2 = new Cartesian3();
-    var toEncode3 = new Cartesian3();
-
-    /**
-     * Compresses and packs geometry normal attribute values to save memory.
-     *
-     * @param {Geometry} geometry The geometry to modify.
-     * @returns {Geometry} The modified <code>geometry</code> argument, with its normals compressed and packed.
-     *
-     * @example
-     * geometry = Cesium.GeometryPipeline.compressVertices(geometry);
-     */
-    GeometryPipeline.compressVertices = function(geometry) {
-                if (!defined(geometry)) {
-            throw new DeveloperError('geometry is required.');
-        }
-        
-        var normalAttribute = geometry.attributes.normal;
-        var stAttribute = geometry.attributes.st;
-        if (!defined(normalAttribute) && !defined(stAttribute)) {
-            return geometry;
-        }
-
-        var tangentAttribute = geometry.attributes.tangent;
-        var binormalAttribute = geometry.attributes.binormal;
-
-        var normals;
-        var st;
-        var tangents;
-        var binormals;
-
-        if (defined(normalAttribute)) {
-            normals = normalAttribute.values;
-        }
-        if (defined(stAttribute)) {
-            st = stAttribute.values;
-        }
-        if (defined(tangentAttribute)) {
-            tangents = tangentAttribute.values;
-        }
-        if (binormalAttribute) {
-            binormals = binormalAttribute.values;
-        }
-
-        var length = defined(normals) ? normals.length : st.length;
-        var numComponents = defined(normals) ? 3.0 : 2.0;
-        var numVertices = length / numComponents;
-
-        var compressedLength = numVertices;
-        var numCompressedComponents = defined(st) && defined(normals) ? 2.0 : 1.0;
-        numCompressedComponents += defined(tangents) || defined(binormals) ? 1.0 : 0.0;
-        compressedLength *= numCompressedComponents;
-
-        var compressedAttributes = new Float32Array(compressedLength);
-
-        var normalIndex = 0;
-        for (var i = 0; i < numVertices; ++i) {
-            if (defined(st)) {
-                Cartesian2.fromArray(st, i * 2.0, scratchCartesian2);
-                compressedAttributes[normalIndex++] = AttributeCompression.compressTextureCoordinates(scratchCartesian2);
-            }
-
-            var index = i * 3.0;
-            if (defined(normals) && defined(tangents) && defined(binormals)) {
-                Cartesian3.fromArray(normals, index, toEncode1);
-                Cartesian3.fromArray(tangents, index, toEncode2);
-                Cartesian3.fromArray(binormals, index, toEncode3);
-
-                AttributeCompression.octPack(toEncode1, toEncode2, toEncode3, scratchCartesian2);
-                compressedAttributes[normalIndex++] = scratchCartesian2.x;
-                compressedAttributes[normalIndex++] = scratchCartesian2.y;
-            } else {
-                if (defined(normals)) {
-                    Cartesian3.fromArray(normals, index, toEncode1);
-                    compressedAttributes[normalIndex++] = AttributeCompression.octEncodeFloat(toEncode1);
-                }
-
-                if (defined(tangents)) {
-                    Cartesian3.fromArray(tangents, index, toEncode1);
-                    compressedAttributes[normalIndex++] = AttributeCompression.octEncodeFloat(toEncode1);
-                }
-
-                if (defined(binormals)) {
-                    Cartesian3.fromArray(binormals, index, toEncode1);
-                    compressedAttributes[normalIndex++] = AttributeCompression.octEncodeFloat(toEncode1);
-                }
-            }
-        }
-
-        geometry.attributes.compressedAttributes = new GeometryAttribute({
-            componentDatatype : ComponentDatatype.FLOAT,
-            componentsPerAttribute : numCompressedComponents,
-            values : compressedAttributes
-        });
-
-        if (defined(normals)) {
-            delete geometry.attributes.normal;
-        }
-        if (defined(st)) {
-            delete geometry.attributes.st;
-        }
-        if (defined(tangents)) {
-            delete geometry.attributes.tangent;
-        }
-        if (defined(binormals)) {
-            delete geometry.attributes.binormal;
-        }
-
-        return geometry;
-    };
-
-    function indexTriangles(geometry) {
-        if (defined(geometry.indices)) {
-            return geometry;
-        }
-        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
-
-                if (numberOfVertices < 3) {
-            throw new DeveloperError('The number of vertices must be at least three.');
-        }
-        if (numberOfVertices % 3 !== 0) {
-            throw new DeveloperError('The number of vertices must be a multiple of three.');
-        }
-        
-        var indices = IndexDatatype.createTypedArray(numberOfVertices, numberOfVertices);
-        for (var i = 0; i < numberOfVertices; ++i) {
-            indices[i] = i;
-        }
-
-        geometry.indices = indices;
-        return geometry;
-    }
-
-    function indexTriangleFan(geometry) {
-        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
-
-                if (numberOfVertices < 3) {
-            throw new DeveloperError('The number of vertices must be at least three.');
-        }
-        
-        var indices = IndexDatatype.createTypedArray(numberOfVertices, (numberOfVertices - 2) * 3);
-        indices[0] = 1;
-        indices[1] = 0;
-        indices[2] = 2;
-
-        var indicesIndex = 3;
-        for (var i = 3; i < numberOfVertices; ++i) {
-            indices[indicesIndex++] = i - 1;
-            indices[indicesIndex++] = 0;
-            indices[indicesIndex++] = i;
-        }
-
-        geometry.indices = indices;
-        geometry.primitiveType = PrimitiveType.TRIANGLES;
-        return geometry;
-    }
-
-    function indexTriangleStrip(geometry) {
-        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
-
-                if (numberOfVertices < 3) {
-            throw new DeveloperError('The number of vertices must be at least 3.');
-        }
-        
-        var indices = IndexDatatype.createTypedArray(numberOfVertices, (numberOfVertices - 2) * 3);
-        indices[0] = 0;
-        indices[1] = 1;
-        indices[2] = 2;
-
-        if (numberOfVertices > 3) {
-            indices[3] = 0;
-            indices[4] = 2;
-            indices[5] = 3;
-        }
-
-        var indicesIndex = 6;
-        for (var i = 3; i < numberOfVertices - 1; i += 2) {
-            indices[indicesIndex++] = i;
-            indices[indicesIndex++] = i - 1;
-            indices[indicesIndex++] = i + 1;
-
-            if (i + 2 < numberOfVertices) {
-                indices[indicesIndex++] = i;
-                indices[indicesIndex++] = i + 1;
-                indices[indicesIndex++] = i + 2;
-            }
-        }
-
-        geometry.indices = indices;
-        geometry.primitiveType = PrimitiveType.TRIANGLES;
-        return geometry;
-    }
-
-    function indexLines(geometry) {
-        if (defined(geometry.indices)) {
-            return geometry;
-        }
-        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
-
-                if (numberOfVertices < 2) {
-            throw new DeveloperError('The number of vertices must be at least two.');
-        }
-        if (numberOfVertices % 2 !== 0) {
-            throw new DeveloperError('The number of vertices must be a multiple of 2.');
-        }
-        
-        var indices = IndexDatatype.createTypedArray(numberOfVertices, numberOfVertices);
-        for (var i = 0; i < numberOfVertices; ++i) {
-            indices[i] = i;
-        }
-
-        geometry.indices = indices;
-        return geometry;
-    }
-
-    function indexLineStrip(geometry) {
-        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
-
-                if (numberOfVertices < 2) {
-            throw new DeveloperError('The number of vertices must be at least two.');
-        }
-        
-        var indices = IndexDatatype.createTypedArray(numberOfVertices, (numberOfVertices - 1) * 2);
-        indices[0] = 0;
-        indices[1] = 1;
-        var indicesIndex = 2;
-        for (var i = 2; i < numberOfVertices; ++i) {
-            indices[indicesIndex++] = i - 1;
-            indices[indicesIndex++] = i;
-        }
-
-        geometry.indices = indices;
-        geometry.primitiveType = PrimitiveType.LINES;
-        return geometry;
-    }
-
-    function indexLineLoop(geometry) {
-        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
-
-                if (numberOfVertices < 2) {
-            throw new DeveloperError('The number of vertices must be at least two.');
-        }
-        
-        var indices = IndexDatatype.createTypedArray(numberOfVertices, numberOfVertices * 2);
-
-        indices[0] = 0;
-        indices[1] = 1;
-
-        var indicesIndex = 2;
-        for (var i = 2; i < numberOfVertices; ++i) {
-            indices[indicesIndex++] = i - 1;
-            indices[indicesIndex++] = i;
-        }
-
-        indices[indicesIndex++] = numberOfVertices - 1;
-        indices[indicesIndex] = 0;
-
-        geometry.indices = indices;
-        geometry.primitiveType = PrimitiveType.LINES;
-        return geometry;
-    }
-
-    function indexPrimitive(geometry) {
-        switch (geometry.primitiveType) {
-        case PrimitiveType.TRIANGLE_FAN:
-            return indexTriangleFan(geometry);
-        case PrimitiveType.TRIANGLE_STRIP:
-            return indexTriangleStrip(geometry);
-        case PrimitiveType.TRIANGLES:
-            return indexTriangles(geometry);
-        case PrimitiveType.LINE_STRIP:
-            return indexLineStrip(geometry);
-        case PrimitiveType.LINE_LOOP:
-            return indexLineLoop(geometry);
-        case PrimitiveType.LINES:
-            return indexLines(geometry);
-        }
-
-        return geometry;
-    }
-
-    function offsetPointFromXZPlane(p, isBehind) {
-        if (Math.abs(p.y) < CesiumMath.EPSILON11){
-            if (isBehind) {
-                p.y = -CesiumMath.EPSILON11;
-            } else {
-                p.y = CesiumMath.EPSILON11;
-            }
-        }
-    }
-
-    var c3 = new Cartesian3();
-    function getXZIntersectionOffsetPoints(p, p1, u1, v1) {
-        Cartesian3.add(p, Cartesian3.multiplyByScalar(Cartesian3.subtract(p1, p, c3), p.y/(p.y-p1.y), c3), u1);
-        Cartesian3.clone(u1, v1);
-        offsetPointFromXZPlane(u1, true);
-        offsetPointFromXZPlane(v1, false);
-    }
-
-    var u1 = new Cartesian3();
-    var u2 = new Cartesian3();
-    var q1 = new Cartesian3();
-    var q2 = new Cartesian3();
-
-    var splitTriangleResult = {
-        positions : new Array(7),
-        indices : new Array(3 * 3)
-    };
-
-    function splitTriangle(p0, p1, p2) {
-        // In WGS84 coordinates, for a triangle approximately on the
-        // ellipsoid to cross the IDL, first it needs to be on the
-        // negative side of the plane x = 0.
-        if ((p0.x >= 0.0) || (p1.x >= 0.0) || (p2.x >= 0.0)) {
-            return undefined;
-        }
-
-        var p0Behind = p0.y < 0.0;
-        var p1Behind = p1.y < 0.0;
-        var p2Behind = p2.y < 0.0;
-
-        offsetPointFromXZPlane(p0, p0Behind);
-        offsetPointFromXZPlane(p1, p1Behind);
-        offsetPointFromXZPlane(p2, p2Behind);
-
-        var numBehind = 0;
-        numBehind += p0Behind ? 1 : 0;
-        numBehind += p1Behind ? 1 : 0;
-        numBehind += p2Behind ? 1 : 0;
-
-        var indices = splitTriangleResult.indices;
-
-        if (numBehind === 1) {
-            indices[1] = 3;
-            indices[2] = 4;
-            indices[5] = 6;
-            indices[7] = 6;
-            indices[8] = 5;
-
-            if (p0Behind) {
-                getXZIntersectionOffsetPoints(p0, p1, u1, q1);
-                getXZIntersectionOffsetPoints(p0, p2, u2, q2);
-
-                indices[0] = 0;
-                indices[3] = 1;
-                indices[4] = 2;
-                indices[6] = 1;
-            } else if (p1Behind) {
-                getXZIntersectionOffsetPoints(p1, p2, u1, q1);
-                getXZIntersectionOffsetPoints(p1, p0, u2, q2);
-
-                indices[0] = 1;
-                indices[3] = 2;
-                indices[4] = 0;
-                indices[6] = 2;
-            } else if (p2Behind) {
-                getXZIntersectionOffsetPoints(p2, p0, u1, q1);
-                getXZIntersectionOffsetPoints(p2, p1, u2, q2);
-
-                indices[0] = 2;
-                indices[3] = 0;
-                indices[4] = 1;
-                indices[6] = 0;
-            }
-        } else if (numBehind === 2) {
-            indices[2] = 4;
-            indices[4] = 4;
-            indices[5] = 3;
-            indices[7] = 5;
-            indices[8] = 6;
-
-            if (!p0Behind) {
-                getXZIntersectionOffsetPoints(p0, p1, u1, q1);
-                getXZIntersectionOffsetPoints(p0, p2, u2, q2);
-
-                indices[0] = 1;
-                indices[1] = 2;
-                indices[3] = 1;
-                indices[6] = 0;
-            } else if (!p1Behind) {
-                getXZIntersectionOffsetPoints(p1, p2, u1, q1);
-                getXZIntersectionOffsetPoints(p1, p0, u2, q2);
-
-                indices[0] = 2;
-                indices[1] = 0;
-                indices[3] = 2;
-                indices[6] = 1;
-            } else if (!p2Behind) {
-                getXZIntersectionOffsetPoints(p2, p0, u1, q1);
-                getXZIntersectionOffsetPoints(p2, p1, u2, q2);
-
-                indices[0] = 0;
-                indices[1] = 1;
-                indices[3] = 0;
-                indices[6] = 2;
-            }
-        }
-
-        var positions = splitTriangleResult.positions;
-        positions[0] = p0;
-        positions[1] = p1;
-        positions[2] = p2;
-        splitTriangleResult.length = 3;
-
-        if (numBehind === 1 || numBehind === 2) {
-            positions[3] = u1;
-            positions[4] = u2;
-            positions[5] = q1;
-            positions[6] = q2;
-            splitTriangleResult.length = 7;
-        }
-
-        return splitTriangleResult;
-    }
-
-    var u0Scratch = new Cartesian2();
-    var u1Scratch = new Cartesian2();
-    var u2Scratch = new Cartesian2();
-    var v0Scratch = new Cartesian3();
-    var v1Scratch = new Cartesian3();
-    var v2Scratch = new Cartesian3();
-    var computeScratch = new Cartesian3();
-    function computeTriangleAttributes(i0, i1, i2, dividedTriangle, normals, binormals, tangents, texCoords) {
-        if (!defined(normals) && !defined(binormals) && !defined(tangents) && !defined(texCoords)) {
-            return;
-        }
-
-        var positions = dividedTriangle.positions;
-        var p0 = positions[0];
-        var p1 = positions[1];
-        var p2 = positions[2];
-
-        var n0, n1, n2;
-        var b0, b1, b2;
-        var t0, t1, t2;
-        var s0, s1, s2;
-        var v0 = v0Scratch;
-        var v1 = v1Scratch;
-        var v2 = v2Scratch;
-        var u0 = u0Scratch;
-        var u1 = u1Scratch;
-        var u2 = u2Scratch;
-
-        if (defined(normals)) {
-            n0 = Cartesian3.fromArray(normals, i0 * 3);
-            n1 = Cartesian3.fromArray(normals, i1 * 3);
-            n2 = Cartesian3.fromArray(normals, i2 * 3);
-        }
-
-        if (defined(binormals)) {
-            b0 = Cartesian3.fromArray(binormals, i0 * 3);
-            b1 = Cartesian3.fromArray(binormals, i1 * 3);
-            b2 = Cartesian3.fromArray(binormals, i2 * 3);
-        }
-
-        if (defined(tangents)) {
-            t0 = Cartesian3.fromArray(tangents, i0 * 3);
-            t1 = Cartesian3.fromArray(tangents, i1 * 3);
-            t2 = Cartesian3.fromArray(tangents, i2 * 3);
-        }
-
-        if (defined(texCoords)) {
-            s0 = Cartesian2.fromArray(texCoords, i0 * 2);
-            s1 = Cartesian2.fromArray(texCoords, i1 * 2);
-            s2 = Cartesian2.fromArray(texCoords, i2 * 2);
-        }
-
-        for (var i = 3; i < positions.length; ++i) {
-            var point = positions[i];
-            var coords = barycentricCoordinates(point, p0, p1, p2);
-
-            if (defined(normals)) {
-                v0 = Cartesian3.multiplyByScalar(n0, coords.x, v0);
-                v1 = Cartesian3.multiplyByScalar(n1, coords.y, v1);
-                v2 = Cartesian3.multiplyByScalar(n2, coords.z, v2);
-
-                var normal = Cartesian3.add(v0, v1, computeScratch);
-                Cartesian3.add(normal, v2, normal);
-                Cartesian3.normalize(normal, normal);
-
-                normals.push(normal.x, normal.y, normal.z);
-            }
-
-            if (defined(binormals)) {
-                v0 = Cartesian3.multiplyByScalar(b0, coords.x, v0);
-                v1 = Cartesian3.multiplyByScalar(b1, coords.y, v1);
-                v2 = Cartesian3.multiplyByScalar(b2, coords.z, v2);
-
-                var binormal = Cartesian3.add(v0, v1, computeScratch);
-                Cartesian3.add(binormal, v2, binormal);
-                Cartesian3.normalize(binormal, binormal);
-
-                binormals.push(binormal.x, binormal.y, binormal.z);
-            }
-
-            if (defined(tangents)) {
-                v0 = Cartesian3.multiplyByScalar(t0, coords.x, v0);
-                v1 = Cartesian3.multiplyByScalar(t1, coords.y, v1);
-                v2 = Cartesian3.multiplyByScalar(t2, coords.z, v2);
-
-                var tangent = Cartesian3.add(v0, v1, computeScratch);
-                Cartesian3.add(tangent, v2, tangent);
-                Cartesian3.normalize(tangent, tangent);
-
-                tangents.push(tangent.x, tangent.y, tangent.z);
-            }
-
-            if (defined(texCoords)) {
-                u0 = Cartesian2.multiplyByScalar(s0, coords.x, u0);
-                u1 = Cartesian2.multiplyByScalar(s1, coords.y, u1);
-                u2 = Cartesian2.multiplyByScalar(s2, coords.z, u2);
-
-                var texCoord = Cartesian2.add(u0, u1, u0);
-                Cartesian2.add(texCoord, u2, texCoord);
-
-                texCoords.push(texCoord.x, texCoord.y);
-            }
-        }
-    }
-
-    function wrapLongitudeTriangles(geometry) {
-        var attributes = geometry.attributes;
-        var positions = attributes.position.values;
-        var normals = (defined(attributes.normal)) ? attributes.normal.values : undefined;
-        var binormals = (defined(attributes.binormal)) ? attributes.binormal.values : undefined;
-        var tangents = (defined(attributes.tangent)) ? attributes.tangent.values : undefined;
-        var texCoords = (defined(attributes.st)) ? attributes.st.values : undefined;
-        var indices = geometry.indices;
-
-        var newPositions = Array.prototype.slice.call(positions, 0);
-        var newNormals = (defined(normals)) ? Array.prototype.slice.call(normals, 0) : undefined;
-        var newBinormals = (defined(binormals)) ? Array.prototype.slice.call(binormals, 0) : undefined;
-        var newTangents = (defined(tangents)) ? Array.prototype.slice.call(tangents, 0) : undefined;
-        var newTexCoords = (defined(texCoords)) ? Array.prototype.slice.call(texCoords, 0) : undefined;
-        var newIndices = [];
-
-        var len = indices.length;
-        for (var i = 0; i < len; i += 3) {
-            var i0 = indices[i];
-            var i1 = indices[i + 1];
-            var i2 = indices[i + 2];
-
-            var p0 = Cartesian3.fromArray(positions, i0 * 3);
-            var p1 = Cartesian3.fromArray(positions, i1 * 3);
-            var p2 = Cartesian3.fromArray(positions, i2 * 3);
-
-            var result = splitTriangle(p0, p1, p2);
-            if (defined(result)) {
-                newPositions[i0 * 3 + 1] = result.positions[0].y;
-                newPositions[i1 * 3 + 1] = result.positions[1].y;
-                newPositions[i2 * 3 + 1] = result.positions[2].y;
-
-                if (result.length > 3) {
-                    var positionsLength = newPositions.length / 3;
-                    for(var j = 0; j < result.indices.length; ++j) {
-                        var index = result.indices[j];
-                        if (index < 3) {
-                            newIndices.push(indices[i + index]);
-                        } else {
-                            newIndices.push(index - 3 + positionsLength);
-                        }
-                    }
-
-                    for (var k = 3; k < result.positions.length; ++k) {
-                        var position = result.positions[k];
-                        newPositions.push(position.x, position.y, position.z);
-                    }
-                    computeTriangleAttributes(i0, i1, i2, result, newNormals, newBinormals, newTangents, newTexCoords);
-                } else {
-                    newIndices.push(i0, i1, i2);
-                }
-            } else {
-                newIndices.push(i0, i1, i2);
-            }
-        }
-
-        geometry.attributes.position.values = new Float64Array(newPositions);
-
-        if (defined(newNormals)) {
-            attributes.normal.values = ComponentDatatype.createTypedArray(attributes.normal.componentDatatype, newNormals);
-        }
-
-        if (defined(newBinormals)) {
-            attributes.binormal.values = ComponentDatatype.createTypedArray(attributes.binormal.componentDatatype, newBinormals);
-        }
-
-        if (defined(newTangents)) {
-            attributes.tangent.values = ComponentDatatype.createTypedArray(attributes.tangent.componentDatatype, newTangents);
-        }
-
-        if (defined(newTexCoords)) {
-            attributes.st.values = ComponentDatatype.createTypedArray(attributes.st.componentDatatype, newTexCoords);
-        }
-
-        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
-        geometry.indices = IndexDatatype.createTypedArray(numberOfVertices, newIndices);
-    }
-
-    var offsetScratch = new Cartesian3();
-    var offsetPointScratch = new Cartesian3();
-    function wrapLongitudeLines(geometry) {
-        var attributes = geometry.attributes;
-        var positions = attributes.position.values;
-        var indices = geometry.indices;
-
-        var newPositions = Array.prototype.slice.call(positions, 0);
-        var newIndices = [];
-
-        var xzPlane = Plane.fromPointNormal(Cartesian3.ZERO, Cartesian3.UNIT_Y);
-
-        var length = indices.length;
-        for ( var i = 0; i < length; i += 2) {
-            var i0 = indices[i];
-            var i1 = indices[i + 1];
-
-            var prev = Cartesian3.fromArray(positions, i0 * 3);
-            var cur = Cartesian3.fromArray(positions, i1 * 3);
-
-            if (Math.abs(prev.y) < CesiumMath.EPSILON6){
-                if (prev.y < 0.0) {
-                    prev.y = -CesiumMath.EPSILON6;
-                } else {
-                    prev.y = CesiumMath.EPSILON6;
-                }
-
-                newPositions[i0 * 3 + 1] = prev.y;
-            }
-
-            if (Math.abs(cur.y) < CesiumMath.EPSILON6){
-                if (cur.y < 0.0) {
-                    cur.y = -CesiumMath.EPSILON6;
-                } else {
-                    cur.y = CesiumMath.EPSILON6;
-                }
-
-                newPositions[i1 * 3 + 1] = cur.y;
-            }
-
-            newIndices.push(i0);
-
-            // intersects the IDL if either endpoint is on the negative side of the yz-plane
-            if (prev.x < 0.0 || cur.x < 0.0) {
-                // and intersects the xz-plane
-                var intersection = IntersectionTests.lineSegmentPlane(prev, cur, xzPlane);
-                if (defined(intersection)) {
-                    // move point on the xz-plane slightly away from the plane
-                    var offset = Cartesian3.multiplyByScalar(Cartesian3.UNIT_Y, 5.0 * CesiumMath.EPSILON9, offsetScratch);
-                    if (prev.y < 0.0) {
-                        Cartesian3.negate(offset, offset);
-                    }
-
-                    var index = newPositions.length / 3;
-                    newIndices.push(index, index + 1);
-
-                    var offsetPoint = Cartesian3.add(intersection, offset, offsetPointScratch);
-                    newPositions.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
-
-                    Cartesian3.negate(offset, offset);
-                    Cartesian3.add(intersection, offset, offsetPoint);
-                    newPositions.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
-                }
-            }
-
-            newIndices.push(i1);
-        }
-
-        geometry.attributes.position.values = new Float64Array(newPositions);
-        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
-        geometry.indices = IndexDatatype.createTypedArray(numberOfVertices, newIndices);
-    }
-
-    /**
-     * Splits the geometry's primitives, by introducing new vertices and indices,that
-     * intersect the International Date Line so that no primitives cross longitude
-     * -180/180 degrees.  This is not required for 3D drawing, but is required for
-     * correcting drawing in 2D and Columbus view.
-     *
-     * @param {Geometry} geometry The geometry to modify.
-     * @returns {Geometry} The modified <code>geometry</code> argument, with it's primitives split at the International Date Line.
-     *
-     * @example
-     * geometry = Cesium.GeometryPipeline.wrapLongitude(geometry);
-     */
-    GeometryPipeline.wrapLongitude = function(geometry) {
-                if (!defined(geometry)) {
-            throw new DeveloperError('geometry is required.');
-        }
-        
-        var boundingSphere = geometry.boundingSphere;
-        if (defined(boundingSphere)) {
-            var minX = boundingSphere.center.x - boundingSphere.radius;
-            if (minX > 0 || BoundingSphere.intersect(boundingSphere, Cartesian4.UNIT_Y) !== Intersect.INTERSECTING) {
-                return geometry;
-            }
-        }
-
-        indexPrimitive(geometry);
-        if (geometry.primitiveType === PrimitiveType.TRIANGLES) {
-            wrapLongitudeTriangles(geometry);
-        } else if (geometry.primitiveType === PrimitiveType.LINES) {
-            wrapLongitudeLines(geometry);
-        }
-
-        return geometry;
-    };
-
-    return GeometryPipeline;
-});
-/*global define*/
-define('Core/PolygonGeometryLibrary',[
-        './Cartesian3',
-        './defaultValue',
-        './defined',
-        './Ellipsoid'
-    ], function(
-        Cartesian3,
-        defaultValue,
-        defined,
-        Ellipsoid) {
-    "use strict";
-
-    /**
-     * @private
-     */
-    var PolygonGeometryLibrary = {};
-
-    var distanceScratch = new Cartesian3();
-    function getPointAtDistance(p0, p1, distance, length) {
-        Cartesian3.subtract(p1, p0, distanceScratch);
-        Cartesian3.multiplyByScalar(distanceScratch, distance / length, distanceScratch);
-        Cartesian3.add(p0, distanceScratch, distanceScratch);
-        return [distanceScratch.x, distanceScratch.y, distanceScratch.z];
-    }
-
-    /**
-     * @private
-     */
-    PolygonGeometryLibrary.subdivideLine = function(p0, p1, granularity) {
-        var length = Cartesian3.distance(p0, p1);
-        var angleBetween = Cartesian3.angleBetween(p0, p1);
-        var n = angleBetween / granularity;
-        var countDivide = Math.ceil(Math.log(n) / Math.log(2));
-        if (countDivide < 1) {
-            countDivide = 0;
-        }
-        var numVertices = Math.pow(2, countDivide);
-
-        var distanceBetweenVertices = length / numVertices;
-
-        var positions = new Array(numVertices * 3);
-        var index = 0;
-        positions[index++] = p0.x;
-        positions[index++] = p0.y;
-        positions[index++] = p0.z;
-        for ( var i = 1; i < numVertices; i++) {
-            var p = getPointAtDistance(p0, p1, i * distanceBetweenVertices, length);
-            positions[index++] = p[0];
-            positions[index++] = p[1];
-            positions[index++] = p[2];
-        }
-
-        return positions;
-    };
-
-    var scaleToGeodeticHeightN1 = new Cartesian3();
-    var scaleToGeodeticHeightN2 = new Cartesian3();
-    var scaleToGeodeticHeightP1 = new Cartesian3();
-    var scaleToGeodeticHeightP2 = new Cartesian3();
-    /**
-     * @private
-     */
-    PolygonGeometryLibrary.scaleToGeodeticHeightExtruded = function(geometry, maxHeight, minHeight, ellipsoid, perPositionHeight) {
-        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-
-        var n1 = scaleToGeodeticHeightN1;
-        var n2 = scaleToGeodeticHeightN2;
-        var p = scaleToGeodeticHeightP1;
-        var p2 = scaleToGeodeticHeightP2;
-
-        if (defined(geometry) && defined(geometry.attributes) && defined(geometry.attributes.position)) {
-            var positions = geometry.attributes.position.values;
-            var length = positions.length / 2;
-
-            for ( var i = 0; i < length; i += 3) {
-                Cartesian3.fromArray(positions, i, p);
-
-                ellipsoid.geodeticSurfaceNormal(p, n1);
-                p2 = ellipsoid.scaleToGeodeticSurface(p, p2);
-                n2 = Cartesian3.multiplyByScalar(n1, minHeight, n2);
-                n2 = Cartesian3.add(p2, n2, n2);
-                positions[i + length] = n2.x;
-                positions[i + 1 + length] = n2.y;
-                positions[i + 2 + length] = n2.z;
-
-                if (perPositionHeight) {
-                    p2 = Cartesian3.clone(p, p2);
-                }
-                n2 = Cartesian3.multiplyByScalar(n1, maxHeight, n2);
-                n2 = Cartesian3.add(p2, n2, n2);
-                positions[i] = n2.x;
-                positions[i + 1] = n2.y;
-                positions[i + 2] = n2.z;
-            }
-        }
-        return geometry;
-    };
-
-    return PolygonGeometryLibrary;
-});
-/*global define*/
-define('Core/pointInsideTriangle',[
-        './barycentricCoordinates',
-        './Cartesian3'
-    ], function(
-        barycentricCoordinates,
-        Cartesian3) {
-    "use strict";
-
-    var coords = new Cartesian3();
-
-    /**
-     * Determines if a point is inside a triangle.
-     *
-     * @exports pointInsideTriangle
-     *
-     * @param {Cartesian2|Cartesian3} point The point to test.
-     * @param {Cartesian2|Cartesian3} p0 The first point of the triangle.
-     * @param {Cartesian2|Cartesian3} p1 The second point of the triangle.
-     * @param {Cartesian2|Cartesian3} p2 The third point of the triangle.
-     * @returns {Boolean} <code>true</code> if the point is inside the triangle; otherwise, <code>false</code>.
-     *
-     * @example
-     * // Returns true
-     * var p = new Cesium.Cartesian2(0.25, 0.25);
-     * var b = Cesium.pointInsideTriangle(p,
-     *   new Cesium.Cartesian2(0.0, 0.0),
-     *   new Cesium.Cartesian2(1.0, 0.0),
-     *   new Cesium.Cartesian2(0.0, 1.0));
-     */
-    var pointInsideTriangle = function(point, p0, p1, p2) {
-        barycentricCoordinates(point, p0, p1, p2, coords);
-        return (coords.x > 0.0) && (coords.y > 0.0) && (coords.z > 0);
-    };
-
-    return pointInsideTriangle;
-});
-
-/*global define*/
-define('Core/Queue',[],function() {
-    "use strict";
-
-    /**
-     * A queue that can enqueue items at the end, and dequeue items from the front.
-     *
-     * @alias Queue
-     * @constructor
-     */
-    var Queue = function() {
-        this._array = [];
-        this._offset = 0;
-
-        /**
-         * The length of the queue.
-         */
-        this.length = 0;
-    };
-
-    /**
-     * Enqueues the specified item.
-     *
-     * @param {Object} item The item to enqueue.
-     */
-    Queue.prototype.enqueue = function(item) {
-        this._array.push(item);
-        this.length++;
-    };
-
-    /**
-     * Dequeues an item.  Returns undefined if the queue is empty.
-     */
-    Queue.prototype.dequeue = function() {
-        if (this.length === 0) {
-            return undefined;
-        }
-
-        var array = this._array;
-        var offset = this._offset;
-        var item = array[offset];
-        array[offset] = undefined;
-
-        offset++;
-        if (offset > 10 && offset * 2 > array.length) {
-            //compact array
-            this._array = array.slice(offset);
-            offset = 0;
-        }
-
-        this._offset = offset;
-        this.length--;
-
-        return item;
-    };
-
-    /**
-     * Check whether this queue contains the specified item.
-     *
-     * @param {Object} item the item to search for.
-     */
-    Queue.prototype.contains = function(item) {
-        return this._array.indexOf(item) !== -1;
-    };
-
-    /**
-     * Remove all items from the queue.
-     */
-    Queue.prototype.clear = function() {
-        this._array.length = this._offset = this.length = 0;
-    };
-
-    /**
-     * Sort the items in the queue in-place.
-     *
-     * @param {Queue~Comparator} compareFunction A function that defines the sort order.
-     */
-    Queue.prototype.sort = function(compareFunction) {
-        if (this._offset > 0) {
-            //compact array
-            this._array = this._array.slice(this._offset);
-            this._offset = 0;
-        }
-
-        this._array.sort(compareFunction);
-    };
-
-    /**
-     * A function used to compare two items while sorting a queue.
-     * @callback Queue~Comparator
-     *
-     * @param {Object} a An item in the array.
-     * @param {Object} b An item in the array.
-     * @returns {Number} Returns a negative value if <code>a</code> is less than <code>b</code>,
-     *          a positive value if <code>a</code> is greater than <code>b</code>, or
-     *          0 if <code>a</code> is equal to <code>b</code>.
-     *
-     * @example
-     * function compareNumbers(a, b) {
-     *     return a - b;
-     * }
-     */
-
-    return Queue;
-});
-/*global define*/
-define('Core/WindingOrder',[
-        './freezeObject'
-    ], function(
-        freezeObject) {
-    "use strict";
-
-    /**
-     * Winding order defines the order of vertices for a triangle to be considered front-facing.
-     *
-     * @namespace
-     * @alias WindingOrder
-     */
-    var WindingOrder = {
-        /**
-         * 0x0900. Vertices are in clockwise order.
-         *
-         * @type {Number}
-         * @constant
-         */
-        CLOCKWISE : 0x0900, // WebGL: CW
-
-        /**
-         * 0x0901. Vertices are in counter-clockwise order.
-         *
-         * @type {Number}
-         * @constant
-         */
-        COUNTER_CLOCKWISE : 0x0901, // WebGL: CCW
-
-        /**
-         * @private
-         */
-        validate : function(windingOrder) {
-            return windingOrder === WindingOrder.CLOCKWISE ||
-                   windingOrder === WindingOrder.COUNTER_CLOCKWISE;
-        }
-    };
-
-    return freezeObject(WindingOrder);
-});
-/*global define*/
-define('Core/PolygonPipeline',[
-        './Cartesian2',
-        './Cartesian3',
-        './ComponentDatatype',
-        './defaultValue',
-        './defined',
-        './DeveloperError',
-        './Ellipsoid',
-        './EllipsoidTangentPlane',
-        './Geometry',
-        './GeometryAttribute',
-        './Math',
-        './pointInsideTriangle',
-        './PrimitiveType',
-        './Queue',
-        './WindingOrder'
-    ], function(
-        Cartesian2,
-        Cartesian3,
-        ComponentDatatype,
-        defaultValue,
-        defined,
-        DeveloperError,
-        Ellipsoid,
-        EllipsoidTangentPlane,
-        Geometry,
-        GeometryAttribute,
-        CesiumMath,
-        pointInsideTriangle,
-        PrimitiveType,
-        Queue,
-        WindingOrder) {
-    "use strict";
-
-    var uScratch = new Cartesian2();
-    var vScratch = new Cartesian2();
-    function isTipConvex(p0, p1, p2) {
-        var u = Cartesian2.subtract(p1, p0, uScratch);
-        var v = Cartesian2.subtract(p2, p1, vScratch);
-
-        // Use the sign of the z component of the cross product
-        return ((u.x * v.y) - (u.y * v.x)) >= 0.0;
-    }
-
-    /**
-     * Returns the index of the vertex with the maximum X value.
-     *
-     * @param {Cartesian2[]} positions An array of the Cartesian points defining the polygon's vertices.
-     * @returns {Number} The index of the positions with the maximum X value.
-     *
-     * @private
-     */
-    function getRightmostPositionIndex(positions) {
-        var maximumX = positions[0].x;
-        var rightmostPositionIndex = 0;
-        for ( var i = 0; i < positions.length; i++) {
-            if (positions[i].x > maximumX) {
-                maximumX = positions[i].x;
-                rightmostPositionIndex = i;
-            }
-        }
-        return rightmostPositionIndex;
-    }
-
-    /**
-     * Returns the index of the ring that contains the rightmost vertex.
-     *
-     * @param {Cartesian2[]} rings An array of arrays of Cartesians. Each array contains the vertices defining a polygon.
-     * @returns {Number} The index of the ring containing the rightmost vertex.
-     *
-     * @private
-     */
-    function getRightmostRingIndex(rings) {
-        var rightmostX = rings[0][0].x;
-        var rightmostRingIndex = 0;
-        for ( var ring = 0; ring < rings.length; ring++) {
-            var maximumX = rings[ring][getRightmostPositionIndex(rings[ring])].x;
-            if (maximumX > rightmostX) {
-                rightmostX = maximumX;
-                rightmostRingIndex = ring;
-            }
-        }
-
-        return rightmostRingIndex;
-    }
-
-    /**
-     * Returns a list containing the reflex vertices for a given polygon.
-     *
-     * @param {Cartesian2[]} polygon An array of Cartesian elements defining the polygon.
-     * @returns {Cartesian2[]}
-     *
-     * @private
-     */
-    function getReflexVertices(polygon) {
-        var reflexVertices = [];
-        for ( var i = 0; i < polygon.length; i++) {
-            var p0 = polygon[((i - 1) + polygon.length) % polygon.length];
-            var p1 = polygon[i];
-            var p2 = polygon[(i + 1) % polygon.length];
-
-            if (!isTipConvex(p0, p1, p2)) {
-                reflexVertices.push(p1);
-            }
-        }
-        return reflexVertices;
-    }
-
-    /**
-     * Returns true if the given point is contained in the list of positions.
-     *
-     * @param {Cartesian2[]} positions A list of Cartesian elements defining a polygon.
-     * @param {Cartesian2} point The point to check.
-     * @returns {Number} The index of <code>point</code> in <code>positions</code> or -1 if it was not found.
-     *
-     * @private
-     */
-    function isVertex(positions, point) {
-        for ( var i = 0; i < positions.length; i++) {
-            if (Cartesian2.equals(point, positions[i])) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Given a point inside a polygon, find the nearest point directly to the right that lies on one of the polygon's edges.
-     *
-     * @param {Cartesian2} point A point inside the polygon defined by <code>ring</code>.
-     * @param {Cartesian2[]} ring A list of Cartesian points defining a polygon.
-     * @param {Number[]} [edgeIndices]  An array containing the indices two endpoints of the edge containing the intersection.
-     * @returns {Cartesian2} The intersection point.
-     *
-     * @private
-     */
-    var distScratch = new Cartesian2();
-    function intersectPointWithRing(point, ring, edgeIndices) {
-        edgeIndices = defaultValue(edgeIndices, []);
-
-        var minDistance = Number.MAX_VALUE;
-        var rightmostVertexIndex = getRightmostPositionIndex(ring);
-        var intersection = new Cartesian2(ring[rightmostVertexIndex].x, point.y);
-        edgeIndices.push(rightmostVertexIndex);
-        edgeIndices.push((rightmostVertexIndex + 1) % ring.length);
-
-        var boundaryMinX = ring[0].x;
-        var boundaryMaxX = boundaryMinX;
-        for ( var i = 1; i < ring.length; ++i) {
-            if (ring[i].x < boundaryMinX) {
-                boundaryMinX = ring[i].x;
-            } else if (ring[i].x > boundaryMaxX) {
-                boundaryMaxX = ring[i].x;
-            }
-        }
-        boundaryMaxX += (boundaryMaxX - boundaryMinX);
-        var point2 = new Cartesian3(boundaryMaxX, point.y, 0.0);
-
-        // Find the nearest intersection.
-        for (i = 0; i < ring.length; i++) {
-            var v1 = ring[i];
-            var v2 = ring[(i + 1) % ring.length];
-
-            if (((v1.x >= point.x) || (v2.x >= point.x)) && (((v1.y >= point.y) && (v2.y <= point.y)) || ((v1.y <= point.y) && (v2.y >= point.y)))) {
-                var temp = ((v2.y - v1.y) * (point2.x - point.x)) - ((v2.x - v1.x) * (point2.y - point.y));
-                if (temp !== 0.0) {
-                    temp = 1.0 / temp;
-                    var ua = (((v2.x - v1.x) * (point.y - v1.y)) - ((v2.y - v1.y) * (point.x - v1.x))) * temp;
-                    var ub = (((point2.x - point.x) * (point.y - v1.y)) - ((point2.y - point.y) * (point.x - v1.x))) * temp;
-                    if ((ua >= 0.0) && (ua <= 1.0) && (ub >= 0.0) && (ub <= 1.0)) {
-                        var tempIntersection = new Cartesian2(point.x + ua * (point2.x - point.x), point.y + ua * (point2.y - point.y));
-                        var dist = Cartesian2.subtract(tempIntersection, point, distScratch);
-                        temp = Cartesian2.magnitudeSquared(dist);
-                        if (temp < minDistance) {
-                            intersection = tempIntersection;
-                            minDistance = temp;
-                            edgeIndices[0] = i;
-                            edgeIndices[1] = (i + 1) % ring.length;
-                        }
-                    }
-                }
-            }
-        }
-
-        return intersection;
-    }
-
-    /**
-     * Given an outer ring and multiple inner rings, determine the point on the outer ring that is visible
-     * to the rightmost vertex of the rightmost inner ring.
-     *
-     * @param {Cartesian2[]} outerRing An array of Cartesian points defining the outer boundary of the polygon.
-     * @param {Cartesian2[]} innerRings An array of arrays of Cartesian points, where each array represents a hole in the polygon.
-     * @returns {Number} The index of the vertex in <code>outerRing</code> that is mutually visible to the rightmost vertex in <code>inenrRing</code>.
-     *
-     * @private
-     */
-    var v1Scratch = new Cartesian2(1.0, 0.0);
-    var v2Scratch = new Cartesian2();
-    function getMutuallyVisibleVertexIndex(outerRing, innerRings) {
-        var innerRingIndex = getRightmostRingIndex(innerRings);
-        var innerRing = innerRings[innerRingIndex];
-        var innerRingVertexIndex = getRightmostPositionIndex(innerRing);
-        var innerRingVertex = innerRing[innerRingVertexIndex];
-        var edgeIndices = [];
-        var intersection = intersectPointWithRing(innerRingVertex, outerRing, edgeIndices);
-
-        var visibleVertex = isVertex(outerRing, intersection);
-        if (visibleVertex !== -1) {
-            return visibleVertex;
-        }
-
-        // Set P to be the edge endpoint closest to the inner ring vertex
-        var d1 = Cartesian2.magnitudeSquared(Cartesian2.subtract(outerRing[edgeIndices[0]], innerRingVertex, v1Scratch));
-        var d2 = Cartesian2.magnitudeSquared(Cartesian2.subtract(outerRing[edgeIndices[1]], innerRingVertex, v1Scratch));
-        var p = (d1 < d2) ? outerRing[edgeIndices[0]] : outerRing[edgeIndices[1]];
-
-        var reflexVertices = getReflexVertices(outerRing);
-        var reflexIndex = reflexVertices.indexOf(p);
-        if (reflexIndex !== -1) {
-            reflexVertices.splice(reflexIndex, 1); // Do not include p if it happens to be reflex.
-        }
-
-        var pointsInside = [];
-        for ( var i = 0; i < reflexVertices.length; i++) {
-            var vertex = reflexVertices[i];
-            if (pointInsideTriangle(vertex, innerRingVertex, intersection, p)) {
-                pointsInside.push(vertex);
-            }
-        }
-
-        // If all reflexive vertices are outside the triangle formed by points
-        // innerRingVertex, intersection and P, then P is the visible vertex.
-        // Otherwise, return the reflex vertex that minimizes the angle between <1,0> and <k, reflex>.
-        var minAngle = Number.MAX_VALUE;
-        if (pointsInside.length > 0) {
-            var v1 = Cartesian2.fromElements(1.0, 0.0, v1Scratch);
-            for (i = 0; i < pointsInside.length; i++) {
-                var v2 = Cartesian2.subtract(pointsInside[i], innerRingVertex, v2Scratch);
-                var denominator = Cartesian2.magnitude(v1) * Cartesian2.magnitudeSquared(v2);
-                if (denominator !== 0) {
-                    var angle = Math.abs(CesiumMath.acosClamped(Cartesian2.dot(v1, v2) / denominator));
-                    if (angle < minAngle) {
-                        minAngle = angle;
-                        p = pointsInside[i];
-                    }
-                }
-            }
-        }
-
-        return outerRing.indexOf(p);
-    }
-
-    /**
-     * Given a polygon defined by an outer ring with one or more inner rings (holes), return a single list of points representing
-     * a polygon with the rightmost hole added to it. The added hole is removed from <code>innerRings</code>.
-     *
-     * @param {Cartesian2[]} outerRing An array of Cartesian points defining the outer boundary of the polygon.
-     * @param {Cartesian2[]} innerRings An array of arrays of Cartesian points, where each array represents a hole in the polygon.
-     * @returns {Cartesian2[]} A single list of Cartesian points defining the polygon, including the eliminated inner ring.
-     *
-     * @private
-     */
-    function eliminateHole(outerRing, innerRings, ellipsoid) {
-        // Check that the holes are defined in the winding order opposite that of the outer ring.
-        var windingOrder = PolygonPipeline.computeWindingOrder2D(outerRing);
-        for ( var i = 0; i < innerRings.length; i++) {
-            var ring = innerRings[i];
-
-            // Ensure each hole's first and last points are the same.
-            if (!Cartesian3.equals(ring[0], ring[ring.length - 1])) {
-                ring.push(ring[0]);
-            }
-
-            var innerWindingOrder = PolygonPipeline.computeWindingOrder2D(ring);
-            if (innerWindingOrder === windingOrder) {
-                ring.reverse();
-            }
-        }
-
-        // Project points onto a tangent plane to find the mutually visible vertex.
-        var tangentPlane = EllipsoidTangentPlane.fromPoints(outerRing, ellipsoid);
-        var tangentOuterRing = tangentPlane.projectPointsOntoPlane(outerRing);
-        var tangentInnerRings = [];
-        for (i = 0; i < innerRings.length; i++) {
-            tangentInnerRings.push(tangentPlane.projectPointsOntoPlane(innerRings[i]));
-        }
-
-        var visibleVertexIndex = getMutuallyVisibleVertexIndex(tangentOuterRing, tangentInnerRings);
-        var innerRingIndex = getRightmostRingIndex(tangentInnerRings);
-        var innerRingVertexIndex = getRightmostPositionIndex(tangentInnerRings[innerRingIndex]);
-
-        var innerRing = innerRings[innerRingIndex];
-        var newPolygonVertices = [];
-
-        for (i = 0; i < outerRing.length; i++) {
-            newPolygonVertices.push(outerRing[i]);
-        }
-
-        var j;
-        var holeVerticesToAdd = [];
-
-        // If the rightmost inner vertex is not the starting and ending point of the ring,
-        // then some other point is duplicated in the inner ring and should be skipped once.
-        if (innerRingVertexIndex !== 0) {
-            for (j = 0; j <= innerRing.length; j++) {
-                var index = (j + innerRingVertexIndex) % innerRing.length;
-                if (index !== 0) {
-                    holeVerticesToAdd.push(innerRing[index]);
-                }
-            }
-        } else {
-            for (j = 0; j < innerRing.length; j++) {
-                holeVerticesToAdd.push(innerRing[(j + innerRingVertexIndex) % innerRing.length]);
-            }
-        }
-
-        var lastVisibleVertexIndex = newPolygonVertices.lastIndexOf(outerRing[visibleVertexIndex]);
-
-        holeVerticesToAdd.push(outerRing[lastVisibleVertexIndex]);
-
-        var front = newPolygonVertices.slice(0, lastVisibleVertexIndex + 1);
-        var back = newPolygonVertices.slice(lastVisibleVertexIndex + 1);
-        newPolygonVertices = front.concat(holeVerticesToAdd, back);
-
-        innerRings.splice(innerRingIndex, 1);
-
-        return newPolygonVertices;
-    }
-
-    /**
-     * Use seeded pseudo-random number to be testable.
-     *
-     * @param {Number} length
-     * @returns {Number} Random integer from 0 to <code>length - 1</code>
-     *
-     * @private
-     */
-    function getRandomIndex(length) {
-        var random = '0.' + Math.sin(rseed).toString().substr(5);
-        rseed += 0.2;
-        var i = Math.floor(random * length);
-        if (i === length) {
-            i--;
-        }
-        return i;
-    }
-    var rseed = 0;
-
-    /**
-     * Determine whether a cut between two polygon vertices is clean.
-     *
-     * @param {Number} a1i Index of first vertex.
-     * @param {Number} a2i Index of second vertex.
-     * @param {Array} pArray Array of <code>{ position, index }</code> objects representing the polygon.
-     * @returns {Boolean} If true, a cut from the first vertex to the second is internal and does not cross any other sides.
-     *
-     * @private
-     */
-    function cleanCut(a1i, a2i, pArray) {
-        return (internalCut(a1i, a2i, pArray) && internalCut(a2i, a1i, pArray)) &&
-                !intersectsSide(pArray[a1i].position, pArray[a2i].position, pArray) &&
-                !Cartesian2.equals(pArray[a1i].position, pArray[a2i].position);
-    }
-
-    /**
-     * Determine whether the cut formed between the two vertices is internal
-     * to the angle formed by the sides connecting at the first vertex.
-     *
-     * @param {Number} a1i Index of first vertex.
-     * @param {Number} a2i Index of second vertex.
-     * @param {Array} pArray Array of <code>{ position, index }</code> objects representing the polygon.
-     * @returns {Boolean} If true, the cut formed between the two vertices is internal to the angle at vertex 1
-     *
-     * @private
-     */
-    var BEFORE = -1;
-    var AFTER = 1;
-    var s1Scratch = new Cartesian3();
-    var s2Scratch = new Cartesian3();
-    var cutScratch = new Cartesian3();
-    function internalCut(a1i, a2i, pArray) {
-        // Make sure vertex is valid
-        validateVertex(a1i, pArray);
-
-        // Get the nodes from the array
-        var a1 = pArray[a1i];
-        var a2 = pArray[a2i];
-
-        // Define side and cut vectors
-        var before = getNextVertex(a1i, pArray, BEFORE);
-        var after = getNextVertex(a1i, pArray, AFTER);
-
-        var s1 = Cartesian2.subtract(pArray[before].position, a1.position, s1Scratch);
-        var s2 = Cartesian2.subtract(pArray[after].position, a1.position, s2Scratch);
-        var cut = Cartesian2.subtract(a2.position, a1.position, cutScratch);
-
-        if (isParallel(s1, cut)) { // Cut is parallel to s1
-            return isInternalToParallelSide(s1, cut);
-        } else if (isParallel(s2, cut)) { // Cut is parallel to s2
-            return isInternalToParallelSide(s2, cut);
-        } else if (angleLessThan180(s1, s2)) { // Angle at point is less than 180
-            if (isInsideSmallAngle(s1, s2, cut)) { // Cut is in-between sides
-                return true;
-            }
-
-            return false;
-        } else if (angleGreaterThan180(s1, s2)) { // Angle at point is greater than 180
-            if (isInsideBigAngle(s1, s2, cut)) { // Cut is in-between sides
-                return false;
-            }
-
-            return true;
-        }
-    }
-
-    /**
-     * Checks whether cut parallel to side is internal.
-     *
-     *  e.g.
-     *
-     *  7_________6
-     *  |         |
-     *  | 4 ______|
-     *  |  |       5
-     *  |  |______2     Is cut from 1 to 6 internal? No.
-     *  | 3       |
-     *  |_________|
-     * 0           1
-     *
-     * Note that this function simply checks whether the cut is longer or shorter.
-     *
-     * An important valid cut:
-     *
-     * Polygon:
-     *
-     * 0 ___2__4
-     *  |  /\  |
-     *  | /  \ |   Is cut 0 to 2 or 2 to 4 internal? Yes.
-     *  |/    \|
-     * 1       3
-     *
-     * This situation can occur and the only solution is a cut along a parallel
-     * side.
-     *
-     * This method is technically incomplete, however, for the following case:
-     *
-     *  7_________6
-     *  |         |
-     *  |         |______4
-     *  |          5     |    Now is 1 to 6 internal? Yes, but we'll never need it.
-     *  |         2______|
-     *  |         |      5
-     *  |_________|
-     * 0           1
-     *
-     * In this case, although the cut from 1 to 6 is valid, the side 1-2 is
-     * shorter and thus this cut will be called invalid. Assuming there are no
-     * superfluous vertices (a requirement for this method to work), however,
-     * we'll never need this cut because we can always find cut 2-5 as a substitute.
-     *
-     * @param {Cartesian2} side
-     * @param {Cartesian2} cut
-     * @returns {Boolean}
-     *
-     * @private
-     */
-    function isInternalToParallelSide(side, cut) {
-        return Cartesian2.magnitude(cut) < Cartesian2.magnitude(side);
-    }
-
-    /**
-     * Provides next vertex in some direction and also validates that vertex.
-     *
-     * @param {Number} index Index of original vertex.
-     * @param {Number} pArray Array of vertices.
-     * @param {Number} direction Direction of traversal.
-     * @returns {Number} Index of vertex.
-     *
-     * @private
-     */
-    function getNextVertex(index, pArray, direction) {
-        var next = index + direction;
-        if (next < 0) {
-            next = pArray.length - 1;
-        }
-        if (next === pArray.length) {
-            next = 0;
-        }
-
-        validateVertex(next, pArray);
-
-        return next;
-    }
-
-    /**
-     * Checks to make sure vertex is not superfluous.
-     *
-     * @param {Number} index Index of vertex.
-     * @param {Number} pArray Array of vertices.
-     *
-     * @exception {DeveloperError} Superfluous vertex found.
-     *
-     * @private
-     */
-    var vvScratch1 = new Cartesian3();
-    var vvScratch2 = new Cartesian3();
-    function validateVertex(index, pArray) {
-        var before = index - 1;
-        var after = index + 1;
-        if (before < 0) {
-            before = pArray.length - 1;
-        }
-        if (after === pArray.length) {
-            after = 0;
-        }
-
-        var s1 = Cartesian2.subtract(pArray[before].position, pArray[index].position, vvScratch1);
-        var s2 = Cartesian2.subtract(pArray[after].position, pArray[index].position, vvScratch2);
-
-        if (isParallel(s1, s2)) {
-            var e = new DeveloperError("Superfluous vertex found.");
-            e.vertexIndex = index;
-            throw e;
-        }
-    }
-
-    /**
-     * Determine whether s1 and s2 are parallel.
-     *
-     * @param {Cartesian3} s1
-     * @param {Cartesian3} s2
-     * @returns {Boolean}
-     *
-     * @private
-     */
-    var parallelScratch = new Cartesian3();
-    function isParallel(s1, s2) {
-        return Cartesian3.cross(s1, s2, parallelScratch).z === 0.0;
-    }
-
-    /**
-     * Assuming s1 is to the left of s2, determine whether
-     * the angle between them is less than 180 degrees.
-     *
-     * @param {Cartesian3} s1
-     * @param {Cartesian3} s2
-     * @returns {Boolean}
-     *
-     * @private
-     */
-    var lessThanScratch = new Cartesian3();
-    function angleLessThan180(s1, s2) {
-        return Cartesian3.cross(s1, s2, lessThanScratch).z < 0.0;
-    }
-
-    /**
-     * Assuming s1 is to the left of s2, determine whether
-     * the angle between them is greater than 180 degrees.
-     *
-     * @param {Cartesian3} s1
-     * @param {Cartesian3} s2
-     * @returns {Boolean}
-     *
-     * @private
-     */
-    var greaterThanScratch = new Cartesian3();
-    function angleGreaterThan180(s1, s2) {
-        return Cartesian3.cross(s1, s2, greaterThanScratch).z > 0.0;
-    }
-
-    /**
-     * Determines whether s3 is inside the greater-than-180-degree angle
-     * between s1 and s2.
-     *
-     * Important: s1 must be to the left of s2.
-     *
-     * @param {Cartesian3} s1
-     * @param {Cartesian3} s2
-     * @param {Cartesian3} s3
-     * @returns {Boolean}
-     *
-     * @private
-     */
-    var insideBigAngleScratch = new Cartesian3();
-    function isInsideBigAngle(s1, s2, s3) {
-        return (Cartesian3.cross(s1, s3, insideBigAngleScratch).z > 0.0) && (Cartesian3.cross(s3, s2, insideBigAngleScratch).z > 0.0);
-    }
-
-    /**
-     * Determines whether s3 is inside the less-than-180-degree angle
-     * between s1 and s2.
-     *
-     * Important: s1 must be to the left of s2.
-     *
-     * @param {Cartesian3} s1
-     * @param {Cartesian3} s2
-     * @param {Cartesian3} s3
-     * @returns {Boolean}
-     *
-     * @private
-     */
-    var insideSmallAngleScratch = new Cartesian3();
-    function isInsideSmallAngle(s1, s2, s3) {
-        return (Cartesian3.cross(s1, s3, insideSmallAngleScratch).z < 0.0) && (Cartesian3.cross(s3, s2, insideSmallAngleScratch).z < 0.0);
-    }
-
-    /**
-     * Determine whether this segment intersects any other polygon sides.
-     *
-     * @param {Cartesian2} a1 Position of first vertex.
-     * @param {Cartesian2} a2 Position of second vertex.
-     * @param {Array} pArray Array of <code>{ position, index }</code> objects representing polygon.
-     * @returns {Boolean} The segment between a1 and a2 intersect another polygon side.
-     *
-     * @private
-     */
-    var intersectionScratch = new Cartesian2();
-    function intersectsSide(a1, a2, pArray) {
-        for ( var i = 0; i < pArray.length; i++) {
-            var b1 = pArray[i].position;
-            var b2;
-            if (i < pArray.length - 1) {
-                b2 = pArray[i + 1].position;
-            } else {
-                b2 = pArray[0].position;
-            }
-
-            // If there's a duplicate point, there's no intersection here.
-            if (Cartesian2.equals(a1, b1) || Cartesian2.equals(a2, b2) || Cartesian2.equals(a1, b2) || Cartesian2.equals(a2, b1)) {
-                continue;
-            }
-
-            // Slopes (NaN means vertical)
-            var slopeA = (a2.y - a1.y) / (a2.x - a1.x);
-            var slopeB = (b2.y - b1.y) / (b2.x - b1.x);
-
-            // If parallel, no intersection
-            if (slopeA === slopeB || (isNaN(slopeA) && isNaN(slopeB))) {
-                continue;
-            }
-
-            // Calculate intersection point
-            var intX;
-            if (isNaN(slopeA)) {
-                intX = a1.x;
-            } else if (isNaN(slopeB)) {
-                intX = b1.x;
-            } else {
-                intX = (a1.y - b1.y - slopeA * a1.x + slopeB * b1.x) / (slopeB - slopeA);
-            }
-            var intY = slopeA * intX + a1.y - slopeA * a1.x;
-
-            var intersection = Cartesian2.fromElements(intX, intY, intersectionScratch);
-
-            // If intersection is on an endpoint, count no intersection
-            if (Cartesian2.equals(intersection, a1) || Cartesian2.equals(intersection, a2) || Cartesian2.equals(intersection, b1) || Cartesian2.equals(intersection, b2)) {
-                continue;
-            }
-
-            // Is intersection point between segments?
-            var intersects = isBetween(intX, a1.x, a2.x) && isBetween(intY, a1.y, a2.y) && isBetween(intX, b1.x, b2.x) && isBetween(intY, b1.y, b2.y);
-
-            // If intersecting, the cut is not clean
-            if (intersects) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    var side1Scratch = new Cartesian3();
-    var side2Scratch = new Cartesian3();
-    function triangleInLine(pArray) {
-        // Get two sides
-        var v1 = pArray[0].position;
-        var v2 = pArray[1].position;
-        var v3 = pArray[2].position;
-
-        var side1 = Cartesian2.subtract(v2, v1, side1Scratch);
-        var side2 = Cartesian2.subtract(v3, v1, side2Scratch);
-
-        // If they're parallel, so is the last
-        return isParallel(side1, side2);
-    }
-
-    /**
-     * Determine whether number is between n1 and n2.
-     * Do not include number === n1 or number === n2.
-     * Do include n1 === n2 === number.
-     *
-     * @param {Number} number The number tested.
-     * @param {Number} n1 First bound.
-     * @param {Number} n2 Secound bound.
-     * @returns {Boolean} number is between n1 and n2.
-     *
-     * @private
-     */
-    function isBetween(number, n1, n2) {
-        return ((number > n1 || number > n2) && (number < n1 || number < n2)) || (n1 === n2 && n1 === number);
-    }
-
-    /**
-     * This recursive algorithm takes a polygon, randomly selects two vertices
-     * which form a clean cut through the polygon, and divides the polygon
-     * then continues to "chop" the two resulting polygons.
-     *
-     * @param {Array} nodeArray Array of <code>{ position, index }</code> objects representing polygon
-     * @returns {Number[]} Index array representing triangles that fill the polygon
-     *
-     * @exception {DeveloperError} Invalid polygon: must have at least three vertices.
-     *
-     * @private
-     */
-    function randomChop(nodeArray) {
-        // Determine & verify number of vertices
-        var numVertices = nodeArray.length;
-
-        // Is it already a triangle?
-        if (numVertices === 3) {
-            // Only return triangle if it has area (not a line)
-            if (!triangleInLine(nodeArray)) {
-                return [nodeArray[0].index, nodeArray[1].index, nodeArray[2].index];
-            }
-
-            // If it's a line, we don't need it.
-            return [];
-        } else if (nodeArray.length < 3) {
-            throw new DeveloperError('Invalid polygon: must have at least three vertices.');
-        }
-
-        // Search for clean cut
-        var cutFound = false;
-        var tries = 0;
-        while (!cutFound) {
-            // Make sure we don't go into an endless loop
-            var maxTries = nodeArray.length * 10;
-            if (tries > maxTries) {
-                // Hopefully that part of the polygon isn't important
-                return [];
-            }
-            tries++;
-
-            // Generate random indices
-            var index1 = getRandomIndex(nodeArray.length);
-            var index2 = index1 + 1;
-            while (Math.abs(index1 - index2) < 2 || Math.abs(index1 - index2) > nodeArray.length - 2) {
-                index2 = getRandomIndex(nodeArray.length);
-            }
-
-            // Make sure index2 is bigger
-            if (index1 > index2) {
-                var index = index1;
-                index1 = index2;
-                index2 = index;
-            }
-            try {
-                // Check for a clean cut
-                if (cleanCut(index1, index2, nodeArray)) {
-                    // Divide polygon
-                    var nodeArray2 = nodeArray.splice(index1, (index2 - index1 + 1), nodeArray[index1], nodeArray[index2]);
-
-                    // Chop up resulting polygons
-                    return randomChop(nodeArray).concat(randomChop(nodeArray2));
-                }
-            } catch (exception) {
-                // Eliminate superfluous vertex and start over
-                if (exception.hasOwnProperty("vertexIndex")) {
-                    nodeArray.splice(exception.vertexIndex, 1);
-                    return randomChop(nodeArray);
-                }
-                throw exception;
-            }
-        }
-    }
-
-    var scaleToGeodeticHeightN = new Cartesian3();
-    var scaleToGeodeticHeightP = new Cartesian3();
-
-    /**
-     * @private
-     */
-    var PolygonPipeline = {};
-    /**
-     * Cleans up a simple polygon by removing duplicate adjacent positions and making
-     * the first position not equal the last position.
-     *
-     * @exception {DeveloperError} At least three positions are required.
-     */
-    PolygonPipeline.removeDuplicates = function(positions) {
-                if (!defined(positions)) {
-            throw new DeveloperError('positions is required.');
-        }
-        if (positions.length < 3) {
-            throw new DeveloperError('At least three positions are required.');
-        }
-        
-        var length = positions.length;
-
-        var cleanedPositions = [];
-
-        for ( var i0 = length - 1, i1 = 0; i1 < length; i0 = i1++) {
-            var v0 = positions[i0];
-            var v1 = positions[i1];
-
-            if (!Cartesian3.equals(v0, v1)) {
-                cleanedPositions.push(v1); // Shallow copy!
-            }
-        }
-
-        return cleanedPositions;
-    };
-
-    /**
-     * @exception {DeveloperError} At least three positions are required.
-     */
-    PolygonPipeline.computeArea2D = function(positions) {
-                if (!defined(positions)) {
-            throw new DeveloperError('positions is required.');
-        }
-        if (positions.length < 3) {
-            throw new DeveloperError('At least three positions are required.');
-        }
-        
-        var length = positions.length;
-        var area = 0.0;
-
-        for ( var i0 = length - 1, i1 = 0; i1 < length; i0 = i1++) {
-            var v0 = positions[i0];
-            var v1 = positions[i1];
-
-            area += (v0.x * v1.y) - (v1.x * v0.y);
-        }
-
-        return area * 0.5;
-    };
-
-    /**
-     * @returns {WindingOrder} The winding order.
-     *
-     * @exception {DeveloperError} At least three positions are required.
-     */
-    PolygonPipeline.computeWindingOrder2D = function(positions) {
-        var area = PolygonPipeline.computeArea2D(positions);
-        return (area > 0.0) ? WindingOrder.COUNTER_CLOCKWISE : WindingOrder.CLOCKWISE;
-    };
-
-    /**
-     * Triangulate a polygon
-     *
-     * @param {Cartesian2[]} positions - Cartesian2 array containing the vertices of the polygon
-     * @returns {Number[]} - Index array representing triangles that fill the polygon
-     *
-     * @exception {DeveloperError} At least three positions are required.
-     */
-    PolygonPipeline.triangulate = function(positions) {
-                if (!defined(positions)) {
-            throw new DeveloperError('positions is required.');
-        }
-        if (positions.length < 3) {
-            throw new DeveloperError('At least three positions are required.');
-        }
-        
-        var length = positions.length;
-        // Keep track of indices for later
-        var nodeArray = [];
-        for ( var i = 0; i < length; ++i) {
-            nodeArray[i] = {
-                position : positions[i],
-                index : i
-            };
-        }
-
-        // Recursive chop
-        return randomChop(nodeArray);
-    };
-
-    /**
-     * This function is used for predictable testing.
-     *
-     * @private
-     */
-    PolygonPipeline.resetSeed = function(seed) {
-        rseed = defaultValue(seed, 0);
-    };
-
-    /**
-     * Subdivides positions and raises points to the surface of the ellipsoid.
-     *
-     * @param {Cartesian3[]} positions An array of {@link Cartesian3} positions of the polygon.
-     * @param {Number[]} indices An array of indices that determines the triangles in the polygon.
-     * @param {Number} [granularity=CesiumMath.RADIANS_PER_DEGREE] The distance, in radians, between each latitude and longitude. Determines the number of positions in the buffer.
-     *
-     * @exception {DeveloperError} At least three indices are required.
-     * @exception {DeveloperError} The number of indices must be divisable by three.
-     * @exception {DeveloperError} Granularity must be greater than zero.
-     */
-    PolygonPipeline.computeSubdivision = function(positions, indices, granularity) {
-        granularity = defaultValue(granularity, CesiumMath.RADIANS_PER_DEGREE);
-
-                if (!defined(positions)) {
-            throw new DeveloperError('positions is required.');
-        }
-        if (!defined(indices)) {
-            throw new DeveloperError('indices is required.');
-        }
-        if (indices.length < 3) {
-            throw new DeveloperError('At least three indices are required.');
-        }
-        if (indices.length % 3 !== 0) {
-            throw new DeveloperError('The number of indices must be divisable by three.');
-        }
-        if (granularity <= 0.0) {
-            throw new DeveloperError('granularity must be greater than zero.');
-        }
-        
-        // Use a queue for triangles that need (or might need) to be subdivided.
-        var triangles = new Queue();
-
-        var indicesLength = indices.length;
-        for ( var j = 0; j < indicesLength; j += 3) {
-            triangles.enqueue({
-                i0 : indices[j],
-                i1 : indices[j + 1],
-                i2 : indices[j + 2]
-            });
-        }
-
-        // New positions due to edge splits are appended to the positions list.
-        var subdividedPositions = positions.slice(0); // shallow copy!
-        var subdividedIndices = [];
-
-        // Used to make sure shared edges are not split more than once.
-        var edges = {};
-
-        var i;
-        while (triangles.length > 0) {
-            var triangle = triangles.dequeue();
-
-            var v0 = subdividedPositions[triangle.i0];
-            var v1 = subdividedPositions[triangle.i1];
-            var v2 = subdividedPositions[triangle.i2];
-
-            var g0 = Cartesian3.angleBetween(v0, v1);
-            var g1 = Cartesian3.angleBetween(v1, v2);
-            var g2 = Cartesian3.angleBetween(v2, v0);
-
-            var max = Math.max(g0, Math.max(g1, g2));
-            var edge;
-            var mid;
-
-            if (max > granularity) {
-                if (g0 === max) {
-                    edge = Math.min(triangle.i0, triangle.i1).toString() + ' ' + Math.max(triangle.i0, triangle.i1).toString();
-
-                    i = edges[edge];
-                    if (!i) {
-                        mid = Cartesian3.add(v0, v1, new Cartesian3());
-                        Cartesian3.multiplyByScalar(mid, 0.5, mid);
-                        subdividedPositions.push(mid);
-                        i = subdividedPositions.length - 1;
-                        edges[edge] = i;
-                    }
-
-                    triangles.enqueue({
-                        i0 : triangle.i0,
-                        i1 : i,
-                        i2 : triangle.i2
-                    });
-                    triangles.enqueue({
-                        i0 : i,
-                        i1 : triangle.i1,
-                        i2 : triangle.i2
-                    });
-                } else if (g1 === max) {
-                    edge = Math.min(triangle.i1, triangle.i2).toString() + ' ' + Math.max(triangle.i1, triangle.i2).toString();
-
-                    i = edges[edge];
-                    if (!i) {
-                        mid = Cartesian3.add(v1, v2, new Cartesian3());
-                        Cartesian3.multiplyByScalar(mid, 0.5, mid);
-                        subdividedPositions.push(mid);
-                        i = subdividedPositions.length - 1;
-                        edges[edge] = i;
-                    }
-
-                    triangles.enqueue({
-                        i0 : triangle.i1,
-                        i1 : i,
-                        i2 : triangle.i0
-                    });
-                    triangles.enqueue({
-                        i0 : i,
-                        i1 : triangle.i2,
-                        i2 : triangle.i0
-                    });
-                } else if (g2 === max) {
-                    edge = Math.min(triangle.i2, triangle.i0).toString() + ' ' + Math.max(triangle.i2, triangle.i0).toString();
-
-                    i = edges[edge];
-                    if (!i) {
-                        mid = Cartesian3.add(v2, v0, new Cartesian3());
-                        Cartesian3.multiplyByScalar(mid, 0.5, mid);
-                        subdividedPositions.push(mid);
-                        i = subdividedPositions.length - 1;
-                        edges[edge] = i;
-                    }
-
-                    triangles.enqueue({
-                        i0 : triangle.i2,
-                        i1 : i,
-                        i2 : triangle.i1
-                    });
-                    triangles.enqueue({
-                        i0 : i,
-                        i1 : triangle.i0,
-                        i2 : triangle.i1
-                    });
-                }
-            } else {
-                subdividedIndices.push(triangle.i0);
-                subdividedIndices.push(triangle.i1);
-                subdividedIndices.push(triangle.i2);
-            }
-        }
-
-        // PERFORMANCE_IDEA Rather that waste time re-iterating the entire set of positions
-        // here, all of the above code can be refactored to flatten as values are added
-        // Removing the need for this for loop.
-        var length = subdividedPositions.length;
-        var flattenedPositions = new Array(length * 3);
-        var q = 0;
-        for (i = 0; i < length; i++) {
-            var item = subdividedPositions[i];
-            flattenedPositions[q++] = item.x;
-            flattenedPositions[q++] = item.y;
-            flattenedPositions[q++] = item.z;
-        }
-
-        return new Geometry({
-            attributes : {
-                position : new GeometryAttribute({
-                    componentDatatype : ComponentDatatype.DOUBLE,
-                    componentsPerAttribute : 3,
-                    values : flattenedPositions
-                })
-            },
-            indices : subdividedIndices,
-            primitiveType : PrimitiveType.TRIANGLES
-        });
-    };
-
-    /**
-     * Scales each position of a geometry's position attribute to a height, in place.
-     *
-     * @param {Geometry} geometry The geometry whose positions are to be scaled.
-     * @param {Number} [height=0.0] The desired height to add to the positions of the geometry.
-     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid on which the positions lie.
-     * @param {Boolean} [scaleToSurface=true] <code>true</code> if the positions need to be scaled to the surface before the height is added.
-     * @returns {Geometry} The same geometry whose positions where scaled.
-     */
-    PolygonPipeline.scaleToGeodeticHeight = function(geometry, height, ellipsoid, scaleToSurface) {
-        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-
-        var n = scaleToGeodeticHeightN;
-        var p = scaleToGeodeticHeightP;
-
-        height = defaultValue(height, 0.0);
-        scaleToSurface = defaultValue(scaleToSurface, true);
-
-        if (defined(geometry) && defined(geometry.attributes) && defined(geometry.attributes.position)) {
-            var positions = geometry.attributes.position.values;
-            var length = positions.length;
-
-            for ( var i = 0; i < length; i += 3) {
-                Cartesian3.fromArray(positions, i, p);
-
-                if (scaleToSurface) {
-                    p = ellipsoid.scaleToGeodeticSurface(p, p);
-                }
-
-                n = ellipsoid.geodeticSurfaceNormal(p, n);
-
-                Cartesian3.multiplyByScalar(n, height, n);
-                Cartesian3.add(p, n, p);
-
-                positions[i] = p.x;
-                positions[i + 1] = p.y;
-                positions[i + 2] = p.z;
-            }
-        }
-
-        return geometry;
-    };
-
-    /**
-     * Given a polygon defined by an outer ring with one or more inner rings (holes), return a single list of points representing
-     * a polygon defined by the outer ring with the inner holes removed.
-     *
-     * @param {Cartesian2[]} outerRing An array of Cartesian points defining the outer boundary of the polygon.
-     * @param {Cartesian2[]} innerRings An array of arrays of Cartesian points, where each array represents a hole in the polygon.
-     * @returns A single list of Cartesian points defining the polygon, including the eliminated inner ring.
-     *
-     * @exception {DeveloperError} <code>outerRing</code> must not be empty.
-     *
-     * @example
-     * // Simplifying a polygon with multiple holes.
-     * outerRing = Cesium.PolygonPipeline.eliminateHoles(outerRing, innerRings);
-     * polygon.positions = outerRing;
-     */
-    PolygonPipeline.eliminateHoles = function(outerRing, innerRings, ellipsoid) {
-                if (!defined(outerRing)) {
-            throw new DeveloperError('outerRing is required.');
-        }
-        if (outerRing.length === 0) {
-            throw new DeveloperError('outerRing must not be empty.');
-        }
-        if (!defined(innerRings)) {
-            throw new DeveloperError('innerRings is required.');
-        }
-        
-        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-
-        var innerRingsCopy = [];
-        for ( var i = 0; i < innerRings.length; i++) {
-            var innerRing = [];
-            for ( var j = 0; j < innerRings[i].length; j++) {
-                innerRing.push(Cartesian3.clone(innerRings[i][j]));
-            }
-            innerRingsCopy.push(innerRing);
-        }
-
-        var newPolygonVertices = outerRing;
-        while (innerRingsCopy.length > 0) {
-            newPolygonVertices = eliminateHole(newPolygonVertices, innerRingsCopy, ellipsoid);
-        }
-        return newPolygonVertices;
-    };
-
-    return PolygonPipeline;
-});
-
-/*global define*/
 define('Core/Quaternion',[
         './Cartesian3',
         './defaultValue',
@@ -23166,6 +17770,37 @@ define('Core/Quaternion',[
         result.z = z;
         result.w = w;
         return result;
+    };
+
+    var scratchHPRQuaternion = new Quaternion();
+
+    /**
+     * Computes a rotation from the given heading, pitch and roll angles. Heading is the rotation about the
+     * negative z axis. Pitch is the rotation about the negative y axis. Roll is the rotation about
+     * the positive x axis.
+     *
+     * @param {Number} heading The heading angle in radians.
+     * @param {Number} pitch The pitch angle in radians.
+     * @param {Number} roll The roll angle in radians.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if none was provided.
+     */
+    Quaternion.fromHeadingPitchRoll = function(heading, pitch, roll, result) {
+                if (!defined(heading)) {
+            throw new DeveloperError('heading is required.');
+        }
+        if (!defined(pitch)) {
+            throw new DeveloperError('pitch is required.');
+        }
+        if (!defined(roll)) {
+            throw new DeveloperError('roll is required.');
+        }
+        
+        var rollQuaternion = Quaternion.fromAxisAngle(Cartesian3.UNIT_X, roll, scratchHPRQuaternion);
+        var pitchQuaternion = Quaternion.fromAxisAngle(Cartesian3.UNIT_Y, -pitch, result);
+        result = Quaternion.multiply(pitchQuaternion, rollQuaternion, pitchQuaternion);
+        var headingQuaternion = Quaternion.fromAxisAngle(Cartesian3.UNIT_Z, -heading, scratchHPRQuaternion);
+        return Quaternion.multiply(headingQuaternion, result, result);
     };
 
     var sampledQuaternionAxis = new Cartesian3();
@@ -24056,11 +18691,6464 @@ define('Core/Quaternion',[
     return Quaternion;
 });
 /*global define*/
+define('Core/Transforms',[
+        '../ThirdParty/when',
+        './Cartesian2',
+        './Cartesian3',
+        './Cartesian4',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './EarthOrientationParameters',
+        './EarthOrientationParametersSample',
+        './Ellipsoid',
+        './Iau2006XysData',
+        './Iau2006XysSample',
+        './JulianDate',
+        './Math',
+        './Matrix3',
+        './Matrix4',
+        './Quaternion',
+        './TimeConstants'
+    ], function(
+        when,
+        Cartesian2,
+        Cartesian3,
+        Cartesian4,
+        defaultValue,
+        defined,
+        DeveloperError,
+        EarthOrientationParameters,
+        EarthOrientationParametersSample,
+        Ellipsoid,
+        Iau2006XysData,
+        Iau2006XysSample,
+        JulianDate,
+        CesiumMath,
+        Matrix3,
+        Matrix4,
+        Quaternion,
+        TimeConstants) {
+    "use strict";
+
+    /**
+     * Contains functions for transforming positions to various reference frames.
+     *
+     * @namespace
+     * @alias Transforms
+     */
+    var Transforms = {};
+
+    var eastNorthUpToFixedFrameNormal = new Cartesian3();
+    var eastNorthUpToFixedFrameTangent = new Cartesian3();
+    var eastNorthUpToFixedFrameBitangent = new Cartesian3();
+
+    /**
+     * Computes a 4x4 transformation matrix from a reference frame with an east-north-up axes
+     * centered at the provided origin to the provided ellipsoid's fixed reference frame.
+     * The local axes are defined as:
+     * <ul>
+     * <li>The <code>x</code> axis points in the local east direction.</li>
+     * <li>The <code>y</code> axis points in the local north direction.</li>
+     * <li>The <code>z</code> axis points in the direction of the ellipsoid surface normal which passes through the position.</li>
+     * </ul>
+     *
+     * @param {Cartesian3} origin The center point of the local reference frame.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
+     * @param {Matrix4} [result] The object onto which to store the result.
+     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
+     *
+     * @example
+     * // Get the transform from local east-north-up at cartographic (0.0, 0.0) to Earth's fixed frame.
+     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var transform = Cesium.Transforms.eastNorthUpToFixedFrame(center);
+     */
+    Transforms.eastNorthUpToFixedFrame = function(origin, ellipsoid, result) {
+                if (!defined(origin)) {
+            throw new DeveloperError('origin is required.');
+        }
+        
+        // If x and y are zero, assume origin is at a pole, which is a special case.
+        if (CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
+            CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
+            var sign = CesiumMath.sign(origin.z);
+            if (!defined(result)) {
+                return new Matrix4(
+                        0.0, -sign,  0.0, origin.x,
+                        1.0,   0.0,  0.0, origin.y,
+                        0.0,   0.0, sign, origin.z,
+                        0.0,   0.0,  0.0, 1.0);
+            }
+            result[0] = 0.0;
+            result[1] = 1.0;
+            result[2] = 0.0;
+            result[3] = 0.0;
+            result[4] = -sign;
+            result[5] = 0.0;
+            result[6] = 0.0;
+            result[7] = 0.0;
+            result[8] = 0.0;
+            result[9] = 0.0;
+            result[10] = sign;
+            result[11] = 0.0;
+            result[12] = origin.x;
+            result[13] = origin.y;
+            result[14] = origin.z;
+            result[15] = 1.0;
+            return result;
+        }
+
+        var normal = eastNorthUpToFixedFrameNormal;
+        var tangent  = eastNorthUpToFixedFrameTangent;
+        var bitangent = eastNorthUpToFixedFrameBitangent;
+
+        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
+        ellipsoid.geodeticSurfaceNormal(origin, normal);
+
+        tangent.x = -origin.y;
+        tangent.y = origin.x;
+        tangent.z = 0.0;
+        Cartesian3.normalize(tangent, tangent);
+
+        Cartesian3.cross(normal, tangent, bitangent);
+
+        if (!defined(result)) {
+            return new Matrix4(
+                    tangent.x, bitangent.x, normal.x, origin.x,
+                    tangent.y, bitangent.y, normal.y, origin.y,
+                    tangent.z, bitangent.z, normal.z, origin.z,
+                    0.0,       0.0,         0.0,      1.0);
+        }
+        result[0] = tangent.x;
+        result[1] = tangent.y;
+        result[2] = tangent.z;
+        result[3] = 0.0;
+        result[4] = bitangent.x;
+        result[5] = bitangent.y;
+        result[6] = bitangent.z;
+        result[7] = 0.0;
+        result[8] = normal.x;
+        result[9] = normal.y;
+        result[10] = normal.z;
+        result[11] = 0.0;
+        result[12] = origin.x;
+        result[13] = origin.y;
+        result[14] = origin.z;
+        result[15] = 1.0;
+        return result;
+    };
+
+    var northEastDownToFixedFrameNormal = new Cartesian3();
+    var northEastDownToFixedFrameTangent = new Cartesian3();
+    var northEastDownToFixedFrameBitangent = new Cartesian3();
+
+    /**
+     * Computes a 4x4 transformation matrix from a reference frame with an north-east-down axes
+     * centered at the provided origin to the provided ellipsoid's fixed reference frame.
+     * The local axes are defined as:
+     * <ul>
+     * <li>The <code>x</code> axis points in the local north direction.</li>
+     * <li>The <code>y</code> axis points in the local east direction.</li>
+     * <li>The <code>z</code> axis points in the opposite direction of the ellipsoid surface normal which passes through the position.</li>
+     * </ul>
+     *
+     * @param {Cartesian3} origin The center point of the local reference frame.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
+     * @param {Matrix4} [result] The object onto which to store the result.
+     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
+     *
+     * @example
+     * // Get the transform from local north-east-down at cartographic (0.0, 0.0) to Earth's fixed frame.
+     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var transform = Cesium.Transforms.northEastDownToFixedFrame(center);
+     */
+    Transforms.northEastDownToFixedFrame = function(origin, ellipsoid, result) {
+                if (!defined(origin)) {
+            throw new DeveloperError('origin is required.');
+        }
+        
+        if (CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
+            CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
+            // The poles are special cases.  If x and y are zero, assume origin is at a pole.
+            var sign = CesiumMath.sign(origin.z);
+            if (!defined(result)) {
+                return new Matrix4(
+                  -sign, 0.0,   0.0, origin.x,
+                    0.0, 1.0,   0.0, origin.y,
+                    0.0, 0.0, -sign, origin.z,
+                    0.0, 0.0,   0.0, 1.0);
+            }
+            result[0] = -sign;
+            result[1] = 0.0;
+            result[2] = 0.0;
+            result[3] = 0.0;
+            result[4] = 0.0;
+            result[5] = 1.0;
+            result[6] = 0.0;
+            result[7] = 0.0;
+            result[8] = 0.0;
+            result[9] = 0.0;
+            result[10] = -sign;
+            result[11] = 0.0;
+            result[12] = origin.x;
+            result[13] = origin.y;
+            result[14] = origin.z;
+            result[15] = 1.0;
+            return result;
+        }
+
+        var normal = northEastDownToFixedFrameNormal;
+        var tangent = northEastDownToFixedFrameTangent;
+        var bitangent = northEastDownToFixedFrameBitangent;
+
+        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
+        ellipsoid.geodeticSurfaceNormal(origin, normal);
+
+        tangent.x = -origin.y;
+        tangent.y = origin.x;
+        tangent.z = 0.0;
+        Cartesian3.normalize(tangent, tangent);
+
+        Cartesian3.cross(normal, tangent, bitangent);
+
+        if (!defined(result)) {
+            return new Matrix4(
+                    bitangent.x, tangent.x, -normal.x, origin.x,
+                    bitangent.y, tangent.y, -normal.y, origin.y,
+                    bitangent.z, tangent.z, -normal.z, origin.z,
+                    0.0,       0.0,         0.0,      1.0);
+        }
+        result[0] = bitangent.x;
+        result[1] = bitangent.y;
+        result[2] = bitangent.z;
+        result[3] = 0.0;
+        result[4] = tangent.x;
+        result[5] = tangent.y;
+        result[6] = tangent.z;
+        result[7] = 0.0;
+        result[8] = -normal.x;
+        result[9] = -normal.y;
+        result[10] = -normal.z;
+        result[11] = 0.0;
+        result[12] = origin.x;
+        result[13] = origin.y;
+        result[14] = origin.z;
+        result[15] = 1.0;
+        return result;
+    };
+
+    /**
+     * Computes a 4x4 transformation matrix from a reference frame with an north-up-east axes
+     * centered at the provided origin to the provided ellipsoid's fixed reference frame.
+     * The local axes are defined as:
+     * <ul>
+     * <li>The <code>x</code> axis points in the local north direction.</li>
+     * <li>The <code>y</code> axis points in the direction of the ellipsoid surface normal which passes through the position.</li>
+     * <li>The <code>z</code> axis points in the local east direction.</li>
+     * </ul>
+     *
+     * @param {Cartesian3} origin The center point of the local reference frame.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
+     * @param {Matrix4} [result] The object onto which to store the result.
+     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
+     *
+     * @example
+     * // Get the transform from local north-up-east at cartographic (0.0, 0.0) to Earth's fixed frame.
+     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var transform = Cesium.Transforms.northUpEastToFixedFrame(center);
+     */
+    Transforms.northUpEastToFixedFrame = function(origin, ellipsoid, result) {
+                if (!defined(origin)) {
+            throw new DeveloperError('origin is required.');
+        }
+        
+        // If x and y are zero, assume origin is at a pole, which is a special case.
+        if (CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
+            CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
+            var sign = CesiumMath.sign(origin.z);
+            if (!defined(result)) {
+                return new Matrix4(
+                       -sign, 0.0,  0.0, origin.x,
+                        0.0,  0.0,  1.0, origin.y,
+                        0.0,  sign, 0.0, origin.z,
+                        0.0,  0.0,  0.0, 1.0);
+            }
+            result[0] = -sign;
+            result[1] = 0.0;
+            result[2] = 0.0;
+            result[3] = 0.0;
+            result[4] = 0.0;
+            result[5] = 0.0;
+            result[6] = sign;
+            result[7] = 0.0;
+            result[8] = 0.0;
+            result[9] = 1.0;
+            result[10] = 0.0;
+            result[11] = 0.0;
+            result[12] = origin.x;
+            result[13] = origin.y;
+            result[14] = origin.z;
+            result[15] = 1.0;
+            return result;
+        }
+
+        var normal = eastNorthUpToFixedFrameNormal;
+        var tangent  = eastNorthUpToFixedFrameTangent;
+        var bitangent = eastNorthUpToFixedFrameBitangent;
+
+        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
+        ellipsoid.geodeticSurfaceNormal(origin, normal);
+
+        tangent.x = -origin.y;
+        tangent.y = origin.x;
+        tangent.z = 0.0;
+        Cartesian3.normalize(tangent, tangent);
+
+        Cartesian3.cross(normal, tangent, bitangent);
+
+        if (!defined(result)) {
+            return new Matrix4(
+                    bitangent.x, normal.x, tangent.x, origin.x,
+                    bitangent.y, normal.y, tangent.y, origin.y,
+                    bitangent.z, normal.z, tangent.z, origin.z,
+                    0.0,       0.0,         0.0,      1.0);
+        }
+        result[0] = bitangent.x;
+        result[1] = bitangent.y;
+        result[2] = bitangent.z;
+        result[3] = 0.0;
+        result[4] = normal.x;
+        result[5] = normal.y;
+        result[6] = normal.z;
+        result[7] = 0.0;
+        result[8] = tangent.x;
+        result[9] = tangent.y;
+        result[10] = tangent.z;
+        result[11] = 0.0;
+        result[12] = origin.x;
+        result[13] = origin.y;
+        result[14] = origin.z;
+        result[15] = 1.0;
+        return result;
+    };
+
+    var scratchHPRQuaternion = new Quaternion();
+    var scratchScale = new Cartesian3(1.0, 1.0, 1.0);
+    var scratchHPRMatrix4 = new Matrix4();
+
+    /**
+     * Computes a 4x4 transformation matrix from a reference frame with axes computed from the heading-pitch-roll angles
+     * centered at the provided origin to the provided ellipsoid's fixed reference frame. Heading is the rotation from the local north
+     * direction where a positive angle is increasing eastward. Pitch is the rotation from the local east-north plane. Positive pitch angles
+     * are above the plane. Negative pitch angles are below the plane. Roll is the first rotation applied about the local east axis.
+     *
+     * @param {Cartesian3} origin The center point of the local reference frame.
+     * @param {Number} heading The heading angle in radians.
+     * @param {Number} pitch The pitch angle in radians.
+     * @param {Number} roll The roll angle in radians.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
+     * @param {Matrix4} [result] The object onto which to store the result.
+     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
+     *
+     * @example
+     * // Get the transform from local heading-pitch-roll at cartographic (0.0, 0.0) to Earth's fixed frame.
+     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var heading = -Cesium.Math.PI_OVER_TWO;
+     * var pitch = Cesium.Math.PI_OVER_FOUR;
+     * var roll = 0.0;
+     * var transform = Cesium.Transforms.headingPitchRollToFixedFrame(center, heading, pitch, roll);
+     */
+    Transforms.headingPitchRollToFixedFrame = function(origin, heading, pitch, roll, ellipsoid, result) {
+        // checks for required parameters happen in the called functions
+        var hprQuaternion = Quaternion.fromHeadingPitchRoll(heading, pitch, roll, scratchHPRQuaternion);
+        var hprMatrix = Matrix4.fromTranslationQuaternionRotationScale(Cartesian3.ZERO, hprQuaternion, scratchScale, scratchHPRMatrix4);
+        result = Transforms.eastNorthUpToFixedFrame(origin, ellipsoid, result);
+        return Matrix4.multiply(result, hprMatrix, result);
+    };
+
+    var scratchENUMatrix4 = new Matrix4();
+    var scratchHPRMatrix3 = new Matrix3();
+
+    /**
+     * Computes a quaternion from a reference frame with axes computed from the heading-pitch-roll angles
+     * centered at the provided origin. Heading is the rotation from the local north
+     * direction where a positive angle is increasing eastward. Pitch is the rotation from the local east-north plane. Positive pitch angles
+     * are above the plane. Negative pitch angles are below the plane. Roll is the first rotation applied about the local east axis.
+     *
+     * @param {Cartesian3} origin The center point of the local reference frame.
+     * @param {Number} heading The heading angle in radians.
+     * @param {Number} pitch The pitch angle in radians.
+     * @param {Number} roll The roll angle in radians.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
+     * @param {Quaternion} [result] The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if none was provided.
+     *
+     * @example
+     * // Get the quaternion from local heading-pitch-roll at cartographic (0.0, 0.0) to Earth's fixed frame.
+     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var heading = -Cesium.Math.PI_OVER_TWO;
+     * var pitch = Cesium.Math.PI_OVER_FOUR;
+     * var roll = 0.0;
+     * var quaternion = Cesium.Transforms.headingPitchRollQuaternion(center, heading, pitch, roll);
+     */
+    Transforms.headingPitchRollQuaternion = function(origin, heading, pitch, roll, ellipsoid, result) {
+        // checks for required parameters happen in the called functions
+        var transform = Transforms.headingPitchRollToFixedFrame(origin, heading, pitch, roll, ellipsoid, scratchENUMatrix4);
+        var rotation = Matrix4.getRotation(transform, scratchHPRMatrix3);
+        return Quaternion.fromRotationMatrix(rotation, result);
+    };
+
+
+    var gmstConstant0 = 6 * 3600 + 41 * 60 + 50.54841;
+    var gmstConstant1 = 8640184.812866;
+    var gmstConstant2 = 0.093104;
+    var gmstConstant3 = -6.2E-6;
+    var rateCoef = 1.1772758384668e-19;
+    var wgs84WRPrecessing = 7.2921158553E-5;
+    var twoPiOverSecondsInDay = CesiumMath.TWO_PI / 86400.0;
+    var dateInUtc = new JulianDate();
+
+    /**
+     * Computes a rotation matrix to transform a point or vector from True Equator Mean Equinox (TEME) axes to the
+     * pseudo-fixed axes at a given time.  This method treats the UT1 time standard as equivalent to UTC.
+     *
+     * @param {JulianDate} date The time at which to compute the rotation matrix.
+     * @param {Matrix3} [result] The object onto which to store the result.
+     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if none was provided.
+     *
+     * @example
+     * //Set the view to in the inertial frame.
+     * scene.preRender.addEventListener(function(scene, time) {
+     *    var now = new Cesium.JulianDate();
+     *    var offset = Cesium.Matrix4.multiplyByPoint(camera.transform, camera.position, new Cesium.Cartesian3());
+     *    var transform = Cesium.Matrix4.fromRotationTranslation(Cesium.Transforms.computeTemeToPseudoFixedMatrix(now));
+     *    var inverseTransform = Cesium.Matrix4.inverseTransformation(transform, new Cesium.Matrix4());
+     *    Cesium.Matrix4.multiplyByPoint(inverseTransform, offset, offset);
+     *    camera.lookAtTransform(transform, offset);
+     * });
+     */
+    Transforms.computeTemeToPseudoFixedMatrix = function (date, result) {
+                if (!defined(date)) {
+            throw new DeveloperError('date is required.');
+        }
+        
+        // GMST is actually computed using UT1.  We're using UTC as an approximation of UT1.
+        // We do not want to use the function like convertTaiToUtc in JulianDate because
+        // we explicitly do not want to fail when inside the leap second.
+
+        dateInUtc = JulianDate.addSeconds(date, -JulianDate.computeTaiMinusUtc(date), dateInUtc);
+        var utcDayNumber = dateInUtc.dayNumber;
+        var utcSecondsIntoDay = dateInUtc.secondsOfDay;
+
+        var t;
+        var diffDays = utcDayNumber - 2451545;
+        if (utcSecondsIntoDay >= 43200.0) {
+            t = (diffDays + 0.5) / TimeConstants.DAYS_PER_JULIAN_CENTURY;
+        } else {
+            t = (diffDays - 0.5) / TimeConstants.DAYS_PER_JULIAN_CENTURY;
+        }
+
+        var gmst0 = gmstConstant0 + t * (gmstConstant1 + t * (gmstConstant2 + t * gmstConstant3));
+        var angle = (gmst0 * twoPiOverSecondsInDay) % CesiumMath.TWO_PI;
+        var ratio = wgs84WRPrecessing + rateCoef * (utcDayNumber - 2451545.5);
+        var secondsSinceMidnight = (utcSecondsIntoDay + TimeConstants.SECONDS_PER_DAY * 0.5) % TimeConstants.SECONDS_PER_DAY;
+        var gha = angle + (ratio * secondsSinceMidnight);
+        var cosGha = Math.cos(gha);
+        var sinGha = Math.sin(gha);
+
+        if (!defined(result)) {
+            return new Matrix3(cosGha, sinGha, 0.0,
+                              -sinGha, cosGha, 0.0,
+                                  0.0,    0.0, 1.0);
+        }
+        result[0] = cosGha;
+        result[1] = -sinGha;
+        result[2] = 0.0;
+        result[3] = sinGha;
+        result[4] = cosGha;
+        result[5] = 0.0;
+        result[6] = 0.0;
+        result[7] = 0.0;
+        result[8] = 1.0;
+        return result;
+    };
+
+    /**
+     * The source of IAU 2006 XYS data, used for computing the transformation between the
+     * Fixed and ICRF axes.
+     * @type {Iau2006XysData}
+     *
+     * @see Transforms.computeIcrfToFixedMatrix
+     * @see Transforms.computeFixedToIcrfMatrix
+     *
+     * @private
+     */
+    Transforms.iau2006XysData = new Iau2006XysData();
+
+    /**
+     * The source of Earth Orientation Parameters (EOP) data, used for computing the transformation
+     * between the Fixed and ICRF axes.  By default, zero values are used for all EOP values,
+     * yielding a reasonable but not completely accurate representation of the ICRF axes.
+     * @type {EarthOrientationParameters}
+     *
+     * @see Transforms.computeIcrfToFixedMatrix
+     * @see Transforms.computeFixedToIcrfMatrix
+     *
+     * @private
+     */
+    Transforms.earthOrientationParameters = EarthOrientationParameters.NONE;
+
+    var ttMinusTai = 32.184;
+    var j2000ttDays = 2451545.0;
+
+    /**
+     * Preloads the data necessary to transform between the ICRF and Fixed axes, in either
+     * direction, over a given interval.  This function returns a promise that, when resolved,
+     * indicates that the preload has completed.
+     *
+     * @param {TimeInterval} timeInterval The interval to preload.
+     * @returns {Promise} A promise that, when resolved, indicates that the preload has completed
+     *          and evaluation of the transformation between the fixed and ICRF axes will
+     *          no longer return undefined for a time inside the interval.
+     *
+     * @see Transforms.computeIcrfToFixedMatrix
+     * @see Transforms.computeFixedToIcrfMatrix
+     * @see when
+     *
+     * @example
+     * var interval = new Cesium.TimeInterval(...);
+     * when(preloadIcrfFixed(interval), function() {
+     *     // the data is now loaded
+     * });
+     */
+    Transforms.preloadIcrfFixed = function(timeInterval) {
+        var startDayTT = timeInterval.start.dayNumber;
+        var startSecondTT = timeInterval.start.secondsOfDay + ttMinusTai;
+        var stopDayTT = timeInterval.stop.dayNumber;
+        var stopSecondTT = timeInterval.stop.secondsOfDay + ttMinusTai;
+
+        var xysPromise = Transforms.iau2006XysData.preload(startDayTT, startSecondTT, stopDayTT, stopSecondTT);
+        var eopPromise = Transforms.earthOrientationParameters.getPromiseToLoad();
+
+        return when.all([xysPromise, eopPromise]);
+    };
+
+    /**
+     * Computes a rotation matrix to transform a point or vector from the International Celestial
+     * Reference Frame (GCRF/ICRF) inertial frame axes to the Earth-Fixed frame axes (ITRF)
+     * at a given time.  This function may return undefined if the data necessary to
+     * do the transformation is not yet loaded.
+     *
+     * @param {JulianDate} date The time at which to compute the rotation matrix.
+     * @param {Matrix3} [result] The object onto which to store the result.  If this parameter is
+     *                  not specified, a new instance is created and returned.
+     * @returns {Matrix3} The rotation matrix, or undefined if the data necessary to do the
+     *                   transformation is not yet loaded.
+     *
+     * @see Transforms.preloadIcrfFixed
+     *
+     * @example
+     * scene.preRender.addEventListener(function(scene, time) {
+     *   var icrfToFixed = Cesium.Transforms.computeIcrfToFixedMatrix(time);
+     *   if (Cesium.defined(icrfToFixed)) {
+     *     var offset = Cesium.Matrix4.multiplyByPoint(camera.transform, camera.position, new Cesium.Cartesian3());
+     *     var transform = Cesium.Matrix4.fromRotationTranslation(icrfToFixed)
+     *     var inverseTransform = Cesium.Matrix4.inverseTransformation(transform, new Cesium.Matrix4());
+     *     Cesium.Matrix4.multiplyByPoint(inverseTransform, offset, offset);
+     *     camera.lookAtTransform(transform, offset);
+     *   }
+     * });
+     */
+    Transforms.computeIcrfToFixedMatrix = function(date, result) {
+                if (!defined(date)) {
+            throw new DeveloperError('date is required.');
+        }
+                if (!defined(result)) {
+            result = new Matrix3();
+        }
+
+        var fixedToIcrfMtx = Transforms.computeFixedToIcrfMatrix(date, result);
+        if (!defined(fixedToIcrfMtx)) {
+            return undefined;
+        }
+
+        return Matrix3.transpose(fixedToIcrfMtx, result);
+    };
+
+    var xysScratch = new Iau2006XysSample(0.0, 0.0, 0.0);
+    var eopScratch = new EarthOrientationParametersSample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    var rotation1Scratch = new Matrix3();
+    var rotation2Scratch = new Matrix3();
+
+    /**
+     * Computes a rotation matrix to transform a point or vector from the Earth-Fixed frame axes (ITRF)
+     * to the International Celestial Reference Frame (GCRF/ICRF) inertial frame axes
+     * at a given time.  This function may return undefined if the data necessary to
+     * do the transformation is not yet loaded.
+     *
+     * @param {JulianDate} date The time at which to compute the rotation matrix.
+     * @param {Matrix3} [result] The object onto which to store the result.  If this parameter is
+     *                  not specified, a new instance is created and returned.
+     * @returns {Matrix3} The rotation matrix, or undefined if the data necessary to do the
+     *                   transformation is not yet loaded.
+     *
+     * @see Transforms.preloadIcrfFixed
+     *
+     * @example
+     * // Transform a point from the ICRF axes to the Fixed axes.
+     * var now = new Cesium.JulianDate();
+     * var pointInFixed = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var fixedToIcrf = Cesium.Transforms.computeIcrfToFixedMatrix(now);
+     * var pointInInertial = new Cesium.Cartesian3();
+     * if (Cesium.defined(fixedToIcrf)) {
+     *     pointInInertial = Cesium.Matrix3.multiplyByVector(fixedToIcrf, pointInFixed, pointInInertial);
+     * }
+     */
+    Transforms.computeFixedToIcrfMatrix = function(date, result) {
+                if (!defined(date)) {
+            throw new DeveloperError('date is required.');
+        }
+        
+        if (!defined(result)) {
+            result = new Matrix3();
+        }
+
+        // Compute pole wander
+        var eop = Transforms.earthOrientationParameters.compute(date, eopScratch);
+        if (!defined(eop)) {
+            return undefined;
+        }
+
+        // There is no external conversion to Terrestrial Time (TT).
+        // So use International Atomic Time (TAI) and convert using offsets.
+        // Here we are assuming that dayTT and secondTT are positive
+        var dayTT = date.dayNumber;
+        // It's possible here that secondTT could roll over 86400
+        // This does not seem to affect the precision (unit tests check for this)
+        var secondTT = date.secondsOfDay + ttMinusTai;
+
+        var xys = Transforms.iau2006XysData.computeXysRadians(dayTT, secondTT, xysScratch);
+        if (!defined(xys)) {
+            return undefined;
+        }
+
+        var x = xys.x + eop.xPoleOffset;
+        var y = xys.y + eop.yPoleOffset;
+
+        // Compute XYS rotation
+        var a = 1.0 / (1.0 + Math.sqrt(1.0 - x * x - y * y));
+
+        var rotation1 = rotation1Scratch;
+        rotation1[0] = 1.0 - a * x * x;
+        rotation1[3] = -a * x * y;
+        rotation1[6] = x;
+        rotation1[1] = -a * x * y;
+        rotation1[4] = 1 - a * y * y;
+        rotation1[7] = y;
+        rotation1[2] = -x;
+        rotation1[5] = -y;
+        rotation1[8] = 1 - a * (x * x + y * y);
+
+        var rotation2 = Matrix3.fromRotationZ(-xys.s, rotation2Scratch);
+        var matrixQ = Matrix3.multiply(rotation1, rotation2, rotation1Scratch);
+
+        // Similar to TT conversions above
+        // It's possible here that secondTT could roll over 86400
+        // This does not seem to affect the precision (unit tests check for this)
+        var dateUt1day = date.dayNumber;
+        var dateUt1sec = date.secondsOfDay - JulianDate.computeTaiMinusUtc(date) + eop.ut1MinusUtc;
+
+        // Compute Earth rotation angle
+        // The IERS standard for era is
+        //    era = 0.7790572732640 + 1.00273781191135448 * Tu
+        // where
+        //    Tu = JulianDateInUt1 - 2451545.0
+        // However, you get much more precision if you make the following simplification
+        //    era = a + (1 + b) * (JulianDayNumber + FractionOfDay - 2451545)
+        //    era = a + (JulianDayNumber - 2451545) + FractionOfDay + b (JulianDayNumber - 2451545 + FractionOfDay)
+        //    era = a + FractionOfDay + b (JulianDayNumber - 2451545 + FractionOfDay)
+        // since (JulianDayNumber - 2451545) represents an integer number of revolutions which will be discarded anyway.
+        var daysSinceJ2000 = dateUt1day - 2451545;
+        var fractionOfDay = dateUt1sec / TimeConstants.SECONDS_PER_DAY;
+        var era = 0.7790572732640 + fractionOfDay + 0.00273781191135448 * (daysSinceJ2000 + fractionOfDay);
+        era = (era % 1.0) * CesiumMath.TWO_PI;
+
+        var earthRotation = Matrix3.fromRotationZ(era, rotation2Scratch);
+
+        // pseudoFixed to ICRF
+        var pfToIcrf = Matrix3.multiply(matrixQ, earthRotation, rotation1Scratch);
+
+        // Compute pole wander matrix
+        var cosxp = Math.cos(eop.xPoleWander);
+        var cosyp = Math.cos(eop.yPoleWander);
+        var sinxp = Math.sin(eop.xPoleWander);
+        var sinyp = Math.sin(eop.yPoleWander);
+
+        var ttt = (dayTT - j2000ttDays) + secondTT / TimeConstants.SECONDS_PER_DAY;
+        ttt /= 36525.0;
+
+        // approximate sp value in rad
+        var sp = -47.0e-6 * ttt * CesiumMath.RADIANS_PER_DEGREE / 3600.0;
+        var cossp = Math.cos(sp);
+        var sinsp = Math.sin(sp);
+
+        var fToPfMtx = rotation2Scratch;
+        fToPfMtx[0] = cosxp * cossp;
+        fToPfMtx[1] = cosxp * sinsp;
+        fToPfMtx[2] = sinxp;
+        fToPfMtx[3] = -cosyp * sinsp + sinyp * sinxp * cossp;
+        fToPfMtx[4] = cosyp * cossp + sinyp * sinxp * sinsp;
+        fToPfMtx[5] = -sinyp * cosxp;
+        fToPfMtx[6] = -sinyp * sinsp - cosyp * sinxp * cossp;
+        fToPfMtx[7] = sinyp * cossp - cosyp * sinxp * sinsp;
+        fToPfMtx[8] = cosyp * cosxp;
+
+        return Matrix3.multiply(pfToIcrf, fToPfMtx, result);
+    };
+
+    var pointToWindowCoordinatesTemp = new Cartesian4();
+
+    /**
+     * Transform a point from model coordinates to window coordinates.
+     *
+     * @param {Matrix4} modelViewProjectionMatrix The 4x4 model-view-projection matrix.
+     * @param {Matrix4} viewportTransformation The 4x4 viewport transformation.
+     * @param {Cartesian3} point The point to transform.
+     * @param {Cartesian2} [result] The object onto which to store the result.
+     * @returns {Cartesian2} The modified result parameter or a new Cartesian2 instance if none was provided.
+     */
+    Transforms.pointToWindowCoordinates = function (modelViewProjectionMatrix, viewportTransformation, point, result) {
+        result = Transforms.pointToGLWindowCoordinates(modelViewProjectionMatrix, viewportTransformation, point, result);
+        result.y = 2.0 * viewportTransformation[5] - result.y;
+        return result;
+    };
+
+    /**
+     * @private
+     */
+    Transforms.pointToGLWindowCoordinates = function(modelViewProjectionMatrix, viewportTransformation, point, result) {
+                if (!defined(modelViewProjectionMatrix)) {
+            throw new DeveloperError('modelViewProjectionMatrix is required.');
+        }
+
+        if (!defined(viewportTransformation)) {
+            throw new DeveloperError('viewportTransformation is required.');
+        }
+
+        if (!defined(point)) {
+            throw new DeveloperError('point is required.');
+        }
+        
+        if (!defined(result)) {
+            result = new Cartesian2();
+        }
+
+        var tmp = pointToWindowCoordinatesTemp;
+
+        Matrix4.multiplyByVector(modelViewProjectionMatrix, Cartesian4.fromElements(point.x, point.y, point.z, 1, tmp), tmp);
+        Cartesian4.multiplyByScalar(tmp, 1.0 / tmp.w, tmp);
+        Matrix4.multiplyByVector(viewportTransformation, tmp, tmp);
+        return Cartesian2.fromCartesian4(tmp, result);
+    };
+
+    return Transforms;
+});
+
+/*global define*/
+define('Core/EllipsoidTangentPlane',[
+        './AxisAlignedBoundingBox',
+        './Cartesian2',
+        './Cartesian3',
+        './Cartesian4',
+        './defaultValue',
+        './defined',
+        './defineProperties',
+        './DeveloperError',
+        './Ellipsoid',
+        './IntersectionTests',
+        './Matrix4',
+        './Plane',
+        './Ray',
+        './Transforms'
+    ], function(
+        AxisAlignedBoundingBox,
+        Cartesian2,
+        Cartesian3,
+        Cartesian4,
+        defaultValue,
+        defined,
+        defineProperties,
+        DeveloperError,
+        Ellipsoid,
+        IntersectionTests,
+        Matrix4,
+        Plane,
+        Ray,
+        Transforms) {
+    "use strict";
+
+    var scratchCart4 = new Cartesian4();
+    /**
+     * A plane tangent to the provided ellipsoid at the provided origin.
+     * If origin is not on the surface of the ellipsoid, it's surface projection will be used.
+     * If origin as at the center of the ellipsoid, an exception will be thrown.
+     * @alias EllipsoidTangentPlane
+     * @constructor
+     *
+     * @param {Ellipsoid} ellipsoid The ellipsoid to use.
+     * @param {Cartesian3} origin The point on the surface of the ellipsoid where the tangent plane touches.
+     *
+     * @exception {DeveloperError} origin must not be at the center of the ellipsoid.
+     */
+    var EllipsoidTangentPlane = function(origin, ellipsoid) {
+                if (!defined(origin)) {
+            throw new DeveloperError('origin is required.');
+        }
+        
+        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
+        origin = ellipsoid.scaleToGeodeticSurface(origin);
+
+                if (!defined(origin)) {
+            throw new DeveloperError('origin must not be at the center of the ellipsoid.');
+        }
+        
+        var eastNorthUp = Transforms.eastNorthUpToFixedFrame(origin, ellipsoid);
+        this._ellipsoid = ellipsoid;
+        this._origin = origin;
+        this._xAxis = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 0, scratchCart4));
+        this._yAxis = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 1, scratchCart4));
+
+        var normal = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 2, scratchCart4));
+        this._plane = Plane.fromPointNormal(origin, normal);
+    };
+
+    defineProperties(EllipsoidTangentPlane.prototype, {
+        /**
+         * Gets the ellipsoid.
+         * @memberof EllipsoidTangentPlane.prototype
+         * @type {Ellipsoid}
+         */
+        ellipsoid : {
+            get : function() {
+                return this._ellipsoid;
+            }
+        },
+
+        /**
+         * Gets the origin.
+         * @memberof EllipsoidTangentPlane.prototype
+         * @type {Cartesian3}
+         */
+        origin : {
+            get : function() {
+                return this._origin;
+            }
+        }
+    });
+
+    var tmp = new AxisAlignedBoundingBox();
+    /**
+     * Creates a new instance from the provided ellipsoid and the center
+     * point of the provided Cartesians.
+     *
+     * @param {Ellipsoid} ellipsoid The ellipsoid to use.
+     * @param {Cartesian3} cartesians The list of positions surrounding the center point.
+     */
+    EllipsoidTangentPlane.fromPoints = function(cartesians, ellipsoid) {
+                if (!defined(cartesians)) {
+            throw new DeveloperError('cartesians is required.');
+        }
+        
+        var box = AxisAlignedBoundingBox.fromPoints(cartesians, tmp);
+        return new EllipsoidTangentPlane(box.center, ellipsoid);
+    };
+
+    var projectPointOntoPlaneRay = new Ray();
+    var projectPointOntoPlaneCartesian3 = new Cartesian3();
+
+    /**
+     * Computes the projection of the provided 3D position onto the 2D plane.
+     *
+     * @param {Cartesian3} cartesian The point to project.
+     * @param {Cartesian2} [result] The object onto which to store the result.
+     * @returns {Cartesian2} The modified result parameter or a new Cartesian2 instance if none was provided.
+     */
+    EllipsoidTangentPlane.prototype.projectPointOntoPlane = function(cartesian, result) {
+                if (!defined(cartesian)) {
+            throw new DeveloperError('cartesian is required.');
+        }
+        
+        var ray = projectPointOntoPlaneRay;
+        ray.origin = cartesian;
+        Cartesian3.normalize(cartesian, ray.direction);
+
+        var intersectionPoint = IntersectionTests.rayPlane(ray, this._plane, projectPointOntoPlaneCartesian3);
+        if (!defined(intersectionPoint)) {
+            Cartesian3.negate(ray.direction, ray.direction);
+            intersectionPoint = IntersectionTests.rayPlane(ray, this._plane, projectPointOntoPlaneCartesian3);
+        }
+
+        if (defined(intersectionPoint)) {
+            var v = Cartesian3.subtract(intersectionPoint, this._origin, intersectionPoint);
+            var x = Cartesian3.dot(this._xAxis, v);
+            var y = Cartesian3.dot(this._yAxis, v);
+
+            if (!defined(result)) {
+                return new Cartesian2(x, y);
+            }
+            result.x = x;
+            result.y = y;
+            return result;
+        }
+        return undefined;
+    };
+
+    /**
+     * Computes the projection of the provided 3D positions onto the 2D plane.
+     *
+     * @param {Cartesian3[]} cartesians The array of points to project.
+     * @param {Cartesian2[]} [result] The array of Cartesian2 instances onto which to store results.
+     * @returns {Cartesian2[]} The modified result parameter or a new array of Cartesian2 instances if none was provided.
+     */
+    EllipsoidTangentPlane.prototype.projectPointsOntoPlane = function(cartesians, result) {
+                if (!defined(cartesians)) {
+            throw new DeveloperError('cartesians is required.');
+        }
+        
+        if (!defined(result)) {
+            result = [];
+        }
+
+        var count = 0;
+        var length = cartesians.length;
+        for ( var i = 0; i < length; i++) {
+            var p = this.projectPointOntoPlane(cartesians[i], result[count]);
+            if (defined(p)) {
+                result[count] = p;
+                count++;
+            }
+        }
+        result.length = count;
+        return result;
+    };
+
+
+    var projectPointsOntoEllipsoidScratch = new Cartesian3();
+    /**
+     * Computes the projection of the provided 2D positions onto the 3D ellipsoid.
+     *
+     * @param {Cartesian2[]} cartesians The array of points to project.
+     * @param {Cartesian3[]} [result] The array of Cartesian3 instances onto which to store results.
+     * @returns {Cartesian3[]} The modified result parameter or a new array of Cartesian3 instances if none was provided.
+     */
+    EllipsoidTangentPlane.prototype.projectPointsOntoEllipsoid = function(cartesians, result) {
+                if (!defined(cartesians)) {
+            throw new DeveloperError('cartesians is required.');
+        }
+        
+        var length = cartesians.length;
+        if (!defined(result)) {
+            result = new Array(length);
+        } else {
+            result.length = length;
+        }
+
+        var ellipsoid = this._ellipsoid;
+        var origin = this._origin;
+        var xAxis = this._xAxis;
+        var yAxis = this._yAxis;
+        var tmp = projectPointsOntoEllipsoidScratch;
+
+        for ( var i = 0; i < length; ++i) {
+            var position = cartesians[i];
+            Cartesian3.multiplyByScalar(xAxis, position.x, tmp);
+            if (!defined(result[i])) {
+                result[i] = new Cartesian3();
+            }
+            var point = Cartesian3.add(origin, tmp, result[i]);
+            Cartesian3.multiplyByScalar(yAxis, position.y, tmp);
+            Cartesian3.add(point, tmp, point);
+            ellipsoid.scaleToGeocentricSurface(point, point);
+        }
+
+        return result;
+    };
+
+    return EllipsoidTangentPlane;
+});
+
+/*global define*/
+define('Core/GeometryType',[
+        './freezeObject'
+    ], function(
+        freezeObject) {
+    "use strict";
+
+    /**
+     * @private
+     */
+    var GeometryType = {
+        NONE : 0,
+        TRIANGLES : 1,
+        LINES : 2,
+        POLYLINES : 3
+    };
+
+    return freezeObject(GeometryType);
+});
+
+/*global define*/
+define('Core/PrimitiveType',[
+        './freezeObject'
+    ], function(
+        freezeObject) {
+    "use strict";
+
+    /**
+     * The type of a geometric primitive, i.e., points, lines, and triangles.
+     *
+     * @namespace
+     * @alias PrimitiveType
+     */
+    var PrimitiveType = {
+        /**
+         * 0x0000.  Points primitive where each vertex (or index) is a separate point.
+         *
+         * @type {Number}
+         * @constant
+         */
+        POINTS : 0x0000,
+
+        /**
+         * 0x0001.  Lines primitive where each two vertices (or indices) is a line segment.  Line segments are not necessarily connected.
+         *
+         * @type {Number}
+         * @constant
+         */
+        LINES : 0x0001,
+
+        /**
+         * 0x0002.  Line loop primitive where each vertex (or index) after the first connects a line to
+         * the previous vertex, and the last vertex implicitly connects to the first.
+         *
+         * @type {Number}
+         * @constant
+         */
+        LINE_LOOP : 0x0002,
+
+        /**
+         * 0x0003.  Line strip primitive where each vertex (or index) after the first connects a line to the previous vertex.
+         *
+         * @type {Number}
+         * @constant
+         */
+        LINE_STRIP : 0x0003,
+
+        /**
+         * 0x0004.  Triangles primitive where each three vertices (or indices) is a triangle.  Triangles do not necessarily share edges.
+         *
+         * @type {Number}
+         * @constant
+         */
+        TRIANGLES : 0x0004,
+
+        /**
+         * 0x0005.  Triangle strip primitive where each vertex (or index) after the first two connect to
+         * the previous two vertices forming a triangle.  For example, this can be used to model a wall.
+         *
+         * @type {Number}
+         * @constant
+         */
+        TRIANGLE_STRIP : 0x0005,
+
+        /**
+         * 0x0006.  Triangle fan primitive where each vertex (or index) after the first two connect to
+         * the previous vertex and the first vertex forming a triangle.  For example, this can be used
+         * to model a cone or circle.
+         *
+         * @type {Number}
+         * @constant
+         */
+        TRIANGLE_FAN : 0x0006,
+
+        /**
+         * @private
+         */
+        validate : function(primitiveType) {
+            return primitiveType === PrimitiveType.POINTS ||
+                   primitiveType === PrimitiveType.LINES ||
+                   primitiveType === PrimitiveType.LINE_LOOP ||
+                   primitiveType === PrimitiveType.LINE_STRIP ||
+                   primitiveType === PrimitiveType.TRIANGLES ||
+                   primitiveType === PrimitiveType.TRIANGLE_STRIP ||
+                   primitiveType === PrimitiveType.TRIANGLE_FAN;
+        }
+    };
+
+    return freezeObject(PrimitiveType);
+});
+
+/*global define*/
+define('Core/Geometry',[
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './GeometryType',
+        './PrimitiveType'
+    ], function(
+        defaultValue,
+        defined,
+        DeveloperError,
+        GeometryType,
+        PrimitiveType) {
+    "use strict";
+
+    /**
+     * A geometry representation with attributes forming vertices and optional index data
+     * defining primitives.  Geometries and an {@link Appearance}, which describes the shading,
+     * can be assigned to a {@link Primitive} for visualization.  A <code>Primitive</code> can
+     * be created from many heterogeneous - in many cases - geometries for performance.
+     * <p>
+     * Geometries can be transformed and optimized using functions in {@link GeometryPipeline}.
+     * </p>
+     *
+     * @alias Geometry
+     * @constructor
+     *
+     * @param {Object} options Object with the following properties:
+     * @param {GeometryAttributes} options.attributes Attributes, which make up the geometry's vertices.
+     * @param {PrimitiveType} [options.primitiveType=PrimitiveType.TRIANGLES] The type of primitives in the geometry.
+     * @param {Uint16Array|Uint32Array} [options.indices] Optional index data that determines the primitives in the geometry.
+     * @param {BoundingSphere} [options.boundingSphere] An optional bounding sphere that fully enclosed the geometry.
+     *
+     * @see PolygonGeometry
+     * @see RectangleGeometry
+     * @see EllipseGeometry
+     * @see CircleGeometry
+     * @see WallGeometry
+     * @see SimplePolylineGeometry
+     * @see BoxGeometry
+     * @see EllipsoidGeometry
+     *
+     * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Geometry%20and%20Appearances.html|Geometry and Appearances Demo}
+     *
+     * @example
+     * // Create geometry with a position attribute and indexed lines.
+     * var positions = new Float64Array([
+     *   0.0, 0.0, 0.0,
+     *   7500000.0, 0.0, 0.0,
+     *   0.0, 7500000.0, 0.0
+     * ]);
+     *
+     * var geometry = new Cesium.Geometry({
+     *   attributes : {
+     *     position : new Cesium.GeometryAttribute({
+     *       componentDatatype : Cesium.ComponentDatatype.DOUBLE,
+     *       componentsPerAttribute : 3,
+     *       values : positions
+     *     })
+     *   },
+     *   indices : new Uint16Array([0, 1, 1, 2, 2, 0]),
+     *   primitiveType : Cesium.PrimitiveType.LINES,
+     *   boundingSphere : Cesium.BoundingSphere.fromVertices(positions)
+     * });
+     */
+    var Geometry = function(options) {
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
+
+                if (!defined(options.attributes)) {
+            throw new DeveloperError('options.attributes is required.');
+        }
+        
+        /**
+         * Attributes, which make up the geometry's vertices.  Each property in this object corresponds to a
+         * {@link GeometryAttribute} containing the attribute's data.
+         * <p>
+         * Attributes are always stored non-interleaved in a Geometry.
+         * </p>
+         * <p>
+         * There are reserved attribute names with well-known semantics.  The following attributes
+         * are created by a Geometry (depending on the provided {@link VertexFormat}.
+         * <ul>
+         *    <li><code>position</code> - 3D vertex position.  64-bit floating-point (for precision).  3 components per attribute.  See {@link VertexFormat#position}.</li>
+         *    <li><code>normal</code> - Normal (normalized), commonly used for lighting.  32-bit floating-point.  3 components per attribute.  See {@link VertexFormat#normal}.</li>
+         *    <li><code>st</code> - 2D texture coordinate.  32-bit floating-point.  2 components per attribute.  See {@link VertexFormat#st}.</li>
+         *    <li><code>binormal</code> - Binormal (normalized), used for tangent-space effects like bump mapping.  32-bit floating-point.  3 components per attribute.  See {@link VertexFormat#binormal}.</li>
+         *    <li><code>tangent</code> - Tangent (normalized), used for tangent-space effects like bump mapping.  32-bit floating-point.  3 components per attribute.  See {@link VertexFormat#tangent}.</li>
+         * </ul>
+         * </p>
+         * <p>
+         * The following attribute names are generally not created by a Geometry, but are added
+         * to a Geometry by a {@link Primitive} or {@link GeometryPipeline} functions to prepare
+         * the geometry for rendering.
+         * <ul>
+         *    <li><code>position3DHigh</code> - High 32 bits for encoded 64-bit position computed with {@link GeometryPipeline.encodeAttribute}.  32-bit floating-point.  4 components per attribute.</li>
+         *    <li><code>position3DLow</code> - Low 32 bits for encoded 64-bit position computed with {@link GeometryPipeline.encodeAttribute}.  32-bit floating-point.  4 components per attribute.</li>
+         *    <li><code>position3DHigh</code> - High 32 bits for encoded 64-bit 2D (Columbus view) position computed with {@link GeometryPipeline.encodeAttribute}.  32-bit floating-point.  4 components per attribute.</li>
+         *    <li><code>position2DLow</code> - Low 32 bits for encoded 64-bit 2D (Columbus view) position computed with {@link GeometryPipeline.encodeAttribute}.  32-bit floating-point.  4 components per attribute.</li>
+         *    <li><code>color</code> - RGBA color (normalized) usually from {@link GeometryInstance#color}.  32-bit floating-point.  4 components per attribute.</li>
+         *    <li><code>pickColor</code> - RGBA color used for picking.  32-bit floating-point.  4 components per attribute.</li>
+         * </ul>
+         * </p>
+         *
+         * @type GeometryAttributes
+         *
+         * @default undefined
+         *
+         * @see GeometryAttribute
+         * @see VertexFormat
+         *
+         * @example
+         * geometry.attributes.position = new Cesium.GeometryAttribute({
+         *   componentDatatype : Cesium.ComponentDatatype.FLOAT,
+         *   componentsPerAttribute : 3,
+         *   values : new Float32Array()
+         * });
+         */
+        this.attributes = options.attributes;
+
+        /**
+         * Optional index data that - along with {@link Geometry#primitiveType} -
+         * determines the primitives in the geometry.
+         *
+         * @type Array
+         *
+         * @default undefined
+         */
+        this.indices = options.indices;
+
+        /**
+         * The type of primitives in the geometry.  This is most often {@link PrimitiveType.TRIANGLES},
+         * but can varying based on the specific geometry.
+         *
+         * @type PrimitiveType
+         *
+         * @default undefined
+         */
+        this.primitiveType = defaultValue(options.primitiveType, PrimitiveType.TRIANGLES);
+
+        /**
+         * An optional bounding sphere that fully encloses the geometry.  This is
+         * commonly used for culling.
+         *
+         * @type BoundingSphere
+         *
+         * @default undefined
+         */
+        this.boundingSphere = options.boundingSphere;
+
+        /**
+         * @private
+         */
+        this.geometryType = defaultValue(options.geometryType, GeometryType.NONE);
+
+        /**
+         * @private
+         */
+        this.boundingSphereCV = undefined;
+    };
+
+    /**
+     * Computes the number of vertices in a geometry.  The runtime is linear with
+     * respect to the number of attributes in a vertex, not the number of vertices.
+     *
+     * @param {Cartesian3} geometry The geometry.
+     * @returns {Number} The number of vertices in the geometry.
+     *
+     * @example
+     * var numVertices = Cesium.Geometry.computeNumberOfVertices(geometry);
+     */
+    Geometry.computeNumberOfVertices = function(geometry) {
+                if (!defined(geometry)) {
+            throw new DeveloperError('geometry is required.');
+        }
+        
+        var numberOfVertices = -1;
+        for ( var property in geometry.attributes) {
+            if (geometry.attributes.hasOwnProperty(property) &&
+                    defined(geometry.attributes[property]) &&
+                    defined(geometry.attributes[property].values)) {
+
+                var attribute = geometry.attributes[property];
+                var num = attribute.values.length / attribute.componentsPerAttribute;
+                if ((numberOfVertices !== num) && (numberOfVertices !== -1)) {
+                    throw new DeveloperError('All attribute lists must have the same number of attributes.');
+                }
+                numberOfVertices = num;
+            }
+        }
+
+        return numberOfVertices;
+    };
+
+    return Geometry;
+});
+
+/*global define*/
+define('Core/GeometryAttribute',[
+        './defaultValue',
+        './defined',
+        './DeveloperError'
+    ], function(
+        defaultValue,
+        defined,
+        DeveloperError) {
+    "use strict";
+
+    /**
+     * Values and type information for geometry attributes.  A {@link Geometry}
+     * generally contains one or more attributes.  All attributes together form
+     * the geometry's vertices.
+     *
+     * @alias GeometryAttribute
+     * @constructor
+     *
+     * @param {Object} [options] Object with the following properties:
+     * @param {ComponentDatatype} [options.componentDatatype] The datatype of each component in the attribute, e.g., individual elements in values.
+     * @param {Number} [options.componentsPerAttribute] A number between 1 and 4 that defines the number of components in an attributes.
+     * @param {Boolean} [options.normalize=false] When <code>true</code> and <code>componentDatatype</code> is an integer format, indicate that the components should be mapped to the range [0, 1] (unsigned) or [-1, 1] (signed) when they are accessed as floating-point for rendering.
+     * @param {Number[]} [options.values] The values for the attributes stored in a typed array.
+     *
+     * @exception {DeveloperError} options.componentsPerAttribute must be between 1 and 4.
+     *
+     * @see Geometry
+     *
+     * @example
+     * var geometry = new Cesium.Geometry({
+     *   attributes : {
+     *     position : new Cesium.GeometryAttribute({
+     *       componentDatatype : Cesium.ComponentDatatype.FLOAT,
+     *       componentsPerAttribute : 3,
+     *       values : [
+     *         0.0, 0.0, 0.0,
+     *         7500000.0, 0.0, 0.0,
+     *         0.0, 7500000.0, 0.0
+     *       ]
+     *     })
+     *   },
+     *   primitiveType : Cesium.PrimitiveType.LINE_LOOP
+     * });
+     */
+    var GeometryAttribute = function(options) {
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
+
+                if (!defined(options.componentDatatype)) {
+            throw new DeveloperError('options.componentDatatype is required.');
+        }
+        if (!defined(options.componentsPerAttribute)) {
+            throw new DeveloperError('options.componentsPerAttribute is required.');
+        }
+        if (options.componentsPerAttribute < 1 || options.componentsPerAttribute > 4) {
+            throw new DeveloperError('options.componentsPerAttribute must be between 1 and 4.');
+        }
+        if (!defined(options.values)) {
+            throw new DeveloperError('options.values is required.');
+        }
+        
+        /**
+         * The datatype of each component in the attribute, e.g., individual elements in
+         * {@link GeometryAttribute#values}.
+         *
+         * @type ComponentDatatype
+         *
+         * @default undefined
+         */
+        this.componentDatatype = options.componentDatatype;
+
+        /**
+         * A number between 1 and 4 that defines the number of components in an attributes.
+         * For example, a position attribute with x, y, and z components would have 3 as
+         * shown in the code example.
+         *
+         * @type Number
+         *
+         * @default undefined
+         *
+         * @example
+         * attribute.componentDatatype : Cesium.ComponentDatatype.FLOAT,
+         * attribute.componentsPerAttribute : 3,
+         * attribute.values = new Float32Array([
+         *   0.0, 0.0, 0.0,
+         *   7500000.0, 0.0, 0.0,
+         *   0.0, 7500000.0, 0.0
+         * ]);
+         */
+        this.componentsPerAttribute = options.componentsPerAttribute;
+
+        /**
+         * When <code>true</code> and <code>componentDatatype</code> is an integer format,
+         * indicate that the components should be mapped to the range [0, 1] (unsigned)
+         * or [-1, 1] (signed) when they are accessed as floating-point for rendering.
+         * <p>
+         * This is commonly used when storing colors using {@link ComponentDatatype.UNSIGNED_BYTE}.
+         * </p>
+         *
+         * @type Boolean
+         *
+         * @default false
+         *
+         * @example
+         * attribute.componentDatatype : Cesium.ComponentDatatype.UNSIGNED_BYTE,
+         * attribute.componentsPerAttribute : 4,
+         * attribute.normalize = true;
+         * attribute.values = new Uint8Array([
+         *   Cesium.Color.floatToByte(color.red)
+         *   Cesium.Color.floatToByte(color.green)
+         *   Cesium.Color.floatToByte(color.blue)
+         *   Cesium.Color.floatToByte(color.alpha)
+         * ]);
+         */
+        this.normalize = defaultValue(options.normalize, false);
+
+        /**
+         * The values for the attributes stored in a typed array.  In the code example,
+         * every three elements in <code>values</code> defines one attributes since
+         * <code>componentsPerAttribute</code> is 3.
+         *
+         * @type Array
+         *
+         * @default undefined
+         *
+         * @example
+         * attribute.componentDatatype : Cesium.ComponentDatatype.FLOAT,
+         * attribute.componentsPerAttribute : 3,
+         * attribute.values = new Float32Array([
+         *   0.0, 0.0, 0.0,
+         *   7500000.0, 0.0, 0.0,
+         *   0.0, 7500000.0, 0.0
+         * ]);
+         */
+        this.values = options.values;
+    };
+
+    return GeometryAttribute;
+});
+
+/*global define*/
+define('Core/GeometryAttributes',[
+        './defaultValue'
+    ], function(
+        defaultValue) {
+    "use strict";
+
+    /**
+     * Attributes, which make up a geometry's vertices.  Each property in this object corresponds to a
+     * {@link GeometryAttribute} containing the attribute's data.
+     * <p>
+     * Attributes are always stored non-interleaved in a Geometry.
+     * </p>
+     *
+     * @alias GeometryAttributes
+     * @constructor
+     */
+    var GeometryAttributes = function(options) {
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
+
+        /**
+         * The 3D position attribute.
+         * <p>
+         * 64-bit floating-point (for precision).  3 components per attribute.
+         * </p>
+         *
+         * @type GeometryAttribute
+         *
+         * @default undefined
+         */
+        this.position = options.position;
+
+        /**
+         * The normal attribute (normalized), which is commonly used for lighting.
+         * <p>
+         * 32-bit floating-point.  3 components per attribute.
+         * </p>
+         *
+         * @type GeometryAttribute
+         *
+         * @default undefined
+         */
+        this.normal = options.normal;
+
+        /**
+         * The 2D texture coordinate attribute.
+         * <p>
+         * 32-bit floating-point.  2 components per attribute
+         * </p>
+         *
+         * @type GeometryAttribute
+         *
+         * @default undefined
+         */
+        this.st = options.st;
+
+        /**
+         * The binormal attribute (normalized), which is used for tangent-space effects like bump mapping.
+         * <p>
+         * 32-bit floating-point.  3 components per attribute.
+         * </p>
+         *
+         * @type GeometryAttribute
+         *
+         * @default undefined
+         */
+        this.binormal = options.binormal;
+
+        /**
+         * The tangent attribute (normalized), which is used for tangent-space effects like bump mapping.
+         * <p>
+         * 32-bit floating-point.  3 components per attribute.
+         * </p>
+         *
+         * @type GeometryAttribute
+         *
+         * @default undefined
+         */
+        this.tangent = options.tangent;
+
+        /**
+         * The color attribute.
+         * <p>
+         * 8-bit unsigned integer. 4 components per attribute.
+         * </p>
+         *
+         * @type GeometryAttribute
+         *
+         * @default undefined
+         */
+        this.color = options.color;
+    };
+
+    return GeometryAttributes;
+});
+/*global define*/
+define('Core/GeometryInstance',[
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './Matrix4'
+    ], function(
+        defaultValue,
+        defined,
+        DeveloperError,
+        Matrix4) {
+    "use strict";
+
+    /**
+     * Geometry instancing allows one {@link Geometry} object to be positions in several
+     * different locations and colored uniquely.  For example, one {@link BoxGeometry} can
+     * be instanced several times, each with a different <code>modelMatrix</code> to change
+     * its position, rotation, and scale.
+     *
+     * @alias GeometryInstance
+     * @constructor
+     *
+     * @param {Object} options Object with the following properties:
+     * @param {Geometry} options.geometry The geometry to instance.
+     * @param {Matrix4} [options.modelMatrix=Matrix4.IDENTITY] The model matrix that transforms to transform the geometry from model to world coordinates.
+     * @param {Object} [options.id] A user-defined object to return when the instance is picked with {@link Scene#pick} or get/set per-instance attributes with {@link Primitive#getGeometryInstanceAttributes}.
+     * @param {Object} [options.attributes] Per-instance attributes like a show or color attribute shown in the example below.
+     *
+     * @see Geometry
+     *
+     * @example
+     * // Create geometry for a box, and two instances that refer to it.
+     * // One instance positions the box on the bottom and colored aqua.
+     * // The other instance positions the box on the top and color white.
+     * var geometry = new Cesium.BoxGeometry({
+     *   vertexFormat : Cesium.VertexFormat.POSITION_AND_NORMAL,
+     *   dimensions : new Cesium.Cartesian3(1000000.0, 1000000.0, 500000.0)
+     * }),
+     * var instanceBottom = new Cesium.GeometryInstance({
+     *   geometry : geometry,
+     *   modelMatrix : Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(
+     *     Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883)), new Cesium.Cartesian3(0.0, 0.0, 1000000.0), new Cesium.Matrix4()),
+     *   attributes : {
+     *     color : new Cesium.ColorGeometryInstanceAttribute(Cesium.Color.AQUA)
+     *   }
+     *   id : 'bottom'
+     * });
+     * var instanceTop = new Cesium.GeometryInstance({
+     *   geometry : geometry,
+     *   modelMatrix : Cesium.Matrix4.multiplyByTranslation(Cesium.Transforms.eastNorthUpToFixedFrame(
+     *     Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883)), new Cesium.Cartesian3(0.0, 0.0, 3000000.0), new Cesium.Matrix4()),
+     *   attributes : {
+     *     color : new Cesium.ColorGeometryInstanceAttribute(Cesium.Color.AQUA)
+     *   }
+     *   id : 'top'
+     * });
+     */
+    var GeometryInstance = function(options) {
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
+
+                if (!defined(options.geometry)) {
+            throw new DeveloperError('options.geometry is required.');
+        }
+        
+        /**
+         * The geometry being instanced.
+         *
+         * @type Geometry
+         *
+         * @default undefined
+         */
+        this.geometry = options.geometry;
+
+        /**
+         * The 4x4 transformation matrix that transforms the geometry from model to world coordinates.
+         * When this is the identity matrix, the geometry is drawn in world coordinates, i.e., Earth's WGS84 coordinates.
+         * Local reference frames can be used by providing a different transformation matrix, like that returned
+         * by {@link Transforms.eastNorthUpToFixedFrame}.
+         *
+         * @type Matrix4
+         *
+         * @default Matrix4.IDENTITY
+         */
+        this.modelMatrix = Matrix4.clone(defaultValue(options.modelMatrix, Matrix4.IDENTITY));
+
+        /**
+         * User-defined object returned when the instance is picked or used to get/set per-instance attributes.
+         *
+         * @type Object
+         *
+         * @default undefined
+         *
+         * @see Scene#pick
+         * @see Primitive#getGeometryInstanceAttributes
+         */
+        this.id = options.id;
+
+        /**
+         * Used for picking primitives that wrap geometry instances.
+         *
+         * @private
+         */
+        this.pickPrimitive = options.pickPrimitive;
+
+        /**
+         * Per-instance attributes like {@link ColorGeometryInstanceAttribute} or {@link ShowGeometryInstanceAttribute}.
+         * {@link Geometry} attributes varying per vertex; these attributes are constant for the entire instance.
+         *
+         * @type Object
+         *
+         * @default undefined
+         */
+        this.attributes = defaultValue(options.attributes, {});
+
+        /**
+         * @private
+         */
+        this.westHemisphereGeometry = undefined;
+        /**
+         * @private
+         */
+        this.eastHemisphereGeometry = undefined;
+    };
+
+    return GeometryInstance;
+});
+
+/*global define*/
+define('Core/AttributeCompression',[
+        './Cartesian2',
+        './Cartesian3',
+        './defined',
+        './DeveloperError',
+        './Math'
+    ], function(
+        Cartesian2,
+        Cartesian3,
+        defined,
+        DeveloperError,
+        CesiumMath) {
+    "use strict";
+
+    /**
+     * Attribute compression and decompression functions.
+     *
+     * @namespace
+     * @alias AttributeCompression
+     *
+     * @private
+     */
+    var AttributeCompression = {};
+
+    /**
+     * Encodes a normalized vector into 2 SNORM values in the range of [0-255] following the 'oct' encoding.
+     *
+     * Oct encoding is a compact representation of unit length vectors.  The encoding and decoding functions are low cost, and represent the normalized vector within 1 degree of error.
+     * The 'oct' encoding is described in "A Survey of Efficient Representations of Independent Unit Vectors",
+     * Cigolle et al 2014: {@link http://jcgt.org/published/0003/02/01/}
+     *
+     * @param {Cartesian3} vector The normalized vector to be compressed into 2 byte 'oct' encoding.
+     * @param {Cartesian2} result The 2 byte oct-encoded unit length vector.
+     * @returns {Cartesian2} The 2 byte oct-encoded unit length vector.
+     *
+     * @exception {DeveloperError} vector must be defined.
+     * @exception {DeveloperError} result must be defined.
+     * @exception {DeveloperError} vector must be normalized.
+     *
+     * @see AttributeCompression.octDecode
+     */
+    AttributeCompression.octEncode = function(vector, result) {
+                if (!defined(vector)) {
+            throw new DeveloperError('vector is required.');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required.');
+        }
+        var magSquared = Cartesian3.magnitudeSquared(vector);
+        if (Math.abs(magSquared - 1.0) > CesiumMath.EPSILON6) {
+            throw new DeveloperError('vector must be normalized.');
+        }
+        
+        result.x = vector.x / (Math.abs(vector.x) + Math.abs(vector.y) + Math.abs(vector.z));
+        result.y = vector.y / (Math.abs(vector.x) + Math.abs(vector.y) + Math.abs(vector.z));
+        if (vector.z < 0) {
+            var x = result.x;
+            var y = result.y;
+            result.x = (1.0 - Math.abs(y)) * CesiumMath.signNotZero(x);
+            result.y = (1.0 - Math.abs(x)) * CesiumMath.signNotZero(y);
+        }
+
+        result.x = CesiumMath.toSNorm(result.x);
+        result.y = CesiumMath.toSNorm(result.y);
+
+        return result;
+    };
+
+    /**
+     * Decodes a unit-length vector in 'oct' encoding to a normalized 3-component vector.
+     *
+     * @param {Number} x The x component of the oct-encoded unit length vector.
+     * @param {Number} y The y component of the oct-encoded unit length vector.
+     * @param {Cartesian3} result The decoded and normalized vector
+     * @returns {Cartesian3} The decoded and normalized vector.
+     *
+     * @exception {DeveloperError} result must be defined.
+     * @exception {DeveloperError} x and y must be a signed normalized integer between 0 and 255.
+     *
+     * @see AttributeCompression.octEncode
+     */
+    AttributeCompression.octDecode = function(x, y, result) {
+                if (!defined(result)) {
+            throw new DeveloperError('result is required.');
+        }
+        if (x < 0 || x > 255 || y < 0 || y > 255) {
+            throw new DeveloperError('x and y must be a signed normalized integer between 0 and 255');
+        }
+        
+        result.x = CesiumMath.fromSNorm(x);
+        result.y = CesiumMath.fromSNorm(y);
+        result.z = 1.0 - (Math.abs(result.x) + Math.abs(result.y));
+
+        if (result.z < 0.0)
+        {
+            var oldVX = result.x;
+            result.x = (1.0 - Math.abs(result.y)) * CesiumMath.signNotZero(oldVX);
+            result.y = (1.0 - Math.abs(oldVX)) * CesiumMath.signNotZero(result.y);
+        }
+
+        return Cartesian3.normalize(result, result);
+    };
+
+    /**
+     * Packs an oct encoded vector into a single floating-point number.
+     *
+     * @param {Cartesian2} encoded The oct encoded vector.
+     * @returns {Number} The oct encoded vector packed into a single float.
+     *
+     * @exception {DeveloperError} encoded is required.
+     */
+    AttributeCompression.octPackFloat = function(encoded) {
+                if (!defined(encoded)) {
+            throw new DeveloperError('encoded is required.');
+        }
+                return 256.0 * encoded.x + encoded.y;
+    };
+
+    var scratchEncodeCart2 = new Cartesian2();
+
+    /**
+     * Encodes a normalized vector into 2 SNORM values in the range of [0-255] following the 'oct' encoding and
+     * stores those values in a single float-point number.
+     *
+     * @param {Cartesian3} vector The normalized vector to be compressed into 2 byte 'oct' encoding.
+     * @returns {Number} The 2 byte oct-encoded unit length vector.
+     *
+     * @exception {DeveloperError} vector must be defined.
+     * @exception {DeveloperError} vector must be normalized.
+     */
+    AttributeCompression.octEncodeFloat = function(vector) {
+        AttributeCompression.octEncode(vector, scratchEncodeCart2);
+        return AttributeCompression.octPackFloat(scratchEncodeCart2);
+    };
+
+    /**
+     * Decodes a unit-length vector in 'oct' encoding packed in a floating-point number to a normalized 3-component vector.
+     *
+     * @param {Number} value The oct-encoded unit length vector stored as a single floating-point number.
+     * @param {Cartesian3} result The decoded and normalized vector
+     * @returns {Cartesian3} The decoded and normalized vector.
+     *
+     * @exception {DeveloperError} value must be defined.
+     * @exception {DeveloperError} result must be defined.
+     */
+    AttributeCompression.octDecodeFloat = function(value, result) {
+                if (!defined(value)) {
+            throw new DeveloperError('value is required.');
+        }
+        
+        var temp = value / 256.0;
+        var x = Math.floor(temp);
+        var y = (temp - x) * 256.0;
+
+        return AttributeCompression.octDecode(x, y, result);
+    };
+
+    /**
+     * Encodes three normalized vectors into 6 SNORM values in the range of [0-255] following the 'oct' encoding and
+     * packs those into two floating-point numbers.
+     *
+     * @param {Cartesian3} v1 A normalized vector to be compressed.
+     * @param {Cartesian3} v2 A normalized vector to be compressed.
+     * @param {Cartesian3} v3 A normalized vector to be compressed.
+     * @param {Cartesian2} result The 'oct' encoded vectors packed into two floating-point numbers.
+     * @returns {Cartesian2} The 'oct' encoded vectors packed into two floating-point numbers.
+     *
+     * @exception {DeveloperError} v1 must be defined.
+     * @exception {DeveloperError} v2 must be defined.
+     * @exception {DeveloperError} v3 must be defined.
+     * @exception {DeveloperError} result must be defined.
+     */
+    AttributeCompression.octPack = function(v1, v2, v3, result) {
+                if (!defined(v1)) {
+            throw new DeveloperError('v1 is required.');
+        }
+        if (!defined(v2)) {
+            throw new DeveloperError('v2 is required.');
+        }
+        if (!defined(v3)) {
+            throw new DeveloperError('v3 is required.');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required.');
+        }
+        
+        var encoded1 = AttributeCompression.octEncodeFloat(v1);
+        var encoded2 = AttributeCompression.octEncodeFloat(v2);
+
+        var encoded3 = AttributeCompression.octEncode(v3, scratchEncodeCart2);
+        result.x = 65536.0 * encoded3.x + encoded1;
+        result.y = 65536.0 * encoded3.y + encoded2;
+        return result;
+    };
+
+    /**
+     * Decodes three unit-length vectors in 'oct' encoding packed into a floating-point number to a normalized 3-component vector.
+     *
+     * @param {Cartesian2} packed The three oct-encoded unit length vectors stored as two floating-point number.
+     * @param {Cartesian3} v1 One decoded and normalized vector.
+     * @param {Cartesian3} v2 One decoded and normalized vector.
+     * @param {Cartesian3} v3 One decoded and normalized vector.
+     *
+     * @exception {DeveloperError} packed must be defined.
+     * @exception {DeveloperError} v1 must be defined.
+     * @exception {DeveloperError} v2 must be defined.
+     * @exception {DeveloperError} v3 must be defined.
+     */
+    AttributeCompression.octUnpack = function(packed, v1, v2, v3) {
+                if (!defined(packed)) {
+            throw new DeveloperError('packed is required.');
+        }
+        if (!defined(v1)) {
+            throw new DeveloperError('v1 is required.');
+        }
+        if (!defined(v2)) {
+            throw new DeveloperError('v2 is required.');
+        }
+        if (!defined(v3)) {
+            throw new DeveloperError('v3 is required.');
+        }
+        
+        var temp = packed.x / 65536.0;
+        var x = Math.floor(temp);
+        var encodedFloat1 = (temp - x) * 65536.0;
+
+        temp = packed.y / 65536.0;
+        var y = Math.floor(temp);
+        var encodedFloat2 = (temp - y) * 65536.0;
+
+        AttributeCompression.octDecodeFloat(encodedFloat1, v1);
+        AttributeCompression.octDecodeFloat(encodedFloat2, v2);
+        AttributeCompression.octDecode(x, y, v3);
+    };
+
+    /**
+     * Pack texture coordinates into a single float. The texture coordinates will only preserve 12 bits of precision.
+     *
+     * @param {Cartesian2} textureCoordinates The texture coordinates to compress
+     * @returns {Number} The packed texture coordinates.
+     *
+     * @exception {DeveloperError} textureCoordinates is required.
+     */
+    AttributeCompression.compressTextureCoordinates = function(textureCoordinates) {
+                if (!defined(textureCoordinates)) {
+            throw new DeveloperError('textureCoordinates is required.');
+        }
+        
+        var x = textureCoordinates.x === 1.0 ? 4095.0 : (textureCoordinates.x * 4096.0) | 0;
+        var y = textureCoordinates.y === 1.0 ? 4095.0 : (textureCoordinates.y * 4096.0) | 0;
+        return 4096.0 * x + y;
+    };
+
+    /**
+     * Decompresses texture coordinates that were packed into a single float.
+     *
+     * @param {Number} compressed The compressed texture coordinates.
+     * @param {Cartesian2} result The decompressed texture coordinates.
+     * @returns {Cartesian2} The modified result parameter.
+     *
+     * @exception {DeveloperError} compressed is required.
+     * @exception {DeveloperError} result is required.
+     */
+    AttributeCompression.decompressTextureCoordinates = function(compressed, result) {
+                if (!defined(compressed)) {
+            throw new DeveloperError('compressed is required.');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required.');
+        }
+        
+        var temp = compressed / 4096.0;
+        result.x = Math.floor(temp) / 4096.0;
+        result.y = temp - Math.floor(temp);
+        return result;
+    };
+
+    return AttributeCompression;
+});
+/*global define*/
+define('Core/barycentricCoordinates',[
+        './Cartesian2',
+        './Cartesian3',
+        './defined',
+        './DeveloperError'
+    ], function(
+        Cartesian2,
+        Cartesian3,
+        defined,
+        DeveloperError) {
+    "use strict";
+
+    var scratchCartesian1 = new Cartesian3();
+    var scratchCartesian2 = new Cartesian3();
+    var scratchCartesian3 = new Cartesian3();
+
+    /**
+     * Computes the barycentric coordinates for a point with respect to a triangle.
+     *
+     * @exports barycentricCoordinates
+     *
+     * @param {Cartesian2|Cartesian3} point The point to test.
+     * @param {Cartesian2|Cartesian3} p0 The first point of the triangle, corresponding to the barycentric x-axis.
+     * @param {Cartesian2|Cartesian3} p1 The second point of the triangle, corresponding to the barycentric y-axis.
+     * @param {Cartesian2|Cartesian3} p2 The third point of the triangle, corresponding to the barycentric z-axis.
+     * @param {Cartesian3} [result] The object onto which to store the result.
+     * @returns {Cartesian3} The modified result parameter or a new Cartesian3 instance if one was not provided.
+     *
+     * @example
+     * // Returns Cartesian3.UNIT_X
+     * var p = new Cesium.Cartesian3(-1.0, 0.0, 0.0);
+     * var b = Cesium.barycentricCoordinates(p,
+     *   new Cesium.Cartesian3(-1.0, 0.0, 0.0),
+     *   new Cesium.Cartesian3( 1.0, 0.0, 0.0),
+     *   new Cesium.Cartesian3( 0.0, 1.0, 1.0));
+     */
+    var barycentricCoordinates = function(point, p0, p1, p2, result) {
+                if (!defined(point) || !defined(p0) || !defined(p1) || !defined(p2)) {
+            throw new DeveloperError('point, p0, p1, and p2 are required.');
+        }
+        
+
+        if (!defined(result)) {
+            result = new Cartesian3();
+        }
+
+        // Implementation based on http://www.blackpawn.com/texts/pointinpoly/default.html.
+        var v0, v1, v2;
+        var dot00, dot01, dot02, dot11, dot12;
+
+        if(!defined(p0.z)) {
+          v0 = Cartesian2.subtract(p1, p0, scratchCartesian1);
+          v1 = Cartesian2.subtract(p2, p0, scratchCartesian2);
+          v2 = Cartesian2.subtract(point, p0, scratchCartesian3);
+
+          dot00 = Cartesian2.dot(v0, v0);
+          dot01 = Cartesian2.dot(v0, v1);
+          dot02 = Cartesian2.dot(v0, v2);
+          dot11 = Cartesian2.dot(v1, v1);
+          dot12 = Cartesian2.dot(v1, v2);
+        } else {
+          v0 = Cartesian3.subtract(p1, p0, scratchCartesian1);
+          v1 = Cartesian3.subtract(p2, p0, scratchCartesian2);
+          v2 = Cartesian3.subtract(point, p0, scratchCartesian3);
+
+          dot00 = Cartesian3.dot(v0, v0);
+          dot01 = Cartesian3.dot(v0, v1);
+          dot02 = Cartesian3.dot(v0, v2);
+          dot11 = Cartesian3.dot(v1, v1);
+          dot12 = Cartesian3.dot(v1, v2);
+        }
+
+        var q = 1.0 / (dot00 * dot11 - dot01 * dot01);
+        result.y = (dot11 * dot02 - dot01 * dot12) * q;
+        result.z = (dot00 * dot12 - dot01 * dot02) * q;
+        result.x = 1.0 - result.y - result.z;
+        return result;
+    };
+
+    return barycentricCoordinates;
+});
+
+/*global define*/
+define('Core/EncodedCartesian3',[
+        './Cartesian3',
+        './defined',
+        './DeveloperError'
+    ], function(
+        Cartesian3,
+        defined,
+        DeveloperError) {
+    "use strict";
+
+    /**
+     * A fixed-point encoding of a {@link Cartesian3} with 64-bit floating-point components, as two {@link Cartesian3}
+     * values that, when converted to 32-bit floating-point and added, approximate the original input.
+     * <p>
+     * This is used to encode positions in vertex buffers for rendering without jittering artifacts
+     * as described in {@link http://blogs.agi.com/insight3d/index.php/2008/09/03/precisions-precisions/|Precisions, Precisions}.
+     * </p>
+     *
+     * @alias EncodedCartesian3
+     * @constructor
+     *
+     * @private
+     */
+    var EncodedCartesian3 = function() {
+        /**
+         * The high bits for each component.  Bits 0 to 22 store the whole value.  Bits 23 to 31 are not used.
+         *
+         * @type {Cartesian3}
+         * @default {@link Cartesian3.ZERO}
+         */
+        this.high = Cartesian3.clone(Cartesian3.ZERO);
+
+        /**
+         * The low bits for each component.  Bits 7 to 22 store the whole value, and bits 0 to 6 store the fraction.  Bits 23 to 31 are not used.
+         *
+         * @type {Cartesian3}
+         * @default {@link Cartesian3.ZERO}
+         */
+        this.low = Cartesian3.clone(Cartesian3.ZERO);
+    };
+
+    /**
+     * Encodes a 64-bit floating-point value as two floating-point values that, when converted to
+     * 32-bit floating-point and added, approximate the original input.  The returned object
+     * has <code>high</code> and <code>low</code> properties for the high and low bits, respectively.
+     * <p>
+     * The fixed-point encoding follows {@link http://blogs.agi.com/insight3d/index.php/2008/09/03/precisions-precisions/|Precisions, Precisions}.
+     * </p>
+     *
+     * @param {Number} value The floating-point value to encode.
+     * @param {Object} [result] The object onto which to store the result.
+     * @returns {Object} The modified result parameter or a new instance if one was not provided.
+     *
+     * @example
+     * var value = 1234567.1234567;
+     * var splitValue = Cesium.EncodedCartesian3.encode(value);
+     */
+    EncodedCartesian3.encode = function(value, result) {
+                if (!defined(value)) {
+            throw new DeveloperError('value is required');
+        }
+        
+        if (!defined(result)) {
+            result = {
+                high : 0.0,
+                low : 0.0
+            };
+        }
+
+        var doubleHigh;
+        if (value >= 0.0) {
+            doubleHigh = Math.floor(value / 65536.0) * 65536.0;
+            result.high = doubleHigh;
+            result.low = value - doubleHigh;
+        } else {
+            doubleHigh = Math.floor(-value / 65536.0) * 65536.0;
+            result.high = -doubleHigh;
+            result.low = value + doubleHigh;
+        }
+
+        return result;
+    };
+
+    var scratchEncode = {
+        high : 0.0,
+        low : 0.0
+    };
+
+    /**
+     * Encodes a {@link Cartesian3} with 64-bit floating-point components as two {@link Cartesian3}
+     * values that, when converted to 32-bit floating-point and added, approximate the original input.
+     * <p>
+     * The fixed-point encoding follows {@link http://blogs.agi.com/insight3d/index.php/2008/09/03/precisions-precisions/|Precisions, Precisions}.
+     * </p>
+     *
+     * @param {Cartesian3} cartesian The cartesian to encode.
+     * @param {EncodedCartesian3} [result] The object onto which to store the result.
+     * @returns {EncodedCartesian3} The modified result parameter or a new EncodedCartesian3 instance if one was not provided.
+     *
+     * @example
+     * var cart = new Cesium.Cartesian3(-10000000.0, 0.0, 10000000.0);
+     * var encoded = Cesium.EncodedCartesian3.fromCartesian(cart);
+     */
+    EncodedCartesian3.fromCartesian = function(cartesian, result) {
+                if (!defined(cartesian)) {
+            throw new DeveloperError('cartesian is required');
+        }
+        
+        if (!defined(result)) {
+            result = new EncodedCartesian3();
+        }
+
+        var high = result.high;
+        var low = result.low;
+
+        EncodedCartesian3.encode(cartesian.x, scratchEncode);
+        high.x = scratchEncode.high;
+        low.x = scratchEncode.low;
+
+        EncodedCartesian3.encode(cartesian.y, scratchEncode);
+        high.y = scratchEncode.high;
+        low.y = scratchEncode.low;
+
+        EncodedCartesian3.encode(cartesian.z, scratchEncode);
+        high.z = scratchEncode.high;
+        low.z = scratchEncode.low;
+
+        return result;
+    };
+
+    var encodedP = new EncodedCartesian3();
+
+    /**
+     * Encodes the provided <code>cartesian</code>, and writes it to an array with <code>high</code>
+     * components followed by <code>low</code> components, i.e. <code>[high.x, high.y, high.z, low.x, low.y, low.z]</code>.
+     * <p>
+     * This is used to create interleaved high-precision position vertex attributes.
+     * </p>
+     *
+     * @param {Cartesian3} cartesian The cartesian to encode.
+     * @param {Number[]} cartesianArray The array to write to.
+     * @param {Number} index The index into the array to start writing.  Six elements will be written.
+     *
+     * @exception {DeveloperError} index must be a number greater than or equal to 0.
+     *
+     * @example
+     * var positions = [
+     *    new Cesium.Cartesian3(),
+     *    // ...
+     * ];
+     * var encodedPositions = new Float32Array(2 * 3 * positions.length);
+     * var j = 0;
+     * for (var i = 0; i < positions.length; ++i) {
+     *   Cesium.EncodedCartesian3.writeElement(positions[i], encodedPositions, j);
+     *   j += 6;
+     * }
+     */
+    EncodedCartesian3.writeElements = function(cartesian, cartesianArray, index) {
+                if (!defined(cartesian)) {
+            throw new DeveloperError('cartesian is required');
+        }
+        if (!defined(cartesianArray)) {
+            throw new DeveloperError('cartesianArray is required');
+        }
+        if (typeof index !== 'number' || index < 0) {
+            throw new DeveloperError('index must be a number greater than or equal to 0.');
+        }
+        
+        EncodedCartesian3.fromCartesian(cartesian, encodedP);
+        var high = encodedP.high;
+        var low = encodedP.low;
+
+        cartesianArray[index] = high.x;
+        cartesianArray[index + 1] = high.y;
+        cartesianArray[index + 2] = high.z;
+        cartesianArray[index + 3] = low.x;
+        cartesianArray[index + 4] = low.y;
+        cartesianArray[index + 5] = low.z;
+    };
+
+    return EncodedCartesian3;
+});
+
+/*global define*/
+define('Core/IndexDatatype',[
+        './defined',
+        './DeveloperError',
+        './freezeObject',
+        './Math'
+    ], function(
+        defined,
+        DeveloperError,
+        freezeObject,
+        CesiumMath) {
+    "use strict";
+
+    /**
+     * Constants for WebGL index datatypes.  These corresponds to the
+     * <code>type</code> parameter of {@link http://www.khronos.org/opengles/sdk/docs/man/xhtml/glDrawElements.xml|drawElements}.
+     *
+     * @namespace
+     * @alias IndexDatatype
+     */
+    var IndexDatatype = {
+        /**
+         * 0x1401.  8-bit unsigned byte corresponding to <code>UNSIGNED_BYTE</code> and the type
+         * of an element in <code>Uint8Array</code>.
+         *
+         * @type {Number}
+         * @constant
+         */
+        UNSIGNED_BYTE : 0x1401,
+
+        /**
+         * 0x1403.  16-bit unsigned short corresponding to <code>UNSIGNED_SHORT</code> and the type
+         * of an element in <code>Uint16Array</code>.
+         *
+         * @type {Number}
+         * @constant
+         */
+        UNSIGNED_SHORT : 0x1403,
+
+        /**
+         * 0x1405.  32-bit unsigned int corresponding to <code>UNSIGNED_INT</code> and the type
+         * of an element in <code>Uint32Array</code>.
+         *
+         * @type {Number}
+         * @constant
+         */
+        UNSIGNED_INT : 0x1405
+    };
+
+    /**
+     * Returns the size, in bytes, of the corresponding datatype.
+     *
+     * @param {IndexDatatype} indexDatatype The index datatype to get the size of.
+     * @returns {Number} The size in bytes.
+     *
+     * @example
+     * // Returns 2
+     * var size = Cesium.IndexDatatype.getSizeInBytes(Cesium.IndexDatatype.UNSIGNED_SHORT);
+     */
+    IndexDatatype.getSizeInBytes = function(indexDatatype) {
+        switch(indexDatatype) {
+            case IndexDatatype.UNSIGNED_BYTE:
+                return Uint8Array.BYTES_PER_ELEMENT;
+            case IndexDatatype.UNSIGNED_SHORT:
+                return Uint16Array.BYTES_PER_ELEMENT;
+            case IndexDatatype.UNSIGNED_INT:
+                return Uint32Array.BYTES_PER_ELEMENT;
+        }
+
+                throw new DeveloperError('indexDatatype is required and must be a valid IndexDatatype constant.');
+            };
+
+    /**
+     * Validates that the provided index datatype is a valid {@link IndexDatatype}.
+     *
+     * @param {IndexDatatype} indexDatatype The index datatype to validate.
+     * @returns {Boolean} <code>true</code> if the provided index datatype is a valid value; otherwise, <code>false</code>.
+     *
+     * @example
+     * if (!Cesium.IndexDatatype.validate(indexDatatype)) {
+     *   throw new Cesium.DeveloperError('indexDatatype must be a valid value.');
+     * }
+     */
+    IndexDatatype.validate = function(indexDatatype) {
+        return defined(indexDatatype) &&
+               (indexDatatype === IndexDatatype.UNSIGNED_BYTE ||
+                indexDatatype === IndexDatatype.UNSIGNED_SHORT ||
+                indexDatatype === IndexDatatype.UNSIGNED_INT);
+    };
+
+    /**
+     * Creates a typed array that will store indices, using either <code><Uint16Array</code>
+     * or <code>Uint32Array</code> depending on the number of vertices.
+     *
+     * @param {Number} numberOfVertices Number of vertices that the indices will reference.
+     * @param {Any} indicesLengthOrArray Passed through to the typed array constructor.
+     * @returns {Uint16Aray|Uint32Array} A <code>Uint16Array</code> or <code>Uint32Array</code> constructed with <code>indicesLengthOrArray</code>.
+     *
+     * @example
+     * this.indices = Cesium.IndexDatatype.createTypedArray(positions.length / 3, numberOfIndices);
+     */
+    IndexDatatype.createTypedArray = function(numberOfVertices, indicesLengthOrArray) {
+                if (!defined(numberOfVertices)) {
+            throw new DeveloperError('numberOfVertices is required.');
+        }
+        
+        if (numberOfVertices > CesiumMath.SIXTY_FOUR_KILOBYTES) {
+            return new Uint32Array(indicesLengthOrArray);
+        }
+
+        return new Uint16Array(indicesLengthOrArray);
+    };
+
+    /**
+     * Creates a typed array from a source array buffer.  The resulting typed array will store indices, using either <code><Uint16Array</code>
+     * or <code>Uint32Array</code> depending on the number of vertices.
+     *
+     * @param {Number} numberOfVertices Number of vertices that the indices will reference.
+     * @param {ArrayBuffer} sourceArray Passed through to the typed array constructor.
+     * @param {byteOffset} byteOffset Passed through to the typed array constructor.
+     * @param {length} length Passed through to the typed array constructor.
+     * @returns {Uint16Aray|Uint32Array} A <code>Uint16Array</code> or <code>Uint32Array</code> constructed with <code>sourceArray</code>, <code>byteOffset</code>, and <code>length</code>.
+     *
+     */
+    IndexDatatype.createTypedArrayFromArrayBuffer = function(numberOfVertices, sourceArray, byteOffset, length) {
+                if (!defined(numberOfVertices)) {
+            throw new DeveloperError('numberOfVertices is required.');
+        }
+        if (!defined(sourceArray)) {
+            throw new DeveloperError('sourceArray is required.');
+        }
+        if (!defined(byteOffset)) {
+            throw new DeveloperError('byteOffset is required.');
+        }
+        
+        if (numberOfVertices > CesiumMath.SIXTY_FOUR_KILOBYTES) {
+            return new Uint32Array(sourceArray, byteOffset, length);
+        }
+
+        return new Uint16Array(sourceArray, byteOffset, length);
+    };
+
+    return freezeObject(IndexDatatype);
+});
+
+/*global define*/
+define('Core/Tipsify',[
+        './defaultValue',
+        './defined',
+        './DeveloperError'
+    ], function(
+        defaultValue,
+        defined,
+        DeveloperError) {
+    "use strict";
+
+    /**
+     * Encapsulates an algorithm to optimize triangles for the post
+     * vertex-shader cache.  This is based on the 2007 SIGGRAPH paper
+     * 'Fast Triangle Reordering for Vertex Locality and Reduced Overdraw.'
+     * The runtime is linear but several passes are made.
+     *
+     * @namespace
+     * @alias Tipsify
+     *
+     * @see <a href='http://gfx.cs.princeton.edu/pubs/Sander_2007_%3ETR/tipsy.pdf'>
+     * Fast Triangle Reordering for Vertex Locality and Reduced Overdraw</a>
+     * by Sander, Nehab, and Barczak
+     *
+     * @private
+     */
+    var Tipsify = {};
+
+    /**
+     * Calculates the average cache miss ratio (ACMR) for a given set of indices.
+     *
+     * @param {Object} options Object with the following properties:
+     * @param {Number[]} options.indices Lists triads of numbers corresponding to the indices of the vertices
+     *                        in the vertex buffer that define the geometry's triangles.
+     * @param {Number} [options.maximumIndex] The maximum value of the elements in <code>args.indices</code>.
+     *                                     If not supplied, this value will be computed.
+     * @param {Number} [options.cacheSize=24] The number of vertices that can be stored in the cache at any one time.
+     * @returns {Number} The average cache miss ratio (ACMR).
+     *
+     * @exception {DeveloperError} indices length must be a multiple of three.
+     * @exception {DeveloperError} cacheSize must be greater than two.
+     *
+     * @example
+     * var indices = [0, 1, 2, 3, 4, 5];
+     * var maxIndex = 5;
+     * var cacheSize = 3;
+     * var acmr = Cesium.Tipsify.calculateACMR({indices : indices, maxIndex : maxIndex, cacheSize : cacheSize});
+     */
+    Tipsify.calculateACMR = function(options) {
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
+        var indices = options.indices;
+        var maximumIndex = options.maximumIndex;
+        var cacheSize = defaultValue(options.cacheSize, 24);
+
+                if (!defined(indices)) {
+            throw new DeveloperError('indices is required.');
+        }
+        
+        var numIndices = indices.length;
+
+                if (numIndices < 3 || numIndices % 3 !== 0) {
+            throw new DeveloperError('indices length must be a multiple of three.');
+        }
+        if (maximumIndex <= 0) {
+            throw new DeveloperError('maximumIndex must be greater than zero.');
+        }
+        if (cacheSize < 3) {
+            throw new DeveloperError('cacheSize must be greater than two.');
+        }
+        
+        // Compute the maximumIndex if not given
+        if (!defined(maximumIndex)) {
+            maximumIndex = 0;
+            var currentIndex = 0;
+            var intoIndices = indices[currentIndex];
+            while (currentIndex < numIndices) {
+                if (intoIndices > maximumIndex) {
+                    maximumIndex = intoIndices;
+                }
+                ++currentIndex;
+                intoIndices = indices[currentIndex];
+            }
+        }
+
+        // Vertex time stamps
+        var vertexTimeStamps = [];
+        for ( var i = 0; i < maximumIndex + 1; i++) {
+            vertexTimeStamps[i] = 0;
+        }
+
+        // Cache processing
+        var s = cacheSize + 1;
+        for ( var j = 0; j < numIndices; ++j) {
+            if ((s - vertexTimeStamps[indices[j]]) > cacheSize) {
+                vertexTimeStamps[indices[j]] = s;
+                ++s;
+            }
+        }
+
+        return (s - cacheSize + 1) / (numIndices / 3);
+    };
+
+    /**
+     * Optimizes triangles for the post-vertex shader cache.
+     *
+     * @param {Number[]} options.indices Lists triads of numbers corresponding to the indices of the vertices
+     *                        in the vertex buffer that define the geometry's triangles.
+     * @param {Number} [options.maximumIndex] The maximum value of the elements in <code>args.indices</code>.
+     *                                     If not supplied, this value will be computed.
+     * @param {Number} [options.cacheSize=24] The number of vertices that can be stored in the cache at any one time.
+     * @returns {Number[]} A list of the input indices in an optimized order.
+     *
+     * @exception {DeveloperError} indices length must be a multiple of three.
+     * @exception {DeveloperError} cacheSize must be greater than two.
+     *
+     * @example
+     * var indices = [0, 1, 2, 3, 4, 5];
+     * var maxIndex = 5;
+     * var cacheSize = 3;
+     * var reorderedIndices = Cesium.Tipsify.tipsify({indices : indices, maxIndex : maxIndex, cacheSize : cacheSize});
+     */
+    Tipsify.tipsify = function(options) {
+        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
+        var indices = options.indices;
+        var maximumIndex = options.maximumIndex;
+        var cacheSize = defaultValue(options.cacheSize, 24);
+
+        var cursor;
+
+        function skipDeadEnd(vertices, deadEnd, indices, maximumIndexPlusOne) {
+            while (deadEnd.length >= 1) {
+                // while the stack is not empty
+                var d = deadEnd[deadEnd.length - 1]; // top of the stack
+                deadEnd.splice(deadEnd.length - 1, 1); // pop the stack
+
+                if (vertices[d].numLiveTriangles > 0) {
+                    return d;
+                }
+            }
+
+            while (cursor < maximumIndexPlusOne) {
+                if (vertices[cursor].numLiveTriangles > 0) {
+                    ++cursor;
+                    return cursor - 1;
+                }
+                ++cursor;
+            }
+            return -1;
+        }
+
+        function getNextVertex(indices, cacheSize, oneRing, vertices, s, deadEnd, maximumIndexPlusOne) {
+            var n = -1;
+            var p;
+            var m = -1;
+            var itOneRing = 0;
+            while (itOneRing < oneRing.length) {
+                var index = oneRing[itOneRing];
+                if (vertices[index].numLiveTriangles) {
+                    p = 0;
+                    if ((s - vertices[index].timeStamp + (2 * vertices[index].numLiveTriangles)) <= cacheSize) {
+                        p = s - vertices[index].timeStamp;
+                    }
+                    if ((p > m) || (m === -1)) {
+                        m = p;
+                        n = index;
+                    }
+                }
+                ++itOneRing;
+            }
+            if (n === -1) {
+                return skipDeadEnd(vertices, deadEnd, indices, maximumIndexPlusOne);
+            }
+            return n;
+        }
+
+                if (!defined(indices)) {
+            throw new DeveloperError('indices is required.');
+        }
+        
+        var numIndices = indices.length;
+
+                if (numIndices < 3 || numIndices % 3 !== 0) {
+            throw new DeveloperError('indices length must be a multiple of three.');
+        }
+        if (maximumIndex <= 0) {
+            throw new DeveloperError('maximumIndex must be greater than zero.');
+        }
+        if (cacheSize < 3) {
+            throw new DeveloperError('cacheSize must be greater than two.');
+        }
+        
+        // Determine maximum index
+        var maximumIndexPlusOne = 0;
+        var currentIndex = 0;
+        var intoIndices = indices[currentIndex];
+        var endIndex = numIndices;
+        if (defined(maximumIndex)) {
+            maximumIndexPlusOne = maximumIndex + 1;
+        } else {
+            while (currentIndex < endIndex) {
+                if (intoIndices > maximumIndexPlusOne) {
+                    maximumIndexPlusOne = intoIndices;
+                }
+                ++currentIndex;
+                intoIndices = indices[currentIndex];
+            }
+            if (maximumIndexPlusOne === -1) {
+                return 0;
+            }
+            ++maximumIndexPlusOne;
+        }
+
+        // Vertices
+        var vertices = [];
+        for ( var i = 0; i < maximumIndexPlusOne; i++) {
+            vertices[i] = {
+                numLiveTriangles : 0,
+                timeStamp : 0,
+                vertexTriangles : []
+            };
+        }
+        currentIndex = 0;
+        var triangle = 0;
+        while (currentIndex < endIndex) {
+            vertices[indices[currentIndex]].vertexTriangles.push(triangle);
+            ++(vertices[indices[currentIndex]]).numLiveTriangles;
+            vertices[indices[currentIndex + 1]].vertexTriangles.push(triangle);
+            ++(vertices[indices[currentIndex + 1]]).numLiveTriangles;
+            vertices[indices[currentIndex + 2]].vertexTriangles.push(triangle);
+            ++(vertices[indices[currentIndex + 2]]).numLiveTriangles;
+            ++triangle;
+            currentIndex += 3;
+        }
+
+        // Starting index
+        var f = 0;
+
+        // Time Stamp
+        var s = cacheSize + 1;
+        cursor = 1;
+
+        // Process
+        var oneRing = [];
+        var deadEnd = []; //Stack
+        var vertex;
+        var intoVertices;
+        var currentOutputIndex = 0;
+        var outputIndices = [];
+        var numTriangles = numIndices / 3;
+        var triangleEmitted = [];
+        for (i = 0; i < numTriangles; i++) {
+            triangleEmitted[i] = false;
+        }
+        var index;
+        var limit;
+        while (f !== -1) {
+            oneRing = [];
+            intoVertices = vertices[f];
+            limit = intoVertices.vertexTriangles.length;
+            for ( var k = 0; k < limit; ++k) {
+                triangle = intoVertices.vertexTriangles[k];
+                if (!triangleEmitted[triangle]) {
+                    triangleEmitted[triangle] = true;
+                    currentIndex = triangle + triangle + triangle;
+                    for ( var j = 0; j < 3; ++j) {
+                        // Set this index as a possible next index
+                        index = indices[currentIndex];
+                        oneRing.push(index);
+                        deadEnd.push(index);
+
+                        // Output index
+                        outputIndices[currentOutputIndex] = index;
+                        ++currentOutputIndex;
+
+                        // Cache processing
+                        vertex = vertices[index];
+                        --vertex.numLiveTriangles;
+                        if ((s - vertex.timeStamp) > cacheSize) {
+                            vertex.timeStamp = s;
+                            ++s;
+                        }
+                        ++currentIndex;
+                    }
+                }
+            }
+            f = getNextVertex(indices, cacheSize, oneRing, vertices, s, deadEnd, maximumIndexPlusOne);
+        }
+
+        return outputIndices;
+    };
+
+    return Tipsify;
+});
+
+/*global define*/
+define('Core/GeometryPipeline',[
+        './AttributeCompression',
+        './barycentricCoordinates',
+        './BoundingSphere',
+        './Cartesian2',
+        './Cartesian3',
+        './Cartesian4',
+        './Cartographic',
+        './ComponentDatatype',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './EncodedCartesian3',
+        './GeographicProjection',
+        './Geometry',
+        './GeometryAttribute',
+        './GeometryInstance',
+        './GeometryType',
+        './IndexDatatype',
+        './Intersect',
+        './IntersectionTests',
+        './Math',
+        './Matrix3',
+        './Matrix4',
+        './Plane',
+        './PrimitiveType',
+        './Tipsify'
+    ], function(
+        AttributeCompression,
+        barycentricCoordinates,
+        BoundingSphere,
+        Cartesian2,
+        Cartesian3,
+        Cartesian4,
+        Cartographic,
+        ComponentDatatype,
+        defaultValue,
+        defined,
+        DeveloperError,
+        EncodedCartesian3,
+        GeographicProjection,
+        Geometry,
+        GeometryAttribute,
+        GeometryInstance,
+        GeometryType,
+        IndexDatatype,
+        Intersect,
+        IntersectionTests,
+        CesiumMath,
+        Matrix3,
+        Matrix4,
+        Plane,
+        PrimitiveType,
+        Tipsify) {
+    "use strict";
+
+    /**
+     * Content pipeline functions for geometries.
+     *
+     * @namespace
+     * @alias GeometryPipeline
+     *
+     * @see Geometry
+     */
+    var GeometryPipeline = {};
+
+    function addTriangle(lines, index, i0, i1, i2) {
+        lines[index++] = i0;
+        lines[index++] = i1;
+
+        lines[index++] = i1;
+        lines[index++] = i2;
+
+        lines[index++] = i2;
+        lines[index] = i0;
+    }
+
+    function trianglesToLines(triangles) {
+        var count = triangles.length;
+        var size = (count / 3) * 6;
+        var lines = IndexDatatype.createTypedArray(count, size);
+
+        var index = 0;
+        for ( var i = 0; i < count; i += 3, index += 6) {
+            addTriangle(lines, index, triangles[i], triangles[i + 1], triangles[i + 2]);
+        }
+
+        return lines;
+    }
+
+    function triangleStripToLines(triangles) {
+        var count = triangles.length;
+        if (count >= 3) {
+            var size = (count - 2) * 6;
+            var lines = IndexDatatype.createTypedArray(count, size);
+
+            addTriangle(lines, 0, triangles[0], triangles[1], triangles[2]);
+            var index = 6;
+
+            for ( var i = 3; i < count; ++i, index += 6) {
+                addTriangle(lines, index, triangles[i - 1], triangles[i], triangles[i - 2]);
+            }
+
+            return lines;
+        }
+
+        return new Uint16Array();
+    }
+
+    function triangleFanToLines(triangles) {
+        if (triangles.length > 0) {
+            var count = triangles.length - 1;
+            var size = (count - 1) * 6;
+            var lines = IndexDatatype.createTypedArray(count, size);
+
+            var base = triangles[0];
+            var index = 0;
+            for ( var i = 1; i < count; ++i, index += 6) {
+                addTriangle(lines, index, base, triangles[i], triangles[i + 1]);
+            }
+
+            return lines;
+        }
+
+        return new Uint16Array();
+    }
+
+    /**
+     * Converts a geometry's triangle indices to line indices.  If the geometry has an <code>indices</code>
+     * and its <code>primitiveType</code> is <code>TRIANGLES</code>, <code>TRIANGLE_STRIP</code>,
+     * <code>TRIANGLE_FAN</code>, it is converted to <code>LINES</code>; otherwise, the geometry is not changed.
+     * <p>
+     * This is commonly used to create a wireframe geometry for visual debugging.
+     * </p>
+     *
+     * @param {Geometry} geometry The geometry to modify.
+     * @returns {Geometry} The modified <code>geometry</code> argument, with its triangle indices converted to lines.
+     *
+     * @exception {DeveloperError} geometry.primitiveType must be TRIANGLES, TRIANGLE_STRIP, or TRIANGLE_FAN.
+     *
+     * @example
+     * geometry = Cesium.GeometryPipeline.toWireframe(geometry);
+     */
+    GeometryPipeline.toWireframe = function(geometry) {
+                if (!defined(geometry)) {
+            throw new DeveloperError('geometry is required.');
+        }
+        
+        var indices = geometry.indices;
+        if (defined(indices)) {
+            switch (geometry.primitiveType) {
+                case PrimitiveType.TRIANGLES:
+                    geometry.indices = trianglesToLines(indices);
+                    break;
+                case PrimitiveType.TRIANGLE_STRIP:
+                    geometry.indices = triangleStripToLines(indices);
+                    break;
+                case PrimitiveType.TRIANGLE_FAN:
+                    geometry.indices = triangleFanToLines(indices);
+                    break;
+                default:
+                    throw new DeveloperError('geometry.primitiveType must be TRIANGLES, TRIANGLE_STRIP, or TRIANGLE_FAN.');
+            }
+
+            geometry.primitiveType = PrimitiveType.LINES;
+        }
+
+        return geometry;
+    };
+
+    /**
+     * Creates a new {@link Geometry} with <code>LINES</code> representing the provided
+     * attribute (<code>attributeName</code>) for the provided geometry.  This is used to
+     * visualize vector attributes like normals, binormals, and tangents.
+     *
+     * @param {Geometry} geometry The <code>Geometry</code> instance with the attribute.
+     * @param {String} [attributeName='normal'] The name of the attribute.
+     * @param {Number} [length=10000.0] The length of each line segment in meters.  This can be negative to point the vector in the opposite direction.
+     * @returns {Geometry} A new <code>Geometry</code> instance with line segments for the vector.
+     *
+     * @exception {DeveloperError} geometry.attributes must have an attribute with the same name as the attributeName parameter.
+     *
+     * @example
+     * var geometry = Cesium.GeometryPipeline.createLineSegmentsForVectors(instance.geometry, 'binormal', 100000.0),
+     */
+    GeometryPipeline.createLineSegmentsForVectors = function(geometry, attributeName, length) {
+        attributeName = defaultValue(attributeName, 'normal');
+
+                if (!defined(geometry)) {
+            throw new DeveloperError('geometry is required.');
+        }
+        if (!defined(geometry.attributes.position)) {
+            throw new DeveloperError('geometry.attributes.position is required.');
+        }
+        if (!defined(geometry.attributes[attributeName])) {
+            throw new DeveloperError('geometry.attributes must have an attribute with the same name as the attributeName parameter, ' + attributeName + '.');
+        }
+        
+        length = defaultValue(length, 10000.0);
+
+        var positions = geometry.attributes.position.values;
+        var vectors = geometry.attributes[attributeName].values;
+        var positionsLength = positions.length;
+
+        var newPositions = new Float64Array(2 * positionsLength);
+
+        var j = 0;
+        for (var i = 0; i < positionsLength; i += 3) {
+            newPositions[j++] = positions[i];
+            newPositions[j++] = positions[i + 1];
+            newPositions[j++] = positions[i + 2];
+
+            newPositions[j++] = positions[i] + (vectors[i] * length);
+            newPositions[j++] = positions[i + 1] + (vectors[i + 1] * length);
+            newPositions[j++] = positions[i + 2] + (vectors[i + 2] * length);
+        }
+
+        var newBoundingSphere;
+        var bs = geometry.boundingSphere;
+        if (defined(bs)) {
+            newBoundingSphere = new BoundingSphere(bs.center, bs.radius + length);
+        }
+
+        return new Geometry({
+            attributes : {
+                position : new GeometryAttribute({
+                    componentDatatype : ComponentDatatype.DOUBLE,
+                    componentsPerAttribute : 3,
+                    values : newPositions
+                })
+            },
+            primitiveType : PrimitiveType.LINES,
+            boundingSphere : newBoundingSphere
+        });
+    };
+
+    /**
+     * Creates an object that maps attribute names to unique locations (indices)
+     * for matching vertex attributes and shader programs.
+     *
+     * @param {Geometry} geometry The geometry, which is not modified, to create the object for.
+     * @returns {Object} An object with attribute name / index pairs.
+     *
+     * @example
+     * var attributeLocations = Cesium.GeometryPipeline.createAttributeLocations(geometry);
+     * // Example output
+     * // {
+     * //   'position' : 0,
+     * //   'normal' : 1
+     * // }
+     */
+    GeometryPipeline.createAttributeLocations = function(geometry) {
+                if (!defined(geometry)) {
+            throw new DeveloperError('geometry is required.');
+        }
+        
+        // There can be a WebGL performance hit when attribute 0 is disabled, so
+        // assign attribute locations to well-known attributes.
+        var semantics = [
+            'position',
+            'positionHigh',
+            'positionLow',
+
+            // From VertexFormat.position - after 2D projection and high-precision encoding
+            'position3DHigh',
+            'position3DLow',
+            'position2DHigh',
+            'position2DLow',
+
+            // From Primitive
+            'pickColor',
+
+            // From VertexFormat
+            'normal',
+            'st',
+            'binormal',
+            'tangent',
+
+            // From compressing texture coordinates and normals
+            'compressedAttributes'
+        ];
+
+        var attributes = geometry.attributes;
+        var indices = {};
+        var j = 0;
+        var i;
+        var len = semantics.length;
+
+        // Attribute locations for well-known attributes
+        for (i = 0; i < len; ++i) {
+            var semantic = semantics[i];
+
+            if (defined(attributes[semantic])) {
+                indices[semantic] = j++;
+            }
+        }
+
+        // Locations for custom attributes
+        for (var name in attributes) {
+            if (attributes.hasOwnProperty(name) && (!defined(indices[name]))) {
+                indices[name] = j++;
+            }
+        }
+
+        return indices;
+    };
+
+    /**
+     * Reorders a geometry's attributes and <code>indices</code> to achieve better performance from the GPU's pre-vertex-shader cache.
+     *
+     * @param {Geometry} geometry The geometry to modify.
+     * @returns {Geometry} The modified <code>geometry</code> argument, with its attributes and indices reordered for the GPU's pre-vertex-shader cache.
+     *
+     * @exception {DeveloperError} Each attribute array in geometry.attributes must have the same number of attributes.
+     *
+     * @see GeometryPipeline.reorderForPostVertexCache
+     *
+     * @example
+     * geometry = Cesium.GeometryPipeline.reorderForPreVertexCache(geometry);
+     */
+    GeometryPipeline.reorderForPreVertexCache = function(geometry) {
+                if (!defined(geometry)) {
+            throw new DeveloperError('geometry is required.');
+        }
+        
+        var numVertices = Geometry.computeNumberOfVertices(geometry);
+
+        var indices = geometry.indices;
+        if (defined(indices)) {
+            var indexCrossReferenceOldToNew = new Int32Array(numVertices);
+            for ( var i = 0; i < numVertices; i++) {
+                indexCrossReferenceOldToNew[i] = -1;
+            }
+
+            // Construct cross reference and reorder indices
+            var indicesIn = indices;
+            var numIndices = indicesIn.length;
+            var indicesOut = IndexDatatype.createTypedArray(numVertices, numIndices);
+
+            var intoIndicesIn = 0;
+            var intoIndicesOut = 0;
+            var nextIndex = 0;
+            var tempIndex;
+            while (intoIndicesIn < numIndices) {
+                tempIndex = indexCrossReferenceOldToNew[indicesIn[intoIndicesIn]];
+                if (tempIndex !== -1) {
+                    indicesOut[intoIndicesOut] = tempIndex;
+                } else {
+                    tempIndex = indicesIn[intoIndicesIn];
+                    indexCrossReferenceOldToNew[tempIndex] = nextIndex;
+
+                    indicesOut[intoIndicesOut] = nextIndex;
+                    ++nextIndex;
+                }
+                ++intoIndicesIn;
+                ++intoIndicesOut;
+            }
+            geometry.indices = indicesOut;
+
+            // Reorder attributes
+            var attributes = geometry.attributes;
+            for ( var property in attributes) {
+                if (attributes.hasOwnProperty(property) &&
+                        defined(attributes[property]) &&
+                        defined(attributes[property].values)) {
+
+                    var attribute = attributes[property];
+                    var elementsIn = attribute.values;
+                    var intoElementsIn = 0;
+                    var numComponents = attribute.componentsPerAttribute;
+                    var elementsOut = ComponentDatatype.createTypedArray(attribute.componentDatatype, nextIndex * numComponents);
+                    while (intoElementsIn < numVertices) {
+                        var temp = indexCrossReferenceOldToNew[intoElementsIn];
+                        if (temp !== -1) {
+                            for (i = 0; i < numComponents; i++) {
+                                elementsOut[numComponents * temp + i] = elementsIn[numComponents * intoElementsIn + i];
+                            }
+                        }
+                        ++intoElementsIn;
+                    }
+                    attribute.values = elementsOut;
+                }
+            }
+        }
+
+        return geometry;
+    };
+
+    /**
+     * Reorders a geometry's <code>indices</code> to achieve better performance from the GPU's
+     * post vertex-shader cache by using the Tipsify algorithm.  If the geometry <code>primitiveType</code>
+     * is not <code>TRIANGLES</code> or the geometry does not have an <code>indices</code>, this function has no effect.
+     *
+     * @param {Geometry} geometry The geometry to modify.
+     * @param {Number} [cacheCapacity=24] The number of vertices that can be held in the GPU's vertex cache.
+     * @returns {Geometry} The modified <code>geometry</code> argument, with its indices reordered for the post-vertex-shader cache.
+     *
+     * @exception {DeveloperError} cacheCapacity must be greater than two.
+     *
+     * @see GeometryPipeline.reorderForPreVertexCache
+     * @see {@link http://gfx.cs.princeton.edu/pubs/Sander_2007_%3ETR/tipsy.pdf|Fast Triangle Reordering for Vertex Locality and Reduced Overdraw}
+     * by Sander, Nehab, and Barczak
+     *
+     * @example
+     * geometry = Cesium.GeometryPipeline.reorderForPostVertexCache(geometry);
+     */
+    GeometryPipeline.reorderForPostVertexCache = function(geometry, cacheCapacity) {
+                if (!defined(geometry)) {
+            throw new DeveloperError('geometry is required.');
+        }
+        
+        var indices = geometry.indices;
+        if ((geometry.primitiveType === PrimitiveType.TRIANGLES) && (defined(indices))) {
+            var numIndices = indices.length;
+            var maximumIndex = 0;
+            for ( var j = 0; j < numIndices; j++) {
+                if (indices[j] > maximumIndex) {
+                    maximumIndex = indices[j];
+                }
+            }
+            geometry.indices = Tipsify.tipsify({
+                indices : indices,
+                maximumIndex : maximumIndex,
+                cacheSize : cacheCapacity
+            });
+        }
+
+        return geometry;
+    };
+
+    function copyAttributesDescriptions(attributes) {
+        var newAttributes = {};
+
+        for ( var attribute in attributes) {
+            if (attributes.hasOwnProperty(attribute) &&
+                    defined(attributes[attribute]) &&
+                    defined(attributes[attribute].values)) {
+
+                var attr = attributes[attribute];
+                newAttributes[attribute] = new GeometryAttribute({
+                    componentDatatype : attr.componentDatatype,
+                    componentsPerAttribute : attr.componentsPerAttribute,
+                    normalize : attr.normalize,
+                    values : []
+                });
+            }
+        }
+
+        return newAttributes;
+    }
+
+    function copyVertex(destinationAttributes, sourceAttributes, index) {
+        for ( var attribute in sourceAttributes) {
+            if (sourceAttributes.hasOwnProperty(attribute) &&
+                    defined(sourceAttributes[attribute]) &&
+                    defined(sourceAttributes[attribute].values)) {
+
+                var attr = sourceAttributes[attribute];
+
+                for ( var k = 0; k < attr.componentsPerAttribute; ++k) {
+                    destinationAttributes[attribute].values.push(attr.values[(index * attr.componentsPerAttribute) + k]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Splits a geometry into multiple geometries, if necessary, to ensure that indices in the
+     * <code>indices</code> fit into unsigned shorts.  This is used to meet the WebGL requirements
+     * when unsigned int indices are not supported.
+     * <p>
+     * If the geometry does not have any <code>indices</code>, this function has no effect.
+     * </p>
+     *
+     * @param {Geometry} geometry The geometry to be split into multiple geometries.
+     * @returns {Geometry[]} An array of geometries, each with indices that fit into unsigned shorts.
+     *
+     * @exception {DeveloperError} geometry.primitiveType must equal to PrimitiveType.TRIANGLES, PrimitiveType.LINES, or PrimitiveType.POINTS
+     * @exception {DeveloperError} All geometry attribute lists must have the same number of attributes.
+     *
+     * @example
+     * var geometries = Cesium.GeometryPipeline.fitToUnsignedShortIndices(geometry);
+     */
+    GeometryPipeline.fitToUnsignedShortIndices = function(geometry) {
+                if (!defined(geometry)) {
+            throw new DeveloperError('geometry is required.');
+        }
+        if ((defined(geometry.indices)) &&
+            ((geometry.primitiveType !== PrimitiveType.TRIANGLES) &&
+             (geometry.primitiveType !== PrimitiveType.LINES) &&
+             (geometry.primitiveType !== PrimitiveType.POINTS))) {
+            throw new DeveloperError('geometry.primitiveType must equal to PrimitiveType.TRIANGLES, PrimitiveType.LINES, or PrimitiveType.POINTS.');
+        }
+        
+        var geometries = [];
+
+        // If there's an index list and more than 64K attributes, it is possible that
+        // some indices are outside the range of unsigned short [0, 64K - 1]
+        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
+        if (defined(geometry.indices) && (numberOfVertices > CesiumMath.SIXTY_FOUR_KILOBYTES)) {
+            var oldToNewIndex = [];
+            var newIndices = [];
+            var currentIndex = 0;
+            var newAttributes = copyAttributesDescriptions(geometry.attributes);
+
+            var originalIndices = geometry.indices;
+            var numberOfIndices = originalIndices.length;
+
+            var indicesPerPrimitive;
+
+            if (geometry.primitiveType === PrimitiveType.TRIANGLES) {
+                indicesPerPrimitive = 3;
+            } else if (geometry.primitiveType === PrimitiveType.LINES) {
+                indicesPerPrimitive = 2;
+            } else if (geometry.primitiveType === PrimitiveType.POINTS) {
+                indicesPerPrimitive = 1;
+            }
+
+            for ( var j = 0; j < numberOfIndices; j += indicesPerPrimitive) {
+                for (var k = 0; k < indicesPerPrimitive; ++k) {
+                    var x = originalIndices[j + k];
+                    var i = oldToNewIndex[x];
+                    if (!defined(i)) {
+                        i = currentIndex++;
+                        oldToNewIndex[x] = i;
+                        copyVertex(newAttributes, geometry.attributes, x);
+                    }
+                    newIndices.push(i);
+                }
+
+                if (currentIndex + indicesPerPrimitive > CesiumMath.SIXTY_FOUR_KILOBYTES) {
+                    geometries.push(new Geometry({
+                        attributes : newAttributes,
+                        indices : newIndices,
+                        primitiveType : geometry.primitiveType,
+                        boundingSphere : geometry.boundingSphere,
+                        boundingSphereCV : geometry.boundingSphereCV
+                    }));
+
+                    // Reset for next vertex-array
+                    oldToNewIndex = [];
+                    newIndices = [];
+                    currentIndex = 0;
+                    newAttributes = copyAttributesDescriptions(geometry.attributes);
+                }
+            }
+
+            if (newIndices.length !== 0) {
+                geometries.push(new Geometry({
+                    attributes : newAttributes,
+                    indices : newIndices,
+                    primitiveType : geometry.primitiveType,
+                    boundingSphere : geometry.boundingSphere,
+                    boundingSphereCV : geometry.boundingSphereCV
+                }));
+            }
+        } else {
+            // No need to split into multiple geometries
+            geometries.push(geometry);
+        }
+
+        return geometries;
+    };
+
+    var scratchProjectTo2DCartesian3 = new Cartesian3();
+    var scratchProjectTo2DCartographic = new Cartographic();
+
+    /**
+     * Projects a geometry's 3D <code>position</code> attribute to 2D, replacing the <code>position</code>
+     * attribute with separate <code>position3D</code> and <code>position2D</code> attributes.
+     * <p>
+     * If the geometry does not have a <code>position</code>, this function has no effect.
+     * </p>
+     *
+     * @param {Geometry} geometry The geometry to modify.
+     * @param {String} attributeName The name of the attribute.
+     * @param {String} attributeName3D The name of the attribute in 3D.
+     * @param {String} attributeName2D The name of the attribute in 2D.
+     * @param {Object} [projection=new GeographicProjection()] The projection to use.
+     * @returns {Geometry} The modified <code>geometry</code> argument with <code>position3D</code> and <code>position2D</code> attributes.
+     *
+     * @exception {DeveloperError} geometry must have attribute matching the attributeName argument.
+     * @exception {DeveloperError} The attribute componentDatatype must be ComponentDatatype.DOUBLE.
+     * @exception {DeveloperError} Could not project a point to 2D.
+     *
+     * @example
+     * geometry = Cesium.GeometryPipeline.projectTo2D(geometry, 'position', 'position3D', 'position2D');
+     */
+    GeometryPipeline.projectTo2D = function(geometry, attributeName, attributeName3D, attributeName2D, projection) {
+                if (!defined(geometry)) {
+            throw new DeveloperError('geometry is required.');
+        }
+        if (!defined(attributeName)) {
+            throw new DeveloperError('attributeName is required.');
+        }
+        if (!defined(attributeName3D)) {
+            throw new DeveloperError('attributeName3D is required.');
+        }
+        if (!defined(attributeName2D)) {
+            throw new DeveloperError('attributeName2D is required.');
+        }
+        if (!defined(geometry.attributes[attributeName])) {
+            throw new DeveloperError('geometry must have attribute matching the attributeName argument: ' + attributeName + '.');
+        }
+        if (geometry.attributes[attributeName].componentDatatype !== ComponentDatatype.DOUBLE) {
+            throw new DeveloperError('The attribute componentDatatype must be ComponentDatatype.DOUBLE.');
+        }
+        
+        var attribute = geometry.attributes[attributeName];
+        projection = (defined(projection)) ? projection : new GeographicProjection();
+        var ellipsoid = projection.ellipsoid;
+
+        // Project original values to 2D.
+        var values3D = attribute.values;
+        var projectedValues = new Float64Array(values3D.length);
+        var index = 0;
+
+        for ( var i = 0; i < values3D.length; i += 3) {
+            var value = Cartesian3.fromArray(values3D, i, scratchProjectTo2DCartesian3);
+
+            var lonLat = ellipsoid.cartesianToCartographic(value, scratchProjectTo2DCartographic);
+            if (!defined(lonLat)) {
+                throw new DeveloperError('Could not project point (' + value.x + ', ' + value.y + ', ' + value.z + ') to 2D.');
+            }
+
+            var projectedLonLat = projection.project(lonLat, scratchProjectTo2DCartesian3);
+
+            projectedValues[index++] = projectedLonLat.x;
+            projectedValues[index++] = projectedLonLat.y;
+            projectedValues[index++] = projectedLonLat.z;
+        }
+
+        // Rename original cartesians to WGS84 cartesians.
+        geometry.attributes[attributeName3D] = attribute;
+
+        // Replace original cartesians with 2D projected cartesians
+        geometry.attributes[attributeName2D] = new GeometryAttribute({
+            componentDatatype : ComponentDatatype.DOUBLE,
+            componentsPerAttribute : 3,
+            values : projectedValues
+        });
+        delete geometry.attributes[attributeName];
+
+        return geometry;
+    };
+
+    var encodedResult = {
+        high : 0.0,
+        low : 0.0
+    };
+
+    /**
+     * Encodes floating-point geometry attribute values as two separate attributes to improve
+     * rendering precision.
+     * <p>
+     * This is commonly used to create high-precision position vertex attributes.
+     * </p>
+     *
+     * @param {Geometry} geometry The geometry to modify.
+     * @param {String} attributeName The name of the attribute.
+     * @param {String} attributeHighName The name of the attribute for the encoded high bits.
+     * @param {String} attributeLowName The name of the attribute for the encoded low bits.
+     * @returns {Geometry} The modified <code>geometry</code> argument, with its encoded attribute.
+     *
+     * @exception {DeveloperError} geometry must have attribute matching the attributeName argument.
+     * @exception {DeveloperError} The attribute componentDatatype must be ComponentDatatype.DOUBLE.
+     *
+     * @example
+     * geometry = Cesium.GeometryPipeline.encodeAttribute(geometry, 'position3D', 'position3DHigh', 'position3DLow');
+     */
+    GeometryPipeline.encodeAttribute = function(geometry, attributeName, attributeHighName, attributeLowName) {
+                if (!defined(geometry)) {
+            throw new DeveloperError('geometry is required.');
+        }
+        if (!defined(attributeName)) {
+            throw new DeveloperError('attributeName is required.');
+        }
+        if (!defined(attributeHighName)) {
+            throw new DeveloperError('attributeHighName is required.');
+        }
+        if (!defined(attributeLowName)) {
+            throw new DeveloperError('attributeLowName is required.');
+        }
+        if (!defined(geometry.attributes[attributeName])) {
+            throw new DeveloperError('geometry must have attribute matching the attributeName argument: ' + attributeName + '.');
+        }
+        if (geometry.attributes[attributeName].componentDatatype !== ComponentDatatype.DOUBLE) {
+            throw new DeveloperError('The attribute componentDatatype must be ComponentDatatype.DOUBLE.');
+        }
+        
+        var attribute = geometry.attributes[attributeName];
+        var values = attribute.values;
+        var length = values.length;
+        var highValues = new Float32Array(length);
+        var lowValues = new Float32Array(length);
+
+        for (var i = 0; i < length; ++i) {
+            EncodedCartesian3.encode(values[i], encodedResult);
+            highValues[i] = encodedResult.high;
+            lowValues[i] = encodedResult.low;
+        }
+
+        var componentsPerAttribute = attribute.componentsPerAttribute;
+
+        geometry.attributes[attributeHighName] = new GeometryAttribute({
+            componentDatatype : ComponentDatatype.FLOAT,
+            componentsPerAttribute : componentsPerAttribute,
+            values : highValues
+        });
+        geometry.attributes[attributeLowName] = new GeometryAttribute({
+            componentDatatype : ComponentDatatype.FLOAT,
+            componentsPerAttribute : componentsPerAttribute,
+            values : lowValues
+        });
+        delete geometry.attributes[attributeName];
+
+        return geometry;
+    };
+
+    var scratchCartesian3 = new Cartesian3();
+
+    function transformPoint(matrix, attribute) {
+        if (defined(attribute)) {
+            var values = attribute.values;
+            var length = values.length;
+            for (var i = 0; i < length; i += 3) {
+                Cartesian3.unpack(values, i, scratchCartesian3);
+                Matrix4.multiplyByPoint(matrix, scratchCartesian3, scratchCartesian3);
+                Cartesian3.pack(scratchCartesian3, values, i);
+            }
+        }
+    }
+
+    function transformVector(matrix, attribute) {
+        if (defined(attribute)) {
+            var values = attribute.values;
+            var length = values.length;
+            for (var i = 0; i < length; i += 3) {
+                Cartesian3.unpack(values, i, scratchCartesian3);
+                Matrix3.multiplyByVector(matrix, scratchCartesian3, scratchCartesian3);
+                scratchCartesian3 = Cartesian3.normalize(scratchCartesian3, scratchCartesian3);
+                Cartesian3.pack(scratchCartesian3, values, i);
+            }
+        }
+    }
+
+    var inverseTranspose = new Matrix4();
+    var normalMatrix = new Matrix3();
+
+    /**
+     * Transforms a geometry instance to world coordinates.  This is used as a prerequisite
+     * to batch together several instances with {@link GeometryPipeline.combineInstances}.  This changes
+     * the instance's <code>modelMatrix</code> to {@link Matrix4.IDENTITY} and transforms the
+     * following attributes if they are present: <code>position</code>, <code>normal</code>,
+     * <code>binormal</code>, and <code>tangent</code>.
+     *
+     * @param {GeometryInstance} instance The geometry instance to modify.
+     * @returns {GeometryInstance} The modified <code>instance</code> argument, with its attributes transforms to world coordinates.
+     *
+     * @see GeometryPipeline.combineInstances
+     *
+     * @example
+     * for (var i = 0; i < instances.length; ++i) {
+     *   Cesium.GeometryPipeline.transformToWorldCoordinates(instances[i]);
+     * }
+     * var geometries = Cesium.GeometryPipeline.combineInstances(instances);
+     */
+    GeometryPipeline.transformToWorldCoordinates = function(instance) {
+                if (!defined(instance)) {
+            throw new DeveloperError('instance is required.');
+        }
+        
+        var modelMatrix = instance.modelMatrix;
+
+        if (Matrix4.equals(modelMatrix, Matrix4.IDENTITY)) {
+            // Already in world coordinates
+            return instance;
+        }
+
+        var attributes = instance.geometry.attributes;
+
+        // Transform attributes in known vertex formats
+        transformPoint(modelMatrix, attributes.position);
+        transformPoint(modelMatrix, attributes.prevPosition);
+        transformPoint(modelMatrix, attributes.nextPosition);
+
+        if ((defined(attributes.normal)) ||
+            (defined(attributes.binormal)) ||
+            (defined(attributes.tangent))) {
+
+            Matrix4.inverse(modelMatrix, inverseTranspose);
+            Matrix4.transpose(inverseTranspose, inverseTranspose);
+            Matrix4.getRotation(inverseTranspose, normalMatrix);
+
+            transformVector(normalMatrix, attributes.normal);
+            transformVector(normalMatrix, attributes.binormal);
+            transformVector(normalMatrix, attributes.tangent);
+        }
+
+        var boundingSphere = instance.geometry.boundingSphere;
+
+        if (defined(boundingSphere)) {
+            instance.geometry.boundingSphere = BoundingSphere.transform(boundingSphere, modelMatrix, boundingSphere);
+        }
+
+        instance.modelMatrix = Matrix4.clone(Matrix4.IDENTITY);
+
+        return instance;
+    };
+
+    function findAttributesInAllGeometries(instances, propertyName) {
+        var length = instances.length;
+
+        var attributesInAllGeometries = {};
+
+        var attributes0 = instances[0][propertyName].attributes;
+        var name;
+
+        for (name in attributes0) {
+            if (attributes0.hasOwnProperty(name) &&
+                    defined(attributes0[name]) &&
+                    defined(attributes0[name].values)) {
+
+                var attribute = attributes0[name];
+                var numberOfComponents = attribute.values.length;
+                var inAllGeometries = true;
+
+                // Does this same attribute exist in all geometries?
+                for (var i = 1; i < length; ++i) {
+                    var otherAttribute = instances[i][propertyName].attributes[name];
+
+                    if ((!defined(otherAttribute)) ||
+                        (attribute.componentDatatype !== otherAttribute.componentDatatype) ||
+                        (attribute.componentsPerAttribute !== otherAttribute.componentsPerAttribute) ||
+                        (attribute.normalize !== otherAttribute.normalize)) {
+
+                        inAllGeometries = false;
+                        break;
+                    }
+
+                    numberOfComponents += otherAttribute.values.length;
+                }
+
+                if (inAllGeometries) {
+                    attributesInAllGeometries[name] = new GeometryAttribute({
+                        componentDatatype : attribute.componentDatatype,
+                        componentsPerAttribute : attribute.componentsPerAttribute,
+                        normalize : attribute.normalize,
+                        values : ComponentDatatype.createTypedArray(attribute.componentDatatype, numberOfComponents)
+                    });
+                }
+            }
+        }
+
+        return attributesInAllGeometries;
+    }
+
+    var tempScratch = new Cartesian3();
+
+    function combineGeometries(instances, propertyName) {
+        var length = instances.length;
+
+        var name;
+        var i;
+        var j;
+        var k;
+
+        var m = instances[0].modelMatrix;
+        var haveIndices = (defined(instances[0][propertyName].indices));
+        var primitiveType = instances[0][propertyName].primitiveType;
+
+                for (i = 1; i < length; ++i) {
+            if (!Matrix4.equals(instances[i].modelMatrix, m)) {
+                throw new DeveloperError('All instances must have the same modelMatrix.');
+            }
+            if ((defined(instances[i][propertyName].indices)) !== haveIndices) {
+                throw new DeveloperError('All instance geometries must have an indices or not have one.');
+            }
+            if (instances[i][propertyName].primitiveType !== primitiveType) {
+                throw new DeveloperError('All instance geometries must have the same primitiveType.');
+            }
+        }
+        
+        // Find subset of attributes in all geometries
+        var attributes = findAttributesInAllGeometries(instances, propertyName);
+        var values;
+        var sourceValues;
+        var sourceValuesLength;
+
+        // Combine attributes from each geometry into a single typed array
+        for (name in attributes) {
+            if (attributes.hasOwnProperty(name)) {
+                values = attributes[name].values;
+
+                k = 0;
+                for (i = 0; i < length; ++i) {
+                    sourceValues = instances[i][propertyName].attributes[name].values;
+                    sourceValuesLength = sourceValues.length;
+
+                    for (j = 0; j < sourceValuesLength; ++j) {
+                        values[k++] = sourceValues[j];
+                    }
+                }
+            }
+        }
+
+        // Combine index lists
+        var indices;
+
+        if (haveIndices) {
+            var numberOfIndices = 0;
+            for (i = 0; i < length; ++i) {
+                numberOfIndices += instances[i][propertyName].indices.length;
+            }
+
+            var numberOfVertices = Geometry.computeNumberOfVertices(new Geometry({
+                attributes : attributes,
+                primitiveType : PrimitiveType.POINTS
+            }));
+            var destIndices = IndexDatatype.createTypedArray(numberOfVertices, numberOfIndices);
+
+            var destOffset = 0;
+            var offset = 0;
+
+            for (i = 0; i < length; ++i) {
+                var sourceIndices = instances[i][propertyName].indices;
+                var sourceIndicesLen = sourceIndices.length;
+
+                for (k = 0; k < sourceIndicesLen; ++k) {
+                    destIndices[destOffset++] = offset + sourceIndices[k];
+                }
+
+                offset += Geometry.computeNumberOfVertices(instances[i][propertyName]);
+            }
+
+            indices = destIndices;
+        }
+
+        // Create bounding sphere that includes all instances
+        var center = new Cartesian3();
+        var radius = 0.0;
+        var bs;
+
+        for (i = 0; i < length; ++i) {
+            bs = instances[i][propertyName].boundingSphere;
+            if (!defined(bs)) {
+                // If any geometries have an undefined bounding sphere, then so does the combined geometry
+                center = undefined;
+                break;
+            }
+
+            Cartesian3.add(bs.center, center, center);
+        }
+
+        if (defined(center)) {
+            Cartesian3.divideByScalar(center, length, center);
+
+            for (i = 0; i < length; ++i) {
+                bs = instances[i][propertyName].boundingSphere;
+                var tempRadius = Cartesian3.magnitude(Cartesian3.subtract(bs.center, center, tempScratch)) + bs.radius;
+
+                if (tempRadius > radius) {
+                    radius = tempRadius;
+                }
+            }
+        }
+
+        return new Geometry({
+            attributes : attributes,
+            indices : indices,
+            primitiveType : primitiveType,
+            boundingSphere : (defined(center)) ? new BoundingSphere(center, radius) : undefined
+        });
+    }
+
+    /**
+     * Combines geometry from several {@link GeometryInstance} objects into one geometry.
+     * This concatenates the attributes, concatenates and adjusts the indices, and creates
+     * a bounding sphere encompassing all instances.
+     * <p>
+     * If the instances do not have the same attributes, a subset of attributes common
+     * to all instances is used, and the others are ignored.
+     * </p>
+     * <p>
+     * This is used by {@link Primitive} to efficiently render a large amount of static data.
+     * </p>
+     *
+     * @private
+     *
+     * @param {GeometryInstance[]} [instances] The array of {@link GeometryInstance} objects whose geometry will be combined.
+     * @returns {Geometry} A single geometry created from the provided geometry instances.
+     *
+     * @exception {DeveloperError} All instances must have the same modelMatrix.
+     * @exception {DeveloperError} All instance geometries must have an indices or not have one.
+     * @exception {DeveloperError} All instance geometries must have the same primitiveType.
+     *
+     * @see GeometryPipeline.transformToWorldCoordinates
+     *
+     * @example
+     * for (var i = 0; i < instances.length; ++i) {
+     *   Cesium.GeometryPipeline.transformToWorldCoordinates(instances[i]);
+     * }
+     * var geometries = Cesium.GeometryPipeline.combineInstances(instances);
+     */
+    GeometryPipeline.combineInstances = function(instances) {
+                if ((!defined(instances)) || (instances.length < 1)) {
+            throw new DeveloperError('instances is required and must have length greater than zero.');
+        }
+        
+        var instanceGeometry = [];
+        var instanceSplitGeometry = [];
+        var length = instances.length;
+        for (var i = 0; i < length; ++i) {
+            var instance = instances[i];
+            if (defined(instance.geometry)) {
+                instanceGeometry.push(instance);
+            } else {
+                instanceSplitGeometry.push(instance);
+            }
+        }
+
+        var geometries = [];
+        if (instanceGeometry.length > 0) {
+            geometries.push(combineGeometries(instanceGeometry, 'geometry'));
+        }
+
+        if (instanceSplitGeometry.length > 0) {
+            geometries.push(combineGeometries(instanceSplitGeometry, 'westHemisphereGeometry'));
+            geometries.push(combineGeometries(instanceSplitGeometry, 'eastHemisphereGeometry'));
+        }
+
+        return geometries;
+    };
+
+    var normal = new Cartesian3();
+    var v0 = new Cartesian3();
+    var v1 = new Cartesian3();
+    var v2 = new Cartesian3();
+
+    /**
+     * Computes per-vertex normals for a geometry containing <code>TRIANGLES</code> by averaging the normals of
+     * all triangles incident to the vertex.  The result is a new <code>normal</code> attribute added to the geometry.
+     * This assumes a counter-clockwise winding order.
+     *
+     * @param {Geometry} geometry The geometry to modify.
+     * @returns {Geometry} The modified <code>geometry</code> argument with the computed <code>normal</code> attribute.
+     *
+     * @exception {DeveloperError} geometry.indices length must be greater than 0 and be a multiple of 3.
+     * @exception {DeveloperError} geometry.primitiveType must be {@link PrimitiveType.TRIANGLES}.
+     *
+     * @example
+     * Cesium.GeometryPipeline.computeNormal(geometry);
+     */
+    GeometryPipeline.computeNormal = function(geometry) {
+                if (!defined(geometry)) {
+            throw new DeveloperError('geometry is required.');
+        }
+        if (!defined(geometry.attributes.position) || !defined(geometry.attributes.position.values)) {
+            throw new DeveloperError('geometry.attributes.position.values is required.');
+        }
+        if (!defined(geometry.indices)) {
+            throw new DeveloperError('geometry.indices is required.');
+        }
+        if (geometry.indices.length < 2 || geometry.indices.length % 3 !== 0) {
+            throw new DeveloperError('geometry.indices length must be greater than 0 and be a multiple of 3.');
+        }
+        if (geometry.primitiveType !== PrimitiveType.TRIANGLES) {
+            throw new DeveloperError('geometry.primitiveType must be PrimitiveType.TRIANGLES.');
+        }
+        
+        var indices = geometry.indices;
+        var attributes = geometry.attributes;
+        var vertices = attributes.position.values;
+        var numVertices = attributes.position.values.length / 3;
+        var numIndices = indices.length;
+        var normalsPerVertex = new Array(numVertices);
+        var normalsPerTriangle = new Array(numIndices / 3);
+        var normalIndices = new Array(numIndices);
+
+        for ( var i = 0; i < numVertices; i++) {
+            normalsPerVertex[i] = {
+                indexOffset : 0,
+                count : 0,
+                currentCount : 0
+            };
+        }
+
+        var j = 0;
+        for (i = 0; i < numIndices; i += 3) {
+            var i0 = indices[i];
+            var i1 = indices[i + 1];
+            var i2 = indices[i + 2];
+            var i03 = i0 * 3;
+            var i13 = i1 * 3;
+            var i23 = i2 * 3;
+
+            v0.x = vertices[i03];
+            v0.y = vertices[i03 + 1];
+            v0.z = vertices[i03 + 2];
+            v1.x = vertices[i13];
+            v1.y = vertices[i13 + 1];
+            v1.z = vertices[i13 + 2];
+            v2.x = vertices[i23];
+            v2.y = vertices[i23 + 1];
+            v2.z = vertices[i23 + 2];
+
+            normalsPerVertex[i0].count++;
+            normalsPerVertex[i1].count++;
+            normalsPerVertex[i2].count++;
+
+            Cartesian3.subtract(v1, v0, v1);
+            Cartesian3.subtract(v2, v0, v2);
+            normalsPerTriangle[j] = Cartesian3.cross(v1, v2, new Cartesian3());
+            j++;
+        }
+
+        var indexOffset = 0;
+        for (i = 0; i < numVertices; i++) {
+            normalsPerVertex[i].indexOffset += indexOffset;
+            indexOffset += normalsPerVertex[i].count;
+        }
+
+        j = 0;
+        var vertexNormalData;
+        for (i = 0; i < numIndices; i += 3) {
+            vertexNormalData = normalsPerVertex[indices[i]];
+            var index = vertexNormalData.indexOffset + vertexNormalData.currentCount;
+            normalIndices[index] = j;
+            vertexNormalData.currentCount++;
+
+            vertexNormalData = normalsPerVertex[indices[i + 1]];
+            index = vertexNormalData.indexOffset + vertexNormalData.currentCount;
+            normalIndices[index] = j;
+            vertexNormalData.currentCount++;
+
+            vertexNormalData = normalsPerVertex[indices[i + 2]];
+            index = vertexNormalData.indexOffset + vertexNormalData.currentCount;
+            normalIndices[index] = j;
+            vertexNormalData.currentCount++;
+
+            j++;
+        }
+
+        var normalValues = new Float32Array(numVertices * 3);
+        for (i = 0; i < numVertices; i++) {
+            var i3 = i * 3;
+            vertexNormalData = normalsPerVertex[i];
+            if (vertexNormalData.count > 0) {
+                Cartesian3.clone(Cartesian3.ZERO, normal);
+                for (j = 0; j < vertexNormalData.count; j++) {
+                    Cartesian3.add(normal, normalsPerTriangle[normalIndices[vertexNormalData.indexOffset + j]], normal);
+                }
+                Cartesian3.normalize(normal, normal);
+                normalValues[i3] = normal.x;
+                normalValues[i3 + 1] = normal.y;
+                normalValues[i3 + 2] = normal.z;
+            } else {
+                normalValues[i3] = 0.0;
+                normalValues[i3 + 1] = 0.0;
+                normalValues[i3 + 2] = 1.0;
+            }
+        }
+
+        geometry.attributes.normal = new GeometryAttribute({
+            componentDatatype : ComponentDatatype.FLOAT,
+            componentsPerAttribute : 3,
+            values : normalValues
+        });
+
+        return geometry;
+    };
+
+    var normalScratch = new Cartesian3();
+    var normalScale = new Cartesian3();
+    var tScratch = new Cartesian3();
+
+    /**
+     * Computes per-vertex binormals and tangents for a geometry containing <code>TRIANGLES</code>.
+     * The result is new <code>binormal</code> and <code>tangent</code> attributes added to the geometry.
+     * This assumes a counter-clockwise winding order.
+     * <p>
+     * Based on <a href="http://www.terathon.com/code/tangent.html">Computing Tangent Space Basis Vectors
+     * for an Arbitrary Mesh</a> by Eric Lengyel.
+     * </p>
+     *
+     * @param {Geometry} geometry The geometry to modify.
+     * @returns {Geometry} The modified <code>geometry</code> argument with the computed <code>binormal</code> and <code>tangent</code> attributes.
+     *
+     * @exception {DeveloperError} geometry.indices length must be greater than 0 and be a multiple of 3.
+     * @exception {DeveloperError} geometry.primitiveType must be {@link PrimitiveType.TRIANGLES}.
+     *
+     * @example
+     * Cesium.GeometryPipeline.computeBinormalAndTangent(geometry);
+     */
+    GeometryPipeline.computeBinormalAndTangent = function(geometry) {
+                if (!defined(geometry)) {
+            throw new DeveloperError('geometry is required.');
+        }
+        
+        var attributes = geometry.attributes;
+        var indices = geometry.indices;
+
+                if (!defined(attributes.position) || !defined(attributes.position.values)) {
+            throw new DeveloperError('geometry.attributes.position.values is required.');
+        }
+        if (!defined(attributes.normal) || !defined(attributes.normal.values)) {
+            throw new DeveloperError('geometry.attributes.normal.values is required.');
+        }
+        if (!defined(attributes.st) || !defined(attributes.st.values)) {
+            throw new DeveloperError('geometry.attributes.st.values is required.');
+        }
+        if (!defined(indices)) {
+            throw new DeveloperError('geometry.indices is required.');
+        }
+        if (indices.length < 2 || indices.length % 3 !== 0) {
+            throw new DeveloperError('geometry.indices length must be greater than 0 and be a multiple of 3.');
+        }
+        if (geometry.primitiveType !== PrimitiveType.TRIANGLES) {
+            throw new DeveloperError('geometry.primitiveType must be PrimitiveType.TRIANGLES.');
+        }
+        
+        var vertices = geometry.attributes.position.values;
+        var normals = geometry.attributes.normal.values;
+        var st = geometry.attributes.st.values;
+
+        var numVertices = geometry.attributes.position.values.length / 3;
+        var numIndices = indices.length;
+        var tan1 = new Array(numVertices * 3);
+
+        for ( var i = 0; i < tan1.length; i++) {
+            tan1[i] = 0;
+        }
+
+        var i03;
+        var i13;
+        var i23;
+        for (i = 0; i < numIndices; i += 3) {
+            var i0 = indices[i];
+            var i1 = indices[i + 1];
+            var i2 = indices[i + 2];
+            i03 = i0 * 3;
+            i13 = i1 * 3;
+            i23 = i2 * 3;
+            var i02 = i0 * 2;
+            var i12 = i1 * 2;
+            var i22 = i2 * 2;
+
+            var ux = vertices[i03];
+            var uy = vertices[i03 + 1];
+            var uz = vertices[i03 + 2];
+
+            var wx = st[i02];
+            var wy = st[i02 + 1];
+            var t1 = st[i12 + 1] - wy;
+            var t2 = st[i22 + 1] - wy;
+
+            var r = 1.0 / ((st[i12] - wx) * t2 - (st[i22] - wx) * t1);
+            var sdirx = (t2 * (vertices[i13] - ux) - t1 * (vertices[i23] - ux)) * r;
+            var sdiry = (t2 * (vertices[i13 + 1] - uy) - t1 * (vertices[i23 + 1] - uy)) * r;
+            var sdirz = (t2 * (vertices[i13 + 2] - uz) - t1 * (vertices[i23 + 2] - uz)) * r;
+
+            tan1[i03] += sdirx;
+            tan1[i03 + 1] += sdiry;
+            tan1[i03 + 2] += sdirz;
+
+            tan1[i13] += sdirx;
+            tan1[i13 + 1] += sdiry;
+            tan1[i13 + 2] += sdirz;
+
+            tan1[i23] += sdirx;
+            tan1[i23 + 1] += sdiry;
+            tan1[i23 + 2] += sdirz;
+        }
+
+        var binormalValues = new Float32Array(numVertices * 3);
+        var tangentValues = new Float32Array(numVertices * 3);
+
+        for (i = 0; i < numVertices; i++) {
+            i03 = i * 3;
+            i13 = i03 + 1;
+            i23 = i03 + 2;
+
+            var n = Cartesian3.fromArray(normals, i03, normalScratch);
+            var t = Cartesian3.fromArray(tan1, i03, tScratch);
+            var scalar = Cartesian3.dot(n, t);
+            Cartesian3.multiplyByScalar(n, scalar, normalScale);
+            Cartesian3.normalize(Cartesian3.subtract(t, normalScale, t), t);
+
+            tangentValues[i03] = t.x;
+            tangentValues[i13] = t.y;
+            tangentValues[i23] = t.z;
+
+            Cartesian3.normalize(Cartesian3.cross(n, t, t), t);
+
+            binormalValues[i03] = t.x;
+            binormalValues[i13] = t.y;
+            binormalValues[i23] = t.z;
+        }
+
+        geometry.attributes.tangent = new GeometryAttribute({
+            componentDatatype : ComponentDatatype.FLOAT,
+            componentsPerAttribute : 3,
+            values : tangentValues
+        });
+
+        geometry.attributes.binormal = new GeometryAttribute({
+            componentDatatype : ComponentDatatype.FLOAT,
+            componentsPerAttribute : 3,
+            values : binormalValues
+        });
+
+        return geometry;
+    };
+
+    var scratchCartesian2 = new Cartesian2();
+    var toEncode1 = new Cartesian3();
+    var toEncode2 = new Cartesian3();
+    var toEncode3 = new Cartesian3();
+
+    /**
+     * Compresses and packs geometry normal attribute values to save memory.
+     *
+     * @param {Geometry} geometry The geometry to modify.
+     * @returns {Geometry} The modified <code>geometry</code> argument, with its normals compressed and packed.
+     *
+     * @example
+     * geometry = Cesium.GeometryPipeline.compressVertices(geometry);
+     */
+    GeometryPipeline.compressVertices = function(geometry) {
+                if (!defined(geometry)) {
+            throw new DeveloperError('geometry is required.');
+        }
+        
+        var normalAttribute = geometry.attributes.normal;
+        var stAttribute = geometry.attributes.st;
+        if (!defined(normalAttribute) && !defined(stAttribute)) {
+            return geometry;
+        }
+
+        var tangentAttribute = geometry.attributes.tangent;
+        var binormalAttribute = geometry.attributes.binormal;
+
+        var normals;
+        var st;
+        var tangents;
+        var binormals;
+
+        if (defined(normalAttribute)) {
+            normals = normalAttribute.values;
+        }
+        if (defined(stAttribute)) {
+            st = stAttribute.values;
+        }
+        if (defined(tangentAttribute)) {
+            tangents = tangentAttribute.values;
+        }
+        if (binormalAttribute) {
+            binormals = binormalAttribute.values;
+        }
+
+        var length = defined(normals) ? normals.length : st.length;
+        var numComponents = defined(normals) ? 3.0 : 2.0;
+        var numVertices = length / numComponents;
+
+        var compressedLength = numVertices;
+        var numCompressedComponents = defined(st) && defined(normals) ? 2.0 : 1.0;
+        numCompressedComponents += defined(tangents) || defined(binormals) ? 1.0 : 0.0;
+        compressedLength *= numCompressedComponents;
+
+        var compressedAttributes = new Float32Array(compressedLength);
+
+        var normalIndex = 0;
+        for (var i = 0; i < numVertices; ++i) {
+            if (defined(st)) {
+                Cartesian2.fromArray(st, i * 2.0, scratchCartesian2);
+                compressedAttributes[normalIndex++] = AttributeCompression.compressTextureCoordinates(scratchCartesian2);
+            }
+
+            var index = i * 3.0;
+            if (defined(normals) && defined(tangents) && defined(binormals)) {
+                Cartesian3.fromArray(normals, index, toEncode1);
+                Cartesian3.fromArray(tangents, index, toEncode2);
+                Cartesian3.fromArray(binormals, index, toEncode3);
+
+                AttributeCompression.octPack(toEncode1, toEncode2, toEncode3, scratchCartesian2);
+                compressedAttributes[normalIndex++] = scratchCartesian2.x;
+                compressedAttributes[normalIndex++] = scratchCartesian2.y;
+            } else {
+                if (defined(normals)) {
+                    Cartesian3.fromArray(normals, index, toEncode1);
+                    compressedAttributes[normalIndex++] = AttributeCompression.octEncodeFloat(toEncode1);
+                }
+
+                if (defined(tangents)) {
+                    Cartesian3.fromArray(tangents, index, toEncode1);
+                    compressedAttributes[normalIndex++] = AttributeCompression.octEncodeFloat(toEncode1);
+                }
+
+                if (defined(binormals)) {
+                    Cartesian3.fromArray(binormals, index, toEncode1);
+                    compressedAttributes[normalIndex++] = AttributeCompression.octEncodeFloat(toEncode1);
+                }
+            }
+        }
+
+        geometry.attributes.compressedAttributes = new GeometryAttribute({
+            componentDatatype : ComponentDatatype.FLOAT,
+            componentsPerAttribute : numCompressedComponents,
+            values : compressedAttributes
+        });
+
+        if (defined(normals)) {
+            delete geometry.attributes.normal;
+        }
+        if (defined(st)) {
+            delete geometry.attributes.st;
+        }
+        if (defined(tangents)) {
+            delete geometry.attributes.tangent;
+        }
+        if (defined(binormals)) {
+            delete geometry.attributes.binormal;
+        }
+
+        return geometry;
+    };
+
+    function indexTriangles(geometry) {
+        if (defined(geometry.indices)) {
+            return geometry;
+        }
+        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
+
+                if (numberOfVertices < 3) {
+            throw new DeveloperError('The number of vertices must be at least three.');
+        }
+        if (numberOfVertices % 3 !== 0) {
+            throw new DeveloperError('The number of vertices must be a multiple of three.');
+        }
+        
+        var indices = IndexDatatype.createTypedArray(numberOfVertices, numberOfVertices);
+        for (var i = 0; i < numberOfVertices; ++i) {
+            indices[i] = i;
+        }
+
+        geometry.indices = indices;
+        return geometry;
+    }
+
+    function indexTriangleFan(geometry) {
+        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
+
+                if (numberOfVertices < 3) {
+            throw new DeveloperError('The number of vertices must be at least three.');
+        }
+        
+        var indices = IndexDatatype.createTypedArray(numberOfVertices, (numberOfVertices - 2) * 3);
+        indices[0] = 1;
+        indices[1] = 0;
+        indices[2] = 2;
+
+        var indicesIndex = 3;
+        for (var i = 3; i < numberOfVertices; ++i) {
+            indices[indicesIndex++] = i - 1;
+            indices[indicesIndex++] = 0;
+            indices[indicesIndex++] = i;
+        }
+
+        geometry.indices = indices;
+        geometry.primitiveType = PrimitiveType.TRIANGLES;
+        return geometry;
+    }
+
+    function indexTriangleStrip(geometry) {
+        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
+
+                if (numberOfVertices < 3) {
+            throw new DeveloperError('The number of vertices must be at least 3.');
+        }
+        
+        var indices = IndexDatatype.createTypedArray(numberOfVertices, (numberOfVertices - 2) * 3);
+        indices[0] = 0;
+        indices[1] = 1;
+        indices[2] = 2;
+
+        if (numberOfVertices > 3) {
+            indices[3] = 0;
+            indices[4] = 2;
+            indices[5] = 3;
+        }
+
+        var indicesIndex = 6;
+        for (var i = 3; i < numberOfVertices - 1; i += 2) {
+            indices[indicesIndex++] = i;
+            indices[indicesIndex++] = i - 1;
+            indices[indicesIndex++] = i + 1;
+
+            if (i + 2 < numberOfVertices) {
+                indices[indicesIndex++] = i;
+                indices[indicesIndex++] = i + 1;
+                indices[indicesIndex++] = i + 2;
+            }
+        }
+
+        geometry.indices = indices;
+        geometry.primitiveType = PrimitiveType.TRIANGLES;
+        return geometry;
+    }
+
+    function indexLines(geometry) {
+        if (defined(geometry.indices)) {
+            return geometry;
+        }
+        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
+
+                if (numberOfVertices < 2) {
+            throw new DeveloperError('The number of vertices must be at least two.');
+        }
+        if (numberOfVertices % 2 !== 0) {
+            throw new DeveloperError('The number of vertices must be a multiple of 2.');
+        }
+        
+        var indices = IndexDatatype.createTypedArray(numberOfVertices, numberOfVertices);
+        for (var i = 0; i < numberOfVertices; ++i) {
+            indices[i] = i;
+        }
+
+        geometry.indices = indices;
+        return geometry;
+    }
+
+    function indexLineStrip(geometry) {
+        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
+
+                if (numberOfVertices < 2) {
+            throw new DeveloperError('The number of vertices must be at least two.');
+        }
+        
+        var indices = IndexDatatype.createTypedArray(numberOfVertices, (numberOfVertices - 1) * 2);
+        indices[0] = 0;
+        indices[1] = 1;
+        var indicesIndex = 2;
+        for (var i = 2; i < numberOfVertices; ++i) {
+            indices[indicesIndex++] = i - 1;
+            indices[indicesIndex++] = i;
+        }
+
+        geometry.indices = indices;
+        geometry.primitiveType = PrimitiveType.LINES;
+        return geometry;
+    }
+
+    function indexLineLoop(geometry) {
+        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
+
+                if (numberOfVertices < 2) {
+            throw new DeveloperError('The number of vertices must be at least two.');
+        }
+        
+        var indices = IndexDatatype.createTypedArray(numberOfVertices, numberOfVertices * 2);
+
+        indices[0] = 0;
+        indices[1] = 1;
+
+        var indicesIndex = 2;
+        for (var i = 2; i < numberOfVertices; ++i) {
+            indices[indicesIndex++] = i - 1;
+            indices[indicesIndex++] = i;
+        }
+
+        indices[indicesIndex++] = numberOfVertices - 1;
+        indices[indicesIndex] = 0;
+
+        geometry.indices = indices;
+        geometry.primitiveType = PrimitiveType.LINES;
+        return geometry;
+    }
+
+    function indexPrimitive(geometry) {
+        switch (geometry.primitiveType) {
+        case PrimitiveType.TRIANGLE_FAN:
+            return indexTriangleFan(geometry);
+        case PrimitiveType.TRIANGLE_STRIP:
+            return indexTriangleStrip(geometry);
+        case PrimitiveType.TRIANGLES:
+            return indexTriangles(geometry);
+        case PrimitiveType.LINE_STRIP:
+            return indexLineStrip(geometry);
+        case PrimitiveType.LINE_LOOP:
+            return indexLineLoop(geometry);
+        case PrimitiveType.LINES:
+            return indexLines(geometry);
+        }
+
+        return geometry;
+    }
+
+    function offsetPointFromXZPlane(p, isBehind) {
+        if (Math.abs(p.y) < CesiumMath.EPSILON6){
+            if (isBehind) {
+                p.y = -CesiumMath.EPSILON6;
+            } else {
+                p.y = CesiumMath.EPSILON6;
+            }
+        }
+    }
+
+    function offsetTriangleFromXZPlane(p0, p1, p2) {
+        if (p0.y !== 0.0 && p1.y !== 0.0 && p2.y !== 0.0) {
+            offsetPointFromXZPlane(p0, p0.y < 0.0);
+            offsetPointFromXZPlane(p1, p1.y < 0.0);
+            offsetPointFromXZPlane(p2, p2.y < 0.0);
+            return;
+        }
+
+        var p0y = Math.abs(p0.y);
+        var p1y = Math.abs(p1.y);
+        var p2y = Math.abs(p2.y);
+
+        var sign;
+        if (p0y > p1y) {
+            if (p0y > p2y) {
+                sign = CesiumMath.sign(p0.y);
+            } else {
+                sign = CesiumMath.sign(p2.y);
+            }
+        } else if (p1y > p2y) {
+            sign = CesiumMath.sign(p1.y);
+        } else {
+            sign = CesiumMath.sign(p2.y);
+        }
+
+        var isBehind = sign < 0.0;
+        offsetPointFromXZPlane(p0, isBehind);
+        offsetPointFromXZPlane(p1, isBehind);
+        offsetPointFromXZPlane(p2, isBehind);
+    }
+
+    var c3 = new Cartesian3();
+    function getXZIntersectionOffsetPoints(p, p1, u1, v1) {
+        Cartesian3.add(p, Cartesian3.multiplyByScalar(Cartesian3.subtract(p1, p, c3), p.y/(p.y-p1.y), c3), u1);
+        Cartesian3.clone(u1, v1);
+        offsetPointFromXZPlane(u1, true);
+        offsetPointFromXZPlane(v1, false);
+    }
+
+    var u1 = new Cartesian3();
+    var u2 = new Cartesian3();
+    var q1 = new Cartesian3();
+    var q2 = new Cartesian3();
+
+    var splitTriangleResult = {
+        positions : new Array(7),
+        indices : new Array(3 * 3)
+    };
+
+    function splitTriangle(p0, p1, p2) {
+        // In WGS84 coordinates, for a triangle approximately on the
+        // ellipsoid to cross the IDL, first it needs to be on the
+        // negative side of the plane x = 0.
+        if ((p0.x >= 0.0) || (p1.x >= 0.0) || (p2.x >= 0.0)) {
+            return undefined;
+        }
+
+        offsetTriangleFromXZPlane(p0, p1, p2);
+
+        var p0Behind = p0.y < 0.0;
+        var p1Behind = p1.y < 0.0;
+        var p2Behind = p2.y < 0.0;
+
+        var numBehind = 0;
+        numBehind += p0Behind ? 1 : 0;
+        numBehind += p1Behind ? 1 : 0;
+        numBehind += p2Behind ? 1 : 0;
+
+        var indices = splitTriangleResult.indices;
+
+        if (numBehind === 1) {
+            indices[1] = 3;
+            indices[2] = 4;
+            indices[5] = 6;
+            indices[7] = 6;
+            indices[8] = 5;
+
+            if (p0Behind) {
+                getXZIntersectionOffsetPoints(p0, p1, u1, q1);
+                getXZIntersectionOffsetPoints(p0, p2, u2, q2);
+
+                indices[0] = 0;
+                indices[3] = 1;
+                indices[4] = 2;
+                indices[6] = 1;
+            } else if (p1Behind) {
+                getXZIntersectionOffsetPoints(p1, p2, u1, q1);
+                getXZIntersectionOffsetPoints(p1, p0, u2, q2);
+
+                indices[0] = 1;
+                indices[3] = 2;
+                indices[4] = 0;
+                indices[6] = 2;
+            } else if (p2Behind) {
+                getXZIntersectionOffsetPoints(p2, p0, u1, q1);
+                getXZIntersectionOffsetPoints(p2, p1, u2, q2);
+
+                indices[0] = 2;
+                indices[3] = 0;
+                indices[4] = 1;
+                indices[6] = 0;
+            }
+        } else if (numBehind === 2) {
+            indices[2] = 4;
+            indices[4] = 4;
+            indices[5] = 3;
+            indices[7] = 5;
+            indices[8] = 6;
+
+            if (!p0Behind) {
+                getXZIntersectionOffsetPoints(p0, p1, u1, q1);
+                getXZIntersectionOffsetPoints(p0, p2, u2, q2);
+
+                indices[0] = 1;
+                indices[1] = 2;
+                indices[3] = 1;
+                indices[6] = 0;
+            } else if (!p1Behind) {
+                getXZIntersectionOffsetPoints(p1, p2, u1, q1);
+                getXZIntersectionOffsetPoints(p1, p0, u2, q2);
+
+                indices[0] = 2;
+                indices[1] = 0;
+                indices[3] = 2;
+                indices[6] = 1;
+            } else if (!p2Behind) {
+                getXZIntersectionOffsetPoints(p2, p0, u1, q1);
+                getXZIntersectionOffsetPoints(p2, p1, u2, q2);
+
+                indices[0] = 0;
+                indices[1] = 1;
+                indices[3] = 0;
+                indices[6] = 2;
+            }
+        }
+
+        var positions = splitTriangleResult.positions;
+        positions[0] = p0;
+        positions[1] = p1;
+        positions[2] = p2;
+        positions.length = 3;
+
+        if (numBehind === 1 || numBehind === 2) {
+            positions[3] = u1;
+            positions[4] = u2;
+            positions[5] = q1;
+            positions[6] = q2;
+            positions.length = 7;
+        }
+
+        return splitTriangleResult;
+    }
+
+    function updateGeometryAfterSplit(geometry, computeBoundingSphere) {
+        var attributes = geometry.attributes;
+
+        if (attributes.position.values.length === 0) {
+            return undefined;
+        }
+
+        for (var property in attributes) {
+            if (attributes.hasOwnProperty(property) &&
+                    defined(attributes[property]) &&
+                    defined(attributes[property].values)) {
+
+                var attribute = attributes[property];
+                attribute.values = ComponentDatatype.createTypedArray(attribute.componentDatatype, attribute.values);
+            }
+        }
+
+        var numberOfVertices = Geometry.computeNumberOfVertices(geometry);
+        geometry.indices = IndexDatatype.createTypedArray(numberOfVertices, geometry.indices);
+
+        if (computeBoundingSphere) {
+            geometry.boundingSphere = BoundingSphere.fromVertices(attributes.position.values);
+        }
+
+        return geometry;
+    }
+
+    function copyGeometryForSplit(geometry) {
+        var attributes = geometry.attributes;
+        var copiedAttributes = {};
+
+        for (var property in attributes) {
+            if (attributes.hasOwnProperty(property) &&
+                    defined(attributes[property]) &&
+                    defined(attributes[property].values)) {
+
+                var attribute = attributes[property];
+                copiedAttributes[property] = new GeometryAttribute({
+                    componentDatatype : attribute.componentDatatype,
+                    componentsPerAttribute : attribute.componentsPerAttribute,
+                    normalize : attribute.normalize,
+                    values : []
+                });
+            }
+        }
+
+        return new Geometry({
+            attributes : copiedAttributes,
+            indices : [],
+            primitiveType : geometry.primitiveType
+        });
+    }
+
+    function updateInstanceAfterSplit(instance, westGeometry, eastGeometry) {
+        var computeBoundingSphere = defined(instance.geometry.boundingSphere);
+
+        westGeometry = updateGeometryAfterSplit(westGeometry, computeBoundingSphere);
+        eastGeometry = updateGeometryAfterSplit(eastGeometry, computeBoundingSphere);
+
+        if (defined(eastGeometry) && !defined(westGeometry)) {
+            instance.geometry = eastGeometry;
+        } else if (!defined(eastGeometry) && defined(westGeometry)) {
+            instance.geometry = westGeometry;
+        } else {
+            instance.westHemisphereGeometry = westGeometry;
+            instance.eastHemisphereGeometry = eastGeometry;
+            instance.geometry = undefined;
+        }
+    }
+
+    var p0Scratch = new Cartesian3();
+    var p1Scratch = new Cartesian3();
+    var p2Scratch = new Cartesian3();
+    var barycentricScratch = new Cartesian3();
+    var s0Scratch = new Cartesian2();
+    var s1Scratch = new Cartesian2();
+    var s2Scratch = new Cartesian2();
+
+    function computeTriangleAttributes(i0, i1, i2, point, positions, normals, binormals, tangents, texCoords, currentAttributes, insertedIndex) {
+        if (!defined(normals) && !defined(binormals) && !defined(tangents) && !defined(texCoords)) {
+            return;
+        }
+
+        var p0 = Cartesian3.fromArray(positions, i0 * 3, p0Scratch);
+        var p1 = Cartesian3.fromArray(positions, i1 * 3, p1Scratch);
+        var p2 = Cartesian3.fromArray(positions, i2 * 3, p2Scratch);
+        var coords = barycentricCoordinates(point, p0, p1, p2, barycentricScratch);
+
+        if (defined(normals)) {
+            var n0 = Cartesian3.fromArray(normals, i0 * 3, p0Scratch);
+            var n1 = Cartesian3.fromArray(normals, i1 * 3, p1Scratch);
+            var n2 = Cartesian3.fromArray(normals, i2 * 3, p2Scratch);
+
+            Cartesian3.multiplyByScalar(n0, coords.x, n0);
+            Cartesian3.multiplyByScalar(n1, coords.y, n1);
+            Cartesian3.multiplyByScalar(n2, coords.z, n2);
+
+            var normal = Cartesian3.add(n0, n1, n0);
+            Cartesian3.add(normal, n2, normal);
+            Cartesian3.normalize(normal, normal);
+
+            Cartesian3.pack(normal, currentAttributes.normal.values, insertedIndex * 3);
+        }
+
+        if (defined(binormals)) {
+            var b0 = Cartesian3.fromArray(binormals, i0 * 3, p0Scratch);
+            var b1 = Cartesian3.fromArray(binormals, i1 * 3, p1Scratch);
+            var b2 = Cartesian3.fromArray(binormals, i2 * 3, p2Scratch);
+
+            Cartesian3.multiplyByScalar(b0, coords.x, b0);
+            Cartesian3.multiplyByScalar(b1, coords.y, b1);
+            Cartesian3.multiplyByScalar(b2, coords.z, b2);
+
+            var binormal = Cartesian3.add(b0, b1, b0);
+            Cartesian3.add(binormal, b2, binormal);
+            Cartesian3.normalize(binormal, binormal);
+
+            Cartesian3.pack(binormal, currentAttributes.binormal.values, insertedIndex * 3);
+        }
+
+        if (defined(tangents)) {
+            var t0 = Cartesian3.fromArray(tangents, i0 * 3, p0Scratch);
+            var t1 = Cartesian3.fromArray(tangents, i1 * 3, p1Scratch);
+            var t2 = Cartesian3.fromArray(tangents, i2 * 3, p2Scratch);
+
+            Cartesian3.multiplyByScalar(t0, coords.x, t0);
+            Cartesian3.multiplyByScalar(t1, coords.y, t1);
+            Cartesian3.multiplyByScalar(t2, coords.z, t2);
+
+            var tangent = Cartesian3.add(t0, t1, t0);
+            Cartesian3.add(tangent, t2, tangent);
+            Cartesian3.normalize(tangent, tangent);
+
+            Cartesian3.pack(tangent, currentAttributes.tangent.values, insertedIndex * 3);
+        }
+
+        if (defined(texCoords)) {
+            var s0 = Cartesian2.fromArray(texCoords, i0 * 2, s0Scratch);
+            var s1 = Cartesian2.fromArray(texCoords, i1 * 2, s1Scratch);
+            var s2 = Cartesian2.fromArray(texCoords, i2 * 2, s2Scratch);
+
+            Cartesian2.multiplyByScalar(s0, coords.x, s0);
+            Cartesian2.multiplyByScalar(s1, coords.y, s1);
+            Cartesian2.multiplyByScalar(s2, coords.z, s2);
+
+            var texCoord = Cartesian2.add(s0, s1, s0);
+            Cartesian2.add(texCoord, s2, texCoord);
+
+            Cartesian2.pack(texCoord, currentAttributes.st.values, insertedIndex * 2);
+        }
+    }
+
+    function insertSplitPoint(currentAttributes, currentIndices, currentIndexMap, indices, currentIndex, point) {
+        var insertIndex = currentAttributes.position.values.length / 3;
+
+        if (currentIndex !== -1) {
+            var prevIndex = indices[currentIndex];
+            var newIndex = currentIndexMap[prevIndex];
+
+            if (newIndex === -1) {
+                currentIndexMap[prevIndex] = insertIndex;
+                currentAttributes.position.values.push(point.x, point.y, point.z);
+                currentIndices.push(insertIndex);
+                return insertIndex;
+            }
+
+            currentIndices.push(newIndex);
+            return newIndex;
+        }
+
+        currentAttributes.position.values.push(point.x, point.y, point.z);
+        currentIndices.push(insertIndex);
+        return insertIndex;
+    }
+
+    function splitLongitudeTriangles(instance) {
+        var geometry = instance.geometry;
+        var attributes = geometry.attributes;
+        var positions = attributes.position.values;
+        var normals = (defined(attributes.normal)) ? attributes.normal.values : undefined;
+        var binormals = (defined(attributes.binormal)) ? attributes.binormal.values : undefined;
+        var tangents = (defined(attributes.tangent)) ? attributes.tangent.values : undefined;
+        var texCoords = (defined(attributes.st)) ? attributes.st.values : undefined;
+        var indices = geometry.indices;
+
+        var eastGeometry = copyGeometryForSplit(geometry);
+        var westGeometry = copyGeometryForSplit(geometry);
+
+        var currentAttributes;
+        var currentIndices;
+        var currentIndexMap;
+        var insertedIndex;
+        var i;
+
+        var westGeometryIndexMap = [];
+        westGeometryIndexMap.length = positions.length / 3;
+
+        var eastGeometryIndexMap = [];
+        eastGeometryIndexMap.length = positions.length / 3;
+
+        for (i = 0; i < westGeometryIndexMap.length; ++i) {
+            westGeometryIndexMap[i] = -1;
+            eastGeometryIndexMap[i] = -1;
+        }
+
+        var len = indices.length;
+        for (i = 0; i < len; i += 3) {
+            var i0 = indices[i];
+            var i1 = indices[i + 1];
+            var i2 = indices[i + 2];
+
+            var p0 = Cartesian3.fromArray(positions, i0 * 3);
+            var p1 = Cartesian3.fromArray(positions, i1 * 3);
+            var p2 = Cartesian3.fromArray(positions, i2 * 3);
+
+            var result = splitTriangle(p0, p1, p2);
+            if (defined(result) && result.positions.length > 3) {
+                var resultPositions = result.positions;
+                var resultIndices = result.indices;
+                var resultLength = resultIndices.length;
+
+                for (var j = 0; j < resultLength; ++j) {
+                    var resultIndex = resultIndices[j];
+                    var point = resultPositions[resultIndex];
+
+                    if (point.y < 0.0) {
+                        currentAttributes = westGeometry.attributes;
+                        currentIndices = westGeometry.indices;
+                        currentIndexMap = westGeometryIndexMap;
+                    } else {
+                        currentAttributes = eastGeometry.attributes;
+                        currentIndices = eastGeometry.indices;
+                        currentIndexMap = eastGeometryIndexMap;
+                    }
+
+                    insertedIndex = insertSplitPoint(currentAttributes, currentIndices, currentIndexMap, indices, resultIndex < 3 ? i + resultIndex : -1, point);
+                    computeTriangleAttributes(i0, i1, i2, point, positions, normals, binormals, tangents, texCoords, currentAttributes, insertedIndex);
+                }
+            } else {
+                if (defined(result)) {
+                    p0 = result.positions[0];
+                    p1 = result.positions[1];
+                    p2 = result.positions[2];
+                }
+
+                if (p0.y < 0.0) {
+                    currentAttributes = westGeometry.attributes;
+                    currentIndices = westGeometry.indices;
+                    currentIndexMap = westGeometryIndexMap;
+                } else {
+                    currentAttributes = eastGeometry.attributes;
+                    currentIndices = eastGeometry.indices;
+                    currentIndexMap = eastGeometryIndexMap;
+                }
+
+                insertedIndex = insertSplitPoint(currentAttributes, currentIndices, currentIndexMap, indices, i, p0);
+                computeTriangleAttributes(i0, i1, i2, p0, positions, normals, binormals, tangents, texCoords, currentAttributes, insertedIndex);
+
+                insertedIndex = insertSplitPoint(currentAttributes, currentIndices, currentIndexMap, indices, i + 1, p1);
+                computeTriangleAttributes(i0, i1, i2, p1, positions, normals, binormals, tangents, texCoords, currentAttributes, insertedIndex);
+
+                insertedIndex = insertSplitPoint(currentAttributes, currentIndices, currentIndexMap, indices, i + 2, p2);
+                computeTriangleAttributes(i0, i1, i2, p2, positions, normals, binormals, tangents, texCoords, currentAttributes, insertedIndex);
+            }
+        }
+
+        updateInstanceAfterSplit(instance, westGeometry, eastGeometry);
+    }
+
+    var xzPlane = Plane.fromPointNormal(Cartesian3.ZERO, Cartesian3.UNIT_Y);
+
+    var offsetScratch = new Cartesian3();
+    var offsetPointScratch = new Cartesian3();
+
+    function splitLongitudeLines(instance) {
+        var geometry = instance.geometry;
+        var attributes = geometry.attributes;
+        var positions = attributes.position.values;
+        var indices = geometry.indices;
+
+        var eastGeometry = copyGeometryForSplit(geometry);
+        var westGeometry = copyGeometryForSplit(geometry);
+
+        var i;
+        var index;
+        var length = indices.length;
+
+        var westGeometryIndexMap = [];
+        westGeometryIndexMap.length = positions.length / 3;
+
+        var eastGeometryIndexMap = [];
+        eastGeometryIndexMap.length = positions.length / 3;
+
+        for (i = 0; i < westGeometryIndexMap.length; ++i) {
+            westGeometryIndexMap[i] = -1;
+            eastGeometryIndexMap[i] = -1;
+        }
+
+        for (i = 0; i < length; i += 2) {
+            var i0 = indices[i];
+            var i1 = indices[i + 1];
+
+            var p0 = Cartesian3.fromArray(positions, i0 * 3, p0Scratch);
+            var p1 = Cartesian3.fromArray(positions, i1 * 3, p1Scratch);
+
+            if (Math.abs(p0.y) < CesiumMath.EPSILON6){
+                if (p0.y < 0.0) {
+                    p0.y = -CesiumMath.EPSILON6;
+                } else {
+                    p0.y = CesiumMath.EPSILON6;
+                }
+            }
+
+            if (Math.abs(p1.y) < CesiumMath.EPSILON6){
+                if (p1.y < 0.0) {
+                    p1.y = -CesiumMath.EPSILON6;
+                } else {
+                    p1.y = CesiumMath.EPSILON6;
+                }
+            }
+
+            var p0Attributes = eastGeometry.attributes;
+            var p0Indices = eastGeometry.indices;
+            var p0IndexMap = eastGeometryIndexMap;
+            var p1Attributes = westGeometry.attributes;
+            var p1Indices = westGeometry.indices;
+            var p1IndexMap = westGeometryIndexMap;
+
+            var intersection = IntersectionTests.lineSegmentPlane(p0, p1, xzPlane, p2Scratch);
+            if (defined(intersection)) {
+                // move point on the xz-plane slightly away from the plane
+                var offset = Cartesian3.multiplyByScalar(Cartesian3.UNIT_Y, 5.0 * CesiumMath.EPSILON9, offsetScratch);
+                if (p0.y < 0.0) {
+                    Cartesian3.negate(offset, offset);
+
+                    p0Attributes = westGeometry.attributes;
+                    p0Indices = westGeometry.indices;
+                    p0IndexMap = westGeometryIndexMap;
+                    p1Attributes = eastGeometry.attributes;
+                    p1Indices = eastGeometry.indices;
+                    p1IndexMap = eastGeometryIndexMap;
+                }
+
+                var offsetPoint = Cartesian3.add(intersection, offset, offsetPointScratch);
+                insertSplitPoint(p0Attributes, p0Indices, p0IndexMap, indices, i, p0);
+                insertSplitPoint(p0Attributes, p0Indices, p0IndexMap, indices, -1, offsetPoint);
+
+                Cartesian3.negate(offset, offset);
+                Cartesian3.add(intersection, offset, offsetPoint);
+                insertSplitPoint(p1Attributes, p1Indices, p1IndexMap, indices, -1, offsetPoint);
+                insertSplitPoint(p1Attributes, p1Indices, p1IndexMap, indices, i + 1, p1);
+            } else {
+                var currentAttributes;
+                var currentIndices;
+                var currentIndexMap;
+
+                if (p0.y < 0.0) {
+                    currentAttributes = westGeometry.attributes;
+                    currentIndices = westGeometry.indices;
+                    currentIndexMap = westGeometryIndexMap;
+                } else {
+                    currentAttributes = eastGeometry.attributes;
+                    currentIndices = eastGeometry.indices;
+                    currentIndexMap = eastGeometryIndexMap;
+                }
+
+                insertSplitPoint(currentAttributes, currentIndices, currentIndexMap, indices, i, p0);
+                insertSplitPoint(currentAttributes, currentIndices, currentIndexMap, indices, i + 1, p1);
+            }
+        }
+
+        updateInstanceAfterSplit(instance, westGeometry, eastGeometry);
+    }
+
+    var cartesian2Scratch0 = new Cartesian2();
+    var cartesian2Scratch1 = new Cartesian2();
+
+    var cartesian3Scratch0 = new Cartesian3();
+    var cartesian3Scratch1 = new Cartesian3();
+    var cartesian3Scratch2 = new Cartesian3();
+    var cartesian3Scratch3 = new Cartesian3();
+    var cartesian3Scratch4 = new Cartesian3();
+    var cartesian3Scratch5 = new Cartesian3();
+    var cartesian3Scratch6 = new Cartesian3();
+
+    var cartesian4Scratch0 = new Cartesian4();
+    var cartesian4Scratch1 = new Cartesian4();
+
+    function splitLongitudePolyline(instance) {
+        var geometry = instance.geometry;
+        var attributes = geometry.attributes;
+        var positions = attributes.position.values;
+        var prevPositions = attributes.prevPosition.values;
+        var nextPositions = attributes.nextPosition.values;
+        var expandAndWidths = attributes.expandAndWidth.values;
+        var indices = geometry.indices;
+
+        var texCoords = (defined(attributes.st)) ? attributes.st.values : undefined;
+        var colors = (defined(attributes.color)) ? attributes.color.values : undefined;
+
+        var eastGeometry = copyGeometryForSplit(geometry);
+        var westGeometry = copyGeometryForSplit(geometry);
+
+        var i;
+        var j;
+        var index;
+
+        var length = positions.length / 3;
+        for (i = 0; i < length; i += 4) {
+            var i0 = i;
+            var i1 = i + 1;
+            var i2 = i + 2;
+            var i3 = i + 3;
+
+            var p0 = Cartesian3.fromArray(positions, i0 * 3, cartesian3Scratch0);
+            var p1 = Cartesian3.fromArray(positions, i1 * 3, cartesian3Scratch1);
+            var p2 = Cartesian3.fromArray(positions, i2 * 3, cartesian3Scratch2);
+            var p3 = Cartesian3.fromArray(positions, i3 * 3, cartesian3Scratch3);
+
+            if (Math.abs(p0.y) < CesiumMath.EPSILON6) {
+                p0.y = CesiumMath.EPSILON6 * (p2.y < 0.0 ? -1.0 : 1.0);
+                p1.y = p0.y;
+            }
+
+            if (Math.abs(p2.y) < CesiumMath.EPSILON6) {
+                p2.y = CesiumMath.EPSILON6 * (p0.y < 0.0 ? -1.0 : 1.0);
+                p3.y = p2.y;
+            }
+
+            var p0Attributes = eastGeometry.attributes;
+            var p0Indices = eastGeometry.indices;
+            var p2Attributes = westGeometry.attributes;
+            var p2Indices = westGeometry.indices;
+
+            var intersection = IntersectionTests.lineSegmentPlane(p0, p2, xzPlane, cartesian3Scratch4);
+            if (defined(intersection)) {
+                // move point on the xz-plane slightly away from the plane
+                var offset = Cartesian3.multiplyByScalar(Cartesian3.UNIT_Y, 5.0 * CesiumMath.EPSILON9, cartesian3Scratch5);
+                if (p0.y < 0.0) {
+                    Cartesian3.negate(offset, offset);
+                    p0Attributes = westGeometry.attributes;
+                    p0Indices = westGeometry.indices;
+                    p2Attributes = eastGeometry.attributes;
+                    p2Indices = eastGeometry.indices;
+                }
+
+                var offsetPoint = Cartesian3.add(intersection, offset, cartesian3Scratch6);
+                p0Attributes.position.values.push(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z);
+                p0Attributes.position.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
+                p0Attributes.position.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
+
+                Cartesian3.negate(offset, offset);
+                Cartesian3.add(intersection, offset, offsetPoint);
+                p2Attributes.position.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
+                p2Attributes.position.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
+                p2Attributes.position.values.push(p2.x, p2.y, p2.z, p3.x, p3.y, p3.z);
+
+                for (j = i0 * 3; j < i0 * 3 + 2 * 3; ++j) {
+                    p0Attributes.prevPosition.values.push(prevPositions[j]);
+                }
+                p0Attributes.prevPosition.values.push(p0.x, p0.y, p0.z, p0.x, p0.y, p0.z);
+                p2Attributes.prevPosition.values.push(p0.x, p0.y, p0.z, p0.x, p0.y, p0.z);
+                for (j = i2 * 3; j < i2 * 3 + 2 * 3; ++j) {
+                    p2Attributes.prevPosition.values.push(prevPositions[j]);
+                }
+
+                for (j = i0 * 3; j < i0 * 3 + 2 * 3; ++j) {
+                    p0Attributes.nextPosition.values.push(nextPositions[j]);
+                }
+                p0Attributes.nextPosition.values.push(p2.x, p2.y, p2.z, p2.x, p2.y, p2.z);
+                p2Attributes.nextPosition.values.push(p2.x, p2.y, p2.z, p2.x, p2.y, p2.z);
+                for (j = i2 * 3; j < i2 * 3 + 2 * 3; ++j) {
+                    p2Attributes.nextPosition.values.push(nextPositions[j]);
+                }
+
+                var ew0 = Cartesian2.fromArray(expandAndWidths, i0 * 2, cartesian2Scratch0);
+                var width = Math.abs(ew0.y);
+
+                p0Attributes.expandAndWidth.values.push(-1,  width, 1,  width);
+                p0Attributes.expandAndWidth.values.push(-1, -width, 1, -width);
+                p2Attributes.expandAndWidth.values.push(-1,  width, 1,  width);
+                p2Attributes.expandAndWidth.values.push(-1, -width, 1, -width);
+
+                var t = Cartesian3.magnitudeSquared(Cartesian3.subtract(intersection, p0, cartesian3Scratch3));
+                t /= Cartesian3.magnitudeSquared(Cartesian3.subtract(p2, p0, cartesian3Scratch3));
+
+                if (defined(colors)) {
+                    var c0 = Cartesian4.fromArray(colors, i0 * 4, cartesian4Scratch0);
+                    var c2 = Cartesian4.fromArray(colors, i2 * 4, cartesian4Scratch0);
+
+                    var r = CesiumMath.lerp(c0.x, c2.x, t);
+                    var g = CesiumMath.lerp(c0.y, c2.y, t);
+                    var b = CesiumMath.lerp(c0.z, c2.z, t);
+                    var a = CesiumMath.lerp(c0.w, c2.w, t);
+
+                    for (j = i0 * 4; j < i0 * 4 + 2 * 4; ++j) {
+                        p0Attributes.color.values.push(colors[j]);
+                    }
+                    p0Attributes.color.values.push(r, g, b, a);
+                    p0Attributes.color.values.push(r, g, b, a);
+                    p2Attributes.color.values.push(r, g, b, a);
+                    p2Attributes.color.values.push(r, g, b, a);
+                    for (j = i2 * 4; j < i2 * 4 + 2 * 4; ++j) {
+                        p2Attributes.color.values.push(colors[j]);
+                    }
+                }
+
+                if (defined(texCoords)) {
+                    var s0 = Cartesian2.fromArray(texCoords, i0 * 2, cartesian2Scratch0);
+                    var s3 = Cartesian2.fromArray(texCoords, (i + 3) * 2, cartesian2Scratch1);
+
+                    var sx = CesiumMath.lerp(s0.x, s3.x, t);
+
+                    for (j = i0 * 2; j < i0 * 2 + 2 * 2; ++j) {
+                        p0Attributes.st.values.push(texCoords[j]);
+                    }
+                    p0Attributes.st.values.push(sx, s0.y);
+                    p0Attributes.st.values.push(sx, s3.y);
+                    p2Attributes.st.values.push(sx, s0.y);
+                    p2Attributes.st.values.push(sx, s3.y);
+                    for (j = i2 * 2; j < i2 * 2 + 2 * 2; ++j) {
+                        p2Attributes.st.values.push(texCoords[j]);
+                    }
+                }
+
+                index = p0Attributes.position.values.length / 3 - 4;
+                p0Indices.push(index, index + 2, index + 1);
+                p0Indices.push(index + 1, index + 2, index + 3);
+
+                index = p2Attributes.position.values.length / 3 - 4;
+                p2Indices.push(index, index + 2, index + 1);
+                p2Indices.push(index + 1, index + 2, index + 3);
+            } else {
+                var currentAttributes;
+                var currentIndices;
+
+                if (p0.y < 0.0) {
+                    currentAttributes = westGeometry.attributes;
+                    currentIndices = westGeometry.indices;
+                } else {
+                    currentAttributes = eastGeometry.attributes;
+                    currentIndices = eastGeometry.indices;
+                }
+
+                currentAttributes.position.values.push(p0.x, p0.y, p0.z);
+                currentAttributes.position.values.push(p1.x, p1.y, p1.z);
+                currentAttributes.position.values.push(p2.x, p2.y, p2.z);
+                currentAttributes.position.values.push(p3.x, p3.y, p3.z);
+
+                for (j = i * 3; j < i * 3 + 4 * 3; ++j) {
+                    currentAttributes.prevPosition.values.push(prevPositions[j]);
+                    currentAttributes.nextPosition.values.push(nextPositions[j]);
+                }
+
+                for (j = i * 2; j < i * 2 + 4 * 2; ++j) {
+                    currentAttributes.expandAndWidth.values.push(expandAndWidths[j]);
+                    if (defined(texCoords)) {
+                        currentAttributes.st.values.push(texCoords[j]);
+                    }
+                }
+
+                if (defined(colors)) {
+                    for (j = i * 4; j < i * 4 + 4 * 4; ++j) {
+                        currentAttributes.color.values.push(colors[j]);
+                    }
+                }
+
+                index = currentAttributes.position.values.length / 3 - 4;
+                currentIndices.push(index, index + 2, index + 1);
+                currentIndices.push(index + 1, index + 2, index + 3);
+            }
+        }
+
+        updateInstanceAfterSplit(instance, westGeometry, eastGeometry);
+    }
+
+    /**
+     * Splits the instances's geometry, by introducing new vertices and indices,that
+     * intersect the International Date Line and Prime Meridian so that no primitives cross longitude
+     * -180/180 degrees.  This is not required for 3D drawing, but is required for
+     * correcting drawing in 2D and Columbus view.
+     *
+     * @private
+     *
+     * @param {GeometryInstance} instance The instance to modify.
+     * @returns {GeometryInstance} The modified <code>instance</code> argument, with it's geometry split at the International Date Line.
+     *
+     * @example
+     * instance = Cesium.GeometryPipeline.splitLongitude(instance);
+     */
+    GeometryPipeline.splitLongitude = function(instance) {
+                if (!defined(instance)) {
+            throw new DeveloperError('instance is required.');
+        }
+        
+        var geometry = instance.geometry;
+        var boundingSphere = geometry.boundingSphere;
+        if (defined(boundingSphere)) {
+            var minX = boundingSphere.center.x - boundingSphere.radius;
+            if (minX > 0 || BoundingSphere.intersect(boundingSphere, Cartesian4.UNIT_Y) !== Intersect.INTERSECTING) {
+                return instance;
+            }
+        }
+
+        if (geometry.geometryType !== GeometryType.NONE) {
+            switch (geometry.geometryType) {
+            case GeometryType.POLYLINES:
+                splitLongitudePolyline(instance);
+                break;
+            case GeometryType.TRIANGLES:
+                splitLongitudeTriangles(instance);
+                break;
+            case GeometryType.LINES:
+                splitLongitudeLines(instance);
+                break;
+            }
+        } else {
+            indexPrimitive(geometry);
+            if (geometry.primitiveType === PrimitiveType.TRIANGLES) {
+                splitLongitudeTriangles(instance);
+            } else if (geometry.primitiveType === PrimitiveType.LINES) {
+                splitLongitudeLines(instance);
+            }
+        }
+
+        return instance;
+    };
+
+    return GeometryPipeline;
+});
+
+/*global define*/
+define('Core/PolygonGeometryLibrary',[
+        './Cartesian3',
+        './defaultValue',
+        './defined',
+        './Ellipsoid'
+    ], function(
+        Cartesian3,
+        defaultValue,
+        defined,
+        Ellipsoid) {
+    "use strict";
+
+    /**
+     * @private
+     */
+    var PolygonGeometryLibrary = {};
+
+    PolygonGeometryLibrary.computeHierarchyPackedLength = function(polygonHierarchy) {
+        var numComponents = 0;
+        var stack = [polygonHierarchy];
+        while (stack.length > 0) {
+            var hierarchy = stack.pop();
+            if (!defined(hierarchy)) {
+                continue;
+            }
+
+            numComponents += 2;
+
+            var positions = hierarchy.positions;
+            var holes = hierarchy.holes;
+
+            if (defined(positions)) {
+                numComponents += positions.length * Cartesian3.packedLength;
+            }
+
+            if (defined(holes)) {
+                var length = holes.length;
+                for (var i = 0; i < length; ++i) {
+                    stack.push(holes[i]);
+                }
+            }
+        }
+
+        return numComponents;
+    };
+
+    PolygonGeometryLibrary.packPolygonHierarchy = function(polygonHierarchy, array, startingIndex) {
+        var stack = [polygonHierarchy];
+        while (stack.length > 0) {
+            var hierarchy = stack.pop();
+            if (!defined(hierarchy)) {
+                continue;
+            }
+
+            var positions = hierarchy.positions;
+            var holes = hierarchy.holes;
+
+            array[startingIndex++] = defined(positions) ? positions.length : 0;
+            array[startingIndex++] = defined(holes) ? holes.length : 0;
+
+            if (defined(positions)) {
+                var positionsLength = positions.length;
+                for (var i = 0; i < positionsLength; ++i, startingIndex += 3) {
+                    Cartesian3.pack(positions[i], array, startingIndex);
+                }
+            }
+
+            if (defined(holes)) {
+                var holesLength = holes.length;
+                for (var j = 0; j < holesLength; ++j) {
+                    stack.push(holes[j]);
+                }
+            }
+        }
+
+        return startingIndex;
+    };
+
+    PolygonGeometryLibrary.unpackPolygonHierarchy = function(array, startingIndex) {
+        var positionsLength = array[startingIndex++];
+        var holesLength = array[startingIndex++];
+
+        var positions = new Array(positionsLength);
+        var holes = holesLength > 0 ? new Array(holesLength) : undefined;
+
+        for (var i = 0; i < positionsLength; ++i, startingIndex += Cartesian3.packedLength) {
+            positions[i] = Cartesian3.unpack(array, startingIndex);
+        }
+
+        for (var j = 0; j < holesLength; ++j) {
+            holes[j] = PolygonGeometryLibrary.unpackPolygonHierarchy(array, startingIndex);
+            startingIndex = holes[j].startingIndex;
+            delete holes[j].startingIndex;
+        }
+
+        return {
+            positions : positions,
+            holes : holes,
+            startingIndex : startingIndex
+        };
+    };
+
+    var distanceScratch = new Cartesian3();
+    function getPointAtDistance(p0, p1, distance, length) {
+        Cartesian3.subtract(p1, p0, distanceScratch);
+        Cartesian3.multiplyByScalar(distanceScratch, distance / length, distanceScratch);
+        Cartesian3.add(p0, distanceScratch, distanceScratch);
+        return [distanceScratch.x, distanceScratch.y, distanceScratch.z];
+    }
+
+    /**
+     * @private
+     */
+    PolygonGeometryLibrary.subdivideLineCount = function(p0, p1, minDistance) {
+        var distance = Cartesian3.distance(p0, p1);
+        var n = distance / minDistance;
+        var countDivide = Math.max(0, Math.ceil(Math.log(n) / Math.log(2)));
+        return Math.pow(2, countDivide);
+    };
+
+    /**
+     * @private
+     */
+    PolygonGeometryLibrary.subdivideLine = function(p0, p1, minDistance, result) {
+        var numVertices = PolygonGeometryLibrary.subdivideLineCount(p0, p1, minDistance);
+        var length = Cartesian3.distance(p0, p1);
+        var distanceBetweenVertices = length / numVertices;
+
+        if (!defined(result)) {
+            result = [];
+        }
+
+        var positions = result;
+        positions.length = numVertices * 3;
+
+        var index = 0;
+        for ( var i = 0; i < numVertices; i++) {
+            var p = getPointAtDistance(p0, p1, i * distanceBetweenVertices, length);
+            positions[index++] = p[0];
+            positions[index++] = p[1];
+            positions[index++] = p[2];
+        }
+
+        return positions;
+    };
+
+    var scaleToGeodeticHeightN1 = new Cartesian3();
+    var scaleToGeodeticHeightN2 = new Cartesian3();
+    var scaleToGeodeticHeightP1 = new Cartesian3();
+    var scaleToGeodeticHeightP2 = new Cartesian3();
+    /**
+     * @private
+     */
+    PolygonGeometryLibrary.scaleToGeodeticHeightExtruded = function(geometry, maxHeight, minHeight, ellipsoid, perPositionHeight) {
+        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
+
+        var n1 = scaleToGeodeticHeightN1;
+        var n2 = scaleToGeodeticHeightN2;
+        var p = scaleToGeodeticHeightP1;
+        var p2 = scaleToGeodeticHeightP2;
+
+        if (defined(geometry) && defined(geometry.attributes) && defined(geometry.attributes.position)) {
+            var positions = geometry.attributes.position.values;
+            var length = positions.length / 2;
+
+            for ( var i = 0; i < length; i += 3) {
+                Cartesian3.fromArray(positions, i, p);
+
+                ellipsoid.geodeticSurfaceNormal(p, n1);
+                p2 = ellipsoid.scaleToGeodeticSurface(p, p2);
+                n2 = Cartesian3.multiplyByScalar(n1, minHeight, n2);
+                n2 = Cartesian3.add(p2, n2, n2);
+                positions[i + length] = n2.x;
+                positions[i + 1 + length] = n2.y;
+                positions[i + 2 + length] = n2.z;
+
+                if (perPositionHeight) {
+                    p2 = Cartesian3.clone(p, p2);
+                }
+                n2 = Cartesian3.multiplyByScalar(n1, maxHeight, n2);
+                n2 = Cartesian3.add(p2, n2, n2);
+                positions[i] = n2.x;
+                positions[i + 1] = n2.y;
+                positions[i + 2] = n2.z;
+            }
+        }
+        return geometry;
+    };
+
+    return PolygonGeometryLibrary;
+});
+/*global define*/
+define('Core/pointInsideTriangle',[
+        './barycentricCoordinates',
+        './Cartesian3'
+    ], function(
+        barycentricCoordinates,
+        Cartesian3) {
+    "use strict";
+
+    var coords = new Cartesian3();
+
+    /**
+     * Determines if a point is inside a triangle.
+     *
+     * @exports pointInsideTriangle
+     *
+     * @param {Cartesian2|Cartesian3} point The point to test.
+     * @param {Cartesian2|Cartesian3} p0 The first point of the triangle.
+     * @param {Cartesian2|Cartesian3} p1 The second point of the triangle.
+     * @param {Cartesian2|Cartesian3} p2 The third point of the triangle.
+     * @returns {Boolean} <code>true</code> if the point is inside the triangle; otherwise, <code>false</code>.
+     *
+     * @example
+     * // Returns true
+     * var p = new Cesium.Cartesian2(0.25, 0.25);
+     * var b = Cesium.pointInsideTriangle(p,
+     *   new Cesium.Cartesian2(0.0, 0.0),
+     *   new Cesium.Cartesian2(1.0, 0.0),
+     *   new Cesium.Cartesian2(0.0, 1.0));
+     */
+    var pointInsideTriangle = function(point, p0, p1, p2) {
+        barycentricCoordinates(point, p0, p1, p2, coords);
+        return (coords.x > 0.0) && (coords.y > 0.0) && (coords.z > 0);
+    };
+
+    return pointInsideTriangle;
+});
+
+/*global define*/
+define('Core/Queue',[],function() {
+    "use strict";
+
+    /**
+     * A queue that can enqueue items at the end, and dequeue items from the front.
+     *
+     * @alias Queue
+     * @constructor
+     */
+    var Queue = function() {
+        this._array = [];
+        this._offset = 0;
+
+        /**
+         * The length of the queue.
+         */
+        this.length = 0;
+    };
+
+    /**
+     * Enqueues the specified item.
+     *
+     * @param {Object} item The item to enqueue.
+     */
+    Queue.prototype.enqueue = function(item) {
+        this._array.push(item);
+        this.length++;
+    };
+
+    /**
+     * Dequeues an item.  Returns undefined if the queue is empty.
+     */
+    Queue.prototype.dequeue = function() {
+        if (this.length === 0) {
+            return undefined;
+        }
+
+        var array = this._array;
+        var offset = this._offset;
+        var item = array[offset];
+        array[offset] = undefined;
+
+        offset++;
+        if (offset > 10 && offset * 2 > array.length) {
+            //compact array
+            this._array = array.slice(offset);
+            offset = 0;
+        }
+
+        this._offset = offset;
+        this.length--;
+
+        return item;
+    };
+
+    /**
+     * Check whether this queue contains the specified item.
+     *
+     * @param {Object} item the item to search for.
+     */
+    Queue.prototype.contains = function(item) {
+        return this._array.indexOf(item) !== -1;
+    };
+
+    /**
+     * Remove all items from the queue.
+     */
+    Queue.prototype.clear = function() {
+        this._array.length = this._offset = this.length = 0;
+    };
+
+    /**
+     * Sort the items in the queue in-place.
+     *
+     * @param {Queue~Comparator} compareFunction A function that defines the sort order.
+     */
+    Queue.prototype.sort = function(compareFunction) {
+        if (this._offset > 0) {
+            //compact array
+            this._array = this._array.slice(this._offset);
+            this._offset = 0;
+        }
+
+        this._array.sort(compareFunction);
+    };
+
+    /**
+     * A function used to compare two items while sorting a queue.
+     * @callback Queue~Comparator
+     *
+     * @param {Object} a An item in the array.
+     * @param {Object} b An item in the array.
+     * @returns {Number} Returns a negative value if <code>a</code> is less than <code>b</code>,
+     *          a positive value if <code>a</code> is greater than <code>b</code>, or
+     *          0 if <code>a</code> is equal to <code>b</code>.
+     *
+     * @example
+     * function compareNumbers(a, b) {
+     *     return a - b;
+     * }
+     */
+
+    return Queue;
+});
+/*global define*/
+define('Core/WindingOrder',[
+        './freezeObject'
+    ], function(
+        freezeObject) {
+    "use strict";
+
+    /**
+     * Winding order defines the order of vertices for a triangle to be considered front-facing.
+     *
+     * @namespace
+     * @alias WindingOrder
+     */
+    var WindingOrder = {
+        /**
+         * 0x0900. Vertices are in clockwise order.
+         *
+         * @type {Number}
+         * @constant
+         */
+        CLOCKWISE : 0x0900, // WebGL: CW
+
+        /**
+         * 0x0901. Vertices are in counter-clockwise order.
+         *
+         * @type {Number}
+         * @constant
+         */
+        COUNTER_CLOCKWISE : 0x0901, // WebGL: CCW
+
+        /**
+         * @private
+         */
+        validate : function(windingOrder) {
+            return windingOrder === WindingOrder.CLOCKWISE ||
+                   windingOrder === WindingOrder.COUNTER_CLOCKWISE;
+        }
+    };
+
+    return freezeObject(WindingOrder);
+});
+/*global define*/
+define('Core/PolygonPipeline',[
+        './Cartesian2',
+        './Cartesian3',
+        './ComponentDatatype',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './Ellipsoid',
+        './EllipsoidTangentPlane',
+        './Geometry',
+        './GeometryAttribute',
+        './Math',
+        './pointInsideTriangle',
+        './PrimitiveType',
+        './Queue',
+        './WindingOrder'
+    ], function(
+        Cartesian2,
+        Cartesian3,
+        ComponentDatatype,
+        defaultValue,
+        defined,
+        DeveloperError,
+        Ellipsoid,
+        EllipsoidTangentPlane,
+        Geometry,
+        GeometryAttribute,
+        CesiumMath,
+        pointInsideTriangle,
+        PrimitiveType,
+        Queue,
+        WindingOrder) {
+    "use strict";
+
+    var uScratch = new Cartesian2();
+    var vScratch = new Cartesian2();
+    function isTipConvex(p0, p1, p2) {
+        var u = Cartesian2.subtract(p1, p0, uScratch);
+        var v = Cartesian2.subtract(p2, p1, vScratch);
+
+        // Use the sign of the z component of the cross product
+        return ((u.x * v.y) - (u.y * v.x)) >= 0.0;
+    }
+
+    /**
+     * Returns the index of the vertex with the maximum X value.
+     *
+     * @param {Cartesian2[]} positions An array of the Cartesian points defining the polygon's vertices.
+     * @returns {Number} The index of the positions with the maximum X value.
+     *
+     * @private
+     */
+    function getRightmostPositionIndex(positions) {
+        var maximumX = positions[0].x;
+        var rightmostPositionIndex = 0;
+        for ( var i = 0; i < positions.length; i++) {
+            if (positions[i].x > maximumX) {
+                maximumX = positions[i].x;
+                rightmostPositionIndex = i;
+            }
+        }
+        return rightmostPositionIndex;
+    }
+
+    /**
+     * Returns the index of the ring that contains the rightmost vertex.
+     *
+     * @param {Cartesian2[]} rings An array of arrays of Cartesians. Each array contains the vertices defining a polygon.
+     * @returns {Number} The index of the ring containing the rightmost vertex.
+     *
+     * @private
+     */
+    function getRightmostRingIndex(rings) {
+        var rightmostX = rings[0][0].x;
+        var rightmostRingIndex = 0;
+        for ( var ring = 0; ring < rings.length; ring++) {
+            var maximumX = rings[ring][getRightmostPositionIndex(rings[ring])].x;
+            if (maximumX > rightmostX) {
+                rightmostX = maximumX;
+                rightmostRingIndex = ring;
+            }
+        }
+
+        return rightmostRingIndex;
+    }
+
+    /**
+     * Returns a list containing the reflex vertices for a given polygon.
+     *
+     * @param {Cartesian2[]} polygon An array of Cartesian elements defining the polygon.
+     * @returns {Cartesian2[]}
+     *
+     * @private
+     */
+    function getReflexVertices(polygon) {
+        var reflexVertices = [];
+        for ( var i = 0; i < polygon.length; i++) {
+            var p0 = polygon[((i - 1) + polygon.length) % polygon.length];
+            var p1 = polygon[i];
+            var p2 = polygon[(i + 1) % polygon.length];
+
+            if (!isTipConvex(p0, p1, p2)) {
+                reflexVertices.push(p1);
+            }
+        }
+        return reflexVertices;
+    }
+
+    /**
+     * Returns true if the given point is contained in the list of positions.
+     *
+     * @param {Cartesian2[]} positions A list of Cartesian elements defining a polygon.
+     * @param {Cartesian2} point The point to check.
+     * @returns {Number} The index of <code>point</code> in <code>positions</code> or -1 if it was not found.
+     *
+     * @private
+     */
+    function isVertex(positions, point) {
+        for ( var i = 0; i < positions.length; i++) {
+            if (Cartesian2.equals(point, positions[i])) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Given a point inside a polygon, find the nearest point directly to the right that lies on one of the polygon's edges.
+     *
+     * @param {Cartesian2} point A point inside the polygon defined by <code>ring</code>.
+     * @param {Cartesian2[]} ring A list of Cartesian points defining a polygon.
+     * @param {Number[]} [edgeIndices]  An array containing the indices two endpoints of the edge containing the intersection.
+     * @returns {Cartesian2} The intersection point.
+     *
+     * @private
+     */
+    var distScratch = new Cartesian2();
+    function intersectPointWithRing(point, ring, edgeIndices) {
+        edgeIndices = defaultValue(edgeIndices, []);
+
+        var minDistance = Number.MAX_VALUE;
+        var rightmostVertexIndex = getRightmostPositionIndex(ring);
+        var intersection = new Cartesian2(ring[rightmostVertexIndex].x, point.y);
+        edgeIndices.push(rightmostVertexIndex);
+        edgeIndices.push((rightmostVertexIndex + 1) % ring.length);
+
+        var boundaryMinX = ring[0].x;
+        var boundaryMaxX = boundaryMinX;
+        for ( var i = 1; i < ring.length; ++i) {
+            if (ring[i].x < boundaryMinX) {
+                boundaryMinX = ring[i].x;
+            } else if (ring[i].x > boundaryMaxX) {
+                boundaryMaxX = ring[i].x;
+            }
+        }
+        boundaryMaxX += (boundaryMaxX - boundaryMinX);
+        var point2 = new Cartesian3(boundaryMaxX, point.y, 0.0);
+
+        // Find the nearest intersection.
+        for (i = 0; i < ring.length; i++) {
+            var v1 = ring[i];
+            var v2 = ring[(i + 1) % ring.length];
+
+            if (((v1.x >= point.x) || (v2.x >= point.x)) && (((v1.y >= point.y) && (v2.y <= point.y)) || ((v1.y <= point.y) && (v2.y >= point.y)))) {
+                var temp = ((v2.y - v1.y) * (point2.x - point.x)) - ((v2.x - v1.x) * (point2.y - point.y));
+                if (temp !== 0.0) {
+                    temp = 1.0 / temp;
+                    var ua = (((v2.x - v1.x) * (point.y - v1.y)) - ((v2.y - v1.y) * (point.x - v1.x))) * temp;
+                    var ub = (((point2.x - point.x) * (point.y - v1.y)) - ((point2.y - point.y) * (point.x - v1.x))) * temp;
+                    if ((ua >= 0.0) && (ua <= 1.0) && (ub >= 0.0) && (ub <= 1.0)) {
+                        var tempIntersection = new Cartesian2(point.x + ua * (point2.x - point.x), point.y + ua * (point2.y - point.y));
+                        var dist = Cartesian2.subtract(tempIntersection, point, distScratch);
+                        temp = Cartesian2.magnitudeSquared(dist);
+                        if (temp < minDistance) {
+                            intersection = tempIntersection;
+                            minDistance = temp;
+                            edgeIndices[0] = i;
+                            edgeIndices[1] = (i + 1) % ring.length;
+                        }
+                    }
+                }
+            }
+        }
+
+        return intersection;
+    }
+
+    /**
+     * Given an outer ring and multiple inner rings, determine the point on the outer ring that is visible
+     * to the rightmost vertex of the rightmost inner ring.
+     *
+     * @param {Cartesian2[]} outerRing An array of Cartesian points defining the outer boundary of the polygon.
+     * @param {Cartesian2[]} innerRings An array of arrays of Cartesian points, where each array represents a hole in the polygon.
+     * @returns {Number} The index of the vertex in <code>outerRing</code> that is mutually visible to the rightmost vertex in <code>inenrRing</code>.
+     *
+     * @private
+     */
+    var v1Scratch = new Cartesian2(1.0, 0.0);
+    var v2Scratch = new Cartesian2();
+    function getMutuallyVisibleVertexIndex(outerRing, innerRings) {
+        var innerRingIndex = getRightmostRingIndex(innerRings);
+        var innerRing = innerRings[innerRingIndex];
+        var innerRingVertexIndex = getRightmostPositionIndex(innerRing);
+        var innerRingVertex = innerRing[innerRingVertexIndex];
+        var edgeIndices = [];
+        var intersection = intersectPointWithRing(innerRingVertex, outerRing, edgeIndices);
+
+        var visibleVertex = isVertex(outerRing, intersection);
+        if (visibleVertex !== -1) {
+            return visibleVertex;
+        }
+
+        // Set P to be the edge endpoint closest to the inner ring vertex
+        var d1 = Cartesian2.magnitudeSquared(Cartesian2.subtract(outerRing[edgeIndices[0]], innerRingVertex, v1Scratch));
+        var d2 = Cartesian2.magnitudeSquared(Cartesian2.subtract(outerRing[edgeIndices[1]], innerRingVertex, v1Scratch));
+        var p = (d1 < d2) ? outerRing[edgeIndices[0]] : outerRing[edgeIndices[1]];
+
+        var reflexVertices = getReflexVertices(outerRing);
+        var reflexIndex = reflexVertices.indexOf(p);
+        if (reflexIndex !== -1) {
+            reflexVertices.splice(reflexIndex, 1); // Do not include p if it happens to be reflex.
+        }
+
+        var pointsInside = [];
+        for ( var i = 0; i < reflexVertices.length; i++) {
+            var vertex = reflexVertices[i];
+            if (pointInsideTriangle(vertex, innerRingVertex, intersection, p)) {
+                pointsInside.push(vertex);
+            }
+        }
+
+        // If all reflexive vertices are outside the triangle formed by points
+        // innerRingVertex, intersection and P, then P is the visible vertex.
+        // Otherwise, return the reflex vertex that minimizes the angle between <1,0> and <k, reflex>.
+        var minAngle = Number.MAX_VALUE;
+        if (pointsInside.length > 0) {
+            var v1 = Cartesian2.fromElements(1.0, 0.0, v1Scratch);
+            for (i = 0; i < pointsInside.length; i++) {
+                var v2 = Cartesian2.subtract(pointsInside[i], innerRingVertex, v2Scratch);
+                var denominator = Cartesian2.magnitude(v1) * Cartesian2.magnitudeSquared(v2);
+                if (denominator !== 0) {
+                    var angle = Math.abs(CesiumMath.acosClamped(Cartesian2.dot(v1, v2) / denominator));
+                    if (angle < minAngle) {
+                        minAngle = angle;
+                        p = pointsInside[i];
+                    }
+                }
+            }
+        }
+
+        return outerRing.indexOf(p);
+    }
+
+    /**
+     * Given a polygon defined by an outer ring with one or more inner rings (holes), return a single list of points representing
+     * a polygon with the rightmost hole added to it. The added hole is removed from <code>innerRings</code>.
+     *
+     * @param {Cartesian2[]} outerRing An array of Cartesian points defining the outer boundary of the polygon.
+     * @param {Cartesian2[]} innerRings An array of arrays of Cartesian points, where each array represents a hole in the polygon.
+     * @returns {Cartesian2[]} A single list of Cartesian points defining the polygon, including the eliminated inner ring.
+     *
+     * @private
+     */
+    function eliminateHole(outerRing, innerRings, ellipsoid) {
+        // Check that the holes are defined in the winding order opposite that of the outer ring.
+        var windingOrder = PolygonPipeline.computeWindingOrder2D(outerRing);
+        for ( var i = 0; i < innerRings.length; i++) {
+            var ring = innerRings[i];
+
+            // Ensure each hole's first and last points are the same.
+            if (!Cartesian3.equals(ring[0], ring[ring.length - 1])) {
+                ring.push(ring[0]);
+            }
+
+            var innerWindingOrder = PolygonPipeline.computeWindingOrder2D(ring);
+            if (innerWindingOrder === windingOrder) {
+                ring.reverse();
+            }
+        }
+
+        // Project points onto a tangent plane to find the mutually visible vertex.
+        var tangentPlane = EllipsoidTangentPlane.fromPoints(outerRing, ellipsoid);
+        var tangentOuterRing = tangentPlane.projectPointsOntoPlane(outerRing);
+        var tangentInnerRings = [];
+        for (i = 0; i < innerRings.length; i++) {
+            tangentInnerRings.push(tangentPlane.projectPointsOntoPlane(innerRings[i]));
+        }
+
+        var visibleVertexIndex = getMutuallyVisibleVertexIndex(tangentOuterRing, tangentInnerRings);
+        var innerRingIndex = getRightmostRingIndex(tangentInnerRings);
+        var innerRingVertexIndex = getRightmostPositionIndex(tangentInnerRings[innerRingIndex]);
+
+        var innerRing = innerRings[innerRingIndex];
+        var newPolygonVertices = [];
+
+        for (i = 0; i < outerRing.length; i++) {
+            newPolygonVertices.push(outerRing[i]);
+        }
+
+        var j;
+        var holeVerticesToAdd = [];
+
+        // If the rightmost inner vertex is not the starting and ending point of the ring,
+        // then some other point is duplicated in the inner ring and should be skipped once.
+        if (innerRingVertexIndex !== 0) {
+            for (j = 0; j <= innerRing.length; j++) {
+                var index = (j + innerRingVertexIndex) % innerRing.length;
+                if (index !== 0) {
+                    holeVerticesToAdd.push(innerRing[index]);
+                }
+            }
+        } else {
+            for (j = 0; j < innerRing.length; j++) {
+                holeVerticesToAdd.push(innerRing[(j + innerRingVertexIndex) % innerRing.length]);
+            }
+        }
+
+        var lastVisibleVertexIndex = newPolygonVertices.lastIndexOf(outerRing[visibleVertexIndex]);
+
+        holeVerticesToAdd.push(outerRing[lastVisibleVertexIndex]);
+
+        var front = newPolygonVertices.slice(0, lastVisibleVertexIndex + 1);
+        var back = newPolygonVertices.slice(lastVisibleVertexIndex + 1);
+        newPolygonVertices = front.concat(holeVerticesToAdd, back);
+
+        innerRings.splice(innerRingIndex, 1);
+
+        return newPolygonVertices;
+    }
+
+    function getRandomIndex(length) {
+        var random = CesiumMath.nextRandomNumber();
+        var i = Math.floor(random * length);
+        if (i === length) {
+            i--;
+        }
+        return i;
+    }
+
+    function indexedEdgeCrossZ(p0Index, p1Index, vertexIndex, array) {
+        var p0 = array[p0Index].position;
+        var p1 = array[p1Index].position;
+        var v = array[vertexIndex].position;
+
+        var vx = v.x;
+        var vy = v.y;
+
+        // (p0 - v).cross(p1 - v).z
+        var leftX = p0.x - vx;
+        var leftY = p0.y - vy;
+        var rightX = p1.x - vx;
+        var rightY = p1.y - vy;
+
+        return leftX * rightY - leftY * rightX;
+    }
+
+    function crossZ(p0, p1) {
+        // p0.cross(p1).z
+        return p0.x * p1.y - p0.y * p1.x;
+    }
+
+    /**
+     * Checks to make sure vertex is not superfluous.
+     *
+     * @param {Number} index Index of vertex.
+     * @param {Number} pArray Array of vertices.
+     *
+     * @exception {DeveloperError} Superfluous vertex found.
+     *
+     * @private
+     */
+    function validateVertex(index, pArray) {
+        var length = pArray.length;
+        var before = CesiumMath.mod(index - 1, length);
+        var after = CesiumMath.mod(index + 1, length);
+
+        // check if adjacent edges are parallel
+        if (indexedEdgeCrossZ(before, after, index, pArray) === 0.0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks whether cut parallel to side is internal.
+     *
+     *  e.g.
+     *
+     *  7_________6
+     *  |         |
+     *  | 4 ______|
+     *  |  |       5
+     *  |  |______2     Is cut from 1 to 6 internal? No.
+     *  | 3       |
+     *  |_________|
+     * 0           1
+     *
+     * Note that this function simply checks whether the cut is longer or shorter.
+     *
+     * An important valid cut:
+     *
+     * Polygon:
+     *
+     * 0 ___2__4
+     *  |  /\  |
+     *  | /  \ |   Is cut 0 to 2 or 2 to 4 internal? Yes.
+     *  |/    \|
+     * 1       3
+     *
+     * This situation can occur and the only solution is a cut along a parallel
+     * side.
+     *
+     * This method is technically incomplete, however, for the following case:
+     *
+     *  7_________6
+     *  |         |
+     *  |         |______4
+     *  |          5     |    Now is 1 to 6 internal? Yes, but we'll never need it.
+     *  |         2______|
+     *  |         |      5
+     *  |_________|
+     * 0           1
+     *
+     * In this case, although the cut from 1 to 6 is valid, the side 1-2 is
+     * shorter and thus this cut will be called invalid. Assuming there are no
+     * superfluous vertices (a requirement for this method to work), however,
+     * we'll never need this cut because we can always find cut 2-5 as a substitute.
+     *
+     * @param {Cartesian2} side
+     * @param {Cartesian2} cut
+     * @returns {Boolean}
+     *
+     * @private
+     */
+    function isInternalToParallelSide(side, cut) {
+        return Cartesian2.magnitudeSquared(cut) < Cartesian2.magnitudeSquared(side);
+    }
+
+    var INTERNAL = -1;
+    var EXTERNAL = -2;
+
+    /**
+     * Determine whether the cut formed between the two vertices is internal
+     * to the angle formed by the sides connecting at the first vertex.
+     *
+     * @param {Number} a1i Index of first vertex.
+     * @param {Number} a2i Index of second vertex.
+     * @param {Array} pArray Array of <code>{ position, index }</code> objects representing the polygon.
+     * @returns {Number} If INTERNAL, the cut formed between the two vertices is internal to the angle at vertex 1.
+     * If EXTERNAL, then the cut formed between the two vertices is external to the angle at vertex 1. If the value
+     * is greater than or equal to zero, then the value is the index of an invalid vertex.
+     *
+     * @private
+     */
+    var s1Scratch = new Cartesian3();
+    var s2Scratch = new Cartesian3();
+    var cutScratch = new Cartesian3();
+    function internalCut(a1i, a2i, pArray) {
+        // Make sure vertex is valid
+        if (!validateVertex(a1i, pArray)) {
+            return a1i;
+        }
+
+        // Get the nodes from the array
+        var a1Position = pArray[a1i].position;
+        var a2Position = pArray[a2i].position;
+        var length = pArray.length;
+
+        // Define side and cut vectors
+        var before = CesiumMath.mod(a1i - 1, length);
+        if (!validateVertex(before, pArray)) {
+            return before;
+        }
+
+        var after = CesiumMath.mod(a1i + 1, length);
+        if (!validateVertex(after, pArray)) {
+            return after;
+        }
+
+        var s1 = Cartesian2.subtract(pArray[before].position, a1Position, s1Scratch);
+        var s2 = Cartesian2.subtract(pArray[after].position, a1Position, s2Scratch);
+        var cut = Cartesian2.subtract(a2Position, a1Position, cutScratch);
+
+        var leftEdgeCutZ = crossZ(s1, cut);
+        var rightEdgeCutZ = crossZ(s2, cut);
+
+        if (leftEdgeCutZ === 0.0) { // cut is parallel to (a1i - 1, a1i) edge
+            return isInternalToParallelSide(s1, cut) ? INTERNAL : EXTERNAL;
+        } else if (rightEdgeCutZ === 0.0) { // cut is parallel to (a1i + 1, a1i) edge
+            return isInternalToParallelSide(s2, cut) ? INTERNAL : EXTERNAL;
+        } else {
+            var z = crossZ(s1, s2);
+            if (z < 0.0) { // angle at a1i is less than 180 degrees
+                return leftEdgeCutZ < 0.0 && rightEdgeCutZ > 0.0 ? INTERNAL : EXTERNAL; // Cut is in-between sides
+            } else if (z > 0.0) { // angle at a1i is greater than 180 degrees
+                return leftEdgeCutZ > 0.0 && rightEdgeCutZ < 0.0 ? EXTERNAL : INTERNAL; // Cut is in-between sides
+            }
+        }
+    }
+
+    /**
+     * Determine whether number is between n1 and n2.
+     * Do not include number === n1 or number === n2.
+     * Do include n1 === n2 === number.
+     *
+     * @param {Number} number The number tested.
+     * @param {Number} n1 First bound.
+     * @param {Number} n2 Secound bound.
+     * @returns {Boolean} number is between n1 and n2.
+     *
+     * @private
+     */
+    function isBetween(number, n1, n2) {
+        return ((number > n1 || number > n2) && (number < n1 || number < n2)) || (n1 === n2 && n1 === number);
+    }
+
+    var sqrEpsilon = CesiumMath.EPSILON14;
+    var eScratch = new Cartesian2();
+
+    function linesIntersection(p0, d0, p1, d1) {
+        var e = Cartesian2.subtract(p1, p0, eScratch);
+        var cross = d0.x * d1.y - d0.y * d1.x;
+        var sqrCross = cross * cross;
+        var sqrLen0 = Cartesian2.magnitudeSquared(d0);
+        var sqrLen1 = Cartesian2.magnitudeSquared(d1);
+        if (sqrCross > sqrEpsilon * sqrLen0 * sqrLen1) {
+            // lines of the segments are not parallel
+            var s = (e.x * d1.y - e.y * d1.x) / cross;
+            return Cartesian2.add(p0, Cartesian2.multiplyByScalar(d0, s, eScratch), eScratch);
+        }
+
+        // lines of the segments are parallel (they cannot be the same line)
+        return undefined;
+    }
+
+    /**
+     * Determine whether this segment intersects any other polygon sides.
+     *
+     * @param {Cartesian2} a1 Position of first vertex.
+     * @param {Cartesian2} a2 Position of second vertex.
+     * @param {Array} pArray Array of <code>{ position, index }</code> objects representing polygon.
+     * @returns {Boolean} The segment between a1 and a2 intersect another polygon side.
+     *
+     * @private
+     */
+    var intersectionScratch = new Cartesian2();
+    var aDirectionScratch = new Cartesian2();
+    var bDirectionScratch = new Cartesian2();
+
+    function intersectsSide(a1, a2, pArray) {
+        var aDirection = Cartesian2.subtract(a2, a1, aDirectionScratch);
+
+        var length = pArray.length;
+        for (var i = 0; i < length; i++) {
+            var b1 = pArray[i].position;
+            var b2 = pArray[CesiumMath.mod(i + 1, length)].position;
+
+            // If there's a duplicate point, there's no intersection here.
+            if (Cartesian2.equals(a1, b1) || Cartesian2.equals(a2, b2) || Cartesian2.equals(a1, b2) || Cartesian2.equals(a2, b1)) {
+                continue;
+            }
+
+            var bDirection = Cartesian2.subtract(b2, b1, bDirectionScratch);
+            var intersection = linesIntersection(a1, aDirection, b1, bDirection);
+            if (!defined(intersection)) {
+                continue;
+            }
+
+            // If intersection is on an endpoint, count no intersection
+            if (Cartesian2.equals(intersection, a1) || Cartesian2.equals(intersection, a2) || Cartesian2.equals(intersection, b1) || Cartesian2.equals(intersection, b2)) {
+                continue;
+            }
+
+            // Is intersection point between segments?
+            var intX = intersection.x;
+            var intY = intersection.y;
+            var intersects = isBetween(intX, a1.x, a2.x) && isBetween(intY, a1.y, a2.y) && isBetween(intX, b1.x, b2.x) && isBetween(intY, b1.y, b2.y);
+
+            // If intersecting, the cut is not clean
+            if (intersects) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    var CLEAN_CUT = -1;
+    var INVALID_CUT = -2;
+
+    /**
+     * Determine whether a cut between two polygon vertices is clean.
+     *
+     * @param {Number} a1i Index of first vertex.
+     * @param {Number} a2i Index of second vertex.
+     * @param {Array} pArray Array of <code>{ position, index }</code> objects representing the polygon.
+     * @returns {Number} If CLEAN_CUT, a cut from the first vertex to the second is internal and does not cross any other sides.
+     * If INVALID_CUT, then the vertices were valid but a cut could not be made. If the value is greater than or equal to zero,
+     * then the value is the index of an invalid vertex.
+     *
+     * @private
+     */
+    function cleanCut(a1i, a2i, pArray) {
+        var internalCut12 = internalCut(a1i, a2i, pArray);
+        if (internalCut12 >= 0) {
+            return internalCut12;
+        }
+
+        var internalCut21 = internalCut(a2i, a1i, pArray);
+        if (internalCut21 >= 0) {
+            return internalCut21;
+        }
+
+        if (internalCut12 === INTERNAL && internalCut21 === INTERNAL &&
+                !intersectsSide(pArray[a1i].position, pArray[a2i].position, pArray) &&
+                !Cartesian2.equals(pArray[a1i].position, pArray[a2i].position)) {
+            return CLEAN_CUT;
+        }
+
+        return INVALID_CUT;
+    }
+
+    function triangleInLine(pArray) {
+        // Get two sides. If they're parallel, so is the last.
+        return indexedEdgeCrossZ(1, 2, 0, pArray) === 0.0;
+    }
+
+    /**
+     * This recursive algorithm takes a polygon, randomly selects two vertices
+     * which form a clean cut through the polygon, and divides the polygon
+     * then continues to "chop" the two resulting polygons.
+     *
+     * @param {Array} nodeArray Array of <code>{ position, index }</code> objects representing polygon
+     * @returns {Number[]} Index array representing triangles that fill the polygon
+     *
+     * @exception {DeveloperError} Invalid polygon: must have at least three vertices.
+     *
+     * @private
+     */
+    function randomChop(nodeArray) {
+        // Determine & verify number of vertices
+        var numVertices = nodeArray.length;
+
+        // Is it already a triangle?
+        if (numVertices === 3) {
+            // Only return triangle if it has area (not a line)
+            if (!triangleInLine(nodeArray)) {
+                return [nodeArray[0].index, nodeArray[1].index, nodeArray[2].index];
+            }
+
+            // If it's a line, we don't need it.
+            return [];
+        } else if (nodeArray.length < 3) {
+            throw new DeveloperError('Invalid polygon: must have at least three vertices.');
+        }
+
+        // Search for clean cut
+        var tries = 0;
+        var maxTries = nodeArray.length * 10;
+
+        var cutResult = INVALID_CUT;
+        var index1;
+        var index2;
+
+        while (cutResult < CLEAN_CUT && tries++ < maxTries) {
+            // Generate random indices
+            index1 = getRandomIndex(nodeArray.length);
+            index2 = index1 + 1;
+            while (Math.abs(index1 - index2) < 2 || Math.abs(index1 - index2) > nodeArray.length - 2) {
+                index2 = getRandomIndex(nodeArray.length);
+            }
+
+            // Make sure index2 is bigger
+            if (index1 > index2) {
+                var index = index1;
+                index1 = index2;
+                index2 = index;
+            }
+
+            cutResult = cleanCut(index1, index2, nodeArray);
+        }
+
+        if (cutResult === CLEAN_CUT) {
+            // Divide polygon
+            var nodeArray2 = nodeArray.splice(index1, (index2 - index1 + 1), nodeArray[index1], nodeArray[index2]);
+
+            // Chop up resulting polygons
+            return randomChop(nodeArray).concat(randomChop(nodeArray2));
+        } else if (cutResult >= 0) {
+            // Eliminate superfluous vertex and start over
+            nodeArray.splice(cutResult, 1);
+            return randomChop(nodeArray);
+        }
+
+        // No clean cut could be found
+        return [];
+    }
+
+    var scaleToGeodeticHeightN = new Cartesian3();
+    var scaleToGeodeticHeightP = new Cartesian3();
+
+    /**
+     * @private
+     */
+    var PolygonPipeline = {};
+
+    /**
+     * Cleans up a simple polygon by removing duplicate adjacent positions and making
+     * the first position not equal the last position.
+     *
+     * @exception {DeveloperError} At least three positions are required.
+     */
+    PolygonPipeline.removeDuplicates = function(positions) {
+                if (!defined(positions)) {
+            throw new DeveloperError('positions is required.');
+        }
+        
+        var length = positions.length;
+        var cleanedPositions = [];
+        for ( var i0 = length - 1, i1 = 0; i1 < length; i0 = i1++) {
+            var v0 = positions[i0];
+            var v1 = positions[i1];
+
+            if (!Cartesian3.equals(v0, v1)) {
+                cleanedPositions.push(v1); // Shallow copy!
+            }
+        }
+
+        return cleanedPositions;
+    };
+
+    /**
+     * @exception {DeveloperError} At least three positions are required.
+     */
+    PolygonPipeline.computeArea2D = function(positions) {
+                if (!defined(positions)) {
+            throw new DeveloperError('positions is required.');
+        }
+        if (positions.length < 3) {
+            throw new DeveloperError('At least three positions are required.');
+        }
+        
+        var length = positions.length;
+        var area = 0.0;
+
+        for ( var i0 = length - 1, i1 = 0; i1 < length; i0 = i1++) {
+            var v0 = positions[i0];
+            var v1 = positions[i1];
+
+            area += (v0.x * v1.y) - (v1.x * v0.y);
+        }
+
+        return area * 0.5;
+    };
+
+    /**
+     * @returns {WindingOrder} The winding order.
+     *
+     * @exception {DeveloperError} At least three positions are required.
+     */
+    PolygonPipeline.computeWindingOrder2D = function(positions) {
+        var area = PolygonPipeline.computeArea2D(positions);
+        return (area > 0.0) ? WindingOrder.COUNTER_CLOCKWISE : WindingOrder.CLOCKWISE;
+    };
+
+    /**
+     * Triangulate a polygon.
+     *
+     * @param {Cartesian2[]} positions - Cartesian2 array containing the vertices of the polygon
+     * @returns {Number[]} - Index array representing triangles that fill the polygon
+     *
+     * @exception {DeveloperError} At least three positions are required.
+     */
+    PolygonPipeline.triangulate = function(positions) {
+                if (!defined(positions)) {
+            throw new DeveloperError('positions is required.');
+        }
+        if (positions.length < 3) {
+            throw new DeveloperError('At least three positions are required.');
+        }
+        
+        var length = positions.length;
+        // Keep track of indices for later
+        var nodeArray = [];
+        for ( var i = 0; i < length; ++i) {
+            nodeArray[i] = {
+                position : positions[i],
+                index : i
+            };
+        }
+
+        // Recursive chop
+        return randomChop(nodeArray);
+    };
+
+    var subdivisionV0Scratch = new Cartesian3();
+    var subdivisionV1Scratch = new Cartesian3();
+    var subdivisionV2Scratch = new Cartesian3();
+    var subdivisionS0Scratch = new Cartesian3();
+    var subdivisionS1Scratch = new Cartesian3();
+    var subdivisionS2Scratch = new Cartesian3();
+    var subdivisionMidScratch = new Cartesian3();
+
+    /**
+     * Subdivides positions and raises points to the surface of the ellipsoid.
+     *
+     * @param {Ellipsoid} ellipsoid The ellipsoid the polygon in on.
+     * @param {Cartesian3[]} positions An array of {@link Cartesian3} positions of the polygon.
+     * @param {Number[]} indices An array of indices that determines the triangles in the polygon.
+     * @param {Number} [granularity=CesiumMath.RADIANS_PER_DEGREE] The distance, in radians, between each latitude and longitude. Determines the number of positions in the buffer.
+     *
+     * @exception {DeveloperError} At least three indices are required.
+     * @exception {DeveloperError} The number of indices must be divisable by three.
+     * @exception {DeveloperError} Granularity must be greater than zero.
+     */
+    PolygonPipeline.computeSubdivision = function(ellipsoid, positions, indices, granularity) {
+        granularity = defaultValue(granularity, CesiumMath.RADIANS_PER_DEGREE);
+
+                if (!defined(ellipsoid)) {
+            throw new DeveloperError('ellipsoid is required.');
+        }
+        if (!defined(positions)) {
+            throw new DeveloperError('positions is required.');
+        }
+        if (!defined(indices)) {
+            throw new DeveloperError('indices is required.');
+        }
+        if (indices.length < 3) {
+            throw new DeveloperError('At least three indices are required.');
+        }
+        if (indices.length % 3 !== 0) {
+            throw new DeveloperError('The number of indices must be divisable by three.');
+        }
+        if (granularity <= 0.0) {
+            throw new DeveloperError('granularity must be greater than zero.');
+        }
+        
+        // triangles that need (or might need) to be subdivided.
+        var triangles = indices.slice(0);
+
+        // New positions due to edge splits are appended to the positions list.
+        var i;
+        var length = positions.length;
+        var subdividedPositions = new Array(length * 3);
+        var q = 0;
+        for (i = 0; i < length; i++) {
+            var item = positions[i];
+            subdividedPositions[q++] = item.x;
+            subdividedPositions[q++] = item.y;
+            subdividedPositions[q++] = item.z;
+        }
+
+        var subdividedIndices = [];
+
+        // Used to make sure shared edges are not split more than once.
+        var edges = {};
+
+        var radius = ellipsoid.maximumRadius;
+        var minDistance = CesiumMath.chordLength(granularity, radius);
+        var minDistanceSqrd = minDistance * minDistance;
+
+        while (triangles.length > 0) {
+            var i2 = triangles.pop();
+            var i1 = triangles.pop();
+            var i0 = triangles.pop();
+
+            var v0 = Cartesian3.fromArray(subdividedPositions, i0 * 3, subdivisionV0Scratch);
+            var v1 = Cartesian3.fromArray(subdividedPositions, i1 * 3, subdivisionV1Scratch);
+            var v2 = Cartesian3.fromArray(subdividedPositions, i2 * 3, subdivisionV2Scratch);
+
+            var s0 = Cartesian3.multiplyByScalar(Cartesian3.normalize(v0, subdivisionS0Scratch), radius, subdivisionS0Scratch);
+            var s1 = Cartesian3.multiplyByScalar(Cartesian3.normalize(v1, subdivisionS1Scratch), radius, subdivisionS1Scratch);
+            var s2 = Cartesian3.multiplyByScalar(Cartesian3.normalize(v2, subdivisionS2Scratch), radius, subdivisionS2Scratch);
+
+            var g0 = Cartesian3.magnitudeSquared(Cartesian3.subtract(s0, s1, subdivisionMidScratch));
+            var g1 = Cartesian3.magnitudeSquared(Cartesian3.subtract(s1, s2, subdivisionMidScratch));
+            var g2 = Cartesian3.magnitudeSquared(Cartesian3.subtract(s2, s0, subdivisionMidScratch));
+
+            var max = Math.max(g0, g1, g2);
+            var edge;
+            var mid;
+
+            // if the max length squared of a triangle edge is greater than the chord length of squared
+            // of the granularity, subdivide the triangle
+            if (max > minDistanceSqrd) {
+                if (g0 === max) {
+                    edge = Math.min(i0, i1) + ' ' + Math.max(i0, i1);
+
+                    i = edges[edge];
+                    if (!defined(i)) {
+                        mid = Cartesian3.add(v0, v1, subdivisionMidScratch);
+                        Cartesian3.multiplyByScalar(mid, 0.5, mid);
+                        subdividedPositions.push(mid.x, mid.y, mid.z);
+                        i = subdividedPositions.length / 3 - 1;
+                        edges[edge] = i;
+                    }
+
+                    triangles.push(i0, i, i2);
+                    triangles.push(i, i1, i2);
+                } else if (g1 === max) {
+                    edge = Math.min(i1, i2) + ' ' + Math.max(i1, i2);
+
+                    i = edges[edge];
+                    if (!defined(i)) {
+                        mid = Cartesian3.add(v1, v2, subdivisionMidScratch);
+                        Cartesian3.multiplyByScalar(mid, 0.5, mid);
+                        subdividedPositions.push(mid.x, mid.y, mid.z);
+                        i = subdividedPositions.length / 3 - 1;
+                        edges[edge] = i;
+                    }
+
+                    triangles.push(i1, i, i0);
+                    triangles.push(i, i2, i0);
+                } else if (g2 === max) {
+                    edge = Math.min(i2, i0) + ' ' + Math.max(i2, i0);
+
+                    i = edges[edge];
+                    if (!defined(i)) {
+                        mid = Cartesian3.add(v2, v0, subdivisionMidScratch);
+                        Cartesian3.multiplyByScalar(mid, 0.5, mid);
+                        subdividedPositions.push(mid.x, mid.y, mid.z);
+                        i = subdividedPositions.length / 3 - 1;
+                        edges[edge] = i;
+                    }
+
+                    triangles.push(i2, i, i1);
+                    triangles.push(i, i0, i1);
+                }
+            } else {
+                subdividedIndices.push(i0);
+                subdividedIndices.push(i1);
+                subdividedIndices.push(i2);
+            }
+        }
+
+        return new Geometry({
+            attributes : {
+                position : new GeometryAttribute({
+                    componentDatatype : ComponentDatatype.DOUBLE,
+                    componentsPerAttribute : 3,
+                    values : subdividedPositions
+                })
+            },
+            indices : subdividedIndices,
+            primitiveType : PrimitiveType.TRIANGLES
+        });
+    };
+
+    /**
+     * Scales each position of a geometry's position attribute to a height, in place.
+     *
+     * @param {Geometry} geometry The geometry whose positions are to be scaled.
+     * @param {Number} [height=0.0] The desired height to add to the positions of the geometry.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid on which the positions lie.
+     * @param {Boolean} [scaleToSurface=true] <code>true</code> if the positions need to be scaled to the surface before the height is added.
+     * @returns {Geometry} The same geometry whose positions where scaled.
+     */
+    PolygonPipeline.scaleToGeodeticHeight = function(geometry, height, ellipsoid, scaleToSurface) {
+        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
+
+        var n = scaleToGeodeticHeightN;
+        var p = scaleToGeodeticHeightP;
+
+        height = defaultValue(height, 0.0);
+        scaleToSurface = defaultValue(scaleToSurface, true);
+
+        if (defined(geometry) && defined(geometry.attributes) && defined(geometry.attributes.position)) {
+            var positions = geometry.attributes.position.values;
+            var length = positions.length;
+
+            for ( var i = 0; i < length; i += 3) {
+                Cartesian3.fromArray(positions, i, p);
+
+                if (scaleToSurface) {
+                    p = ellipsoid.scaleToGeodeticSurface(p, p);
+                }
+
+                n = ellipsoid.geodeticSurfaceNormal(p, n);
+
+                Cartesian3.multiplyByScalar(n, height, n);
+                Cartesian3.add(p, n, p);
+
+                positions[i] = p.x;
+                positions[i + 1] = p.y;
+                positions[i + 2] = p.z;
+            }
+        }
+
+        return geometry;
+    };
+
+    /**
+     * Given a polygon defined by an outer ring with one or more inner rings (holes), return a single list of points representing
+     * a polygon defined by the outer ring with the inner holes removed.
+     *
+     * @param {Cartesian2[]} outerRing An array of Cartesian points defining the outer boundary of the polygon.
+     * @param {Cartesian2[]} innerRings An array of arrays of Cartesian points, where each array represents a hole in the polygon.
+     * @returns A single list of Cartesian points defining the polygon, including the eliminated inner ring.
+     *
+     * @exception {DeveloperError} <code>outerRing</code> must not be empty.
+     *
+     * @example
+     * // Simplifying a polygon with multiple holes.
+     * outerRing = Cesium.PolygonPipeline.eliminateHoles(outerRing, innerRings);
+     * polygon.positions = outerRing;
+     */
+    PolygonPipeline.eliminateHoles = function(outerRing, innerRings, ellipsoid) {
+                if (!defined(outerRing)) {
+            throw new DeveloperError('outerRing is required.');
+        }
+        if (outerRing.length === 0) {
+            throw new DeveloperError('outerRing must not be empty.');
+        }
+        if (!defined(innerRings)) {
+            throw new DeveloperError('innerRings is required.');
+        }
+        
+        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
+
+        var innerRingsCopy = [];
+        for ( var i = 0; i < innerRings.length; i++) {
+            var innerRing = [];
+            for ( var j = 0; j < innerRings[i].length; j++) {
+                innerRing.push(Cartesian3.clone(innerRings[i][j]));
+            }
+            innerRingsCopy.push(innerRing);
+        }
+
+        var newPolygonVertices = outerRing;
+        while (innerRingsCopy.length > 0) {
+            newPolygonVertices = eliminateHole(newPolygonVertices, innerRingsCopy, ellipsoid);
+        }
+        return newPolygonVertices;
+    };
+
+    return PolygonPipeline;
+});
+
+/*global define*/
 define('Core/VertexFormat',[
         './defaultValue',
+        './defined',
+        './DeveloperError',
         './freezeObject'
     ], function(
         defaultValue,
+        defined,
+        DeveloperError,
         freezeObject) {
     "use strict";
 
@@ -24074,14 +25162,15 @@ define('Core/VertexFormat',[
      * @alias VertexFormat
      * @constructor
      *
-     * @see Geometry#attributes
-     *
      * @example
      * // Create a vertex format with position and 2D texture coordinate attributes.
      * var format = new Cesium.VertexFormat({
      *   position : true,
      *   st : true
      * });
+     *
+     * @see Geometry#attributes
+     * @see Packable
      */
     var VertexFormat = function(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
@@ -24145,6 +25234,18 @@ define('Core/VertexFormat',[
          * @default false
          */
         this.tangent = defaultValue(options.tangent, false);
+
+        /**
+         * When <code>true</code>, the vertex has an RGB color attribute.
+         * <p>
+         * 8-bit unsigned byte.  3 components per attribute.
+         * </p>
+         *
+         * @type Boolean
+         *
+         * @default false
+         */
+        this.color = defaultValue(options.color, false);
     };
 
     /**
@@ -24208,7 +25309,21 @@ define('Core/VertexFormat',[
     }));
 
     /**
-     * An immutable vertex format with all well-known attributes: position, normal, st, binormal, and tangent.
+     * An immutable vertex format with position and color attributes.
+     *
+     * @type {VertexFormat}
+     * @constant
+     *
+     * @see VertexFormat#position
+     * @see VertexFormat#color
+     */
+    VertexFormat.POSITION_AND_COLOR = freezeObject(new VertexFormat({
+        position : true,
+        color : true
+    }));
+
+    /**
+     * An immutable vertex format with well-known attributes: position, normal, st, binormal, and tangent.
      *
      * @type {VertexFormat}
      * @constant
@@ -24240,6 +25355,89 @@ define('Core/VertexFormat',[
      * @see VertexFormat#normal
      */
     VertexFormat.DEFAULT = VertexFormat.POSITION_NORMAL_AND_ST;
+
+    /**
+     * The number of elements used to pack the object into an array.
+     * @type {Number}
+     */
+    VertexFormat.packedLength = 6;
+
+    /**
+     * Stores the provided instance into the provided array.
+     * @function
+     *
+     * @param {Object} value The value to pack.
+     * @param {Number[]} array The array to pack into.
+     * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     */
+    VertexFormat.pack = function(value, array, startingIndex) {
+                if (!defined(value)) {
+            throw new DeveloperError('value is required');
+        }
+        if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        array[startingIndex++] = value.position ? 1.0 : 0.0;
+        array[startingIndex++] = value.normal ? 1.0 : 0.0;
+        array[startingIndex++] = value.st ? 1.0 : 0.0;
+        array[startingIndex++] = value.binormal ? 1.0 : 0.0;
+        array[startingIndex++] = value.tangent ? 1.0 : 0.0;
+        array[startingIndex++] = value.color ? 1.0 : 0.0;
+    };
+
+    /**
+     * Retrieves an instance from a packed array.
+     *
+     * @param {Number[]} array The packed array.
+     * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
+     * @param {VertexFormat} [result] The object into which to store the result.
+     */
+    VertexFormat.unpack = function(array, startingIndex, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        if (!defined(result)) {
+            result = new VertexFormat();
+        }
+
+        result.position = array[startingIndex++] === 1.0;
+        result.normal   = array[startingIndex++] === 1.0;
+        result.st       = array[startingIndex++] === 1.0;
+        result.binormal = array[startingIndex++] === 1.0;
+        result.tangent  = array[startingIndex++] === 1.0;
+        result.color    = array[startingIndex++] === 1.0;
+        return result;
+    };
+
+    /**
+     * Duplicates a VertexFormat instance.
+     *
+     * @param {VertexFormat} cartesian The vertex format to duplicate.
+     * @param {VertexFormat} [result] The object onto which to store the result.
+     * @returns {VertexFormat} The modified result parameter or a new VertexFormat instance if one was not provided. (Returns undefined if vertexFormat is undefined)
+     */
+    VertexFormat.clone = function(vertexFormat, result) {
+        if (!defined(vertexFormat)) {
+            return undefined;
+        }
+        if (!defined(result)) {
+            result = new VertexFormat();
+        }
+
+        result.position = vertexFormat.position;
+        result.normal = vertexFormat.normal;
+        result.st = vertexFormat.st;
+        result.binormal = vertexFormat.binormal;
+        result.tangent = vertexFormat.tangent;
+        result.color = vertexFormat.color;
+        return result;
+    };
 
     return VertexFormat;
 });
@@ -24354,7 +25552,7 @@ define('Core/PolygonGeometry',[
 
         var geo;
         if (!perPositionHeight) {
-            geo = PolygonPipeline.computeSubdivision(positions, indices, granularity);
+            geo = PolygonPipeline.computeSubdivision(ellipsoid, positions, indices, granularity);
         } else {
             var length = positions.length;
             var flattenedPositions = new Array(length * 3);
@@ -24574,48 +25772,89 @@ define('Core/PolygonGeometry',[
         return geometry;
     }
 
-    function computeWallIndices(positions, granularity, perPositionHeight){
-        var edgePositions = [];
-        var subdividedEdge;
-        var edgeIndex;
-        var UL, UR, LL, LR;
-        var i;
+    var computeWallIndicesSubdivided = [];
 
-        var length = positions.length;
+    function computeWallIndices(positions, ellipsoid, granularity, perPositionHeight){
+        var edgePositions;
+        var topEdgeLength;
+        var i;
         var p1;
         var p2;
+
+        var length = positions.length;
+        var index = 0;
+
         if (!perPositionHeight) {
+            var minDistance = CesiumMath.chordLength(granularity, ellipsoid.maximumRadius);
+
+            var numVertices = 0;
+            for (i = 0; i < length; i++) {
+                numVertices += PolygonGeometryLibrary.subdivideLineCount(positions[i], positions[(i + 1) % length], minDistance);
+            }
+
+            topEdgeLength = (numVertices + length) * 3;
+            edgePositions = new Array(topEdgeLength * 2);
             for (i = 0; i < length; i++) {
                 p1 = positions[i];
                 p2 = positions[(i + 1) % length];
-                subdividedEdge = PolygonGeometryLibrary.subdivideLine(p1, p2, granularity);
-                subdividedEdge.push(p2.x, p2.y, p2.z);
-                edgePositions = edgePositions.concat(subdividedEdge);
+
+                var tempPositions = PolygonGeometryLibrary.subdivideLine(p1, p2, minDistance, computeWallIndicesSubdivided);
+                var tempPositionsLength = tempPositions.length;
+                for (var j = 0; j < tempPositionsLength; ++j, ++index) {
+                    edgePositions[index] = tempPositions[j];
+                    edgePositions[index + topEdgeLength] = tempPositions[j];
+                }
+
+                edgePositions[index] = p2.x;
+                edgePositions[index + topEdgeLength] = p2.x;
+                ++index;
+
+                edgePositions[index] = p2.y;
+                edgePositions[index + topEdgeLength] = p2.y;
+                ++index;
+
+                edgePositions[index] = p2.z;
+                edgePositions[index + topEdgeLength] = p2.z;
+                ++index;
             }
         } else {
+            topEdgeLength = length * 3 * 2;
+            edgePositions = new Array(topEdgeLength * 2);
             for (i = 0; i < length; i++) {
                 p1 = positions[i];
                 p2 = positions[(i + 1) % length];
-                edgePositions.push(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z);
+                edgePositions[index] = edgePositions[index + topEdgeLength] = p1.x;
+                ++index;
+                edgePositions[index] = edgePositions[index + topEdgeLength] = p1.y;
+                ++index;
+                edgePositions[index] = edgePositions[index + topEdgeLength] = p1.z;
+                ++index;
+                edgePositions[index] = edgePositions[index + topEdgeLength] = p2.x;
+                ++index;
+                edgePositions[index] = edgePositions[index + topEdgeLength] = p2.y;
+                ++index;
+                edgePositions[index] = edgePositions[index + topEdgeLength] = p2.z;
+                ++index;
             }
         }
 
-        edgePositions = edgePositions.concat(edgePositions);
         length = edgePositions.length;
         var indices = IndexDatatype.createTypedArray(length / 3, length - positions.length * 6);
-        edgeIndex = 0;
+        var edgeIndex = 0;
         length /= 6;
 
         for (i = 0; i < length; i++) {
-            UL = i;
-            UR = UL + 1;
+            var UL = i;
+            var UR = UL + 1;
+            var LL = UL + length;
+            var LR = LL + 1;
+
             p1 = Cartesian3.fromArray(edgePositions, UL * 3, p1Scratch);
             p2 = Cartesian3.fromArray(edgePositions, UR * 3, p2Scratch);
-            if (Cartesian3.equalsEpsilon(p1, p2, CesiumMath.EPSILON6)) {
+            if (Cartesian3.equalsEpsilon(p1, p2, CesiumMath.EPSILON14)) {
                 continue;
             }
-            LL = UL + length;
-            LR = LL + 1;
+
             indices[edgeIndex++] = UL;
             indices[edgeIndex++] = LL;
             indices[edgeIndex++] = UR;
@@ -24641,15 +25880,20 @@ define('Core/PolygonGeometry',[
 
     function createGeometryFromPositionsExtruded(ellipsoid, positions, granularity, hierarchy, perPositionHeight) {
         var topGeo = createGeometryFromPositions(ellipsoid, positions, granularity, perPositionHeight).geometry;
+
         var edgePoints = topGeo.attributes.position.values;
         var indices = topGeo.indices;
+
         var topBottomPositions = edgePoints.concat(edgePoints);
         var numPositions = topBottomPositions.length / 3;
+
         var newIndices = IndexDatatype.createTypedArray(numPositions, indices.length * 2);
         newIndices.set(indices);
         var ilength = indices.length;
+
         var i;
         var length = numPositions / 2;
+
         for (i = 0; i < ilength; i += 3) {
             var i0 = newIndices[i] + length;
             var i1 = newIndices[i + 1] + length;
@@ -24659,6 +25903,7 @@ define('Core/PolygonGeometry',[
             newIndices[i + 1 + ilength] = i1;
             newIndices[i + 2 + ilength] = i0;
         }
+
         var topAndBottomGeo = new Geometry({
             attributes : new GeometryAttributes({
                 position : new GeometryAttribute({
@@ -24674,10 +25919,10 @@ define('Core/PolygonGeometry',[
         var geos = {
             topAndBottom : new GeometryInstance({
                 geometry : topAndBottomGeo
-            })
+            }),
+            walls : []
         };
 
-        geos.walls = [];
         var outerRing = hierarchy.outerRing;
         var tangentPlane = EllipsoidTangentPlane.fromPoints(outerRing, ellipsoid);
         var positions2D = tangentPlane.projectPointsOntoPlane(outerRing, createGeometryFromPositionsExtrudedPositions);
@@ -24687,7 +25932,7 @@ define('Core/PolygonGeometry',[
             outerRing.reverse();
         }
 
-        var wallGeo = computeWallIndices(outerRing, granularity, perPositionHeight);
+        var wallGeo = computeWallIndices(outerRing, ellipsoid, granularity, perPositionHeight);
         geos.walls.push(new GeometryInstance({
             geometry : wallGeo
         }));
@@ -24700,11 +25945,11 @@ define('Core/PolygonGeometry',[
             positions2D = tangentPlane.projectPointsOntoPlane(hole, createGeometryFromPositionsExtrudedPositions);
 
             windingOrder = PolygonPipeline.computeWindingOrder2D(positions2D);
-            if (windingOrder === WindingOrder.CLOCKWISE) {
+            if (windingOrder === WindingOrder.COUNTER_CLOCKWISE) {
                 hole.reverse();
             }
 
-            wallGeo = computeWallIndices(hole, granularity);
+            wallGeo = computeWallIndices(hole, ellipsoid, granularity);
             geos.walls.push(new GeometryInstance({
                 geometry : wallGeo
             }));
@@ -24720,14 +25965,14 @@ define('Core/PolygonGeometry',[
      * @constructor
      *
      * @param {Object} options Object with the following properties:
-     * @param {Object} options.polygonHierarchy A polygon hierarchy that can include holes.
+     * @param {PolygonHierarchy} options.polygonHierarchy A polygon hierarchy that can include holes.
      * @param {Number} [options.height=0.0] The height of the polygon.
      * @param {Number} [options.extrudedHeight] The height of the polygon.
      * @param {VertexFormat} [options.vertexFormat=VertexFormat.DEFAULT] The vertex attributes to be computed.
      * @param {Number} [options.stRotation=0.0] The rotation of the texture coordinates, in radians. A positive rotation is counter-clockwise.
      * @param {Ellipsoid} [options.ellipsoid=Ellipsoid.WGS84] The ellipsoid to be used as a reference.
      * @param {Number} [options.granularity=CesiumMath.RADIANS_PER_DEGREE] The distance, in radians, between each latitude and longitude. Determines the number of positions in the buffer.
-     * @param {Boolean} [options.perPositionHeight=false] Use the height of options.positions for each position instaed of using options.height to determine the height.
+     * @param {Boolean} [options.perPositionHeight=false] Use the height of options.positions for each position instead of using options.height to determine the height.
      *
      * @see PolygonGeometry#createGeometry
      * @see PolygonGeometry#fromPositions
@@ -24797,13 +26042,16 @@ define('Core/PolygonGeometry',[
      *       -68.0, 40.0
      *     ]),
      *     extrudedHeight: 300000
-     *   } 
+     *   }
      * });
      * var geometry = Cesium.PolygonGeometry.createGeometry(extrudedPolygon);
      */
     var PolygonGeometry = function(options) {
-        options = defaultValue(options, defaultValue.EMPTY_OBJECT);
-
+                if (!defined(options) || !defined(options.polygonHierarchy)) {
+            throw new DeveloperError('options.polygonHierarchy is required.');
+        }
+        
+        var polygonHierarchy = options.polygonHierarchy;
         var vertexFormat = defaultValue(options.vertexFormat, VertexFormat.DEFAULT);
         var ellipsoid = defaultValue(options.ellipsoid, Ellipsoid.WGS84);
         var granularity = defaultValue(options.granularity, CesiumMath.RADIANS_PER_DEGREE);
@@ -24818,22 +26066,23 @@ define('Core/PolygonGeometry',[
             extrudedHeight = Math.min(h, height);
             height = Math.max(h, height);
         }
-        var polygonHierarchy = options.polygonHierarchy;
 
-                if (!defined(polygonHierarchy)) {
-            throw new DeveloperError('options.polygonHierarchy is required.');
-        }
-        
-        this._vertexFormat = vertexFormat;
-        this._ellipsoid = ellipsoid;
+        this._vertexFormat = VertexFormat.clone(vertexFormat);
+        this._ellipsoid = Ellipsoid.clone(ellipsoid);
         this._granularity = granularity;
         this._stRotation = stRotation;
         this._height = height;
-        this._extrudedHeight = extrudedHeight;
+        this._extrudedHeight = defaultValue(extrudedHeight, 0.0);
         this._extrude = extrude;
         this._polygonHierarchy = polygonHierarchy;
         this._perPositionHeight = perPositionHeight;
         this._workerName = 'createPolygonGeometry';
+
+        /**
+         * The number of elements used to pack the object into an array.
+         * @type {Number}
+         */
+        this.packedLength = PolygonGeometryLibrary.computeHierarchyPackedLength(polygonHierarchy) + Ellipsoid.packedLength + VertexFormat.packedLength + 7;
     };
 
     /**
@@ -24886,13 +26135,102 @@ define('Core/PolygonGeometry',[
     };
 
     /**
+     * Stores the provided instance into the provided array.
+     * @function
+     *
+     * @param {Object} value The value to pack.
+     * @param {Number[]} array The array to pack into.
+     * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     */
+    PolygonGeometry.pack = function(value, array, startingIndex) {
+                if (!defined(value)) {
+            throw new DeveloperError('value is required');
+        }
+        if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        startingIndex = PolygonGeometryLibrary.packPolygonHierarchy(value._polygonHierarchy, array, startingIndex);
+
+        Ellipsoid.pack(value._ellipsoid, array, startingIndex);
+        startingIndex += Ellipsoid.packedLength;
+
+        VertexFormat.pack(value._vertexFormat, array, startingIndex);
+        startingIndex += VertexFormat.packedLength;
+
+        array[startingIndex++] = value._height;
+        array[startingIndex++] = value._extrudedHeight;
+        array[startingIndex++] = value._granularity;
+        array[startingIndex++] = value._stRotation;
+        array[startingIndex++] = value._extrude ? 1.0 : 0.0;
+        array[startingIndex++] = value._perPositionHeight ? 1.0 : 0.0;
+        array[startingIndex] = value.packedLength;
+    };
+
+    var scratchEllipsoid = Ellipsoid.clone(Ellipsoid.UNIT_SPHERE);
+    var scratchVertexFormat = new VertexFormat();
+
+    //Only used to avoid inaability to default construct.
+    var dummyOptions = {
+        polygonHierarchy : {}
+    };
+
+    /**
+     * Retrieves an instance from a packed array.
+     *
+     * @param {Number[]} array The packed array.
+     * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
+     * @param {PolygonGeometry} [result] The object into which to store the result.
+     */
+    PolygonGeometry.unpack = function(array, startingIndex, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        var polygonHierarchy = PolygonGeometryLibrary.unpackPolygonHierarchy(array, startingIndex);
+        startingIndex = polygonHierarchy.startingIndex;
+        delete polygonHierarchy.startingIndex;
+
+        var ellipsoid = Ellipsoid.unpack(array, startingIndex, scratchEllipsoid);
+        startingIndex += Ellipsoid.packedLength;
+
+        var vertexFormat = VertexFormat.unpack(array, startingIndex, scratchVertexFormat);
+        startingIndex += VertexFormat.packedLength;
+
+        var height = array[startingIndex++];
+        var extrudedHeight = array[startingIndex++];
+        var granularity = array[startingIndex++];
+        var stRotation = array[startingIndex++];
+        var extrude = array[startingIndex++] === 1.0;
+        var perPositionHeight = array[startingIndex++] === 1.0;
+        var packedLength = array[startingIndex];
+
+        if (!defined(result)) {
+            result = new PolygonGeometry(dummyOptions);
+        }
+
+        result._polygonHierarchy = polygonHierarchy;
+        result._ellipsoid = Ellipsoid.clone(ellipsoid, result._ellipsoid);
+        result._vertexFormat = VertexFormat.clone(vertexFormat, result._vertexFormat);
+        result._height = height;
+        result._extrudedHeight = extrudedHeight;
+        result._granularity = granularity;
+        result._stRotation = stRotation;
+        result._extrude = extrude;
+        result._perPositionHeight = perPositionHeight;
+        result.packedLength = packedLength;
+        return result;
+    };
+
+    /**
      * Computes the geometric representation of a polygon, including its vertices, indices, and a bounding sphere.
      *
      * @param {PolygonGeometry} polygonGeometry A description of the polygon.
-     * @returns {Geometry} The computed vertices and indices.
-     *
-     * @exception {DeveloperError} At least three positions are required.
-     * @exception {DeveloperError} Duplicate positions result in not enough positions to form a polygon.
+     * @returns {Geometry|undefined} The computed vertices and indices.
      */
     PolygonGeometry.createGeometry = function(polygonGeometry) {
         var vertexFormat = polygonGeometry._vertexFormat;
@@ -24922,44 +26260,40 @@ define('Core/PolygonGeometry',[
             var holes = outerNode.holes;
             outerRing = PolygonPipeline.removeDuplicates(outerRing);
             if (outerRing.length < 3) {
-                throw new DeveloperError('At least three positions are required.');
+                continue;
             }
 
-            var numChildren = holes ? holes.length : 0;
-            if (numChildren === 0) {
-                // The outer polygon is a simple polygon with no nested inner polygon.
-                polygonHierarchy.push({
-                    outerRing : outerRing,
-                    holes : []
-                });
-                polygons.push(outerRing);
-            } else {
-                // The outer polygon contains inner polygons
-                var polygonHoles = [];
-                for (i = 0; i < numChildren; i++) {
-                    var hole = holes[i];
-                    hole.positions = PolygonPipeline.removeDuplicates(hole.positions);
-                    if (hole.positions.length < 3) {
-                        throw new DeveloperError('At least three positions are required.');
-                    }
-                    polygonHoles.push(hole.positions);
-
-                    var numGrandchildren = 0;
-                    if (defined(hole.holes)) {
-                        numGrandchildren = hole.holes.length;
-                    }
-
-                    for ( var j = 0; j < numGrandchildren; j++) {
-                        queue.enqueue(hole.holes[j]);
-                    }
+            var numChildren = defined(holes) ? holes.length : 0;
+            var polygonHoles = [];
+            for (i = 0; i < numChildren; i++) {
+                var hole = holes[i];
+                hole.positions = PolygonPipeline.removeDuplicates(hole.positions);
+                if (hole.positions.length < 3) {
+                    continue;
                 }
-                polygonHierarchy.push({
-                    outerRing : outerRing,
-                    holes : polygonHoles
-                });
-                var combinedPolygon = PolygonPipeline.eliminateHoles(outerRing, polygonHoles);
-                polygons.push(combinedPolygon);
+                polygonHoles.push(hole.positions);
+
+                var numGrandchildren = 0;
+                if (defined(hole.holes)) {
+                    numGrandchildren = hole.holes.length;
+                }
+
+                for ( var j = 0; j < numGrandchildren; j++) {
+                    queue.enqueue(hole.holes[j]);
+                }
             }
+
+            polygonHierarchy.push({
+                outerRing : outerRing,
+                holes : polygonHoles
+            });
+
+            var combinedPolygon = polygonHoles.length > 0 ? PolygonPipeline.eliminateHoles(outerRing, polygonHoles) : outerRing;
+            polygons.push(combinedPolygon);
+        }
+
+        if (polygons.length === 0) {
+            return undefined;
         }
 
         outerPositions = polygons[0];
@@ -24970,33 +26304,29 @@ define('Core/PolygonGeometry',[
         if (extrude) {
             for (i = 0; i < polygons.length; i++) {
                 geometry = createGeometryFromPositionsExtruded(ellipsoid, polygons[i], granularity, polygonHierarchy[i], perPositionHeight);
-                if (defined(geometry)) {
-                    topAndBottom = geometry.topAndBottom;
-                    topAndBottom.geometry = PolygonGeometryLibrary.scaleToGeodeticHeightExtruded(topAndBottom.geometry, height, extrudedHeight, ellipsoid, perPositionHeight);
-                    topAndBottom.geometry = computeAttributes(vertexFormat, topAndBottom.geometry, outerPositions, ellipsoid, stRotation, true, false);
-                    geometries.push(topAndBottom);
+                topAndBottom = geometry.topAndBottom;
+                topAndBottom.geometry = PolygonGeometryLibrary.scaleToGeodeticHeightExtruded(topAndBottom.geometry, height, extrudedHeight, ellipsoid, perPositionHeight);
+                topAndBottom.geometry = computeAttributes(vertexFormat, topAndBottom.geometry, outerPositions, ellipsoid, stRotation, true, false);
+                geometries.push(topAndBottom);
 
-                    walls = geometry.walls;
-                    for ( var k = 0; k < walls.length; k++) {
-                        var wall = walls[k];
-                        wall.geometry = PolygonGeometryLibrary.scaleToGeodeticHeightExtruded(wall.geometry, height, extrudedHeight, ellipsoid, perPositionHeight);
-                        wall.geometry = computeAttributes(vertexFormat, wall.geometry, outerPositions, ellipsoid, stRotation, true, true);
-                        geometries.push(wall);
-                    }
+                walls = geometry.walls;
+                for ( var k = 0; k < walls.length; k++) {
+                    var wall = walls[k];
+                    wall.geometry = PolygonGeometryLibrary.scaleToGeodeticHeightExtruded(wall.geometry, height, extrudedHeight, ellipsoid, perPositionHeight);
+                    wall.geometry = computeAttributes(vertexFormat, wall.geometry, outerPositions, ellipsoid, stRotation, true, true);
+                    geometries.push(wall);
                 }
             }
         } else {
             for (i = 0; i < polygons.length; i++) {
                 geometry = createGeometryFromPositions(ellipsoid, polygons[i], granularity, perPositionHeight);
-                if (defined(geometry)) {
-                    geometry.geometry = PolygonPipeline.scaleToGeodeticHeight(geometry.geometry, height, ellipsoid, !perPositionHeight);
-                    geometry.geometry = computeAttributes(vertexFormat, geometry.geometry, outerPositions, ellipsoid, stRotation, false, false);
-                    geometries.push(geometry);
-                }
+                geometry.geometry = PolygonPipeline.scaleToGeodeticHeight(geometry.geometry, height, ellipsoid, !perPositionHeight);
+                geometry.geometry = computeAttributes(vertexFormat, geometry.geometry, outerPositions, ellipsoid, stRotation, false, false);
+                geometries.push(geometry);
             }
         }
 
-        geometry = GeometryPipeline.combine(geometries);
+        geometry = GeometryPipeline.combineInstances(geometries)[0];
         geometry.attributes.position.values = new Float64Array(geometry.attributes.position.values);
         geometry.indices = IndexDatatype.createTypedArray(geometry.attributes.position.values.length / 3, geometry.indices);
 
@@ -25020,14 +26350,19 @@ define('Core/PolygonGeometry',[
 
 /*global define*/
 define('Workers/createPolygonGeometry',[
+        '../Core/defined',
         '../Core/Ellipsoid',
         '../Core/PolygonGeometry'
     ], function(
+        defined,
         Ellipsoid,
         PolygonGeometry) {
     "use strict";
 
-    function createPolygonGeometry(polygonGeometry) {
+    function createPolygonGeometry(polygonGeometry, offset) {
+        if (defined(offset)) {
+            polygonGeometry = PolygonGeometry.unpack(polygonGeometry, offset);
+        }
         polygonGeometry._ellipsoid = Ellipsoid.clone(polygonGeometry._ellipsoid);
         return PolygonGeometry.createGeometry(polygonGeometry);
     }

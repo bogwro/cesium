@@ -19,12 +19,7 @@
  */ \n\
 float czm_latitudeToWebMercatorFraction(float latitude, float southMercatorYLow, float southMercatorYHigh, float oneOverMercatorHeight)\n\
 {\n\
-// Firefox 33-34 has a regression that prevents the CORDIC implementation from compiling\n\
-#ifdef DISABLE_CORDIC\n\
     float sinLatitude = sin(latitude);\n\
-#else\n\
-    float sinLatitude = czm_cosineAndSine(latitude).y;\n\
-#endif\n\
     float mercatorY = 0.5 * log((1.0 + sinLatitude) / (1.0 - sinLatitude));\n\
     \n\
     // mercatorY - southMercatorY in simulated double precision.\n\

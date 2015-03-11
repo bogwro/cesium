@@ -1,7 +1,7 @@
 /**
  * Cesium - https://github.com/AnalyticalGraphicsInc/cesium
  *
- * Copyright 2011-2014 Cesium Contributors
+ * Copyright 2011-2015 Cesium Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -850,19 +850,7 @@ define('Core/Math',[
                 if (!defined(x)) {
             throw new DeveloperError('x is required.');
         }
-                var epsilon10 = CesiumMath.EPSILON10;
-        var pi = CesiumMath.PI;
-        var two_pi = CesiumMath.TWO_PI;
-        while (x < -(pi + epsilon10)) {
-            x += two_pi;
-        }
-        if (x < -pi) {
-            return -pi;
-        }
-        while (x > pi + epsilon10) {
-            x -= two_pi;
-        }
-        return x > pi ? pi : x;
+                return CesiumMath.zeroToTwoPi(x + CesiumMath.PI) - CesiumMath.PI;
     };
 
     /**
@@ -875,35 +863,61 @@ define('Core/Math',[
                 if (!defined(x)) {
             throw new DeveloperError('x is required.');
         }
-                var value = x % CesiumMath.TWO_PI;
-        // We do a second modules here if we add 2Pi to ensure that we don't have any numerical issues with very
-        // small negative values.
-        return (value < 0.0) ? (value + CesiumMath.TWO_PI) % CesiumMath.TWO_PI : value;
+                var mod = CesiumMath.mod(x, CesiumMath.TWO_PI);
+        if (Math.abs(mod) < CesiumMath.EPSILON14 && Math.abs(x) > CesiumMath.EPSILON14) {
+            return CesiumMath.TWO_PI;
+        }
+        return mod;
     };
 
     /**
-     * Determines if two values are equal within the provided epsilon.  This is useful
-     * to avoid problems due to roundoff error when comparing floating-point values directly.
+     * The modulo operation that also works for negative dividends.
+     *
+     * @param {Number} m The dividend.
+     * @param {Number} n The divisor.
+     * @returns {Number} The remainder.
+     */
+    CesiumMath.mod = function(m, n) {
+                if (!defined(m)) {
+            throw new DeveloperError('m is required.');
+        }
+        if (!defined(n)) {
+            throw new DeveloperError('n is required.');
+        }
+                return ((m % n) + n) % n;
+    };
+
+    /**
+     * Determines if two values are equal using an absolute or relative tolerance test. This is useful
+     * to avoid problems due to roundoff error when comparing floating-point values directly. The values are
+     * first compared using an absolute tolerance test. If that fails, a relative tolerance test is performed.
+     * Use this test if you are unsure of the magnitudes of left and right.
      *
      * @param {Number} left The first value to compare.
      * @param {Number} right The other value to compare.
-     * @param {Number} [epsilon=0.0] The maximum inclusive delta between <code>left</code> and <code>right</code> where they will be considered equal.
+     * @param {Number} relativeEpsilon The maximum inclusive delta between <code>left</code> and <code>right</code> for the relative tolerance test.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The maximum inclusive delta between <code>left</code> and <code>right</code> for the absolute tolerance test.
      * @returns {Boolean} <code>true</code> if the values are equal within the epsilon; otherwise, <code>false</code>.
      *
      * @example
-     * var b = Cesium.Math.equalsEpsilon(0.0, 0.01, Cesium.Math.EPSILON2); // true
+     * var a = Cesium.Math.equalsEpsilon(0.0, 0.01, Cesium.Math.EPSILON2); // true
      * var b = Cesium.Math.equalsEpsilon(0.0, 0.1, Cesium.Math.EPSILON2);  // false
+     * var c = Cesium.Math.equalsEpsilon(3699175.1634344, 3699175.2, Cesium.Math.EPSILON7); // true
+     * var d = Cesium.Math.equalsEpsilon(3699175.1634344, 3699175.2, Cesium.Math.EPSILON9); // false
      */
-    CesiumMath.equalsEpsilon = function(left, right, epsilon) {
+    CesiumMath.equalsEpsilon = function(left, right, relativeEpsilon, absoluteEpsilon) {
                 if (!defined(left)) {
             throw new DeveloperError('left is required.');
         }
-
         if (!defined(right)) {
             throw new DeveloperError('right is required.');
         }
-                epsilon = defaultValue(epsilon, 0.0);
-        return Math.abs(left - right) <= epsilon;
+        if (!defined(relativeEpsilon)) {
+            throw new DeveloperError('relativeEpsilon is required.');
+        }
+                absoluteEpsilon = defaultValue(absoluteEpsilon, relativeEpsilon);
+        var absDiff = Math.abs(left - right);
+        return absDiff <= absoluteEpsilon || absDiff <= relativeEpsilon * Math.max(Math.abs(left), Math.abs(right));
     };
 
     var factorials = [1];
@@ -1023,7 +1037,7 @@ define('Core/Math',[
      * @param {Number} value The value to constrain.
      * @param {Number} min The minimum value.
      * @param {Number} max The maximum value.
-     * @returns The value clamped so that min <= value <= max.
+     * @returns {Number} The value clamped so that min <= value <= max.
      */
     CesiumMath.clamp = function(value, min, max) {
                 if (!defined(value)) {
@@ -1058,7 +1072,7 @@ define('Core/Math',[
      * Generates a random number in the range of [0.0, 1.0)
      * using a Mersenne twister.
      *
-     * @returns A random number in the range of [0.0, 1.0).
+     * @returns {Number} A random number in the range of [0.0, 1.0).
      *
      * @see CesiumMath.setRandomNumberSeed
      * @see {@link http://en.wikipedia.org/wiki/Mersenne_twister|Mersenne twister on Wikipedia}
@@ -1071,24 +1085,47 @@ define('Core/Math',[
      * Computes <code>Math.acos(value)</acode>, but first clamps <code>value</code> to the range [-1.0, 1.0]
      * so that the function will never return NaN.
      *
-     * @param value The value for which to compute acos.
-     * @returns {number} The acos of the value if the value is in the range [-1.0, 1.0], or the acos of -1.0 or 1.0,
+     * @param {Number} value The value for which to compute acos.
+     * @returns {Number} The acos of the value if the value is in the range [-1.0, 1.0], or the acos of -1.0 or 1.0,
      *          whichever is closer, if the value is outside the range.
      */
     CesiumMath.acosClamped = function(value) {
-        return Math.acos(CesiumMath.clamp(value, -1.0, 1.0));
+                if (!defined(value)) {
+            throw new DeveloperError('value is required.');
+        }
+                return Math.acos(CesiumMath.clamp(value, -1.0, 1.0));
     };
 
     /**
      * Computes <code>Math.asin(value)</acode>, but first clamps <code>value</code> to the range [-1.0, 1.0]
      * so that the function will never return NaN.
      *
-     * @param value The value for which to compute asin.
-     * @returns {number} The asin of the value if the value is in the range [-1.0, 1.0], or the asin of -1.0 or 1.0,
+     * @param {Number} value The value for which to compute asin.
+     * @returns {Number} The asin of the value if the value is in the range [-1.0, 1.0], or the asin of -1.0 or 1.0,
      *          whichever is closer, if the value is outside the range.
      */
     CesiumMath.asinClamped = function(value) {
-        return Math.asin(CesiumMath.clamp(value, -1.0, 1.0));
+                if (!defined(value)) {
+            throw new DeveloperError('value is required.');
+        }
+                return Math.asin(CesiumMath.clamp(value, -1.0, 1.0));
+    };
+
+    /**
+     * Finds the chord length between two points given the circle's radius and the angle between the points.
+     *
+     * @param {Number} angle The angle between the two points.
+     * @param {Number} radius The radius of the circle.
+     * @returns {Number} The chord length.
+     */
+    CesiumMath.chordLength = function(angle, radius) {
+                if (!defined(angle)) {
+            throw new DeveloperError('angle is required.');
+        }
+        if (!defined(radius)) {
+            throw new DeveloperError('radius is required.');
+        }
+                return 2.0 * radius * Math.sin(angle * 0.5);
     };
 
     return CesiumMath;
@@ -1401,7 +1438,7 @@ define('Core/Cartesian3',[
     var distanceScratch = new Cartesian3();
 
     /**
-     * Computes the distance between two points
+     * Computes the distance between two points.
      *
      * @param {Cartesian3} left The first point to compute the distance from.
      * @param {Cartesian3} right The second point to compute the distance to.
@@ -1418,6 +1455,27 @@ define('Core/Cartesian3',[
         
         Cartesian3.subtract(left, right, distanceScratch);
         return Cartesian3.magnitude(distanceScratch);
+    };
+
+    /**
+     * Computes the squared distance between two points.  Comparing squared distances
+     * using this function is more efficient than comparing distances using {@link Cartesian3#distance}.
+     *
+     * @param {Cartesian3} left The first point to compute the distance from.
+     * @param {Cartesian3} right The second point to compute the distance to.
+     * @returns {Number} The distance between two points.
+     *
+     * @example
+     * // Returns 4.0, not 2.0
+     * var d = Cesium.Cartesian3.distance(new Cesium.Cartesian3(1.0, 0.0, 0.0), new Cesium.Cartesian3(3.0, 0.0, 0.0));
+     */
+    Cartesian3.distanceSquared = function(left, right) {
+                if (!defined(left) || !defined(right)) {
+            throw new DeveloperError('left and right are required.');
+        }
+        
+        Cartesian3.subtract(left, right, distanceScratch);
+        return Cartesian3.magnitudeSquared(distanceScratch);
     };
 
     /**
@@ -1735,26 +1793,32 @@ define('Core/Cartesian3',[
     };
 
     /**
+     * @private
+     */
+    Cartesian3.equalsArray = function(cartesian, array, offset) {
+        return cartesian.x === array[offset] &&
+               cartesian.y === array[offset + 1] &&
+               cartesian.z === array[offset + 2];
+    };
+
+    /**
      * Compares the provided Cartesians componentwise and returns
-     * <code>true</code> if they are within the provided epsilon,
+     * <code>true</code> if they pass an absolute or relative tolerance test,
      * <code>false</code> otherwise.
      *
      * @param {Cartesian3} [left] The first Cartesian.
      * @param {Cartesian3} [right] The second Cartesian.
-     * @param {Number} epsilon The epsilon to use for equality testing.
+     * @param {Number} relativeEpsilon The relative epsilon tolerance to use for equality testing.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The absolute epsilon tolerance to use for equality testing.
      * @returns {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
      */
-    Cartesian3.equalsEpsilon = function(left, right, epsilon) {
-                if (typeof epsilon !== 'number') {
-            throw new DeveloperError('epsilon is required and must be a number.');
-        }
-        
+    Cartesian3.equalsEpsilon = function(left, right, relativeEpsilon, absoluteEpsilon) {
         return (left === right) ||
-               ((defined(left)) &&
-                (defined(right)) &&
-                (Math.abs(left.x - right.x) <= epsilon) &&
-                (Math.abs(left.y - right.y) <= epsilon) &&
-                (Math.abs(left.z - right.z) <= epsilon));
+               (defined(left) &&
+                defined(right) &&
+                CesiumMath.equalsEpsilon(left.x, right.x, relativeEpsilon, absoluteEpsilon) &&
+                CesiumMath.equalsEpsilon(left.y, right.y, relativeEpsilon, absoluteEpsilon) &&
+                CesiumMath.equalsEpsilon(left.z, right.z, relativeEpsilon, absoluteEpsilon));
     };
 
     /**
@@ -2052,15 +2116,16 @@ define('Core/Cartesian3',[
 
     /**
      * Compares this Cartesian against the provided Cartesian componentwise and returns
-     * <code>true</code> if they are within the provided epsilon,
+     * <code>true</code> if they pass an absolute or relative tolerance test,
      * <code>false</code> otherwise.
      *
      * @param {Cartesian3} [right] The right hand side Cartesian.
-     * @param {Number} epsilon The epsilon to use for equality testing.
+     * @param {Number} relativeEpsilon The relative epsilon tolerance to use for equality testing.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The absolute epsilon tolerance to use for equality testing.
      * @returns {Boolean} <code>true</code> if they are within the provided epsilon, <code>false</code> otherwise.
      */
-    Cartesian3.prototype.equalsEpsilon = function(right, epsilon) {
-        return Cartesian3.equalsEpsilon(this, right, epsilon);
+    Cartesian3.prototype.equalsEpsilon = function(right, relativeEpsilon, absoluteEpsilon) {
+        return Cartesian3.equalsEpsilon(this, right, relativeEpsilon, absoluteEpsilon);
     };
 
     /**
@@ -2574,6 +2639,51 @@ define('Core/Ellipsoid',[
      */
     Ellipsoid.prototype.clone = function(result) {
         return Ellipsoid.clone(this, result);
+    };
+
+    /**
+     * The number of elements used to pack the object into an array.
+     * @type {Number}
+     */
+    Ellipsoid.packedLength = Cartesian3.packedLength;
+
+    /**
+     * Stores the provided instance into the provided array.
+     * @function
+     *
+     * @param {Object} value The value to pack.
+     * @param {Number[]} array The array to pack into.
+     * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     */
+    Ellipsoid.pack = function(value, array, startingIndex) {
+                if (!defined(value)) {
+            throw new DeveloperError('value is required');
+        }
+        if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        Cartesian3.pack(value._radii, array, startingIndex);
+    };
+
+    /**
+     * Retrieves an instance from a packed array.
+     *
+     * @param {Number[]} array The packed array.
+     * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
+     * @param {Ellipsoid} [result] The object into which to store the result.
+     */
+    Ellipsoid.unpack = function(array, startingIndex, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        var radii = Cartesian3.unpack(array, startingIndex);
+        return Ellipsoid.fromCartesian3(radii, result);
     };
 
     /**
@@ -3159,12 +3269,14 @@ define('Core/Cartesian4',[
         './defaultValue',
         './defined',
         './DeveloperError',
-        './freezeObject'
+        './freezeObject',
+        './Math'
     ], function(
         defaultValue,
         defined,
         DeveloperError,
-        freezeObject) {
+        freezeObject,
+        CesiumMath) {
     "use strict";
 
     /**
@@ -3463,7 +3575,7 @@ define('Core/Cartesian4',[
     var distanceScratch = new Cartesian4();
 
     /**
-     * Computes the 4-space distance between two points
+     * Computes the 4-space distance between two points.
      *
      * @param {Cartesian4} left The first point to compute the distance from.
      * @param {Cartesian4} right The second point to compute the distance to.
@@ -3471,7 +3583,9 @@ define('Core/Cartesian4',[
      *
      * @example
      * // Returns 1.0
-     * var d = Cesium.Cartesian4.distance(new Cesium.Cartesian4(1.0, 0.0, 0.0, 0.0), new Cesium.Cartesian4(2.0, 0.0, 0.0, 0.0));
+     * var d = Cesium.Cartesian4.distance(
+     *   new Cesium.Cartesian4(1.0, 0.0, 0.0, 0.0),
+     *   new Cesium.Cartesian4(2.0, 0.0, 0.0, 0.0));
      */
     Cartesian4.distance = function(left, right) {
                 if (!defined(left) || !defined(right)) {
@@ -3480,6 +3594,29 @@ define('Core/Cartesian4',[
         
         Cartesian4.subtract(left, right, distanceScratch);
         return Cartesian4.magnitude(distanceScratch);
+    };
+
+    /**
+     * Computes the squared distance between two points.  Comparing squared distances
+     * using this function is more efficient than comparing distances using {@link Cartesian4#distance}.
+     *
+     * @param {Cartesian4} left The first point to compute the distance from.
+     * @param {Cartesian4} right The second point to compute the distance to.
+     * @returns {Number} The distance between two points.
+     *
+     * @example
+     * // Returns 4.0, not 2.0
+     * var d = Cesium.Cartesian4.distance(
+     *   new Cesium.Cartesian4(1.0, 0.0, 0.0, 0.0),
+     *   new Cesium.Cartesian4(3.0, 0.0, 0.0, 0.0));
+     */
+    Cartesian4.distanceSquared = function(left, right) {
+                if (!defined(left) || !defined(right)) {
+            throw new DeveloperError('left and right are required.');
+        }
+        
+        Cartesian4.subtract(left, right, distanceScratch);
+        return Cartesian4.magnitudeSquared(distanceScratch);
     };
 
     /**
@@ -3792,27 +3929,34 @@ define('Core/Cartesian4',[
     };
 
     /**
+     * @private
+     */
+    Cartesian4.equalsArray = function(cartesian, array, offset) {
+        return cartesian.x === array[offset] &&
+               cartesian.y === array[offset + 1] &&
+               cartesian.z === array[offset + 2] &&
+               cartesian.w === array[offset + 3];
+    };
+
+    /**
      * Compares the provided Cartesians componentwise and returns
-     * <code>true</code> if they are within the provided epsilon,
+     * <code>true</code> if they pass an absolute or relative tolerance test,
      * <code>false</code> otherwise.
      *
      * @param {Cartesian4} [left] The first Cartesian.
      * @param {Cartesian4} [right] The second Cartesian.
-     * @param {Number} epsilon The epsilon to use for equality testing.
+     * @param {Number} relativeEpsilon The relative epsilon tolerance to use for equality testing.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The absolute epsilon tolerance to use for equality testing.
      * @returns {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
      */
-    Cartesian4.equalsEpsilon = function(left, right, epsilon) {
-                if (typeof epsilon !== 'number') {
-            throw new DeveloperError('epsilon is required and must be a number.');
-        }
-        
+    Cartesian4.equalsEpsilon = function(left, right, relativeEpsilon, absoluteEpsilon) {
         return (left === right) ||
-               ((defined(left)) &&
-                (defined(right)) &&
-                (Math.abs(left.x - right.x) <= epsilon) &&
-                (Math.abs(left.y - right.y) <= epsilon) &&
-                (Math.abs(left.z - right.z) <= epsilon) &&
-                (Math.abs(left.w - right.w) <= epsilon));
+               (defined(left) &&
+                defined(right) &&
+                CesiumMath.equalsEpsilon(left.x, right.x, relativeEpsilon, absoluteEpsilon) &&
+                CesiumMath.equalsEpsilon(left.y, right.y, relativeEpsilon, absoluteEpsilon) &&
+                CesiumMath.equalsEpsilon(left.z, right.z, relativeEpsilon, absoluteEpsilon) &&
+                CesiumMath.equalsEpsilon(left.w, right.w, relativeEpsilon, absoluteEpsilon));
     };
 
     /**
@@ -3878,15 +4022,16 @@ define('Core/Cartesian4',[
 
     /**
      * Compares this Cartesian against the provided Cartesian componentwise and returns
-     * <code>true</code> if they are within the provided epsilon,
+     * <code>true</code> if they pass an absolute or relative tolerance test,
      * <code>false</code> otherwise.
      *
      * @param {Cartesian4} [right] The right hand side Cartesian.
-     * @param {Number} epsilon The epsilon to use for equality testing.
+     * @param {Number} relativeEpsilon The relative epsilon tolerance to use for equality testing.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The absolute epsilon tolerance to use for equality testing.
      * @returns {Boolean} <code>true</code> if they are within the provided epsilon, <code>false</code> otherwise.
      */
-    Cartesian4.prototype.equalsEpsilon = function(right, epsilon) {
-        return Cartesian4.equalsEpsilon(this, right, epsilon);
+    Cartesian4.prototype.equalsEpsilon = function(right, relativeEpsilon, absoluteEpsilon) {
+        return Cartesian4.equalsEpsilon(this, right, relativeEpsilon, absoluteEpsilon);
     };
 
     /**
@@ -3954,6 +4099,71 @@ define('Core/Matrix3',[
         this[6] = defaultValue(column2Row0, 0.0);
         this[7] = defaultValue(column2Row1, 0.0);
         this[8] = defaultValue(column2Row2, 0.0);
+    };
+
+    /**
+     * The number of elements used to pack the object into an array.
+     * @type {Number}
+     */
+    Matrix3.packedLength = 9;
+
+    /**
+     * Stores the provided instance into the provided array.
+     *
+     * @param {Matrix3} value The value to pack.
+     * @param {Number[]} array The array to pack into.
+     * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     */
+    Matrix3.pack = function(value, array, startingIndex) {
+                if (!defined(value)) {
+            throw new DeveloperError('value is required');
+        }
+
+        if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        array[startingIndex++] = value[0];
+        array[startingIndex++] = value[1];
+        array[startingIndex++] = value[2];
+        array[startingIndex++] = value[3];
+        array[startingIndex++] = value[4];
+        array[startingIndex++] = value[5];
+        array[startingIndex++] = value[6];
+        array[startingIndex++] = value[7];
+        array[startingIndex++] = value[8];
+    };
+
+    /**
+     * Retrieves an instance from a packed array.
+     *
+     * @param {Number[]} array The packed array.
+     * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
+     * @param {Matrix3} [result] The object into which to store the result.
+     */
+    Matrix3.unpack = function(array, startingIndex, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        if (!defined(result)) {
+            result = new Matrix3();
+        }
+
+        result[0] = array[startingIndex++];
+        result[1] = array[startingIndex++];
+        result[2] = array[startingIndex++];
+        result[3] = array[startingIndex++];
+        result[4] = array[startingIndex++];
+        result[5] = array[startingIndex++];
+        result[6] = array[startingIndex++];
+        result[7] = array[startingIndex++];
+        result[8] = array[startingIndex++];
+        return result;
     };
 
     /**
@@ -5224,6 +5434,21 @@ define('Core/Matrix3',[
     };
 
     /**
+     * @private
+     */
+    Matrix3.equalsArray = function(matrix, array, offset) {
+        return matrix[0] === array[offset] &&
+               matrix[1] === array[offset + 1] &&
+               matrix[2] === array[offset + 2] &&
+               matrix[3] === array[offset + 3] &&
+               matrix[4] === array[offset + 4] &&
+               matrix[5] === array[offset + 5] &&
+               matrix[6] === array[offset + 6] &&
+               matrix[7] === array[offset + 7] &&
+               matrix[8] === array[offset + 8];
+    };
+
+    /**
      * Compares this matrix to the provided matrix componentwise and returns
      * <code>true</code> if they are within the provided epsilon,
      * <code>false</code> otherwise.
@@ -5601,7 +5826,7 @@ define('Core/Matrix4',[
      * and a Cartesian3 representing the translation.
      *
      * @param {Matrix3} rotation The upper left portion of the matrix representing the rotation.
-     * @param {Cartesian3} translation The upper right portion of the matrix representing the translation.
+     * @param {Cartesian3} [translation=Cartesian3.ZERO] The upper right portion of the matrix representing the translation.
      * @param {Matrix4} [result] The object in which the result will be stored, if undefined a new instance will be created.
      * @returns The modified result parameter, or a new Matrix4 instance if one was not provided.
      */
@@ -5609,10 +5834,9 @@ define('Core/Matrix4',[
                 if (!defined(rotation)) {
             throw new DeveloperError('rotation is required.');
         }
-        if (!defined(translation)) {
-            throw new DeveloperError('translation is required.');
-        }
         
+        translation = defaultValue(translation, Cartesian3.ZERO);
+
         if (!defined(result)) {
             return new Matrix4(rotation[0], rotation[3], rotation[6], translation.x,
                                rotation[1], rotation[4], rotation[7], translation.y,
@@ -5728,6 +5952,10 @@ define('Core/Matrix4',[
      * @see Matrix4.multiplyByTranslation
      */
     Matrix4.fromTranslation = function(translation, result) {
+                if (!defined(translation)) {
+            throw new DeveloperError('translation is required.');
+        }
+        
         return Matrix4.fromRotationTranslation(Matrix3.IDENTITY, translation, result);
     };
 
@@ -6797,6 +7025,82 @@ define('Core/Matrix4',[
 
     /**
      * Multiplies a transformation matrix (with a bottom row of <code>[0.0, 0.0, 0.0, 1.0]</code>)
+     * by a 3x3 rotation matrix.  This is an optimization
+     * for <code>Matrix4.multiply(m, Matrix4.fromRotationTranslation(rotation), m);</code> with less allocations and arithmetic operations.
+     *
+     * @param {Matrix4} matrix The matrix on the left-hand side.
+     * @param {Matrix3} rotation The 3x3 rotation matrix on the right-hand side.
+     * @param {Matrix4} result The object onto which to store the result.
+     * @returns {Matrix4} The modified result parameter.
+     *
+     * @example
+     * // Instead of Cesium.Matrix4.multiply(m, Cesium.Matrix4.fromRotationTranslation(rotation), m);
+     * Cesium.Matrix4.multiplyByMatrix3(m, rotation, m);
+     */
+    Matrix4.multiplyByMatrix3 = function(matrix, rotation, result) {
+                if (!defined(matrix)) {
+            throw new DeveloperError('matrix is required');
+        }
+        if (!defined(rotation)) {
+            throw new DeveloperError('rotation is required');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required,');
+        }
+        
+        var left0 = matrix[0];
+        var left1 = matrix[1];
+        var left2 = matrix[2];
+        var left4 = matrix[4];
+        var left5 = matrix[5];
+        var left6 = matrix[6];
+        var left8 = matrix[8];
+        var left9 = matrix[9];
+        var left10 = matrix[10];
+
+        var right0 = rotation[0];
+        var right1 = rotation[1];
+        var right2 = rotation[2];
+        var right4 = rotation[3];
+        var right5 = rotation[4];
+        var right6 = rotation[5];
+        var right8 = rotation[6];
+        var right9 = rotation[7];
+        var right10 = rotation[8];
+
+        var column0Row0 = left0 * right0 + left4 * right1 + left8 * right2;
+        var column0Row1 = left1 * right0 + left5 * right1 + left9 * right2;
+        var column0Row2 = left2 * right0 + left6 * right1 + left10 * right2;
+
+        var column1Row0 = left0 * right4 + left4 * right5 + left8 * right6;
+        var column1Row1 = left1 * right4 + left5 * right5 + left9 * right6;
+        var column1Row2 = left2 * right4 + left6 * right5 + left10 * right6;
+
+        var column2Row0 = left0 * right8 + left4 * right9 + left8 * right10;
+        var column2Row1 = left1 * right8 + left5 * right9 + left9 * right10;
+        var column2Row2 = left2 * right8 + left6 * right9 + left10 * right10;
+
+        result[0] = column0Row0;
+        result[1] = column0Row1;
+        result[2] = column0Row2;
+        result[3] = 0.0;
+        result[4] = column1Row0;
+        result[5] = column1Row1;
+        result[6] = column1Row2;
+        result[7] = 0.0;
+        result[8] = column2Row0;
+        result[9] = column2Row1;
+        result[10] = column2Row2;
+        result[11] = 0.0;
+        result[12] = matrix[12];
+        result[13] = matrix[13];
+        result[14] = matrix[14];
+        result[15] = matrix[15];
+        return result;
+    };
+
+    /**
+     * Multiplies a transformation matrix (with a bottom row of <code>[0.0, 0.0, 0.0, 1.0]</code>)
      * by an implicit translation matrix defined by a {@link Cartesian3}.  This is an optimization
      * for <code>Matrix4.multiply(m, Matrix4.fromTranslation(position), m);</code> with less allocations and arithmetic operations.
      *
@@ -6804,8 +7108,6 @@ define('Core/Matrix4',[
      * @param {Cartesian3} translation The translation on the right-hand side.
      * @param {Matrix4} result The object onto which to store the result.
      * @returns {Matrix4} The modified result parameter.
-     *
-     * @see Matrix4.fromTranslation
      *
      * @example
      * // Instead of Cesium.Matrix4.multiply(m, Cesium.Matrix4.fromTranslation(position), m);
@@ -7280,24 +7582,33 @@ define('Core/Matrix4',[
      * //Prints "Both matrices are equal" on the console
      */
     Matrix4.equals = function(left, right) {
+        // Given that most matrices will be transformation matrices, the elements
+        // are tested in order such that the test is likely to fail as early
+        // as possible.  I _think_ this is just as friendly to the L1 cache
+        // as testing in index order.  It is certainty faster in practice.
         return (left === right) ||
                (defined(left) &&
                 defined(right) &&
-                left[0] === right[0] &&
-                left[1] === right[1] &&
-                left[2] === right[2] &&
-                left[3] === right[3] &&
-                left[4] === right[4] &&
-                left[5] === right[5] &&
-                left[6] === right[6] &&
-                left[7] === right[7] &&
-                left[8] === right[8] &&
-                left[9] === right[9] &&
-                left[10] === right[10] &&
-                left[11] === right[11] &&
+                // Translation
                 left[12] === right[12] &&
                 left[13] === right[13] &&
                 left[14] === right[14] &&
+
+                // Rotation/scale
+                left[0] === right[0] &&
+                left[1] === right[1] &&
+                left[2] === right[2] &&
+                left[4] === right[4] &&
+                left[5] === right[5] &&
+                left[6] === right[6] &&
+                left[8] === right[8] &&
+                left[9] === right[9] &&
+                left[10] === right[10] &&
+
+                // Bottom row
+                left[3] === right[3] &&
+                left[7] === right[7] &&
+                left[11] === right[11] &&
                 left[15] === right[15]);
     };
 
@@ -7793,6 +8104,28 @@ define('Core/Matrix4',[
     };
 
     /**
+     * @private
+     */
+    Matrix4.equalsArray = function(matrix, array, offset) {
+        return matrix[0] === array[offset] &&
+               matrix[1] === array[offset + 1] &&
+               matrix[2] === array[offset + 2] &&
+               matrix[3] === array[offset + 3] &&
+               matrix[4] === array[offset + 4] &&
+               matrix[5] === array[offset + 5] &&
+               matrix[6] === array[offset + 6] &&
+               matrix[7] === array[offset + 7] &&
+               matrix[8] === array[offset + 8] &&
+               matrix[9] === array[offset + 9] &&
+               matrix[10] === array[offset + 10] &&
+               matrix[11] === array[offset + 11] &&
+               matrix[12] === array[offset + 12] &&
+               matrix[13] === array[offset + 13] &&
+               matrix[14] === array[offset + 14] &&
+               matrix[15] === array[offset + 15];
+    };
+
+    /**
      * Compares this matrix to the provided matrix componentwise and returns
      * <code>true</code> if they are within the provided epsilon,
      * <code>false</code> otherwise.
@@ -7826,6 +8159,7 @@ define('Core/Rectangle',[
         './Cartographic',
         './defaultValue',
         './defined',
+        './defineProperties',
         './DeveloperError',
         './Ellipsoid',
         './freezeObject',
@@ -7834,6 +8168,7 @@ define('Core/Rectangle',[
         Cartographic,
         defaultValue,
         defined,
+        defineProperties,
         DeveloperError,
         Ellipsoid,
         freezeObject,
@@ -7885,6 +8220,114 @@ define('Core/Rectangle',[
          * @default 0.0
          */
         this.north = defaultValue(north, 0.0);
+    };
+
+    defineProperties(Rectangle.prototype, {
+        /**
+         * Gets the width of the rectangle in radians.
+         * @memberof Rectangle.prototype
+         * @type {Number}
+         */
+        width : {
+            get : function() {
+                return Rectangle.computeWidth(this);
+            }
+        },
+
+        /**
+         * Gets the height of the rectangle in radians.
+         * @memberof Rectangle.prototype
+         * @type {Number}
+         */
+        height : {
+            get : function() {
+                return Rectangle.computeHeight(this);
+            }
+        }
+    });
+
+    /**
+     * The number of elements used to pack the object into an array.
+     * @type {Number}
+     */
+    Rectangle.packedLength = 4;
+
+    /**
+     * Stores the provided instance into the provided array.
+     *
+     * @param {BoundingSphere} value The value to pack.
+     * @param {Number[]} array The array to pack into.
+     * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     */
+    Rectangle.pack = function(value, array, startingIndex) {
+                if (!defined(value)) {
+            throw new DeveloperError('value is required');
+        }
+
+        if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        array[startingIndex++] = value.west;
+        array[startingIndex++] = value.south;
+        array[startingIndex++] = value.east;
+        array[startingIndex] = value.north;
+    };
+
+    /**
+     * Retrieves an instance from a packed array.
+     *
+     * @param {Number[]} array The packed array.
+     * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
+     * @param {Rectangle} [result] The object into which to store the result.
+     */
+    Rectangle.unpack = function(array, startingIndex, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        if (!defined(result)) {
+            result = new Rectangle();
+        }
+
+        result.west = array[startingIndex++];
+        result.south = array[startingIndex++];
+        result.east = array[startingIndex++];
+        result.north = array[startingIndex];
+        return result;
+    };
+
+    /**
+     * Computes the width of a rectangle in radians.
+     * @param {Rectangle} rectangle The rectangle to compute the width of.
+     * @returns {Number} The width.
+     */
+    Rectangle.computeWidth = function(rectangle) {
+                if (!defined(rectangle)) {
+            throw new DeveloperError('rectangle is required.');
+        }
+                var east = rectangle.east;
+        var west = rectangle.west;
+        if (east < west) {
+            east += CesiumMath.TWO_PI;
+        }
+        return east - west;
+    };
+
+    /**
+     * Computes the height of a rectangle in radians.
+     * @param {Rectangle} rectangle The rectangle to compute the height of.
+     * @returns {Number} The height.
+     */
+    Rectangle.computeHeight = function(rectangle) {
+                if (!defined(rectangle)) {
+            throw new DeveloperError('rectangle is required.');
+        }
+                return rectangle.north - rectangle.south;
     };
 
     /**
@@ -8242,17 +8685,19 @@ define('Core/Rectangle',[
         var east = rectangle.east;
         var west = rectangle.west;
 
-        var longitude = (west + east) * 0.5;
         if (east < west) {
-            longitude = CesiumMath.negativePiToPi(longitude + CesiumMath.PI);
+            east += CesiumMath.TWO_PI;
         }
 
+        var longitude = CesiumMath.negativePiToPi((west + east) * 0.5);
+        var latitude = (rectangle.south + rectangle.north) * 0.5;
+
         if (!defined(result)) {
-            return new Cartographic(longitude, (rectangle.south + rectangle.north) * 0.5);
+            return new Cartographic(longitude, latitude);
         }
 
         result.longitude = longitude;
-        result.latitude = (rectangle.south + rectangle.north) * 0.5;
+        result.latitude = latitude;
         result.height = 0.0;
         return result;
     };
@@ -8263,9 +8708,9 @@ define('Core/Rectangle',[
      * @param {Rectangle} rectangle On rectangle to find an intersection
      * @param {Rectangle} otherRectangle Another rectangle to find an intersection
      * @param {Rectangle} [result] The object onto which to store the result.
-     * @returns {Rectangle} The modified result parameter or a new Rectangle instance if none was provided.
+     * @returns {Rectangle|undefined} The modified result parameter, a new Rectangle instance if none was provided or undefined if there is no intersection.
      */
-    Rectangle.intersectWith = function(rectangle, otherRectangle, result) {
+    Rectangle.intersection = function(rectangle, otherRectangle, result) {
                 if (!defined(rectangle)) {
             throw new DeveloperError('rectangle is required');
         }
@@ -8273,10 +8718,38 @@ define('Core/Rectangle',[
             throw new DeveloperError('otherRectangle is required.');
         }
         
-        var west = Math.max(rectangle.west, otherRectangle.west);
+        var rectangleEast = rectangle.east;
+        var rectangleWest = rectangle.west;
+
+        var otherRectangleEast = otherRectangle.east;
+        var otherRectangleWest = otherRectangle.west;
+
+        if (rectangleEast < rectangleWest && otherRectangleEast > 0.0) {
+            rectangleEast += CesiumMath.TWO_PI;
+        } else if (otherRectangleEast < otherRectangleWest && rectangleEast > 0.0) {
+            otherRectangleEast += CesiumMath.TWO_PI;
+        }
+
+        if (rectangleEast < rectangleWest && otherRectangleWest < 0.0) {
+            otherRectangleWest += CesiumMath.TWO_PI;
+        } else if (otherRectangleEast < otherRectangleWest && rectangleWest < 0.0) {
+            rectangleWest += CesiumMath.TWO_PI;
+        }
+
+        var west = CesiumMath.negativePiToPi(Math.max(rectangleWest, otherRectangleWest));
+        var east = CesiumMath.negativePiToPi(Math.min(rectangleEast, otherRectangleEast));
+
+        if ((rectangle.west < rectangle.east || otherRectangle.west < otherRectangle.east) && east <= west) {
+            return undefined;
+        }
+
         var south = Math.max(rectangle.south, otherRectangle.south);
-        var east = Math.min(rectangle.east, otherRectangle.east);
         var north = Math.min(rectangle.north, otherRectangle.north);
+
+        if (south >= north) {
+            return undefined;
+        }
+
         if (!defined(result)) {
             return new Rectangle(west, south, east, north);
         }
@@ -8302,25 +8775,22 @@ define('Core/Rectangle',[
             throw new DeveloperError('cartographic is required.');
         }
         
-        return cartographic.longitude >= rectangle.west &&
-               cartographic.longitude <= rectangle.east &&
-               cartographic.latitude >= rectangle.south &&
-               cartographic.latitude <= rectangle.north;
-    };
+        var longitude = cartographic.longitude;
+        var latitude = cartographic.latitude;
 
-    /**
-     * Determines if the rectangle is empty, i.e., if <code>west >= east</code>
-     * or <code>south >= north</code>.
-     *
-     * @param {Rectangle} rectangle The rectangle
-     * @returns {Boolean} True if the rectangle is empty; otherwise, false.
-     */
-    Rectangle.isEmpty = function(rectangle) {
-                if (!defined(rectangle)) {
-            throw new DeveloperError('rectangle is required');
+        var west = rectangle.west;
+        var east = rectangle.east;
+
+        if (east < west) {
+            east += CesiumMath.TWO_PI;
+            if (longitude < 0.0) {
+                longitude += CesiumMath.TWO_PI;
+            }
         }
-        
-        return rectangle.west >= rectangle.east || rectangle.south >= rectangle.north;
+        return (longitude > west || CesiumMath.equalsEpsilon(longitude, west, CesiumMath.EPSILON14)) &&
+               (longitude < east || CesiumMath.equalsEpsilon(longitude, east, CesiumMath.EPSILON14)) &&
+               latitude >= rectangle.south &&
+               latitude <= rectangle.north;
     };
 
     var subsampleLlaScratch = new Cartographic();
@@ -8382,9 +8852,8 @@ define('Core/Rectangle',[
         }
 
         for ( var i = 1; i < 8; ++i) {
-            var temp = -Math.PI + i * CesiumMath.PI_OVER_TWO;
-            if (west < temp && temp < east) {
-                lla.longitude = temp;
+            lla.longitude = -Math.PI + i * CesiumMath.PI_OVER_TWO;
+            if (Rectangle.contains(rectangle, lla)) {
                 result[length] = ellipsoid.cartographicToCartesian(lla, result[length]);
                 length++;
             }
@@ -8948,6 +9417,53 @@ define('Core/BoundingSphere',[
         return result;
     };
 
+    var fromBoundingSpheresScratch = new Cartesian3();
+
+    /**
+     * Computes a tight-fitting bounding sphere enclosing the provided array of bounding spheres.
+     *
+     * @param {BoundingSphere[]} boundingSpheres The array of bounding spheres.
+     * @param {BoundingSphere} [result] The object onto which to store the result.
+     * @returns {BoundingSphere} The modified result parameter or a new BoundingSphere instance if none was provided.
+     */
+    BoundingSphere.fromBoundingSpheres = function(boundingSpheres, result) {
+        if (!defined(result)) {
+            result = new BoundingSphere();
+        }
+
+        if (!defined(boundingSpheres) || boundingSpheres.length === 0) {
+            result.center = Cartesian3.clone(Cartesian3.ZERO, result.center);
+            result.radius = 0.0;
+            return result;
+        }
+
+        var length = boundingSpheres.length;
+        if (length === 1) {
+            return BoundingSphere.clone(boundingSpheres[0], result);
+        }
+
+        if (length === 2) {
+            return BoundingSphere.union(boundingSpheres[0], boundingSpheres[1], result);
+        }
+
+        var positions = [];
+        for (var i = 0; i < length; i++) {
+            positions.push(boundingSpheres[i].center);
+        }
+
+        result = BoundingSphere.fromPoints(positions, result);
+
+        var center = result.center;
+        var radius = result.radius;
+        for (i = 0; i < length; i++) {
+            var tmp = boundingSpheres[i];
+            radius = Math.max(radius, Cartesian3.distance(center, tmp.center, fromBoundingSpheresScratch) + tmp.radius);
+        }
+        result.radius = radius;
+
+        return result;
+    };
+
     /**
      * Duplicates a BoundingSphere instance.
      *
@@ -9005,7 +9521,7 @@ define('Core/BoundingSphere',[
      *
      * @param {Number[]} array The packed array.
      * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
-     * @param {Cartesian3} [result] The object into which to store the result.
+     * @param {BoundingSphere} [result] The object into which to store the result.
      */
     BoundingSphere.unpack = function(array, startingIndex, result) {
                 if (!defined(array)) {
@@ -9795,6 +10311,15 @@ define('Core/FeatureDetection',[
         return isFirefoxResult;
     }
 
+    var isWindowsResult;
+    function isWindows() {
+        if (!defined(isWindowsResult)) {
+            isWindowsResult = /Windows/i.test(navigator.appVersion);
+        }
+        return isWindowsResult;
+    }
+
+
     function firefoxVersion() {
         return isFirefox() && firefoxVersionResult;
     }
@@ -9817,6 +10342,7 @@ define('Core/FeatureDetection',[
         internetExplorerVersion : internetExplorerVersion,
         isFirefox : isFirefox,
         firefoxVersion : firefoxVersion,
+        isWindows : isWindows,
         hardwareConcurrency : defaultValue(navigator.hardwareConcurrency, 3)
     };
 
@@ -10378,10 +10904,10 @@ define('Core/EllipsoidGeodesic',[
         vincentyInverseFormula(ellipsoidGeodesic, ellipsoid.maximumRadius, ellipsoid.minimumRadius,
                                start.longitude, start.latitude, end.longitude, end.latitude);
 
-        start.height = 0;
-        end.height = 0;
         ellipsoidGeodesic._start = Cartographic.clone(start, ellipsoidGeodesic._start);
         ellipsoidGeodesic._end = Cartographic.clone(end, ellipsoidGeodesic._end);
+        ellipsoidGeodesic._start.height = 0;
+        ellipsoidGeodesic._end.height = 0;
 
         setConstants(ellipsoidGeodesic);
     }
@@ -11520,7 +12046,7 @@ define('Core/IntersectionTests',[
      * @param {Cartesian3} p0 The first vertex of the triangle.
      * @param {Cartesian3} p1 The second vertex of the triangle.
      * @param {Cartesian3} p2 The third vertex of the triangle.
-     * @param {Boolean} [cullBackFaces=false] If <code>true<code>, will only compute an intersection with the front face of the triangle
+     * @param {Boolean} [cullBackFaces=false] If <code>true</code>, will only compute an intersection with the front face of the triangle
      *                  and return undefined for intersections with the back face.
      * @param {Cartesian3} [result] The <code>Cartesian3</code> onto which to store the result.
      * @returns {Cartesian3} The intersection point or undefined if there is no intersections.
@@ -11550,7 +12076,7 @@ define('Core/IntersectionTests',[
      * @param {Cartesian3} p0 The first vertex of the triangle.
      * @param {Cartesian3} p1 The second vertex of the triangle.
      * @param {Cartesian3} p2 The third vertex of the triangle.
-     * @param {Boolean} [cullBackFaces=false] If <code>true<code>, will only compute an intersection with the front face of the triangle
+     * @param {Boolean} [cullBackFaces=false] If <code>true</code>, will only compute an intersection with the front face of the triangle
      *                  and return undefined for intersections with the back face.
      * @param {Cartesian3} [result] The <code>Cartesian3</code> onto which to store the result.
      * @returns {Cartesian3} The intersection point or undefined if there is no intersections.
@@ -11920,6 +12446,7 @@ define('Core/IntersectionTests',[
     var sScratch = new Cartesian3();
     var closestScratch = new Cartesian3();
     var surfPointScratch = new Cartographic();
+
     /**
      * Provides the point along the ray which is nearest to the ellipsoid.
      *
@@ -11938,8 +12465,7 @@ define('Core/IntersectionTests',[
         var position = ray.origin;
         var direction = ray.direction;
 
-        var normal = ellipsoid.geodeticSurfaceNormal(position);
-
+        var normal = ellipsoid.geodeticSurfaceNormal(position, firstAxisScratch);
         if (Cartesian3.dot(direction, normal) >= 0.0) { // The location provided is the closest point in altitude
             return position;
         }
@@ -11947,10 +12473,10 @@ define('Core/IntersectionTests',[
         var intersects = defined(this.rayEllipsoid(ray, ellipsoid));
 
         // Compute the scaled direction vector.
-        var f = ellipsoid.transformPositionToScaledSpace(direction);
+        var f = ellipsoid.transformPositionToScaledSpace(direction, firstAxisScratch);
 
         // Constructs a basis from the unit scaled direction vector. Construct its rotation and transpose.
-        var firstAxis = Cartesian3.normalize(f, firstAxisScratch);
+        var firstAxis = Cartesian3.normalize(f, f);
         var reference = Cartesian3.mostOrthogonalAxis(f, referenceScratch);
         var secondAxis = Cartesian3.normalize(Cartesian3.cross(reference, firstAxis, secondAxisScratch), secondAxisScratch);
         var thirdAxis  = Cartesian3.normalize(Cartesian3.cross(firstAxis, secondAxis, thirdAxisScratch), thirdAxisScratch);
@@ -12012,7 +12538,7 @@ define('Core/IntersectionTests',[
             altitude = Cartesian3.magnitude(Cartesian3.subtract(closest, position, referenceScratch)) * Math.sqrt(1.0 - maximumValue * maximumValue);
             altitude = intersects ? -altitude : altitude;
             surfacePoint.height = altitude;
-            return ellipsoid.cartographicToCartesian(surfacePoint);
+            return ellipsoid.cartographicToCartesian(surfacePoint, new Cartesian3());
         }
 
         return undefined;
@@ -12382,9 +12908,9 @@ define('Core/PolylinePipeline',[
      */
     var PolylinePipeline = {};
 
-    PolylinePipeline.numberOfPoints = function(p0, p1, granularity) {
-        var angleBetween = Cartesian3.angleBetween(p0, p1);
-        return Math.ceil(angleBetween / granularity);
+    PolylinePipeline.numberOfPoints = function(p0, p1, minDistance) {
+        var distance = Cartesian3.distance(p0, p1);
+        return Math.ceil(distance / minDistance);
     };
 
     var cartoScratch = new Cartographic();
@@ -12407,8 +12933,12 @@ define('Core/PolylinePipeline',[
     var wrapLongitudeIntersection = new Cartesian3();
     var wrapLongitudeOffset = new Cartesian3();
 
+    var subdivideHeightsScratchArray = [];
+
     function subdivideHeights(numPoints, h0, h1) {
-        var heights = new Array(numPoints);
+        var heights = subdivideHeightsScratchArray;
+        heights.length = numPoints;
+
         var i;
         if (h0 === h1) {
             for (i = 0; i < numPoints; i++) {
@@ -12418,14 +12948,13 @@ define('Core/PolylinePipeline',[
         }
 
         var dHeight = h1 - h0;
-        var heightPerVertex = dHeight / (numPoints);
+        var heightPerVertex = dHeight / numPoints;
 
-        for (i = 1; i < numPoints; i++) {
+        for (i = 0; i < numPoints; i++) {
             var h = h0 + i*heightPerVertex;
             heights[i] = h;
         }
 
-        heights[0] = h0;
         return heights;
     }
 
@@ -12435,13 +12964,14 @@ define('Core/PolylinePipeline',[
     var scaleFirst = new Cartesian3();
     var scaleLast = new Cartesian3();
     var ellipsoidGeodesic = new EllipsoidGeodesic();
+
     //Returns subdivided line scaled to ellipsoid surface starting at p1 and ending at p2.
     //Result includes p1, but not include p2.  This function is called for a sequence of line segments,
     //and this prevents duplication of end point.
-    function generateCartesianArc(p0, p1, granularity, ellipsoid, h0, h1, array, offset) {
+    function generateCartesianArc(p0, p1, minDistance, ellipsoid, h0, h1, array, offset) {
         var first = ellipsoid.scaleToGeodeticSurface(p0, scaleFirst);
         var last = ellipsoid.scaleToGeodeticSurface(p1, scaleLast);
-        var numPoints = PolylinePipeline.numberOfPoints(p0, p1, granularity);
+        var numPoints = PolylinePipeline.numberOfPoints(p0, p1, minDistance);
         var start = ellipsoid.cartesianToCartographic(first, carto1);
         var end = ellipsoid.cartesianToCartographic(last, carto2);
         var heights = subdivideHeights(numPoints, h0, h1);
@@ -12545,6 +13075,8 @@ define('Core/PolylinePipeline',[
         };
     };
 
+    var removeDuplicatesEpsilon = CesiumMath.EPSILON7;
+
     /**
      * Removes adjacent duplicate positions in an array of positions.
      *
@@ -12576,7 +13108,7 @@ define('Core/PolylinePipeline',[
         for (i = 1; i < length; ++i) {
             v0 = positions[i - 1];
             v1 = positions[i];
-            if (Cartesian3.equals(v0, v1)) {
+            if (Cartesian3.equalsEpsilon(v0, v1, removeDuplicatesEpsilon)) {
                 break;
             }
         }
@@ -12585,13 +13117,11 @@ define('Core/PolylinePipeline',[
             return undefined;
         }
 
-        var cleanedPositions = [];
-        cleanedPositions.push(positions[0]);
-
+        var cleanedPositions = positions.slice(0, i);
         for (; i < length; ++i) {
             v0 = positions[i - 1];
             v1 = positions[i];
-            if (!Cartesian3.equals(v0, v1)) {
+            if (!Cartesian3.equalsEpsilon(v0, v1, removeDuplicatesEpsilon)) {
                 cleanedPositions.push(Cartesian3.clone(v1));
             }
         }
@@ -12629,43 +13159,40 @@ define('Core/PolylinePipeline',[
         
         var ellipsoid = defaultValue(options.ellipsoid, Ellipsoid.WGS84);
         var height = defaultValue(options.height, 0);
-        var granularity = defaultValue(options.granularity, CesiumMath.RADIANS_PER_DEGREE);
+        var minDistance = options.minDistance;
+        if (!defined(minDistance)) {
+            var granularity = defaultValue(options.granularity, CesiumMath.RADIANS_PER_DEGREE);
+            minDistance = CesiumMath.chordLength(granularity, ellipsoid.maximumRadius);
+        }
 
         var length = positions.length;
         var numPoints = 0;
         var i;
-        var p0;
-        var p1;
 
-        for (i = 0; i < length-1; i++) {
-            p0 = positions[i];
-            p1 = positions[i+1];
-            numPoints += PolylinePipeline.numberOfPoints(p0, p1, granularity);
+        for (i = 0; i < length -1; i++) {
+            numPoints += PolylinePipeline.numberOfPoints(positions[i], positions[i+1], minDistance);
         }
-        numPoints++;
-        var arrayLength = numPoints * 3;
+
+        var arrayLength = (numPoints + 1) * 3;
         var newPositions = new Array(arrayLength);
         var offset = 0;
+        var hasHeightArray = isArray(height);
+
         for (i = 0; i < length - 1; i++) {
-            p0 = positions[i];
-            p1 = positions[i + 1];
+            var p0 = positions[i];
+            var p1 = positions[i + 1];
 
-            var h0;
-            var h1;
-            if (isArray(height)) {
-                h0 = height[i];
-                h1 = height[i + 1];
-            } else {
-                h0 = height;
-                h1 = height;
-            }
+            var h0 = hasHeightArray ? height[i] : height;
+            var h1 = hasHeightArray ? height[i + 1] : height;
 
-            offset = generateCartesianArc(p0, p1, granularity, ellipsoid, h0, h1, newPositions, offset);
+            offset = generateCartesianArc(p0, p1, minDistance, ellipsoid, h0, h1, newPositions, offset);
         }
+
+        subdivideHeightsScratchArray.length = 0;
 
         var lastPoint = positions[length - 1];
         var carto = ellipsoid.cartesianToCartographic(lastPoint, carto1);
-        carto.height = isArray(height) ? height[length - 1] : height;
+        carto.height = hasHeightArray ? height[length - 1] : height;
         var cart = ellipsoid.cartographicToCartesian(carto, cartesian);
         Cartesian3.pack(cart, newPositions, arrayLength - 3);
 
@@ -12981,7 +13508,7 @@ define('Core/Cartesian2',[
     var distanceScratch = new Cartesian2();
 
     /**
-     * Computes the distance between two points
+     * Computes the distance between two points.
      *
      * @param {Cartesian2} left The first point to compute the distance from.
      * @param {Cartesian2} right The second point to compute the distance to.
@@ -12998,6 +13525,27 @@ define('Core/Cartesian2',[
         
         Cartesian2.subtract(left, right, distanceScratch);
         return Cartesian2.magnitude(distanceScratch);
+    };
+
+    /**
+     * Computes the squared distance between two points.  Comparing squared distances
+     * using this function is more efficient than comparing distances using {@link Cartesian2#distance}.
+     *
+     * @param {Cartesian2} left The first point to compute the distance from.
+     * @param {Cartesian2} right The second point to compute the distance to.
+     * @returns {Number} The distance between two points.
+     *
+     * @example
+     * // Returns 4.0, not 2.0
+     * var d = Cesium.Cartesian2.distance(new Cesium.Cartesian2(1.0, 0.0), new Cesium.Cartesian2(3.0, 0.0));
+     */
+    Cartesian2.distanceSquared = function(left, right) {
+                if (!defined(left) || !defined(right)) {
+            throw new DeveloperError('left and right are required.');
+        }
+        
+        Cartesian2.subtract(left, right, distanceScratch);
+        return Cartesian2.magnitudeSquared(distanceScratch);
     };
 
     /**
@@ -13296,25 +13844,30 @@ define('Core/Cartesian2',[
     };
 
     /**
+     * @private
+     */
+    Cartesian2.equalsArray = function(cartesian, array, offset) {
+        return cartesian.x === array[offset] &&
+               cartesian.y === array[offset + 1];
+    };
+
+    /**
      * Compares the provided Cartesians componentwise and returns
-     * <code>true</code> if they are within the provided epsilon,
+     * <code>true</code> if they pass an absolute or relative tolerance test,
      * <code>false</code> otherwise.
      *
      * @param {Cartesian2} [left] The first Cartesian.
      * @param {Cartesian2} [right] The second Cartesian.
-     * @param {Number} epsilon The epsilon to use for equality testing.
+     * @param {Number} relativeEpsilon The relative epsilon tolerance to use for equality testing.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The absolute epsilon tolerance to use for equality testing.
      * @returns {Boolean} <code>true</code> if left and right are within the provided epsilon, <code>false</code> otherwise.
      */
-    Cartesian2.equalsEpsilon = function(left, right, epsilon) {
-                if (typeof epsilon !== 'number') {
-            throw new DeveloperError('epsilon is required and must be a number.');
-        }
-        
+    Cartesian2.equalsEpsilon = function(left, right, relativeEpsilon, absoluteEpsilon) {
         return (left === right) ||
-               ((defined(left)) &&
-                (defined(right)) &&
-                (Math.abs(left.x - right.x) <= epsilon) &&
-                (Math.abs(left.y - right.y) <= epsilon));
+               (defined(left) &&
+                defined(right) &&
+                CesiumMath.equalsEpsilon(left.x, right.x, relativeEpsilon, absoluteEpsilon) &&
+                CesiumMath.equalsEpsilon(left.y, right.y, relativeEpsilon, absoluteEpsilon));
     };
 
     /**
@@ -13364,15 +13917,16 @@ define('Core/Cartesian2',[
 
     /**
      * Compares this Cartesian against the provided Cartesian componentwise and returns
-     * <code>true</code> if they are within the provided epsilon,
+     * <code>true</code> if they pass an absolute or relative tolerance test,
      * <code>false</code> otherwise.
      *
      * @param {Cartesian2} [right] The right hand side Cartesian.
-     * @param {Number} epsilon The epsilon to use for equality testing.
+     * @param {Number} relativeEpsilon The relative epsilon tolerance to use for equality testing.
+     * @param {Number} [absoluteEpsilon=relativeEpsilon] The absolute epsilon tolerance to use for equality testing.
      * @returns {Boolean} <code>true</code> if they are within the provided epsilon, <code>false</code> otherwise.
      */
-    Cartesian2.prototype.equalsEpsilon = function(right, epsilon) {
-        return Cartesian2.equalsEpsilon(this, right, epsilon);
+    Cartesian2.prototype.equalsEpsilon = function(right, relativeEpsilon, absoluteEpsilon) {
+        return Cartesian2.equalsEpsilon(this, right, relativeEpsilon, absoluteEpsilon);
     };
 
     /**
@@ -15473,7 +16027,7 @@ define('Core/JulianDate',[
             }
         } else {
             //If no time is specified, it is considered the beginning of the day, local time.
-            minute = minute + new Date(Date.UTC(year, month - 1, day)).getTimezoneOffset();
+            minute = minute + new Date(year, month - 1, day).getTimezoneOffset();
         }
 
         //ISO8601 denotes a leap second by any time having a seconds component of 60 seconds.
@@ -16255,7 +16809,7 @@ define('Core/loadWithXhr',[
      *     responseType : 'blob'
      * }).then(function(blob) {
      *     // use the data
-     * }.otherwise(function(error) {
+     * }).otherwise(function(error) {
      *     // an error occurred
      * });
      */
@@ -16415,7 +16969,7 @@ define('Core/loadText',[
      *   'X-Custom-Header' : 'some value'
      * }).then(function(text) {
      *     // Do something with the text
-     * }.otherwise(function(error) {
+     * }).otherwise(function(error) {
      *     // an error occurred
      * });
      */
@@ -16469,7 +17023,7 @@ define('Core/loadJson',[
      * @example
      * Cesium.loadJson('http://someUrl.com/someJson.txt').then(function(jsonData) {
      *     // Do something with the JSON object
-     * }.otherwise(function(error) {
+     * }).otherwise(function(error) {
      *     // an error occurred
      * });
      */
@@ -17553,917 +18107,6 @@ define('Core/Iau2006XysData',[
     return Iau2006XysData;
 });
 /*global define*/
-define('Core/Transforms',[
-        '../ThirdParty/when',
-        './Cartesian2',
-        './Cartesian3',
-        './Cartesian4',
-        './defaultValue',
-        './defined',
-        './DeveloperError',
-        './EarthOrientationParameters',
-        './EarthOrientationParametersSample',
-        './Ellipsoid',
-        './Iau2006XysData',
-        './Iau2006XysSample',
-        './JulianDate',
-        './Math',
-        './Matrix3',
-        './Matrix4',
-        './TimeConstants'
-    ], function(
-        when,
-        Cartesian2,
-        Cartesian3,
-        Cartesian4,
-        defaultValue,
-        defined,
-        DeveloperError,
-        EarthOrientationParameters,
-        EarthOrientationParametersSample,
-        Ellipsoid,
-        Iau2006XysData,
-        Iau2006XysSample,
-        JulianDate,
-        CesiumMath,
-        Matrix3,
-        Matrix4,
-        TimeConstants) {
-    "use strict";
-
-    /**
-     * Contains functions for transforming positions to various reference frames.
-     *
-     * @namespace
-     * @alias Transforms
-     */
-    var Transforms = {};
-
-    var eastNorthUpToFixedFrameNormal = new Cartesian3();
-    var eastNorthUpToFixedFrameTangent = new Cartesian3();
-    var eastNorthUpToFixedFrameBitangent = new Cartesian3();
-
-    /**
-     * Computes a 4x4 transformation matrix from a reference frame with an east-north-up axes
-     * centered at the provided origin to the provided ellipsoid's fixed reference frame.
-     * The local axes are defined as:
-     * <ul>
-     * <li>The <code>x</code> axis points in the local east direction.</li>
-     * <li>The <code>y</code> axis points in the local north direction.</li>
-     * <li>The <code>z</code> axis points in the direction of the ellipsoid surface normal which passes through the position.</li>
-     * </ul>
-     *
-     * @param {Cartesian3} origin The center point of the local reference frame.
-     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
-     * @param {Matrix4} [result] The object onto which to store the result.
-     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
-     *
-     * @example
-     * // Get the transform from local east-north-up at cartographic (0.0, 0.0) to Earth's fixed frame.
-     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
-     * var transform = Cesium.Transforms.eastNorthUpToFixedFrame(center);
-     */
-    Transforms.eastNorthUpToFixedFrame = function(origin, ellipsoid, result) {
-                if (!defined(origin)) {
-            throw new DeveloperError('origin is required.');
-        }
-        
-        // If x and y are zero, assume origin is at a pole, which is a special case.
-        if (CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
-            CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
-            var sign = CesiumMath.sign(origin.z);
-            if (!defined(result)) {
-                return new Matrix4(
-                        0.0, -sign,  0.0, origin.x,
-                        1.0,   0.0,  0.0, origin.y,
-                        0.0,   0.0, sign, origin.z,
-                        0.0,   0.0,  0.0, 1.0);
-            }
-            result[0] = 0.0;
-            result[1] = 1.0;
-            result[2] = 0.0;
-            result[3] = 0.0;
-            result[4] = -sign;
-            result[5] = 0.0;
-            result[6] = 0.0;
-            result[7] = 0.0;
-            result[8] = 0.0;
-            result[9] = 0.0;
-            result[10] = sign;
-            result[11] = 0.0;
-            result[12] = origin.x;
-            result[13] = origin.y;
-            result[14] = origin.z;
-            result[15] = 1.0;
-            return result;
-        }
-
-        var normal = eastNorthUpToFixedFrameNormal;
-        var tangent  = eastNorthUpToFixedFrameTangent;
-        var bitangent = eastNorthUpToFixedFrameBitangent;
-
-        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-        ellipsoid.geodeticSurfaceNormal(origin, normal);
-
-        tangent.x = -origin.y;
-        tangent.y = origin.x;
-        tangent.z = 0.0;
-        Cartesian3.normalize(tangent, tangent);
-
-        Cartesian3.cross(normal, tangent, bitangent);
-
-        if (!defined(result)) {
-            return new Matrix4(
-                    tangent.x, bitangent.x, normal.x, origin.x,
-                    tangent.y, bitangent.y, normal.y, origin.y,
-                    tangent.z, bitangent.z, normal.z, origin.z,
-                    0.0,       0.0,         0.0,      1.0);
-        }
-        result[0] = tangent.x;
-        result[1] = tangent.y;
-        result[2] = tangent.z;
-        result[3] = 0.0;
-        result[4] = bitangent.x;
-        result[5] = bitangent.y;
-        result[6] = bitangent.z;
-        result[7] = 0.0;
-        result[8] = normal.x;
-        result[9] = normal.y;
-        result[10] = normal.z;
-        result[11] = 0.0;
-        result[12] = origin.x;
-        result[13] = origin.y;
-        result[14] = origin.z;
-        result[15] = 1.0;
-        return result;
-    };
-
-    var northEastDownToFixedFrameNormal = new Cartesian3();
-    var northEastDownToFixedFrameTangent = new Cartesian3();
-    var northEastDownToFixedFrameBitangent = new Cartesian3();
-
-    /**
-     * Computes a 4x4 transformation matrix from a reference frame with an north-east-down axes
-     * centered at the provided origin to the provided ellipsoid's fixed reference frame.
-     * The local axes are defined as:
-     * <ul>
-     * <li>The <code>x</code> axis points in the local north direction.</li>
-     * <li>The <code>y</code> axis points in the local east direction.</li>
-     * <li>The <code>z</code> axis points in the opposite direction of the ellipsoid surface normal which passes through the position.</li>
-     * </ul>
-     *
-     * @param {Cartesian3} origin The center point of the local reference frame.
-     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
-     * @param {Matrix4} [result] The object onto which to store the result.
-     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
-     *
-     * @example
-     * // Get the transform from local north-east-down at cartographic (0.0, 0.0) to Earth's fixed frame.
-     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
-     * var transform = Cesium.Transforms.northEastDownToFixedFrame(center);
-     */
-    Transforms.northEastDownToFixedFrame = function(origin, ellipsoid, result) {
-                if (!defined(origin)) {
-            throw new DeveloperError('origin is required.');
-        }
-        
-        if (CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
-            CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
-            // The poles are special cases.  If x and y are zero, assume origin is at a pole.
-            var sign = CesiumMath.sign(origin.z);
-            if (!defined(result)) {
-                return new Matrix4(
-                  -sign, 0.0,   0.0, origin.x,
-                    0.0, 1.0,   0.0, origin.y,
-                    0.0, 0.0, -sign, origin.z,
-                    0.0, 0.0,   0.0, 1.0);
-            }
-            result[0] = -sign;
-            result[1] = 0.0;
-            result[2] = 0.0;
-            result[3] = 0.0;
-            result[4] = 0.0;
-            result[5] = 1.0;
-            result[6] = 0.0;
-            result[7] = 0.0;
-            result[8] = 0.0;
-            result[9] = 0.0;
-            result[10] = -sign;
-            result[11] = 0.0;
-            result[12] = origin.x;
-            result[13] = origin.y;
-            result[14] = origin.z;
-            result[15] = 1.0;
-            return result;
-        }
-
-        var normal = northEastDownToFixedFrameNormal;
-        var tangent = northEastDownToFixedFrameTangent;
-        var bitangent = northEastDownToFixedFrameBitangent;
-
-        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-        ellipsoid.geodeticSurfaceNormal(origin, normal);
-
-        tangent.x = -origin.y;
-        tangent.y = origin.x;
-        tangent.z = 0.0;
-        Cartesian3.normalize(tangent, tangent);
-
-        Cartesian3.cross(normal, tangent, bitangent);
-
-        if (!defined(result)) {
-            return new Matrix4(
-                    bitangent.x, tangent.x, -normal.x, origin.x,
-                    bitangent.y, tangent.y, -normal.y, origin.y,
-                    bitangent.z, tangent.z, -normal.z, origin.z,
-                    0.0,       0.0,         0.0,      1.0);
-        }
-        result[0] = bitangent.x;
-        result[1] = bitangent.y;
-        result[2] = bitangent.z;
-        result[3] = 0.0;
-        result[4] = tangent.x;
-        result[5] = tangent.y;
-        result[6] = tangent.z;
-        result[7] = 0.0;
-        result[8] = -normal.x;
-        result[9] = -normal.y;
-        result[10] = -normal.z;
-        result[11] = 0.0;
-        result[12] = origin.x;
-        result[13] = origin.y;
-        result[14] = origin.z;
-        result[15] = 1.0;
-        return result;
-    };
-
-    /**
-     * Computes a 4x4 transformation matrix from a reference frame with an north-up-east axes
-     * centered at the provided origin to the provided ellipsoid's fixed reference frame.
-     * The local axes are defined as:
-     * <ul>
-     * <li>The <code>x</code> axis points in the local north direction.</li>
-     * <li>The <code>y</code> axis points in the direction of the ellipsoid surface normal which passes through the position.</li>
-     * <li>The <code>z</code> axis points in the local east direction.</li>
-     * </ul>
-     *
-     * @param {Cartesian3} origin The center point of the local reference frame.
-     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
-     * @param {Matrix4} [result] The object onto which to store the result.
-     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
-     *
-     * @example
-     * // Get the transform from local north-up-east at cartographic (0.0, 0.0) to Earth's fixed frame.
-     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
-     * var transform = Cesium.Transforms.northUpEastToFixedFrame(center);
-     */
-    Transforms.northUpEastToFixedFrame = function(origin, ellipsoid, result) {
-                if (!defined(origin)) {
-            throw new DeveloperError('origin is required.');
-        }
-        
-        // If x and y are zero, assume origin is at a pole, which is a special case.
-        if (CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
-            CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
-            var sign = CesiumMath.sign(origin.z);
-            if (!defined(result)) {
-                return new Matrix4(
-                       -sign, 0.0,  0.0, origin.x,
-                        0.0,  0.0,  1.0, origin.y,
-                        0.0,  sign, 0.0, origin.z,
-                        0.0,  0.0,  0.0, 1.0);
-            }
-            result[0] = -sign;
-            result[1] = 0.0;
-            result[2] = 0.0;
-            result[3] = 0.0;
-            result[4] = 0.0;
-            result[5] = 0.0;
-            result[6] = sign;
-            result[7] = 0.0;
-            result[8] = 0.0;
-            result[9] = 1.0;
-            result[10] = 0.0;
-            result[11] = 0.0;
-            result[12] = origin.x;
-            result[13] = origin.y;
-            result[14] = origin.z;
-            result[15] = 1.0;
-            return result;
-        }
-
-        var normal = eastNorthUpToFixedFrameNormal;
-        var tangent  = eastNorthUpToFixedFrameTangent;
-        var bitangent = eastNorthUpToFixedFrameBitangent;
-
-        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-        ellipsoid.geodeticSurfaceNormal(origin, normal);
-
-        tangent.x = -origin.y;
-        tangent.y = origin.x;
-        tangent.z = 0.0;
-        Cartesian3.normalize(tangent, tangent);
-
-        Cartesian3.cross(normal, tangent, bitangent);
-
-        if (!defined(result)) {
-            return new Matrix4(
-                    bitangent.x, normal.x, tangent.x, origin.x,
-                    bitangent.y, normal.y, tangent.y, origin.y,
-                    bitangent.z, normal.z, tangent.z, origin.z,
-                    0.0,       0.0,         0.0,      1.0);
-        }
-        result[0] = bitangent.x;
-        result[1] = bitangent.y;
-        result[2] = bitangent.z;
-        result[3] = 0.0;
-        result[4] = normal.x;
-        result[5] = normal.y;
-        result[6] = normal.z;
-        result[7] = 0.0;
-        result[8] = tangent.x;
-        result[9] = tangent.y;
-        result[10] = tangent.z;
-        result[11] = 0.0;
-        result[12] = origin.x;
-        result[13] = origin.y;
-        result[14] = origin.z;
-        result[15] = 1.0;
-        return result;
-    };
-
-
-    var gmstConstant0 = 6 * 3600 + 41 * 60 + 50.54841;
-    var gmstConstant1 = 8640184.812866;
-    var gmstConstant2 = 0.093104;
-    var gmstConstant3 = -6.2E-6;
-    var rateCoef = 1.1772758384668e-19;
-    var wgs84WRPrecessing = 7.2921158553E-5;
-    var twoPiOverSecondsInDay = CesiumMath.TWO_PI / 86400.0;
-    var dateInUtc = new JulianDate();
-
-    /**
-     * Computes a rotation matrix to transform a point or vector from True Equator Mean Equinox (TEME) axes to the
-     * pseudo-fixed axes at a given time.  This method treats the UT1 time standard as equivalent to UTC.
-     *
-     * @param {JulianDate} date The time at which to compute the rotation matrix.
-     * @param {Matrix3} [result] The object onto which to store the result.
-     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if none was provided.
-     *
-     * @example
-     * //Set the view to in the inertial frame.
-     * scene.preRender.addEventListener(function(scene, time) {
-     *   var now = new Cesium.JulianDate();
-     *   scene.camera.transform = Cesium.Matrix4.fromRotationTranslation(Cesium.Transforms.computeTemeToPseudoFixedMatrix(now), Cesium.Cartesian3.ZERO);
-     * });
-     */
-    Transforms.computeTemeToPseudoFixedMatrix = function (date, result) {
-                if (!defined(date)) {
-            throw new DeveloperError('date is required.');
-        }
-        
-        // GMST is actually computed using UT1.  We're using UTC as an approximation of UT1.
-        // We do not want to use the function like convertTaiToUtc in JulianDate because
-        // we explicitly do not want to fail when inside the leap second.
-
-        dateInUtc = JulianDate.addSeconds(date, -JulianDate.computeTaiMinusUtc(date), dateInUtc);
-        var utcDayNumber = dateInUtc.dayNumber;
-        var utcSecondsIntoDay = dateInUtc.secondsOfDay;
-
-        var t;
-        var diffDays = utcDayNumber - 2451545;
-        if (utcSecondsIntoDay >= 43200.0) {
-            t = (diffDays + 0.5) / TimeConstants.DAYS_PER_JULIAN_CENTURY;
-        } else {
-            t = (diffDays - 0.5) / TimeConstants.DAYS_PER_JULIAN_CENTURY;
-        }
-
-        var gmst0 = gmstConstant0 + t * (gmstConstant1 + t * (gmstConstant2 + t * gmstConstant3));
-        var angle = (gmst0 * twoPiOverSecondsInDay) % CesiumMath.TWO_PI;
-        var ratio = wgs84WRPrecessing + rateCoef * (utcDayNumber - 2451545.5);
-        var secondsSinceMidnight = (utcSecondsIntoDay + TimeConstants.SECONDS_PER_DAY * 0.5) % TimeConstants.SECONDS_PER_DAY;
-        var gha = angle + (ratio * secondsSinceMidnight);
-        var cosGha = Math.cos(gha);
-        var sinGha = Math.sin(gha);
-
-        if (!defined(result)) {
-            return new Matrix3(cosGha, sinGha, 0.0,
-                              -sinGha, cosGha, 0.0,
-                                  0.0,    0.0, 1.0);
-        }
-        result[0] = cosGha;
-        result[1] = -sinGha;
-        result[2] = 0.0;
-        result[3] = sinGha;
-        result[4] = cosGha;
-        result[5] = 0.0;
-        result[6] = 0.0;
-        result[7] = 0.0;
-        result[8] = 1.0;
-        return result;
-    };
-
-    /**
-     * The source of IAU 2006 XYS data, used for computing the transformation between the
-     * Fixed and ICRF axes.
-     * @type {Iau2006XysData}
-     *
-     * @see Transforms.computeIcrfToFixedMatrix
-     * @see Transforms.computeFixedToIcrfMatrix
-     *
-     * @private
-     */
-    Transforms.iau2006XysData = new Iau2006XysData();
-
-    /**
-     * The source of Earth Orientation Parameters (EOP) data, used for computing the transformation
-     * between the Fixed and ICRF axes.  By default, zero values are used for all EOP values,
-     * yielding a reasonable but not completely accurate representation of the ICRF axes.
-     * @type {EarthOrientationParameters}
-     *
-     * @see Transforms.computeIcrfToFixedMatrix
-     * @see Transforms.computeFixedToIcrfMatrix
-     *
-     * @private
-     */
-    Transforms.earthOrientationParameters = EarthOrientationParameters.NONE;
-
-    var ttMinusTai = 32.184;
-    var j2000ttDays = 2451545.0;
-
-    /**
-     * Preloads the data necessary to transform between the ICRF and Fixed axes, in either
-     * direction, over a given interval.  This function returns a promise that, when resolved,
-     * indicates that the preload has completed.
-     *
-     * @param {TimeInterval} timeInterval The interval to preload.
-     * @returns {Promise} A promise that, when resolved, indicates that the preload has completed
-     *          and evaluation of the transformation between the fixed and ICRF axes will
-     *          no longer return undefined for a time inside the interval.
-     *
-     * @see Transforms.computeIcrfToFixedMatrix
-     * @see Transforms.computeFixedToIcrfMatrix
-     * @see when
-     *
-     * @example
-     * var interval = new Cesium.TimeInterval(...);
-     * when(preloadIcrfFixed(interval), function() {
-     *     // the data is now loaded
-     * });
-     */
-    Transforms.preloadIcrfFixed = function(timeInterval) {
-        var startDayTT = timeInterval.start.dayNumber;
-        var startSecondTT = timeInterval.start.secondsOfDay + ttMinusTai;
-        var stopDayTT = timeInterval.stop.dayNumber;
-        var stopSecondTT = timeInterval.stop.secondsOfDay + ttMinusTai;
-
-        var xysPromise = Transforms.iau2006XysData.preload(startDayTT, startSecondTT, stopDayTT, stopSecondTT);
-        var eopPromise = Transforms.earthOrientationParameters.getPromiseToLoad();
-
-        return when.all([xysPromise, eopPromise]);
-    };
-
-    /**
-     * Computes a rotation matrix to transform a point or vector from the International Celestial
-     * Reference Frame (GCRF/ICRF) inertial frame axes to the Earth-Fixed frame axes (ITRF)
-     * at a given time.  This function may return undefined if the data necessary to
-     * do the transformation is not yet loaded.
-     *
-     * @param {JulianDate} date The time at which to compute the rotation matrix.
-     * @param {Matrix3} [result] The object onto which to store the result.  If this parameter is
-     *                  not specified, a new instance is created and returned.
-     * @returns {Matrix3} The rotation matrix, or undefined if the data necessary to do the
-     *                   transformation is not yet loaded.
-     *
-     * @see Transforms.preloadIcrfFixed
-     *
-     * @example
-     * scene.preRender.addEventListener(function(scene, time) {
-     *   var icrfToFixed = Cesium.Transforms.computeIcrfToFixedMatrix(time);
-     *   if (Cesium.defined(icrfToFixed)) {
-     *     scene.camera.transform = Cesium.Matrix4.fromRotationTranslation(icrfToFixed, Cesium.Cartesian3.ZERO);
-     *   }
-     * });
-     */
-    Transforms.computeIcrfToFixedMatrix = function(date, result) {
-                if (!defined(date)) {
-            throw new DeveloperError('date is required.');
-        }
-                if (!defined(result)) {
-            result = new Matrix3();
-        }
-
-        var fixedToIcrfMtx = Transforms.computeFixedToIcrfMatrix(date, result);
-        if (!defined(fixedToIcrfMtx)) {
-            return undefined;
-        }
-
-        return Matrix3.transpose(fixedToIcrfMtx, result);
-    };
-
-    var xysScratch = new Iau2006XysSample(0.0, 0.0, 0.0);
-    var eopScratch = new EarthOrientationParametersSample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-    var rotation1Scratch = new Matrix3();
-    var rotation2Scratch = new Matrix3();
-
-    /**
-     * Computes a rotation matrix to transform a point or vector from the Earth-Fixed frame axes (ITRF)
-     * to the International Celestial Reference Frame (GCRF/ICRF) inertial frame axes
-     * at a given time.  This function may return undefined if the data necessary to
-     * do the transformation is not yet loaded.
-     *
-     * @param {JulianDate} date The time at which to compute the rotation matrix.
-     * @param {Matrix3} [result] The object onto which to store the result.  If this parameter is
-     *                  not specified, a new instance is created and returned.
-     * @returns {Matrix3} The rotation matrix, or undefined if the data necessary to do the
-     *                   transformation is not yet loaded.
-     *
-     * @see Transforms.preloadIcrfFixed
-     *
-     * @example
-     * // Transform a point from the ICRF axes to the Fixed axes.
-     * var now = new Cesium.JulianDate();
-     * var pointInFixed = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
-     * var fixedToIcrf = Cesium.Transforms.computeIcrfToFixedMatrix(now);
-     * var pointInInertial = new Cesium.Cartesian3();
-     * if (Cesium.defined(fixedToIcrf)) {
-     *     pointInInertial = Cesium.Matrix3.multiplyByVector(fixedToIcrf, pointInFixed, pointInInertial);
-     * }
-     */
-    Transforms.computeFixedToIcrfMatrix = function(date, result) {
-                if (!defined(date)) {
-            throw new DeveloperError('date is required.');
-        }
-        
-        if (!defined(result)) {
-            result = new Matrix3();
-        }
-
-        // Compute pole wander
-        var eop = Transforms.earthOrientationParameters.compute(date, eopScratch);
-        if (!defined(eop)) {
-            return undefined;
-        }
-
-        // There is no external conversion to Terrestrial Time (TT).
-        // So use International Atomic Time (TAI) and convert using offsets.
-        // Here we are assuming that dayTT and secondTT are positive
-        var dayTT = date.dayNumber;
-        // It's possible here that secondTT could roll over 86400
-        // This does not seem to affect the precision (unit tests check for this)
-        var secondTT = date.secondsOfDay + ttMinusTai;
-
-        var xys = Transforms.iau2006XysData.computeXysRadians(dayTT, secondTT, xysScratch);
-        if (!defined(xys)) {
-            return undefined;
-        }
-
-        var x = xys.x + eop.xPoleOffset;
-        var y = xys.y + eop.yPoleOffset;
-
-        // Compute XYS rotation
-        var a = 1.0 / (1.0 + Math.sqrt(1.0 - x * x - y * y));
-
-        var rotation1 = rotation1Scratch;
-        rotation1[0] = 1.0 - a * x * x;
-        rotation1[3] = -a * x * y;
-        rotation1[6] = x;
-        rotation1[1] = -a * x * y;
-        rotation1[4] = 1 - a * y * y;
-        rotation1[7] = y;
-        rotation1[2] = -x;
-        rotation1[5] = -y;
-        rotation1[8] = 1 - a * (x * x + y * y);
-
-        var rotation2 = Matrix3.fromRotationZ(-xys.s, rotation2Scratch);
-        var matrixQ = Matrix3.multiply(rotation1, rotation2, rotation1Scratch);
-
-        // Similar to TT conversions above
-        // It's possible here that secondTT could roll over 86400
-        // This does not seem to affect the precision (unit tests check for this)
-        var dateUt1day = date.dayNumber;
-        var dateUt1sec = date.secondsOfDay - JulianDate.computeTaiMinusUtc(date) + eop.ut1MinusUtc;
-
-        // Compute Earth rotation angle
-        // The IERS standard for era is
-        //    era = 0.7790572732640 + 1.00273781191135448 * Tu
-        // where
-        //    Tu = JulianDateInUt1 - 2451545.0
-        // However, you get much more precision if you make the following simplification
-        //    era = a + (1 + b) * (JulianDayNumber + FractionOfDay - 2451545)
-        //    era = a + (JulianDayNumber - 2451545) + FractionOfDay + b (JulianDayNumber - 2451545 + FractionOfDay)
-        //    era = a + FractionOfDay + b (JulianDayNumber - 2451545 + FractionOfDay)
-        // since (JulianDayNumber - 2451545) represents an integer number of revolutions which will be discarded anyway.
-        var daysSinceJ2000 = dateUt1day - 2451545;
-        var fractionOfDay = dateUt1sec / TimeConstants.SECONDS_PER_DAY;
-        var era = 0.7790572732640 + fractionOfDay + 0.00273781191135448 * (daysSinceJ2000 + fractionOfDay);
-        era = (era % 1.0) * CesiumMath.TWO_PI;
-
-        var earthRotation = Matrix3.fromRotationZ(era, rotation2Scratch);
-
-        // pseudoFixed to ICRF
-        var pfToIcrf = Matrix3.multiply(matrixQ, earthRotation, rotation1Scratch);
-
-        // Compute pole wander matrix
-        var cosxp = Math.cos(eop.xPoleWander);
-        var cosyp = Math.cos(eop.yPoleWander);
-        var sinxp = Math.sin(eop.xPoleWander);
-        var sinyp = Math.sin(eop.yPoleWander);
-
-        var ttt = (dayTT - j2000ttDays) + secondTT / TimeConstants.SECONDS_PER_DAY;
-        ttt /= 36525.0;
-
-        // approximate sp value in rad
-        var sp = -47.0e-6 * ttt * CesiumMath.RADIANS_PER_DEGREE / 3600.0;
-        var cossp = Math.cos(sp);
-        var sinsp = Math.sin(sp);
-
-        var fToPfMtx = rotation2Scratch;
-        fToPfMtx[0] = cosxp * cossp;
-        fToPfMtx[1] = cosxp * sinsp;
-        fToPfMtx[2] = sinxp;
-        fToPfMtx[3] = -cosyp * sinsp + sinyp * sinxp * cossp;
-        fToPfMtx[4] = cosyp * cossp + sinyp * sinxp * sinsp;
-        fToPfMtx[5] = -sinyp * cosxp;
-        fToPfMtx[6] = -sinyp * sinsp - cosyp * sinxp * cossp;
-        fToPfMtx[7] = sinyp * cossp - cosyp * sinxp * sinsp;
-        fToPfMtx[8] = cosyp * cosxp;
-
-        return Matrix3.multiply(pfToIcrf, fToPfMtx, result);
-    };
-
-    var pointToWindowCoordinatesTemp = new Cartesian4();
-
-    /**
-     * Transform a point from model coordinates to window coordinates.
-     *
-     * @param {Matrix4} modelViewProjectionMatrix The 4x4 model-view-projection matrix.
-     * @param {Matrix4} viewportTransformation The 4x4 viewport transformation.
-     * @param {Cartesian3} point The point to transform.
-     * @param {Cartesian2} [result] The object onto which to store the result.
-     * @returns {Cartesian2} The modified result parameter or a new Cartesian2 instance if none was provided.
-     */
-    Transforms.pointToWindowCoordinates = function (modelViewProjectionMatrix, viewportTransformation, point, result) {
-        result = Transforms.pointToGLWindowCoordinates(modelViewProjectionMatrix, viewportTransformation, point, result);
-        result.y = 2.0 * viewportTransformation[5] - result.y;
-        return result;
-    };
-
-    /**
-     * @private
-     */
-    Transforms.pointToGLWindowCoordinates = function(modelViewProjectionMatrix, viewportTransformation, point, result) {
-                if (!defined(modelViewProjectionMatrix)) {
-            throw new DeveloperError('modelViewProjectionMatrix is required.');
-        }
-
-        if (!defined(viewportTransformation)) {
-            throw new DeveloperError('viewportTransformation is required.');
-        }
-
-        if (!defined(point)) {
-            throw new DeveloperError('point is required.');
-        }
-        
-        if (!defined(result)) {
-            result = new Cartesian2();
-        }
-
-        var tmp = pointToWindowCoordinatesTemp;
-
-        Matrix4.multiplyByVector(modelViewProjectionMatrix, Cartesian4.fromElements(point.x, point.y, point.z, 1, tmp), tmp);
-        Cartesian4.multiplyByScalar(tmp, 1.0 / tmp.w, tmp);
-        Matrix4.multiplyByVector(viewportTransformation, tmp, tmp);
-        return Cartesian2.fromCartesian4(tmp, result);
-    };
-
-    return Transforms;
-});
-
-/*global define*/
-define('Core/EllipsoidTangentPlane',[
-        './AxisAlignedBoundingBox',
-        './Cartesian2',
-        './Cartesian3',
-        './Cartesian4',
-        './defaultValue',
-        './defined',
-        './defineProperties',
-        './DeveloperError',
-        './Ellipsoid',
-        './IntersectionTests',
-        './Matrix4',
-        './Plane',
-        './Ray',
-        './Transforms'
-    ], function(
-        AxisAlignedBoundingBox,
-        Cartesian2,
-        Cartesian3,
-        Cartesian4,
-        defaultValue,
-        defined,
-        defineProperties,
-        DeveloperError,
-        Ellipsoid,
-        IntersectionTests,
-        Matrix4,
-        Plane,
-        Ray,
-        Transforms) {
-    "use strict";
-
-    var scratchCart4 = new Cartesian4();
-    /**
-     * A plane tangent to the provided ellipsoid at the provided origin.
-     * If origin is not on the surface of the ellipsoid, it's surface projection will be used.
-     * If origin as at the center of the ellipsoid, an exception will be thrown.
-     * @alias EllipsoidTangentPlane
-     * @constructor
-     *
-     * @param {Ellipsoid} ellipsoid The ellipsoid to use.
-     * @param {Cartesian3} origin The point on the surface of the ellipsoid where the tangent plane touches.
-     *
-     * @exception {DeveloperError} origin must not be at the center of the ellipsoid.
-     */
-    var EllipsoidTangentPlane = function(origin, ellipsoid) {
-                if (!defined(origin)) {
-            throw new DeveloperError('origin is required.');
-        }
-        
-        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-        origin = ellipsoid.scaleToGeodeticSurface(origin);
-
-                if (!defined(origin)) {
-            throw new DeveloperError('origin must not be at the center of the ellipsoid.');
-        }
-        
-        var eastNorthUp = Transforms.eastNorthUpToFixedFrame(origin, ellipsoid);
-        this._ellipsoid = ellipsoid;
-        this._origin = origin;
-        this._xAxis = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 0, scratchCart4));
-        this._yAxis = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 1, scratchCart4));
-
-        var normal = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 2, scratchCart4));
-        this._plane = Plane.fromPointNormal(origin, normal);
-    };
-
-    defineProperties(EllipsoidTangentPlane.prototype, {
-        /**
-         * Gets the ellipsoid.
-         * @memberof EllipsoidTangentPlane.prototype
-         * @type {Ellipsoid}
-         */
-        ellipsoid : {
-            get : function() {
-                return this._ellipsoid;
-            }
-        },
-
-        /**
-         * Gets the origin.
-         * @memberof EllipsoidTangentPlane.prototype
-         * @type {Cartesian3}
-         */
-        origin : {
-            get : function() {
-                return this._origin;
-            }
-        }
-    });
-
-    var tmp = new AxisAlignedBoundingBox();
-    /**
-     * Creates a new instance from the provided ellipsoid and the center
-     * point of the provided Cartesians.
-     *
-     * @param {Ellipsoid} ellipsoid The ellipsoid to use.
-     * @param {Cartesian3} cartesians The list of positions surrounding the center point.
-     */
-    EllipsoidTangentPlane.fromPoints = function(cartesians, ellipsoid) {
-                if (!defined(cartesians)) {
-            throw new DeveloperError('cartesians is required.');
-        }
-        
-        var box = AxisAlignedBoundingBox.fromPoints(cartesians, tmp);
-        return new EllipsoidTangentPlane(box.center, ellipsoid);
-    };
-
-    var projectPointOntoPlaneRay = new Ray();
-    var projectPointOntoPlaneCartesian3 = new Cartesian3();
-
-    /**
-     * Computes the projection of the provided 3D position onto the 2D plane.
-     *
-     * @param {Cartesian3} cartesian The point to project.
-     * @param {Cartesian2} [result] The object onto which to store the result.
-     * @returns {Cartesian2} The modified result parameter or a new Cartesian2 instance if none was provided.
-     */
-    EllipsoidTangentPlane.prototype.projectPointOntoPlane = function(cartesian, result) {
-                if (!defined(cartesian)) {
-            throw new DeveloperError('cartesian is required.');
-        }
-        
-        var ray = projectPointOntoPlaneRay;
-        ray.origin = cartesian;
-        Cartesian3.normalize(cartesian, ray.direction);
-
-        var intersectionPoint = IntersectionTests.rayPlane(ray, this._plane, projectPointOntoPlaneCartesian3);
-        if (!defined(intersectionPoint)) {
-            Cartesian3.negate(ray.direction, ray.direction);
-            intersectionPoint = IntersectionTests.rayPlane(ray, this._plane, projectPointOntoPlaneCartesian3);
-        }
-
-        if (defined(intersectionPoint)) {
-            var v = Cartesian3.subtract(intersectionPoint, this._origin, intersectionPoint);
-            var x = Cartesian3.dot(this._xAxis, v);
-            var y = Cartesian3.dot(this._yAxis, v);
-
-            if (!defined(result)) {
-                return new Cartesian2(x, y);
-            }
-            result.x = x;
-            result.y = y;
-            return result;
-        }
-        return undefined;
-    };
-
-    /**
-     * Computes the projection of the provided 3D positions onto the 2D plane.
-     *
-     * @param {Cartesian3[]} cartesians The array of points to project.
-     * @param {Cartesian2[]} [result] The array of Cartesian2 instances onto which to store results.
-     * @returns {Cartesian2[]} The modified result parameter or a new array of Cartesian2 instances if none was provided.
-     */
-    EllipsoidTangentPlane.prototype.projectPointsOntoPlane = function(cartesians, result) {
-                if (!defined(cartesians)) {
-            throw new DeveloperError('cartesians is required.');
-        }
-        
-        if (!defined(result)) {
-            result = [];
-        }
-
-        var count = 0;
-        var length = cartesians.length;
-        for ( var i = 0; i < length; i++) {
-            var p = this.projectPointOntoPlane(cartesians[i], result[count]);
-            if (defined(p)) {
-                result[count] = p;
-                count++;
-            }
-        }
-        result.length = count;
-        return result;
-    };
-
-
-    var projectPointsOntoEllipsoidScratch = new Cartesian3();
-    /**
-     * Computes the projection of the provided 2D positions onto the 3D ellipsoid.
-     *
-     * @param {Cartesian2[]} cartesians The array of points to project.
-     * @param {Cartesian3[]} [result] The array of Cartesian3 instances onto which to store results.
-     * @returns {Cartesian3[]} The modified result parameter or a new array of Cartesian3 instances if none was provided.
-     */
-    EllipsoidTangentPlane.prototype.projectPointsOntoEllipsoid = function(cartesians, result) {
-                if (!defined(cartesians)) {
-            throw new DeveloperError('cartesians is required.');
-        }
-        
-        var length = cartesians.length;
-        if (!defined(result)) {
-            result = new Array(length);
-        } else {
-            result.length = length;
-        }
-
-        var ellipsoid = this._ellipsoid;
-        var origin = this._origin;
-        var xAxis = this._xAxis;
-        var yAxis = this._yAxis;
-        var tmp = projectPointsOntoEllipsoidScratch;
-
-        for ( var i = 0; i < length; ++i) {
-            var position = cartesians[i];
-            Cartesian3.multiplyByScalar(xAxis, position.x, tmp);
-            if (!defined(result[i])) {
-                result[i] = new Cartesian3();
-            }
-            var point = Cartesian3.add(origin, tmp, result[i]);
-            Cartesian3.multiplyByScalar(yAxis, position.y, tmp);
-            Cartesian3.add(point, tmp, point);
-            ellipsoid.scaleToGeocentricSurface(point, point);
-        }
-
-        return result;
-    };
-
-    return EllipsoidTangentPlane;
-});
-
-/*global define*/
 define('Core/Quaternion',[
         './Cartesian3',
         './defaultValue',
@@ -18634,6 +18277,37 @@ define('Core/Quaternion',[
         result.z = z;
         result.w = w;
         return result;
+    };
+
+    var scratchHPRQuaternion = new Quaternion();
+
+    /**
+     * Computes a rotation from the given heading, pitch and roll angles. Heading is the rotation about the
+     * negative z axis. Pitch is the rotation about the negative y axis. Roll is the rotation about
+     * the positive x axis.
+     *
+     * @param {Number} heading The heading angle in radians.
+     * @param {Number} pitch The pitch angle in radians.
+     * @param {Number} roll The roll angle in radians.
+     * @param {Quaternion} result The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if none was provided.
+     */
+    Quaternion.fromHeadingPitchRoll = function(heading, pitch, roll, result) {
+                if (!defined(heading)) {
+            throw new DeveloperError('heading is required.');
+        }
+        if (!defined(pitch)) {
+            throw new DeveloperError('pitch is required.');
+        }
+        if (!defined(roll)) {
+            throw new DeveloperError('roll is required.');
+        }
+        
+        var rollQuaternion = Quaternion.fromAxisAngle(Cartesian3.UNIT_X, roll, scratchHPRQuaternion);
+        var pitchQuaternion = Quaternion.fromAxisAngle(Cartesian3.UNIT_Y, -pitch, result);
+        result = Quaternion.multiply(pitchQuaternion, rollQuaternion, pitchQuaternion);
+        var headingQuaternion = Quaternion.fromAxisAngle(Cartesian3.UNIT_Z, -heading, scratchHPRQuaternion);
+        return Quaternion.multiply(headingQuaternion, result, result);
     };
 
     var sampledQuaternionAxis = new Cartesian3();
@@ -19524,6 +19198,993 @@ define('Core/Quaternion',[
     return Quaternion;
 });
 /*global define*/
+define('Core/Transforms',[
+        '../ThirdParty/when',
+        './Cartesian2',
+        './Cartesian3',
+        './Cartesian4',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './EarthOrientationParameters',
+        './EarthOrientationParametersSample',
+        './Ellipsoid',
+        './Iau2006XysData',
+        './Iau2006XysSample',
+        './JulianDate',
+        './Math',
+        './Matrix3',
+        './Matrix4',
+        './Quaternion',
+        './TimeConstants'
+    ], function(
+        when,
+        Cartesian2,
+        Cartesian3,
+        Cartesian4,
+        defaultValue,
+        defined,
+        DeveloperError,
+        EarthOrientationParameters,
+        EarthOrientationParametersSample,
+        Ellipsoid,
+        Iau2006XysData,
+        Iau2006XysSample,
+        JulianDate,
+        CesiumMath,
+        Matrix3,
+        Matrix4,
+        Quaternion,
+        TimeConstants) {
+    "use strict";
+
+    /**
+     * Contains functions for transforming positions to various reference frames.
+     *
+     * @namespace
+     * @alias Transforms
+     */
+    var Transforms = {};
+
+    var eastNorthUpToFixedFrameNormal = new Cartesian3();
+    var eastNorthUpToFixedFrameTangent = new Cartesian3();
+    var eastNorthUpToFixedFrameBitangent = new Cartesian3();
+
+    /**
+     * Computes a 4x4 transformation matrix from a reference frame with an east-north-up axes
+     * centered at the provided origin to the provided ellipsoid's fixed reference frame.
+     * The local axes are defined as:
+     * <ul>
+     * <li>The <code>x</code> axis points in the local east direction.</li>
+     * <li>The <code>y</code> axis points in the local north direction.</li>
+     * <li>The <code>z</code> axis points in the direction of the ellipsoid surface normal which passes through the position.</li>
+     * </ul>
+     *
+     * @param {Cartesian3} origin The center point of the local reference frame.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
+     * @param {Matrix4} [result] The object onto which to store the result.
+     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
+     *
+     * @example
+     * // Get the transform from local east-north-up at cartographic (0.0, 0.0) to Earth's fixed frame.
+     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var transform = Cesium.Transforms.eastNorthUpToFixedFrame(center);
+     */
+    Transforms.eastNorthUpToFixedFrame = function(origin, ellipsoid, result) {
+                if (!defined(origin)) {
+            throw new DeveloperError('origin is required.');
+        }
+        
+        // If x and y are zero, assume origin is at a pole, which is a special case.
+        if (CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
+            CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
+            var sign = CesiumMath.sign(origin.z);
+            if (!defined(result)) {
+                return new Matrix4(
+                        0.0, -sign,  0.0, origin.x,
+                        1.0,   0.0,  0.0, origin.y,
+                        0.0,   0.0, sign, origin.z,
+                        0.0,   0.0,  0.0, 1.0);
+            }
+            result[0] = 0.0;
+            result[1] = 1.0;
+            result[2] = 0.0;
+            result[3] = 0.0;
+            result[4] = -sign;
+            result[5] = 0.0;
+            result[6] = 0.0;
+            result[7] = 0.0;
+            result[8] = 0.0;
+            result[9] = 0.0;
+            result[10] = sign;
+            result[11] = 0.0;
+            result[12] = origin.x;
+            result[13] = origin.y;
+            result[14] = origin.z;
+            result[15] = 1.0;
+            return result;
+        }
+
+        var normal = eastNorthUpToFixedFrameNormal;
+        var tangent  = eastNorthUpToFixedFrameTangent;
+        var bitangent = eastNorthUpToFixedFrameBitangent;
+
+        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
+        ellipsoid.geodeticSurfaceNormal(origin, normal);
+
+        tangent.x = -origin.y;
+        tangent.y = origin.x;
+        tangent.z = 0.0;
+        Cartesian3.normalize(tangent, tangent);
+
+        Cartesian3.cross(normal, tangent, bitangent);
+
+        if (!defined(result)) {
+            return new Matrix4(
+                    tangent.x, bitangent.x, normal.x, origin.x,
+                    tangent.y, bitangent.y, normal.y, origin.y,
+                    tangent.z, bitangent.z, normal.z, origin.z,
+                    0.0,       0.0,         0.0,      1.0);
+        }
+        result[0] = tangent.x;
+        result[1] = tangent.y;
+        result[2] = tangent.z;
+        result[3] = 0.0;
+        result[4] = bitangent.x;
+        result[5] = bitangent.y;
+        result[6] = bitangent.z;
+        result[7] = 0.0;
+        result[8] = normal.x;
+        result[9] = normal.y;
+        result[10] = normal.z;
+        result[11] = 0.0;
+        result[12] = origin.x;
+        result[13] = origin.y;
+        result[14] = origin.z;
+        result[15] = 1.0;
+        return result;
+    };
+
+    var northEastDownToFixedFrameNormal = new Cartesian3();
+    var northEastDownToFixedFrameTangent = new Cartesian3();
+    var northEastDownToFixedFrameBitangent = new Cartesian3();
+
+    /**
+     * Computes a 4x4 transformation matrix from a reference frame with an north-east-down axes
+     * centered at the provided origin to the provided ellipsoid's fixed reference frame.
+     * The local axes are defined as:
+     * <ul>
+     * <li>The <code>x</code> axis points in the local north direction.</li>
+     * <li>The <code>y</code> axis points in the local east direction.</li>
+     * <li>The <code>z</code> axis points in the opposite direction of the ellipsoid surface normal which passes through the position.</li>
+     * </ul>
+     *
+     * @param {Cartesian3} origin The center point of the local reference frame.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
+     * @param {Matrix4} [result] The object onto which to store the result.
+     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
+     *
+     * @example
+     * // Get the transform from local north-east-down at cartographic (0.0, 0.0) to Earth's fixed frame.
+     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var transform = Cesium.Transforms.northEastDownToFixedFrame(center);
+     */
+    Transforms.northEastDownToFixedFrame = function(origin, ellipsoid, result) {
+                if (!defined(origin)) {
+            throw new DeveloperError('origin is required.');
+        }
+        
+        if (CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
+            CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
+            // The poles are special cases.  If x and y are zero, assume origin is at a pole.
+            var sign = CesiumMath.sign(origin.z);
+            if (!defined(result)) {
+                return new Matrix4(
+                  -sign, 0.0,   0.0, origin.x,
+                    0.0, 1.0,   0.0, origin.y,
+                    0.0, 0.0, -sign, origin.z,
+                    0.0, 0.0,   0.0, 1.0);
+            }
+            result[0] = -sign;
+            result[1] = 0.0;
+            result[2] = 0.0;
+            result[3] = 0.0;
+            result[4] = 0.0;
+            result[5] = 1.0;
+            result[6] = 0.0;
+            result[7] = 0.0;
+            result[8] = 0.0;
+            result[9] = 0.0;
+            result[10] = -sign;
+            result[11] = 0.0;
+            result[12] = origin.x;
+            result[13] = origin.y;
+            result[14] = origin.z;
+            result[15] = 1.0;
+            return result;
+        }
+
+        var normal = northEastDownToFixedFrameNormal;
+        var tangent = northEastDownToFixedFrameTangent;
+        var bitangent = northEastDownToFixedFrameBitangent;
+
+        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
+        ellipsoid.geodeticSurfaceNormal(origin, normal);
+
+        tangent.x = -origin.y;
+        tangent.y = origin.x;
+        tangent.z = 0.0;
+        Cartesian3.normalize(tangent, tangent);
+
+        Cartesian3.cross(normal, tangent, bitangent);
+
+        if (!defined(result)) {
+            return new Matrix4(
+                    bitangent.x, tangent.x, -normal.x, origin.x,
+                    bitangent.y, tangent.y, -normal.y, origin.y,
+                    bitangent.z, tangent.z, -normal.z, origin.z,
+                    0.0,       0.0,         0.0,      1.0);
+        }
+        result[0] = bitangent.x;
+        result[1] = bitangent.y;
+        result[2] = bitangent.z;
+        result[3] = 0.0;
+        result[4] = tangent.x;
+        result[5] = tangent.y;
+        result[6] = tangent.z;
+        result[7] = 0.0;
+        result[8] = -normal.x;
+        result[9] = -normal.y;
+        result[10] = -normal.z;
+        result[11] = 0.0;
+        result[12] = origin.x;
+        result[13] = origin.y;
+        result[14] = origin.z;
+        result[15] = 1.0;
+        return result;
+    };
+
+    /**
+     * Computes a 4x4 transformation matrix from a reference frame with an north-up-east axes
+     * centered at the provided origin to the provided ellipsoid's fixed reference frame.
+     * The local axes are defined as:
+     * <ul>
+     * <li>The <code>x</code> axis points in the local north direction.</li>
+     * <li>The <code>y</code> axis points in the direction of the ellipsoid surface normal which passes through the position.</li>
+     * <li>The <code>z</code> axis points in the local east direction.</li>
+     * </ul>
+     *
+     * @param {Cartesian3} origin The center point of the local reference frame.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
+     * @param {Matrix4} [result] The object onto which to store the result.
+     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
+     *
+     * @example
+     * // Get the transform from local north-up-east at cartographic (0.0, 0.0) to Earth's fixed frame.
+     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var transform = Cesium.Transforms.northUpEastToFixedFrame(center);
+     */
+    Transforms.northUpEastToFixedFrame = function(origin, ellipsoid, result) {
+                if (!defined(origin)) {
+            throw new DeveloperError('origin is required.');
+        }
+        
+        // If x and y are zero, assume origin is at a pole, which is a special case.
+        if (CesiumMath.equalsEpsilon(origin.x, 0.0, CesiumMath.EPSILON14) &&
+            CesiumMath.equalsEpsilon(origin.y, 0.0, CesiumMath.EPSILON14)) {
+            var sign = CesiumMath.sign(origin.z);
+            if (!defined(result)) {
+                return new Matrix4(
+                       -sign, 0.0,  0.0, origin.x,
+                        0.0,  0.0,  1.0, origin.y,
+                        0.0,  sign, 0.0, origin.z,
+                        0.0,  0.0,  0.0, 1.0);
+            }
+            result[0] = -sign;
+            result[1] = 0.0;
+            result[2] = 0.0;
+            result[3] = 0.0;
+            result[4] = 0.0;
+            result[5] = 0.0;
+            result[6] = sign;
+            result[7] = 0.0;
+            result[8] = 0.0;
+            result[9] = 1.0;
+            result[10] = 0.0;
+            result[11] = 0.0;
+            result[12] = origin.x;
+            result[13] = origin.y;
+            result[14] = origin.z;
+            result[15] = 1.0;
+            return result;
+        }
+
+        var normal = eastNorthUpToFixedFrameNormal;
+        var tangent  = eastNorthUpToFixedFrameTangent;
+        var bitangent = eastNorthUpToFixedFrameBitangent;
+
+        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
+        ellipsoid.geodeticSurfaceNormal(origin, normal);
+
+        tangent.x = -origin.y;
+        tangent.y = origin.x;
+        tangent.z = 0.0;
+        Cartesian3.normalize(tangent, tangent);
+
+        Cartesian3.cross(normal, tangent, bitangent);
+
+        if (!defined(result)) {
+            return new Matrix4(
+                    bitangent.x, normal.x, tangent.x, origin.x,
+                    bitangent.y, normal.y, tangent.y, origin.y,
+                    bitangent.z, normal.z, tangent.z, origin.z,
+                    0.0,       0.0,         0.0,      1.0);
+        }
+        result[0] = bitangent.x;
+        result[1] = bitangent.y;
+        result[2] = bitangent.z;
+        result[3] = 0.0;
+        result[4] = normal.x;
+        result[5] = normal.y;
+        result[6] = normal.z;
+        result[7] = 0.0;
+        result[8] = tangent.x;
+        result[9] = tangent.y;
+        result[10] = tangent.z;
+        result[11] = 0.0;
+        result[12] = origin.x;
+        result[13] = origin.y;
+        result[14] = origin.z;
+        result[15] = 1.0;
+        return result;
+    };
+
+    var scratchHPRQuaternion = new Quaternion();
+    var scratchScale = new Cartesian3(1.0, 1.0, 1.0);
+    var scratchHPRMatrix4 = new Matrix4();
+
+    /**
+     * Computes a 4x4 transformation matrix from a reference frame with axes computed from the heading-pitch-roll angles
+     * centered at the provided origin to the provided ellipsoid's fixed reference frame. Heading is the rotation from the local north
+     * direction where a positive angle is increasing eastward. Pitch is the rotation from the local east-north plane. Positive pitch angles
+     * are above the plane. Negative pitch angles are below the plane. Roll is the first rotation applied about the local east axis.
+     *
+     * @param {Cartesian3} origin The center point of the local reference frame.
+     * @param {Number} heading The heading angle in radians.
+     * @param {Number} pitch The pitch angle in radians.
+     * @param {Number} roll The roll angle in radians.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
+     * @param {Matrix4} [result] The object onto which to store the result.
+     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
+     *
+     * @example
+     * // Get the transform from local heading-pitch-roll at cartographic (0.0, 0.0) to Earth's fixed frame.
+     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var heading = -Cesium.Math.PI_OVER_TWO;
+     * var pitch = Cesium.Math.PI_OVER_FOUR;
+     * var roll = 0.0;
+     * var transform = Cesium.Transforms.headingPitchRollToFixedFrame(center, heading, pitch, roll);
+     */
+    Transforms.headingPitchRollToFixedFrame = function(origin, heading, pitch, roll, ellipsoid, result) {
+        // checks for required parameters happen in the called functions
+        var hprQuaternion = Quaternion.fromHeadingPitchRoll(heading, pitch, roll, scratchHPRQuaternion);
+        var hprMatrix = Matrix4.fromTranslationQuaternionRotationScale(Cartesian3.ZERO, hprQuaternion, scratchScale, scratchHPRMatrix4);
+        result = Transforms.eastNorthUpToFixedFrame(origin, ellipsoid, result);
+        return Matrix4.multiply(result, hprMatrix, result);
+    };
+
+    var scratchENUMatrix4 = new Matrix4();
+    var scratchHPRMatrix3 = new Matrix3();
+
+    /**
+     * Computes a quaternion from a reference frame with axes computed from the heading-pitch-roll angles
+     * centered at the provided origin. Heading is the rotation from the local north
+     * direction where a positive angle is increasing eastward. Pitch is the rotation from the local east-north plane. Positive pitch angles
+     * are above the plane. Negative pitch angles are below the plane. Roll is the first rotation applied about the local east axis.
+     *
+     * @param {Cartesian3} origin The center point of the local reference frame.
+     * @param {Number} heading The heading angle in radians.
+     * @param {Number} pitch The pitch angle in radians.
+     * @param {Number} roll The roll angle in radians.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
+     * @param {Quaternion} [result] The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if none was provided.
+     *
+     * @example
+     * // Get the quaternion from local heading-pitch-roll at cartographic (0.0, 0.0) to Earth's fixed frame.
+     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var heading = -Cesium.Math.PI_OVER_TWO;
+     * var pitch = Cesium.Math.PI_OVER_FOUR;
+     * var roll = 0.0;
+     * var quaternion = Cesium.Transforms.headingPitchRollQuaternion(center, heading, pitch, roll);
+     */
+    Transforms.headingPitchRollQuaternion = function(origin, heading, pitch, roll, ellipsoid, result) {
+        // checks for required parameters happen in the called functions
+        var transform = Transforms.headingPitchRollToFixedFrame(origin, heading, pitch, roll, ellipsoid, scratchENUMatrix4);
+        var rotation = Matrix4.getRotation(transform, scratchHPRMatrix3);
+        return Quaternion.fromRotationMatrix(rotation, result);
+    };
+
+
+    var gmstConstant0 = 6 * 3600 + 41 * 60 + 50.54841;
+    var gmstConstant1 = 8640184.812866;
+    var gmstConstant2 = 0.093104;
+    var gmstConstant3 = -6.2E-6;
+    var rateCoef = 1.1772758384668e-19;
+    var wgs84WRPrecessing = 7.2921158553E-5;
+    var twoPiOverSecondsInDay = CesiumMath.TWO_PI / 86400.0;
+    var dateInUtc = new JulianDate();
+
+    /**
+     * Computes a rotation matrix to transform a point or vector from True Equator Mean Equinox (TEME) axes to the
+     * pseudo-fixed axes at a given time.  This method treats the UT1 time standard as equivalent to UTC.
+     *
+     * @param {JulianDate} date The time at which to compute the rotation matrix.
+     * @param {Matrix3} [result] The object onto which to store the result.
+     * @returns {Matrix3} The modified result parameter or a new Matrix3 instance if none was provided.
+     *
+     * @example
+     * //Set the view to in the inertial frame.
+     * scene.preRender.addEventListener(function(scene, time) {
+     *    var now = new Cesium.JulianDate();
+     *    var offset = Cesium.Matrix4.multiplyByPoint(camera.transform, camera.position, new Cesium.Cartesian3());
+     *    var transform = Cesium.Matrix4.fromRotationTranslation(Cesium.Transforms.computeTemeToPseudoFixedMatrix(now));
+     *    var inverseTransform = Cesium.Matrix4.inverseTransformation(transform, new Cesium.Matrix4());
+     *    Cesium.Matrix4.multiplyByPoint(inverseTransform, offset, offset);
+     *    camera.lookAtTransform(transform, offset);
+     * });
+     */
+    Transforms.computeTemeToPseudoFixedMatrix = function (date, result) {
+                if (!defined(date)) {
+            throw new DeveloperError('date is required.');
+        }
+        
+        // GMST is actually computed using UT1.  We're using UTC as an approximation of UT1.
+        // We do not want to use the function like convertTaiToUtc in JulianDate because
+        // we explicitly do not want to fail when inside the leap second.
+
+        dateInUtc = JulianDate.addSeconds(date, -JulianDate.computeTaiMinusUtc(date), dateInUtc);
+        var utcDayNumber = dateInUtc.dayNumber;
+        var utcSecondsIntoDay = dateInUtc.secondsOfDay;
+
+        var t;
+        var diffDays = utcDayNumber - 2451545;
+        if (utcSecondsIntoDay >= 43200.0) {
+            t = (diffDays + 0.5) / TimeConstants.DAYS_PER_JULIAN_CENTURY;
+        } else {
+            t = (diffDays - 0.5) / TimeConstants.DAYS_PER_JULIAN_CENTURY;
+        }
+
+        var gmst0 = gmstConstant0 + t * (gmstConstant1 + t * (gmstConstant2 + t * gmstConstant3));
+        var angle = (gmst0 * twoPiOverSecondsInDay) % CesiumMath.TWO_PI;
+        var ratio = wgs84WRPrecessing + rateCoef * (utcDayNumber - 2451545.5);
+        var secondsSinceMidnight = (utcSecondsIntoDay + TimeConstants.SECONDS_PER_DAY * 0.5) % TimeConstants.SECONDS_PER_DAY;
+        var gha = angle + (ratio * secondsSinceMidnight);
+        var cosGha = Math.cos(gha);
+        var sinGha = Math.sin(gha);
+
+        if (!defined(result)) {
+            return new Matrix3(cosGha, sinGha, 0.0,
+                              -sinGha, cosGha, 0.0,
+                                  0.0,    0.0, 1.0);
+        }
+        result[0] = cosGha;
+        result[1] = -sinGha;
+        result[2] = 0.0;
+        result[3] = sinGha;
+        result[4] = cosGha;
+        result[5] = 0.0;
+        result[6] = 0.0;
+        result[7] = 0.0;
+        result[8] = 1.0;
+        return result;
+    };
+
+    /**
+     * The source of IAU 2006 XYS data, used for computing the transformation between the
+     * Fixed and ICRF axes.
+     * @type {Iau2006XysData}
+     *
+     * @see Transforms.computeIcrfToFixedMatrix
+     * @see Transforms.computeFixedToIcrfMatrix
+     *
+     * @private
+     */
+    Transforms.iau2006XysData = new Iau2006XysData();
+
+    /**
+     * The source of Earth Orientation Parameters (EOP) data, used for computing the transformation
+     * between the Fixed and ICRF axes.  By default, zero values are used for all EOP values,
+     * yielding a reasonable but not completely accurate representation of the ICRF axes.
+     * @type {EarthOrientationParameters}
+     *
+     * @see Transforms.computeIcrfToFixedMatrix
+     * @see Transforms.computeFixedToIcrfMatrix
+     *
+     * @private
+     */
+    Transforms.earthOrientationParameters = EarthOrientationParameters.NONE;
+
+    var ttMinusTai = 32.184;
+    var j2000ttDays = 2451545.0;
+
+    /**
+     * Preloads the data necessary to transform between the ICRF and Fixed axes, in either
+     * direction, over a given interval.  This function returns a promise that, when resolved,
+     * indicates that the preload has completed.
+     *
+     * @param {TimeInterval} timeInterval The interval to preload.
+     * @returns {Promise} A promise that, when resolved, indicates that the preload has completed
+     *          and evaluation of the transformation between the fixed and ICRF axes will
+     *          no longer return undefined for a time inside the interval.
+     *
+     * @see Transforms.computeIcrfToFixedMatrix
+     * @see Transforms.computeFixedToIcrfMatrix
+     * @see when
+     *
+     * @example
+     * var interval = new Cesium.TimeInterval(...);
+     * when(preloadIcrfFixed(interval), function() {
+     *     // the data is now loaded
+     * });
+     */
+    Transforms.preloadIcrfFixed = function(timeInterval) {
+        var startDayTT = timeInterval.start.dayNumber;
+        var startSecondTT = timeInterval.start.secondsOfDay + ttMinusTai;
+        var stopDayTT = timeInterval.stop.dayNumber;
+        var stopSecondTT = timeInterval.stop.secondsOfDay + ttMinusTai;
+
+        var xysPromise = Transforms.iau2006XysData.preload(startDayTT, startSecondTT, stopDayTT, stopSecondTT);
+        var eopPromise = Transforms.earthOrientationParameters.getPromiseToLoad();
+
+        return when.all([xysPromise, eopPromise]);
+    };
+
+    /**
+     * Computes a rotation matrix to transform a point or vector from the International Celestial
+     * Reference Frame (GCRF/ICRF) inertial frame axes to the Earth-Fixed frame axes (ITRF)
+     * at a given time.  This function may return undefined if the data necessary to
+     * do the transformation is not yet loaded.
+     *
+     * @param {JulianDate} date The time at which to compute the rotation matrix.
+     * @param {Matrix3} [result] The object onto which to store the result.  If this parameter is
+     *                  not specified, a new instance is created and returned.
+     * @returns {Matrix3} The rotation matrix, or undefined if the data necessary to do the
+     *                   transformation is not yet loaded.
+     *
+     * @see Transforms.preloadIcrfFixed
+     *
+     * @example
+     * scene.preRender.addEventListener(function(scene, time) {
+     *   var icrfToFixed = Cesium.Transforms.computeIcrfToFixedMatrix(time);
+     *   if (Cesium.defined(icrfToFixed)) {
+     *     var offset = Cesium.Matrix4.multiplyByPoint(camera.transform, camera.position, new Cesium.Cartesian3());
+     *     var transform = Cesium.Matrix4.fromRotationTranslation(icrfToFixed)
+     *     var inverseTransform = Cesium.Matrix4.inverseTransformation(transform, new Cesium.Matrix4());
+     *     Cesium.Matrix4.multiplyByPoint(inverseTransform, offset, offset);
+     *     camera.lookAtTransform(transform, offset);
+     *   }
+     * });
+     */
+    Transforms.computeIcrfToFixedMatrix = function(date, result) {
+                if (!defined(date)) {
+            throw new DeveloperError('date is required.');
+        }
+                if (!defined(result)) {
+            result = new Matrix3();
+        }
+
+        var fixedToIcrfMtx = Transforms.computeFixedToIcrfMatrix(date, result);
+        if (!defined(fixedToIcrfMtx)) {
+            return undefined;
+        }
+
+        return Matrix3.transpose(fixedToIcrfMtx, result);
+    };
+
+    var xysScratch = new Iau2006XysSample(0.0, 0.0, 0.0);
+    var eopScratch = new EarthOrientationParametersSample(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    var rotation1Scratch = new Matrix3();
+    var rotation2Scratch = new Matrix3();
+
+    /**
+     * Computes a rotation matrix to transform a point or vector from the Earth-Fixed frame axes (ITRF)
+     * to the International Celestial Reference Frame (GCRF/ICRF) inertial frame axes
+     * at a given time.  This function may return undefined if the data necessary to
+     * do the transformation is not yet loaded.
+     *
+     * @param {JulianDate} date The time at which to compute the rotation matrix.
+     * @param {Matrix3} [result] The object onto which to store the result.  If this parameter is
+     *                  not specified, a new instance is created and returned.
+     * @returns {Matrix3} The rotation matrix, or undefined if the data necessary to do the
+     *                   transformation is not yet loaded.
+     *
+     * @see Transforms.preloadIcrfFixed
+     *
+     * @example
+     * // Transform a point from the ICRF axes to the Fixed axes.
+     * var now = new Cesium.JulianDate();
+     * var pointInFixed = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var fixedToIcrf = Cesium.Transforms.computeIcrfToFixedMatrix(now);
+     * var pointInInertial = new Cesium.Cartesian3();
+     * if (Cesium.defined(fixedToIcrf)) {
+     *     pointInInertial = Cesium.Matrix3.multiplyByVector(fixedToIcrf, pointInFixed, pointInInertial);
+     * }
+     */
+    Transforms.computeFixedToIcrfMatrix = function(date, result) {
+                if (!defined(date)) {
+            throw new DeveloperError('date is required.');
+        }
+        
+        if (!defined(result)) {
+            result = new Matrix3();
+        }
+
+        // Compute pole wander
+        var eop = Transforms.earthOrientationParameters.compute(date, eopScratch);
+        if (!defined(eop)) {
+            return undefined;
+        }
+
+        // There is no external conversion to Terrestrial Time (TT).
+        // So use International Atomic Time (TAI) and convert using offsets.
+        // Here we are assuming that dayTT and secondTT are positive
+        var dayTT = date.dayNumber;
+        // It's possible here that secondTT could roll over 86400
+        // This does not seem to affect the precision (unit tests check for this)
+        var secondTT = date.secondsOfDay + ttMinusTai;
+
+        var xys = Transforms.iau2006XysData.computeXysRadians(dayTT, secondTT, xysScratch);
+        if (!defined(xys)) {
+            return undefined;
+        }
+
+        var x = xys.x + eop.xPoleOffset;
+        var y = xys.y + eop.yPoleOffset;
+
+        // Compute XYS rotation
+        var a = 1.0 / (1.0 + Math.sqrt(1.0 - x * x - y * y));
+
+        var rotation1 = rotation1Scratch;
+        rotation1[0] = 1.0 - a * x * x;
+        rotation1[3] = -a * x * y;
+        rotation1[6] = x;
+        rotation1[1] = -a * x * y;
+        rotation1[4] = 1 - a * y * y;
+        rotation1[7] = y;
+        rotation1[2] = -x;
+        rotation1[5] = -y;
+        rotation1[8] = 1 - a * (x * x + y * y);
+
+        var rotation2 = Matrix3.fromRotationZ(-xys.s, rotation2Scratch);
+        var matrixQ = Matrix3.multiply(rotation1, rotation2, rotation1Scratch);
+
+        // Similar to TT conversions above
+        // It's possible here that secondTT could roll over 86400
+        // This does not seem to affect the precision (unit tests check for this)
+        var dateUt1day = date.dayNumber;
+        var dateUt1sec = date.secondsOfDay - JulianDate.computeTaiMinusUtc(date) + eop.ut1MinusUtc;
+
+        // Compute Earth rotation angle
+        // The IERS standard for era is
+        //    era = 0.7790572732640 + 1.00273781191135448 * Tu
+        // where
+        //    Tu = JulianDateInUt1 - 2451545.0
+        // However, you get much more precision if you make the following simplification
+        //    era = a + (1 + b) * (JulianDayNumber + FractionOfDay - 2451545)
+        //    era = a + (JulianDayNumber - 2451545) + FractionOfDay + b (JulianDayNumber - 2451545 + FractionOfDay)
+        //    era = a + FractionOfDay + b (JulianDayNumber - 2451545 + FractionOfDay)
+        // since (JulianDayNumber - 2451545) represents an integer number of revolutions which will be discarded anyway.
+        var daysSinceJ2000 = dateUt1day - 2451545;
+        var fractionOfDay = dateUt1sec / TimeConstants.SECONDS_PER_DAY;
+        var era = 0.7790572732640 + fractionOfDay + 0.00273781191135448 * (daysSinceJ2000 + fractionOfDay);
+        era = (era % 1.0) * CesiumMath.TWO_PI;
+
+        var earthRotation = Matrix3.fromRotationZ(era, rotation2Scratch);
+
+        // pseudoFixed to ICRF
+        var pfToIcrf = Matrix3.multiply(matrixQ, earthRotation, rotation1Scratch);
+
+        // Compute pole wander matrix
+        var cosxp = Math.cos(eop.xPoleWander);
+        var cosyp = Math.cos(eop.yPoleWander);
+        var sinxp = Math.sin(eop.xPoleWander);
+        var sinyp = Math.sin(eop.yPoleWander);
+
+        var ttt = (dayTT - j2000ttDays) + secondTT / TimeConstants.SECONDS_PER_DAY;
+        ttt /= 36525.0;
+
+        // approximate sp value in rad
+        var sp = -47.0e-6 * ttt * CesiumMath.RADIANS_PER_DEGREE / 3600.0;
+        var cossp = Math.cos(sp);
+        var sinsp = Math.sin(sp);
+
+        var fToPfMtx = rotation2Scratch;
+        fToPfMtx[0] = cosxp * cossp;
+        fToPfMtx[1] = cosxp * sinsp;
+        fToPfMtx[2] = sinxp;
+        fToPfMtx[3] = -cosyp * sinsp + sinyp * sinxp * cossp;
+        fToPfMtx[4] = cosyp * cossp + sinyp * sinxp * sinsp;
+        fToPfMtx[5] = -sinyp * cosxp;
+        fToPfMtx[6] = -sinyp * sinsp - cosyp * sinxp * cossp;
+        fToPfMtx[7] = sinyp * cossp - cosyp * sinxp * sinsp;
+        fToPfMtx[8] = cosyp * cosxp;
+
+        return Matrix3.multiply(pfToIcrf, fToPfMtx, result);
+    };
+
+    var pointToWindowCoordinatesTemp = new Cartesian4();
+
+    /**
+     * Transform a point from model coordinates to window coordinates.
+     *
+     * @param {Matrix4} modelViewProjectionMatrix The 4x4 model-view-projection matrix.
+     * @param {Matrix4} viewportTransformation The 4x4 viewport transformation.
+     * @param {Cartesian3} point The point to transform.
+     * @param {Cartesian2} [result] The object onto which to store the result.
+     * @returns {Cartesian2} The modified result parameter or a new Cartesian2 instance if none was provided.
+     */
+    Transforms.pointToWindowCoordinates = function (modelViewProjectionMatrix, viewportTransformation, point, result) {
+        result = Transforms.pointToGLWindowCoordinates(modelViewProjectionMatrix, viewportTransformation, point, result);
+        result.y = 2.0 * viewportTransformation[5] - result.y;
+        return result;
+    };
+
+    /**
+     * @private
+     */
+    Transforms.pointToGLWindowCoordinates = function(modelViewProjectionMatrix, viewportTransformation, point, result) {
+                if (!defined(modelViewProjectionMatrix)) {
+            throw new DeveloperError('modelViewProjectionMatrix is required.');
+        }
+
+        if (!defined(viewportTransformation)) {
+            throw new DeveloperError('viewportTransformation is required.');
+        }
+
+        if (!defined(point)) {
+            throw new DeveloperError('point is required.');
+        }
+        
+        if (!defined(result)) {
+            result = new Cartesian2();
+        }
+
+        var tmp = pointToWindowCoordinatesTemp;
+
+        Matrix4.multiplyByVector(modelViewProjectionMatrix, Cartesian4.fromElements(point.x, point.y, point.z, 1, tmp), tmp);
+        Cartesian4.multiplyByScalar(tmp, 1.0 / tmp.w, tmp);
+        Matrix4.multiplyByVector(viewportTransformation, tmp, tmp);
+        return Cartesian2.fromCartesian4(tmp, result);
+    };
+
+    return Transforms;
+});
+
+/*global define*/
+define('Core/EllipsoidTangentPlane',[
+        './AxisAlignedBoundingBox',
+        './Cartesian2',
+        './Cartesian3',
+        './Cartesian4',
+        './defaultValue',
+        './defined',
+        './defineProperties',
+        './DeveloperError',
+        './Ellipsoid',
+        './IntersectionTests',
+        './Matrix4',
+        './Plane',
+        './Ray',
+        './Transforms'
+    ], function(
+        AxisAlignedBoundingBox,
+        Cartesian2,
+        Cartesian3,
+        Cartesian4,
+        defaultValue,
+        defined,
+        defineProperties,
+        DeveloperError,
+        Ellipsoid,
+        IntersectionTests,
+        Matrix4,
+        Plane,
+        Ray,
+        Transforms) {
+    "use strict";
+
+    var scratchCart4 = new Cartesian4();
+    /**
+     * A plane tangent to the provided ellipsoid at the provided origin.
+     * If origin is not on the surface of the ellipsoid, it's surface projection will be used.
+     * If origin as at the center of the ellipsoid, an exception will be thrown.
+     * @alias EllipsoidTangentPlane
+     * @constructor
+     *
+     * @param {Ellipsoid} ellipsoid The ellipsoid to use.
+     * @param {Cartesian3} origin The point on the surface of the ellipsoid where the tangent plane touches.
+     *
+     * @exception {DeveloperError} origin must not be at the center of the ellipsoid.
+     */
+    var EllipsoidTangentPlane = function(origin, ellipsoid) {
+                if (!defined(origin)) {
+            throw new DeveloperError('origin is required.');
+        }
+        
+        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
+        origin = ellipsoid.scaleToGeodeticSurface(origin);
+
+                if (!defined(origin)) {
+            throw new DeveloperError('origin must not be at the center of the ellipsoid.');
+        }
+        
+        var eastNorthUp = Transforms.eastNorthUpToFixedFrame(origin, ellipsoid);
+        this._ellipsoid = ellipsoid;
+        this._origin = origin;
+        this._xAxis = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 0, scratchCart4));
+        this._yAxis = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 1, scratchCart4));
+
+        var normal = Cartesian3.fromCartesian4(Matrix4.getColumn(eastNorthUp, 2, scratchCart4));
+        this._plane = Plane.fromPointNormal(origin, normal);
+    };
+
+    defineProperties(EllipsoidTangentPlane.prototype, {
+        /**
+         * Gets the ellipsoid.
+         * @memberof EllipsoidTangentPlane.prototype
+         * @type {Ellipsoid}
+         */
+        ellipsoid : {
+            get : function() {
+                return this._ellipsoid;
+            }
+        },
+
+        /**
+         * Gets the origin.
+         * @memberof EllipsoidTangentPlane.prototype
+         * @type {Cartesian3}
+         */
+        origin : {
+            get : function() {
+                return this._origin;
+            }
+        }
+    });
+
+    var tmp = new AxisAlignedBoundingBox();
+    /**
+     * Creates a new instance from the provided ellipsoid and the center
+     * point of the provided Cartesians.
+     *
+     * @param {Ellipsoid} ellipsoid The ellipsoid to use.
+     * @param {Cartesian3} cartesians The list of positions surrounding the center point.
+     */
+    EllipsoidTangentPlane.fromPoints = function(cartesians, ellipsoid) {
+                if (!defined(cartesians)) {
+            throw new DeveloperError('cartesians is required.');
+        }
+        
+        var box = AxisAlignedBoundingBox.fromPoints(cartesians, tmp);
+        return new EllipsoidTangentPlane(box.center, ellipsoid);
+    };
+
+    var projectPointOntoPlaneRay = new Ray();
+    var projectPointOntoPlaneCartesian3 = new Cartesian3();
+
+    /**
+     * Computes the projection of the provided 3D position onto the 2D plane.
+     *
+     * @param {Cartesian3} cartesian The point to project.
+     * @param {Cartesian2} [result] The object onto which to store the result.
+     * @returns {Cartesian2} The modified result parameter or a new Cartesian2 instance if none was provided.
+     */
+    EllipsoidTangentPlane.prototype.projectPointOntoPlane = function(cartesian, result) {
+                if (!defined(cartesian)) {
+            throw new DeveloperError('cartesian is required.');
+        }
+        
+        var ray = projectPointOntoPlaneRay;
+        ray.origin = cartesian;
+        Cartesian3.normalize(cartesian, ray.direction);
+
+        var intersectionPoint = IntersectionTests.rayPlane(ray, this._plane, projectPointOntoPlaneCartesian3);
+        if (!defined(intersectionPoint)) {
+            Cartesian3.negate(ray.direction, ray.direction);
+            intersectionPoint = IntersectionTests.rayPlane(ray, this._plane, projectPointOntoPlaneCartesian3);
+        }
+
+        if (defined(intersectionPoint)) {
+            var v = Cartesian3.subtract(intersectionPoint, this._origin, intersectionPoint);
+            var x = Cartesian3.dot(this._xAxis, v);
+            var y = Cartesian3.dot(this._yAxis, v);
+
+            if (!defined(result)) {
+                return new Cartesian2(x, y);
+            }
+            result.x = x;
+            result.y = y;
+            return result;
+        }
+        return undefined;
+    };
+
+    /**
+     * Computes the projection of the provided 3D positions onto the 2D plane.
+     *
+     * @param {Cartesian3[]} cartesians The array of points to project.
+     * @param {Cartesian2[]} [result] The array of Cartesian2 instances onto which to store results.
+     * @returns {Cartesian2[]} The modified result parameter or a new array of Cartesian2 instances if none was provided.
+     */
+    EllipsoidTangentPlane.prototype.projectPointsOntoPlane = function(cartesians, result) {
+                if (!defined(cartesians)) {
+            throw new DeveloperError('cartesians is required.');
+        }
+        
+        if (!defined(result)) {
+            result = [];
+        }
+
+        var count = 0;
+        var length = cartesians.length;
+        for ( var i = 0; i < length; i++) {
+            var p = this.projectPointOntoPlane(cartesians[i], result[count]);
+            if (defined(p)) {
+                result[count] = p;
+                count++;
+            }
+        }
+        result.length = count;
+        return result;
+    };
+
+
+    var projectPointsOntoEllipsoidScratch = new Cartesian3();
+    /**
+     * Computes the projection of the provided 2D positions onto the 3D ellipsoid.
+     *
+     * @param {Cartesian2[]} cartesians The array of points to project.
+     * @param {Cartesian3[]} [result] The array of Cartesian3 instances onto which to store results.
+     * @returns {Cartesian3[]} The modified result parameter or a new array of Cartesian3 instances if none was provided.
+     */
+    EllipsoidTangentPlane.prototype.projectPointsOntoEllipsoid = function(cartesians, result) {
+                if (!defined(cartesians)) {
+            throw new DeveloperError('cartesians is required.');
+        }
+        
+        var length = cartesians.length;
+        if (!defined(result)) {
+            result = new Array(length);
+        } else {
+            result.length = length;
+        }
+
+        var ellipsoid = this._ellipsoid;
+        var origin = this._origin;
+        var xAxis = this._xAxis;
+        var yAxis = this._yAxis;
+        var tmp = projectPointsOntoEllipsoidScratch;
+
+        for ( var i = 0; i < length; ++i) {
+            var position = cartesians[i];
+            Cartesian3.multiplyByScalar(xAxis, position.x, tmp);
+            if (!defined(result[i])) {
+                result[i] = new Cartesian3();
+            }
+            var point = Cartesian3.add(origin, tmp, result[i]);
+            Cartesian3.multiplyByScalar(yAxis, position.y, tmp);
+            Cartesian3.add(point, tmp, point);
+            ellipsoid.scaleToGeocentricSurface(point, point);
+        }
+
+        return result;
+    };
+
+    return EllipsoidTangentPlane;
+});
+
+/*global define*/
 define('Core/PolylineVolumeGeometryLibrary',[
         './Cartesian2',
         './Cartesian3',
@@ -19815,6 +20476,9 @@ define('Core/PolylineVolumeGeometryLibrary',[
         return cleanedPositions;
     };
 
+    var scratchForwardProjection = new Cartesian3();
+    var scratchBackwardProjection = new Cartesian3();
+
     PolylineVolumeGeometryLibrary.computePositions = function(positions, shape2D, boundingRectangle, geometry, duplicatePoints) {
         var ellipsoid = geometry._ellipsoid;
         var heights = scaleToSurface(positions, ellipsoid);
@@ -19863,7 +20527,17 @@ define('Core/PolylineVolumeGeometryLibrary',[
             cornerDirection = Cartesian3.add(forward, backward, cornerDirection);
             cornerDirection = Cartesian3.normalize(cornerDirection, cornerDirection);
             surfaceNormal = ellipsoid.geodeticSurfaceNormal(position, surfaceNormal);
-            var doCorner = !Cartesian3.equalsEpsilon(Cartesian3.negate(cornerDirection, scratch1), surfaceNormal, CesiumMath.EPSILON2);
+
+            var forwardProjection = Cartesian3.multiplyByScalar(surfaceNormal, Cartesian3.dot(forward, surfaceNormal), scratchForwardProjection);
+            Cartesian3.subtract(forward, forwardProjection, forwardProjection);
+            Cartesian3.normalize(forwardProjection, forwardProjection);
+
+            var backwardProjection = Cartesian3.multiplyByScalar(surfaceNormal, Cartesian3.dot(backward, surfaceNormal), scratchBackwardProjection);
+            Cartesian3.subtract(backward, backwardProjection, backwardProjection);
+            Cartesian3.normalize(backwardProjection, backwardProjection);
+
+            var doCorner = !CesiumMath.equalsEpsilon(Math.abs(Cartesian3.dot(forwardProjection, backwardProjection)), 1.0, CesiumMath.EPSILON1);
+
             if (doCorner) {
                 cornerDirection = Cartesian3.cross(cornerDirection, surfaceNormal, cornerDirection);
                 cornerDirection = Cartesian3.cross(surfaceNormal, cornerDirection, cornerDirection);
@@ -20112,6 +20786,9 @@ define('Core/CorridorGeometryLibrary',[
         return positions;
     }
 
+    var scratchForwardProjection = new Cartesian3();
+    var scratchBackwardProjection = new Cartesian3();
+
     /**
      * @private
      */
@@ -20159,7 +20836,17 @@ define('Core/CorridorGeometryLibrary',[
             nextPosition = positions[i + 1];
             forward = Cartesian3.normalize(Cartesian3.subtract(nextPosition, position, forward), forward);
             cornerDirection = Cartesian3.normalize(Cartesian3.add(forward, backward, cornerDirection), cornerDirection);
-            var doCorner = !Cartesian3.equalsEpsilon(Cartesian3.negate(cornerDirection, scratch1), normal, CesiumMath.EPSILON2);
+
+            var forwardProjection = Cartesian3.multiplyByScalar(normal, Cartesian3.dot(forward, normal), scratchForwardProjection);
+            Cartesian3.subtract(forward, forwardProjection, forwardProjection);
+            Cartesian3.normalize(forwardProjection, forwardProjection);
+
+            var backwardProjection = Cartesian3.multiplyByScalar(normal, Cartesian3.dot(backward, normal), scratchBackwardProjection);
+            Cartesian3.subtract(backward, backwardProjection, backwardProjection);
+            Cartesian3.normalize(backwardProjection, backwardProjection);
+
+            var doCorner = !CesiumMath.equalsEpsilon(Math.abs(Cartesian3.dot(forwardProjection, backwardProjection)), 1.0, CesiumMath.EPSILON1);
+
             if (doCorner) {
                 cornerDirection = Cartesian3.cross(cornerDirection, normal, cornerDirection);
                 cornerDirection = Cartesian3.cross(normal, cornerDirection, cornerDirection);
@@ -20286,6 +20973,26 @@ define('Core/CorridorGeometryLibrary',[
     return CorridorGeometryLibrary;
 });
 /*global define*/
+define('Core/GeometryType',[
+        './freezeObject'
+    ], function(
+        freezeObject) {
+    "use strict";
+
+    /**
+     * @private
+     */
+    var GeometryType = {
+        NONE : 0,
+        TRIANGLES : 1,
+        LINES : 2,
+        POLYLINES : 3
+    };
+
+    return freezeObject(GeometryType);
+});
+
+/*global define*/
 define('Core/PrimitiveType',[
         './freezeObject'
     ], function(
@@ -20381,11 +21088,13 @@ define('Core/Geometry',[
         './defaultValue',
         './defined',
         './DeveloperError',
+        './GeometryType',
         './PrimitiveType'
     ], function(
         defaultValue,
         defined,
         DeveloperError,
+        GeometryType,
         PrimitiveType) {
     "use strict";
 
@@ -20522,6 +21231,16 @@ define('Core/Geometry',[
          * @default undefined
          */
         this.boundingSphere = options.boundingSphere;
+
+        /**
+         * @private
+         */
+        this.geometryType = defaultValue(options.geometryType, GeometryType.NONE);
+
+        /**
+         * @private
+         */
+        this.boundingSphereCV = undefined;
     };
 
     /**
@@ -21280,22 +21999,124 @@ define('Core/CorridorOutlineGeometry',[
         }
         
         this._positions = positions;
+        this._ellipsoid = Ellipsoid.clone(defaultValue(options.ellipsoid, Ellipsoid.WGS84));
         this._width = width;
-        this._ellipsoid = defaultValue(options.ellipsoid, Ellipsoid.WGS84);
         this._height = defaultValue(options.height, 0);
         this._extrudedHeight = defaultValue(options.extrudedHeight, this._height);
         this._cornerType = defaultValue(options.cornerType, CornerType.ROUNDED);
         this._granularity = defaultValue(options.granularity, CesiumMath.RADIANS_PER_DEGREE);
         this._workerName = 'createCorridorOutlineGeometry';
+
+        /**
+         * The number of elements used to pack the object into an array.
+         * @type {Number}
+         */
+        this.packedLength = 1 + positions.length * Cartesian3.packedLength + Ellipsoid.packedLength + 5;
+    };
+
+    /**
+     * Stores the provided instance into the provided array.
+     * @function
+     *
+     * @param {Object} value The value to pack.
+     * @param {Number[]} array The array to pack into.
+     * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     */
+    CorridorOutlineGeometry.pack = function(value, array, startingIndex) {
+                if (!defined(value)) {
+            throw new DeveloperError('value is required');
+        }
+        if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        var positions = value._positions;
+        var length = positions.length;
+        array[startingIndex++] = length;
+
+        for (var i = 0; i < length; ++i, startingIndex += Cartesian3.packedLength) {
+            Cartesian3.pack(positions[i], array, startingIndex);
+        }
+
+        Ellipsoid.pack(value._ellipsoid, array, startingIndex);
+        startingIndex += Ellipsoid.packedLength;
+
+        array[startingIndex++] = value._width;
+        array[startingIndex++] = value._height;
+        array[startingIndex++] = value._extrudedHeight;
+        array[startingIndex++] = value._cornerType;
+        array[startingIndex]   = value._granularity;
+    };
+
+    var scratchEllipsoid = Ellipsoid.clone(Ellipsoid.UNIT_SPHERE);
+    var scratchOptions = {
+        positions : undefined,
+        ellipsoid : scratchEllipsoid,
+        width : undefined,
+        height : undefined,
+        extrudedHeight : undefined,
+        cornerType : undefined,
+        granularity : undefined
+    };
+
+    /**
+     * Retrieves an instance from a packed array.
+     *
+     * @param {Number[]} array The packed array.
+     * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
+     * @param {CorridorOutlineGeometry} [result] The object into which to store the result.
+     */
+    CorridorOutlineGeometry.unpack = function(array, startingIndex, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        var length = array[startingIndex++];
+        var positions = new Array(length);
+
+        for (var i = 0; i < length; ++i, startingIndex += Cartesian3.packedLength) {
+            positions[i] = Cartesian3.unpack(array, startingIndex);
+        }
+
+        var ellipsoid = Ellipsoid.unpack(array, startingIndex, scratchEllipsoid);
+        startingIndex += Ellipsoid.packedLength;
+
+        var width = array[startingIndex++];
+        var height = array[startingIndex++];
+        var extrudedHeight = array[startingIndex++];
+        var cornerType = array[startingIndex++];
+        var granularity = array[startingIndex];
+
+        if (!defined(result)) {
+            scratchOptions.positions = positions;
+            scratchOptions.width = width;
+            scratchOptions.height = height;
+            scratchOptions.extrudedHeight = extrudedHeight;
+            scratchOptions.cornerType = cornerType;
+            scratchOptions.granularity = granularity;
+            return new CorridorOutlineGeometry(scratchOptions);
+        }
+
+        result._positions = positions;
+        result._ellipsoid = Ellipsoid.clone(ellipsoid, result._ellipsoid);
+        result._width = width;
+        result._height = height;
+        result._extrudedHeight = extrudedHeight;
+        result._cornerType = cornerType;
+        result._granularity = granularity;
+
+        return result;
     };
 
     /**
      * Computes the geometric representation of a corridor, including its vertices, indices, and a bounding sphere.
      *
      * @param {CorridorOutlineGeometry} corridorOutlineGeometry A description of the corridor.
-     * @returns {Geometry} The computed vertices and indices.
-     *
-     * @exception {DeveloperError} Count of unique positions must be greater than 1.
+     * @returns {Geometry|undefined} The computed vertices and indices.
      */
     CorridorOutlineGeometry.createGeometry = function(corridorOutlineGeometry) {
         var positions = corridorOutlineGeometry._positions;
@@ -21308,10 +22129,10 @@ define('Core/CorridorOutlineGeometry',[
             cleanPositions = positions;
         }
 
-                if (cleanPositions.length < 2) {
-            throw new DeveloperError('Count of unique positions must be greater than 1.');
+        if (cleanPositions.length < 2) {
+            return undefined;
         }
-        
+
         var ellipsoid = corridorOutlineGeometry._ellipsoid;
         var params = {
             ellipsoid : ellipsoid,
@@ -21350,13 +22171,18 @@ define('Core/CorridorOutlineGeometry',[
 /*global define*/
 define('Workers/createCorridorOutlineGeometry',[
         '../Core/CorridorOutlineGeometry',
+        '../Core/defined',
         '../Core/Ellipsoid'
     ], function(
         CorridorOutlineGeometry,
+        defined,
         Ellipsoid) {
     "use strict";
 
-    function createCorridorOutlineGeometry(corridorOutlineGeometry) {
+    function createCorridorOutlineGeometry(corridorOutlineGeometry, offset) {
+        if (defined(offset)) {
+            corridorOutlineGeometry = CorridorOutlineGeometry.unpack(corridorOutlineGeometry, offset);
+        }
         corridorOutlineGeometry._ellipsoid = Ellipsoid.clone(corridorOutlineGeometry._ellipsoid);
         return CorridorOutlineGeometry.createGeometry(corridorOutlineGeometry);
     }
