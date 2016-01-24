@@ -3,7 +3,6 @@ define([
         '../Core/createGuid',
         '../Core/defined',
         '../Core/defineProperties',
-        '../Core/deprecationWarning',
         '../Core/DeveloperError',
         '../Core/Math',
         './Entity',
@@ -12,7 +11,6 @@ define([
         createGuid,
         defined,
         defineProperties,
-        deprecationWarning,
         DeveloperError,
         CesiumMath,
         Entity,
@@ -64,7 +62,7 @@ define([
         var iEntities;
         var collection;
         var composite = that._composite;
-        var newEntities = new EntityCollection();
+        var newEntities = new EntityCollection(that);
         var eventHash = that._eventHash;
         var collectionId;
 
@@ -128,8 +126,8 @@ define([
      *
      * @param {EntityCollection[]} [collections] The initial list of EntityCollection instances to merge.
      */
-    var CompositeEntityCollection = function(collections) {
-        this._composite = new EntityCollection();
+    function CompositeEntityCollection(collections) {
+        this._composite = new EntityCollection(this);
         this._suspendCount = 0;
         this._collections = defined(collections) ? collections.slice() : [];
         this._collectionsCopy = [];
@@ -137,7 +135,7 @@ define([
         this._eventHash = {};
         recomposite(this);
         this._shouldRecomposite = false;
-    };
+    }
 
     defineProperties(CompositeEntityCollection.prototype, {
         /**
@@ -161,20 +159,6 @@ define([
         id : {
             get : function() {
                 return this._id;
-            }
-        },
-        /**
-         * Gets the array of Entity instances in the collection.
-         * This array should not be modified directly.
-         * @memberof CompositeEntityCollection.prototype
-         * @readonly
-         * @type {Entity[]}
-         * @deprecated
-         */
-        entities : {
-            get : function() {
-                deprecationWarning('CompositeEntityCollection.entities', 'EntityCollection.entities has been deprecated and will be removed in Cesium 1.9, use EntityCollection.values instead');
-                return this._composite.values;
             }
         },
         /**
@@ -263,7 +247,7 @@ define([
     /**
      * Returns true if the provided entity is in this collection, false otherwise.
      *
-     * @param entity The entity.
+     * @param {Entity} entity The entity.
      * @returns {Boolean} true if the provided entity is in this collection, false otherwise.
      */
     CompositeEntityCollection.prototype.contains = function(entity) {

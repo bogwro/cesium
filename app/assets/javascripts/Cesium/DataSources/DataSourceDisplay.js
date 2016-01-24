@@ -4,7 +4,6 @@ define([
         '../Core/defaultValue',
         '../Core/defined',
         '../Core/defineProperties',
-        '../Core/deprecationWarning',
         '../Core/destroyObject',
         '../Core/DeveloperError',
         '../Core/EventHelper',
@@ -31,7 +30,6 @@ define([
         defaultValue,
         defined,
         defineProperties,
-        deprecationWarning,
         destroyObject,
         DeveloperError,
         EventHelper,
@@ -67,7 +65,7 @@ define([
      *        A function which creates an array of visualizers used for visualization.
      *        If undefined, all standard visualizers are used.
      */
-    var DataSourceDisplay = function(options) {
+    function DataSourceDisplay(options) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(options)) {
             throw new DeveloperError('options is required.');
@@ -96,11 +94,9 @@ define([
         }
 
         var defaultDataSource = new CustomDataSource();
-        var visualizers = this._visualizersCallback(this._scene, defaultDataSource);
-        defaultDataSource._visualizers = visualizers;
         this._onDataSourceAdded(undefined, defaultDataSource);
         this._defaultDataSource = defaultDataSource;
-    };
+    }
 
     /**
      * Gets or sets the default function which creates an array of visualizers used for visualization.
@@ -165,26 +161,6 @@ define([
     });
 
     /**
-     * Gets the scene being used for display.
-     * @deprecated
-     * @returns {Scene} The scene.
-     */
-    DataSourceDisplay.prototype.getScene = function() {
-        deprecationWarning('DataSourceDisplay.getScene', 'DataSourceDisplay.getScene was deprecated on Cesium 1.5 and will be removed in Cesium 1.9, used the DataSourceDisplay.scene property instead.');
-        return this.scene;
-    };
-
-    /**
-     * Gets the collection of data sources to be displayed.
-     * @deprecated
-     * @returns {DataSourceCollection} The collection of data sources.
-     */
-    DataSourceDisplay.prototype.getDataSources = function() {
-        deprecationWarning('DataSourceDisplay.getDataSources', 'DataSourceDisplay.getDataSources was deprecated on Cesium 1.5 and will be removed in Cesium 1.9, used the DataSourceDisplay.dataSources property instead.');
-        return this.dataSources;
-    };
-
-    /**
      * Returns true if this object was destroyed; otherwise, false.
      * <br /><br />
      * If this object was destroyed, it should not be used; calling any function other than
@@ -210,10 +186,11 @@ define([
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *
-     * @see DataSourceDisplay#isDestroyed
      *
      * @example
      * dataSourceDisplay = dataSourceDisplay.destroy();
+     * 
+     * @see DataSourceDisplay#isDestroyed
      */
     DataSourceDisplay.prototype.destroy = function() {
         this._eventHelper.removeAll();
@@ -324,7 +301,6 @@ define([
         var tmp = getBoundingSphereBoundingSphereScratch;
 
         var count = 0;
-        var resultState;
         var state = BoundingSphereState.DONE;
         var visualizers = dataSource._visualizers;
         var visualizersLength = visualizers.length;
@@ -375,7 +351,7 @@ define([
      *
      * @example
      * function createVisualizers(scene, dataSource) {
-     *     return [new BillboardVisualizer(scene, dataSource.entities)];
+     *     return [new Cesium.BillboardVisualizer(scene, dataSource.entities)];
      * }
      */
 

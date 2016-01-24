@@ -95,6 +95,7 @@ define([
 
         if (instances.length > 0) {
             return new Primitive({
+                asynchronous : false,
                 geometryInstances : instances,
                 appearance : new PerInstanceColorAppearance({
                     flat : true,

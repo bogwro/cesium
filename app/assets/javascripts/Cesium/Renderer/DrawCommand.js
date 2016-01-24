@@ -12,7 +12,7 @@ define([
      *
      * @private
      */
-    var DrawCommand = function(options) {
+    function DrawCommand(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
 
         /**
@@ -30,6 +30,17 @@ define([
          * @see DrawCommand#debugShowBoundingVolume
          */
         this.boundingVolume = options.boundingVolume;
+
+        /**
+         * The oriented bounding box of the geometry in world space. If this is defined, it is used instead of
+         * {@link DrawCommand#boundingVolume} for plane intersection testing.
+         *
+         * @type {OrientedBoundingBox}
+         * @default undefined
+         *
+         * @see DrawCommand#debugShowBoundingVolume
+         */
+        this.orientedBoundingBox = options.orientedBoundingBox;
 
         /**
          * When <code>true</code>, the renderer frustum and horizon culls the command based on its {@link DrawCommand#boundingVolume}.
@@ -84,6 +95,14 @@ define([
         this.offset = defaultValue(options.offset, 0);
 
         /**
+         * The number of instances to draw.
+         *
+         * @type {Number}
+         * @default 1
+         */
+        this.instanceCount = defaultValue(options.instanceCount, 0);
+
+        /**
          * The shader program to apply.
          *
          * @type {ShaderProgram}
@@ -105,8 +124,6 @@ define([
          *
          * @type {RenderState}
          * @default undefined
-         *
-         * @see Context#createRenderState
          */
         this.renderState = options.renderState;
 
@@ -171,7 +188,7 @@ define([
          * @private
          */
         this.oit = undefined;
-    };
+    }
 
     /**
      * Executes the draw command.

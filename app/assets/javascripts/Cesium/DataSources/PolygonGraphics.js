@@ -3,7 +3,6 @@ define([
         '../Core/defaultValue',
         '../Core/defined',
         '../Core/defineProperties',
-        '../Core/deprecationWarning',
         '../Core/DeveloperError',
         '../Core/Event',
         './createMaterialPropertyDescriptor',
@@ -12,7 +11,6 @@ define([
         defaultValue,
         defined,
         defineProperties,
-        deprecationWarning,
         DeveloperError,
         Event,
         createMaterialPropertyDescriptor,
@@ -29,8 +27,8 @@ define([
      *
      * @param {Object} [options] Object with the following properties:
      * @param {Property} [options.hierarchy] A Property specifying the {@link PolygonHierarchy}.
-     * @param {Property} [options.height=0] A numeric Property specifying the altitude of the polygon.
-     * @param {Property} [options.extrudedHeight] A numeric Property specifying the altitude of the polygon extrusion.
+     * @param {Property} [options.height=0] A numeric Property specifying the altitude of the polygon relative to the ellipsoid surface.
+     * @param {Property} [options.extrudedHeight] A numeric Property specifying the altitude of the polygon's extruded face relative to the ellipsoid surface.
      * @param {Property} [options.show=true] A boolean Property specifying the visibility of the polygon.
      * @param {Property} [options.fill=true] A boolean Property specifying whether the polygon is filled with the provided material.
      * @param {MaterialProperty} [options.material=Color.WHITE] A Property specifying the material used to fill the polygon.
@@ -44,7 +42,7 @@ define([
      * @see Entity
      * @demo {@link http://cesiumjs.org/Cesium/Apps/Sandcastle/index.html?src=Polygon.html|Cesium Sandcastle Polygon Demo}
      */
-    var PolygonGraphics = function(options) {
+    function PolygonGraphics(options) {
         this._show = undefined;
         this._showSubscription = undefined;
         this._material = undefined;
@@ -72,7 +70,7 @@ define([
         this._fillSubscription = undefined;
 
         this.merge(defaultValue(options, defaultValue.EMPTY_OBJECT));
-    };
+    }
 
     defineProperties(PolygonGraphics.prototype, {
         /**
@@ -105,23 +103,6 @@ define([
         material : createMaterialPropertyDescriptor('material'),
 
         /**
-         * Gets or sets the positions that define the polygon.
-         * @memberof PolygonGraphics.prototype
-         * @type {Property}
-         * @deprecated
-         */
-        positions : {
-            get : function() {
-                deprecationWarning('PolygonGraphics.positions', 'PolygonGraphics.positions was deprecated in Cesium 1.6, use PolygonGraphics.hierarchy instead. This property will be removed in Cesium 1.9.');
-                return this.hierarchy;
-            },
-            set : function(value) {
-                deprecationWarning('PolygonGraphics.positions', 'PolygonGraphics.positions was deprecated in Cesium 1.6, use PolygonGraphics.hierarchy instead. This property will be removed in Cesium 1.9.');
-                this.hierarchy = value;
-            }
-        },
-
-        /**
          * Gets or sets the Property specifying the {@link PolygonHierarchy}.
          * @memberof PolygonGraphics.prototype
          * @type {Property}
@@ -130,7 +111,6 @@ define([
 
         /**
          * Gets or sets the numeric Property specifying the constant altitude of the polygon.
-         * This property is ignored when {@link PolygonGraphics#perPositionHeight} is true.
          * @memberof PolygonGraphics.prototype
          * @type {Property}
          * @default 0.0

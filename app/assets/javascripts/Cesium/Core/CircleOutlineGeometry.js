@@ -25,9 +25,9 @@ define([
      * @param {Cartesian3} options.center The circle's center point in the fixed frame.
      * @param {Number} options.radius The radius in meters.
      * @param {Ellipsoid} [options.ellipsoid=Ellipsoid.WGS84] The ellipsoid the circle will be on.
-     * @param {Number} [options.height=0.0] The height above the ellipsoid.
+     * @param {Number} [options.height=0.0] The distance in meters between the circle and the ellipsoid surface.
      * @param {Number} [options.granularity=0.02] The angular distance between points on the circle in radians.
-     * @param {Number} [options.extrudedHeight=0.0] The height of the extrusion relative to the ellipsoid.
+     * @param {Number} [options.extrudedHeight=0.0] The distance in meters between the circle's extruded face and the ellipsoid surface.
      * @param {Number} [options.numberOfVerticalLines=16] Number of lines to draw between the top and bottom of an extruded circle.
      *
      * @exception {DeveloperError} radius must be greater than zero.
@@ -46,7 +46,7 @@ define([
      * });
      * var geometry = Cesium.CircleOutlineGeometry.createGeometry(circle);
      */
-    var CircleOutlineGeometry = function(options) {
+    function CircleOutlineGeometry(options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
         var radius = options.radius;
 
@@ -71,7 +71,7 @@ define([
         };
         this._ellipseGeometry = new EllipseOutlineGeometry(ellipseGeometryOptions);
         this._workerName = 'createCircleOutlineGeometry';
-    };
+    }
 
     /**
      * The number of elements used to pack the object into an array.
@@ -81,9 +81,8 @@ define([
 
     /**
      * Stores the provided instance into the provided array.
-     * @function
      *
-     * @param {Object} value The value to pack.
+     * @param {CircleOutlineGeometry} value The value to pack.
      * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
      */
@@ -119,6 +118,7 @@ define([
      * @param {Number[]} array The packed array.
      * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
      * @param {CircleOutlineGeometry} [result] The object into which to store the result.
+     * @returns {CircleOutlineGeometry} The modified result parameter or a new CircleOutlineGeometry instance if one was not provided.
      */
     CircleOutlineGeometry.unpack = function(array, startingIndex, result) {
         var ellipseGeometry = EllipseOutlineGeometry.unpack(array, startingIndex, scratchEllipseGeometry);

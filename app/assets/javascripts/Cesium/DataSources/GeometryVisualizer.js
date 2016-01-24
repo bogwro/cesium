@@ -25,11 +25,10 @@ define([
 
     var emptyArray = [];
 
-    var DynamicGeometryBatch = function(primitives) {
+    function DynamicGeometryBatch(primitives) {
         this._primitives = primitives;
         this._dynamicUpdaters = new AssociativeArray();
-    };
-
+    }
     DynamicGeometryBatch.prototype.add = function(time, updater) {
         this._dynamicUpdaters.set(updater.entity.id, updater.createDynamicUpdater(this._primitives));
     };
@@ -112,7 +111,7 @@ define([
      * @param {Scene} scene The scene the primitives will be rendered in.
      * @param {EntityCollection} entityCollection The entityCollection to visualize.
      */
-    var GeometryVisualizer = function(type, scene, entityCollection) {
+    function GeometryVisualizer(type, scene, entityCollection) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(type)) {
             throw new DeveloperError('type is required.');
@@ -149,7 +148,7 @@ define([
         this._entityCollection = entityCollection;
         entityCollection.collectionChanged.addEventListener(GeometryVisualizer.prototype._onCollectionChanged, this);
         this._onCollectionChanged(entityCollection, entityCollection.values, emptyArray);
-    };
+    }
 
     /**
      * Updates all of the primitives created by this visualizer to match their
@@ -178,6 +177,25 @@ define([
         var id;
         var updater;
 
+        for (i = changed.length - 1; i > -1; i--) {
+            entity = changed[i];
+            id = entity.id;
+            updater = this._updaters.get(id);
+
+            //If in a single update, an entity gets removed and a new instance
+            //re-added with the same id, the updater no longer tracks the
+            //correct entity, we need to both remove the old one and
+            //add the new one, which is done by pushing the entity
+            //onto the removed/added lists.
+            if (updater.entity === entity) {
+                removeUpdater(this, updater);
+                insertUpdaterIntoBatch(this, time, updater);
+            } else {
+                removed.push(entity);
+                added.push(entity);
+            }
+        }
+
         for (i = removed.length - 1; i > -1; i--) {
             entity = removed[i];
             id = entity.id;
@@ -196,14 +214,6 @@ define([
             this._updaters.set(id, updater);
             insertUpdaterIntoBatch(this, time, updater);
             this._subscriptions.set(id, updater.geometryChanged.addEventListener(GeometryVisualizer._onGeometryChanged, this));
-        }
-
-        for (i = changed.length - 1; i > -1; i--) {
-            entity = changed[i];
-            id = entity.id;
-            updater = this._updaters.get(id);
-            removeUpdater(this, updater);
-            insertUpdaterIntoBatch(this, time, updater);
         }
 
         addedObjects.removeAll();
@@ -248,7 +258,6 @@ define([
         var tmp = getBoundingSphereBoundingSphereScratch;
 
         var count = 0;
-        var resultState;
         var state = BoundingSphereState.DONE;
         var batches = this._batches;
         var batchesLength = batches.length;

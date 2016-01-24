@@ -4,7 +4,6 @@ define([
         '../Core/createGuid',
         '../Core/defined',
         '../Core/defineProperties',
-        '../Core/deprecationWarning',
         '../Core/DeveloperError',
         '../Core/Event',
         '../Core/Iso8601',
@@ -17,7 +16,6 @@ define([
         createGuid,
         defined,
         defineProperties,
-        deprecationWarning,
         DeveloperError,
         Event,
         Iso8601,
@@ -49,8 +47,11 @@ define([
      * An observable collection of {@link Entity} instances where each entity has a unique id.
      * @alias EntityCollection
      * @constructor
+     *
+     * @param {DataSource|CompositeEntityCollection} [owner] The data source (or composite entity collection) which created this collection.
      */
-    var EntityCollection = function() {
+    function EntityCollection(owner) {
+        this._owner = owner;
         this._entities = new AssociativeArray();
         this._addedEntities = new AssociativeArray();
         this._removedEntities = new AssociativeArray();
@@ -58,7 +59,7 @@ define([
         this._suspendCount = 0;
         this._collectionChanged = new Event();
         this._id = createGuid();
-    };
+    }
 
     /**
      * Prevents {@link EntityCollection#collectionChanged} events from being raised
@@ -133,24 +134,21 @@ define([
          * @memberof EntityCollection.prototype
          * @readonly
          * @type {Entity[]}
-         * @deprecated
-         */
-        entities : {
-            get : function() {
-                deprecationWarning('EntityCollection.entities', 'EntityCollection.entities has been deprecated and will be removed in Cesium 1.9, use EntityCollection.values instead');
-                return this._entities.values;
-            }
-        },
-        /**
-         * Gets the array of Entity instances in the collection.
-         * This array should not be modified directly.
-         * @memberof EntityCollection.prototype
-         * @readonly
-         * @type {Entity[]}
          */
         values : {
             get : function() {
                 return this._entities.values;
+            }
+        },
+        /**
+         * Gets the owner of this entity collection, ie. the data source or composite entity collection which created it.
+         * @memberof EntityCollection.prototype
+         * @readonly
+         * @type {DataSource|CompositeEntityCollection}
+         */
+        owner : {
+            get : function() {
+                return this._owner;
             }
         }
     });
@@ -198,6 +196,7 @@ define([
      * Add an entity to the collection.
      *
      * @param {Entity} entity The entity to be added.
+     * @returns {Entity} The entity that was added.
      * @exception {DeveloperError} An entity with <entity.id> already exists in this collection.
      */
     EntityCollection.prototype.add = function(entity) {
@@ -217,9 +216,9 @@ define([
             throw new RuntimeError('An entity with id ' + id + ' already exists in this collection.');
         }
 
+        entity.entityCollection = this;
         entities.set(id, entity);
 
-        var removedEntities = this._removedEntities;
         if (!this._removedEntities.remove(id)) {
             this._addedEntities.set(id, entity);
         }
@@ -232,7 +231,7 @@ define([
     /**
      * Removes an entity from the collection.
      *
-     * @param {Entity} entity The entity to be added.
+     * @param {Entity} entity The entity to be removed.
      * @returns {Boolean} true if the item was removed, false if it did not exist in the collection.
      */
     EntityCollection.prototype.remove = function(entity) {
@@ -245,7 +244,7 @@ define([
     /**
      * Returns true if the provided entity is in this collection, false otherwise.
      *
-     * @param entity The entity.
+     * @param {Entity} entity The entity.
      * @returns {Boolean} true if the provided entity is in this collection, false otherwise.
      */
     EntityCollection.prototype.contains = function(entity) {

@@ -15,7 +15,7 @@ define([
         MaterialProperty) {
     "use strict";
 
-    var Batch = function(primitives, appearanceType, materialProperty, closed) {
+    function Batch(primitives, appearanceType, materialProperty, closed) {
         this.primitives = primitives;
         this.appearanceType = appearanceType;
         this.materialProperty = materialProperty;
@@ -30,8 +30,9 @@ define([
         this.attributes = new AssociativeArray();
         this.invalidated = false;
         this.removeMaterialSubscription = materialProperty.definitionChanged.addEventListener(Batch.prototype.onMaterialChanged, this);
-    };
-
+        this.subscriptions = new AssociativeArray();
+        this.showsUpdated = new AssociativeArray();
+    }
     Batch.prototype.onMaterialChanged = function() {
         this.invalidated = true;
     };
@@ -54,16 +55,32 @@ define([
         this.geometry.set(id, updater.createFillGeometryInstance(time));
         if (!updater.hasConstantFill || !updater.fillMaterialProperty.isConstant) {
             this.updatersWithAttributes.set(id, updater);
+        } else {
+            var that = this;
+            this.subscriptions.set(id, updater.entity.definitionChanged.addEventListener(function(entity, propertyName, newValue, oldValue) {
+                if (propertyName === 'isShowing') {
+                    that.showsUpdated.set(entity.id, updater);
+                }
+            }));
         }
         this.createPrimitive = true;
     };
 
     Batch.prototype.remove = function(updater) {
         var id = updater.entity.id;
-        this.createPrimitive = this.updaters.remove(id);
-        this.geometry.remove(id);
-        this.updatersWithAttributes.remove(id);
-        return this.createPrimitive;
+        var createPrimitive = this.updaters.remove(id);
+
+        if (createPrimitive) {
+            this.geometry.remove(id);
+            this.updatersWithAttributes.remove(id);
+            var unsubscribe = this.subscriptions.get(id);
+            if (defined(unsubscribe)) {
+                unsubscribe();
+                this.subscriptions.remove(id);
+            }
+        }
+        this.createPrimitive = createPrimitive;
+        return createPrimitive;
     };
 
     Batch.prototype.update = function(time) {
@@ -71,15 +88,35 @@ define([
         var primitive = this.primitive;
         var primitives = this.primitives;
         var geometries = this.geometry.values;
+        var attributes;
+        var i;
+
         if (this.createPrimitive) {
-            if (defined(primitive)) {
-                if (!defined(this.oldPrimitive)) {
-                    this.oldPrimitive = primitive;
-                } else {
-                    primitives.remove(primitive);
+            var geometriesLength = geometries.length;
+            if (geometriesLength > 0) {
+                if (defined(primitive)) {
+                    if (!defined(this.oldPrimitive)) {
+                        this.oldPrimitive = primitive;
+                    } else {
+                        primitives.remove(primitive);
+                    }
                 }
-            }
-            if (geometries.length > 0) {
+
+                for (i = 0; i < geometriesLength; i++) {
+                    var geometry = geometries[i];
+                    var originalAttributes = geometry.attributes;
+                    attributes = this.attributes.get(geometry.id.id);
+
+                    if (defined(attributes)) {
+                        if (defined(originalAttributes.show)) {
+                            originalAttributes.show.value = attributes.show;
+                        }
+                        if (defined(originalAttributes.color)) {
+                            originalAttributes.color.value = attributes.color;
+                        }
+                    }
+                }
+
                 this.material = MaterialProperty.getValue(time, this.materialProperty, this.material);
                 primitive = new Primitive({
                     asynchronous : true,
@@ -93,7 +130,19 @@ define([
 
                 primitives.add(primitive);
                 isUpdated = false;
+            } else {
+                if (defined(primitive)) {
+                    primitives.remove(primitive);
+                    primitive = undefined;
+                }
+                var oldPrimitive = this.oldPrimitive;
+                if (defined(oldPrimitive)) {
+                    primitives.remove(oldPrimitive);
+                    this.oldPrimitive = undefined;
+                }
             }
+
+            this.attributes.removeAll();
             this.primitive = primitive;
             this.createPrimitive = false;
         } else if (defined(primitive) && primitive.ready) {
@@ -107,28 +156,52 @@ define([
 
             var updatersWithAttributes = this.updatersWithAttributes.values;
             var length = updatersWithAttributes.length;
-            for (var i = 0; i < length; i++) {
+            for (i = 0; i < length; i++) {
                 var updater = updatersWithAttributes[i];
-                var instance = this.geometry.get(updater.entity.id);
+                var entity = updater.entity;
+                var instance = this.geometry.get(entity.id);
 
-                var attributes = this.attributes.get(instance.id.id);
+                attributes = this.attributes.get(instance.id.id);
                 if (!defined(attributes)) {
                     attributes = primitive.getGeometryInstanceAttributes(instance.id);
                     this.attributes.set(instance.id.id, attributes);
                 }
 
-                if (!updater.hasConstantFill) {
-                    var show = updater.isFilled(time);
-                    var currentShow = attributes.show[0] === 1;
-                    if (show !== currentShow) {
-                        attributes.show = ShowGeometryInstanceAttribute.toValue(show, attributes.show);
-                    }
+                var show = entity.isShowing && (updater.hasConstantFill || updater.isFilled(time));
+                var currentShow = attributes.show[0] === 1;
+                if (show !== currentShow) {
+                    attributes.show = ShowGeometryInstanceAttribute.toValue(show, attributes.show);
                 }
             }
+
+            this.updateShows(primitive);
         } else if (defined(primitive) && !primitive.ready) {
             isUpdated = false;
         }
         return isUpdated;
+    };
+
+    Batch.prototype.updateShows = function(primitive) {
+        var showsUpdated = this.showsUpdated.values;
+        var length = showsUpdated.length;
+        for (var i = 0; i < length; i++) {
+            var updater = showsUpdated[i];
+            var entity = updater.entity;
+            var instance = this.geometry.get(entity.id);
+
+            var attributes = this.attributes.get(instance.id.id);
+            if (!defined(attributes)) {
+                attributes = primitive.getGeometryInstanceAttributes(instance.id);
+                this.attributes.set(instance.id.id, attributes);
+            }
+
+            var show = entity.isShowing;
+            var currentShow = attributes.show[0] === 1;
+            if (show !== currentShow) {
+                attributes.show = ShowGeometryInstanceAttribute.toValue(show, attributes.show);
+            }
+        }
+        this.showsUpdated.removeAll();
     };
 
     Batch.prototype.contains = function(entity) {
@@ -165,13 +238,12 @@ define([
     /**
      * @private
      */
-    var StaticGeometryPerMaterialBatch = function(primitives, appearanceType, closed) {
+    function StaticGeometryPerMaterialBatch(primitives, appearanceType, closed) {
         this._items = [];
         this._primitives = primitives;
         this._appearanceType = appearanceType;
         this._closed = closed;
-    };
-
+    }
     StaticGeometryPerMaterialBatch.prototype.add = function(time, updater) {
         var items = this._items;
         var length = items.length;

@@ -39,6 +39,7 @@ define([
     var defaultAlignedAxis = Cartesian3.ZERO;
     var defaultHorizontalOrigin = HorizontalOrigin.CENTER;
     var defaultVerticalOrigin = VerticalOrigin.CENTER;
+    var defaultSizeInMeters = false;
 
     var position = new Cartesian3();
     var color = new Color();
@@ -49,11 +50,11 @@ define([
     var pixelOffsetScaleByDistance = new NearFarScalar();
     var boundingRectangle = new BoundingRectangle();
 
-    var EntityData = function(entity) {
+    function EntityData(entity) {
         this.entity = entity;
         this.billboard = undefined;
         this.textureValue = undefined;
-    };
+    }
 
     /**
      * A {@link Visualizer} which maps {@link Entity#billboard} to a {@link Billboard}.
@@ -63,7 +64,7 @@ define([
      * @param {Scene} scene The scene the primitives will be rendered in.
      * @param {EntityCollection} entityCollection The entityCollection to visualize.
      */
-    var BillboardVisualizer = function(scene, entityCollection) {
+    function BillboardVisualizer(scene, entityCollection) {
         //>>includeStart('debug', pragmas.debug);
         if (!defined(scene)) {
             throw new DeveloperError('scene is required.');
@@ -81,7 +82,7 @@ define([
         this._entityCollection = entityCollection;
         this._items = new AssociativeArray();
         this._onCollectionChanged(entityCollection, entityCollection.values, [], []);
-    };
+    }
 
     /**
      * Updates the primitives created by this visualizer to match their
@@ -105,7 +106,7 @@ define([
             var billboardGraphics = entity._billboard;
             var textureValue;
             var billboard = item.billboard;
-            var show = entity.isAvailable(time) && Property.getValueOrDefault(billboardGraphics._show, time, true);
+            var show = entity.isShowing && entity.isAvailable(time) && Property.getValueOrDefault(billboardGraphics._show, time, true);
 
             if (show) {
                 position = Property.getValueOrUndefined(entity._position, time, position);
@@ -158,6 +159,7 @@ define([
             billboard.scaleByDistance = Property.getValueOrUndefined(billboardGraphics._scaleByDistance, time, scaleByDistance);
             billboard.translucencyByDistance = Property.getValueOrUndefined(billboardGraphics._translucencyByDistance, time, translucencyByDistance);
             billboard.pixelOffsetScaleByDistance = Property.getValueOrUndefined(billboardGraphics._pixelOffsetScaleByDistance, time, pixelOffsetScaleByDistance);
+            billboard.sizeInMeters = Property.getValueOrDefault(billboardGraphics._sizeInMeters, defaultSizeInMeters);
 
             var subRegion = Property.getValueOrUndefined(billboardGraphics._imageSubRegion, time, boundingRectangle);
             if (defined(subRegion)) {

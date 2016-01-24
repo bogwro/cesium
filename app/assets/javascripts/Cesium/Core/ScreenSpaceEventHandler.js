@@ -6,6 +6,7 @@ define([
         './defined',
         './destroyObject',
         './DeveloperError',
+        './FeatureDetection',
         './KeyboardEventModifier',
         './ScreenSpaceEventType'
     ], function(
@@ -15,6 +16,7 @@ define([
         defined,
         destroyObject,
         DeveloperError,
+        FeatureDetection,
         KeyboardEventModifier,
         ScreenSpaceEventType) {
     "use strict";
@@ -60,10 +62,9 @@ define([
     };
 
     function registerListener(screenSpaceEventHandler, domType, element, callback) {
-        var listener = function(e) {
+        function listener(e) {
             callback(screenSpaceEventHandler, e);
-        };
-
+        }
         element.addEventListener(domType, listener, false);
 
         screenSpaceEventHandler._removalFunctions.push(function() {
@@ -79,7 +80,7 @@ define([
         // this is affected by the existence of an undocumented disableRootEvents property on element.
         var alternateElement = !defined(element.disableRootEvents) ? document : element;
 
-        if (defined(window.PointerEvent)) {
+        if (FeatureDetection.supportsPointerEvents()) {
             registerListener(screenSpaceEventHandler, 'pointerdown', element, handlePointerDown);
             registerListener(screenSpaceEventHandler, 'pointerup', element, handlePointerUp);
             registerListener(screenSpaceEventHandler, 'pointermove', element, handlePointerMove);
@@ -639,7 +640,7 @@ define([
      *
      * @constructor
      */
-    var ScreenSpaceEventHandler = function(element) {
+    function ScreenSpaceEventHandler(element) {
         this._inputEvents = {};
         this._buttonDown = undefined;
         this._isPinching = false;
@@ -661,7 +662,7 @@ define([
         this._element = defaultValue(element, document);
 
         registerListeners(this);
-    };
+    }
 
     /**
      * Set a function to be executed on an input event.
@@ -755,10 +756,11 @@ define([
      *
      * @exception {DeveloperError} This object was destroyed, i.e., destroy() was called.
      *
-     * @see ScreenSpaceEventHandler#isDestroyed
      *
      * @example
      * handler = handler && handler.destroy();
+     * 
+     * @see ScreenSpaceEventHandler#isDestroyed
      */
     ScreenSpaceEventHandler.prototype.destroy = function() {
         unregisterListeners(this);
