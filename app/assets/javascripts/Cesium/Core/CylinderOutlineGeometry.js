@@ -27,7 +27,7 @@ define([
         GeometryAttributes,
         IndexDatatype,
         PrimitiveType) {
-    "use strict";
+    'use strict';
 
     var radiusScratch = new Cartesian2();
 
@@ -41,14 +41,14 @@ define([
      * @param {Number} options.length The length of the cylinder.
      * @param {Number} options.topRadius The radius of the top of the cylinder.
      * @param {Number} options.bottomRadius The radius of the bottom of the cylinder.
-     * @param {Number} [options.slices=128] The number of edges around perimeter of the cylinder.
+     * @param {Number} [options.slices=128] The number of edges around the perimeter of the cylinder.
      * @param {Number} [options.numberOfVerticalLines=16] Number of lines to draw between the top and bottom surfaces of the cylinder.
      *
      * @exception {DeveloperError} options.length must be greater than 0.
      * @exception {DeveloperError} options.topRadius must be greater than 0.
      * @exception {DeveloperError} options.bottomRadius must be greater than 0.
      * @exception {DeveloperError} bottomRadius and topRadius cannot both equal 0.
-     * @exception {DeveloperError} options.slices must be greater that 3.
+     * @exception {DeveloperError} options.slices must be greater than or equal to 3.
      *
      * @see CylinderOutlineGeometry.createGeometry
      *
@@ -71,20 +71,17 @@ define([
         var numberOfVerticalLines = Math.max(defaultValue(options.numberOfVerticalLines, 16), 0);
 
         //>>includeStart('debug', pragmas.debug);
-        if (!defined(length) || length <= 0) {
-            throw new DeveloperError('options.length must be greater than 0.');
+        if (!defined(length)) {
+            throw new DeveloperError('options.length must be defined.');
         }
-        if (!defined(topRadius) || topRadius < 0) {
-            throw new DeveloperError('options.topRadius must be greater than 0.');
+        if (!defined(topRadius)) {
+            throw new DeveloperError('options.topRadius must be defined.');
         }
-        if (!defined(bottomRadius) || bottomRadius < 0) {
-            throw new DeveloperError('options.bottomRadius must be greater than 0.');
-        }
-        if (bottomRadius === 0 && topRadius === 0) {
-            throw new DeveloperError('bottomRadius and topRadius cannot both equal 0.');
+        if (!defined(bottomRadius)) {
+            throw new DeveloperError('options.bottomRadius must be defined.');
         }
         if (slices < 3) {
-            throw new DeveloperError('options.slices must be greater that 3.');
+            throw new DeveloperError('options.slices must be greater than or equal to 3.');
         }
         //>>includeEnd('debug');
 
@@ -181,7 +178,7 @@ define([
      * Computes the geometric representation of an outline of a cylinder, including its vertices, indices, and a bounding sphere.
      *
      * @param {CylinderOutlineGeometry} cylinderGeometry A description of the cylinder outline.
-     * @returns {Geometry} The computed vertices and indices.
+     * @returns {Geometry|undefined} The computed vertices and indices.
      */
     CylinderOutlineGeometry.createGeometry = function(cylinderGeometry) {
         var length = cylinderGeometry._length;
@@ -189,6 +186,10 @@ define([
         var bottomRadius = cylinderGeometry._bottomRadius;
         var slices = cylinderGeometry._slices;
         var numberOfVerticalLines = cylinderGeometry._numberOfVerticalLines;
+
+        if ((length <= 0) || (topRadius < 0) || (bottomRadius < 0) || ((topRadius === 0) && (bottomRadius === 0))) {
+            return;
+        }
 
         var numVertices = slices * 2;
 

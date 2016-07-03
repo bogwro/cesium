@@ -37,7 +37,7 @@ define([
         SceneMode,
         SceneTransforms,
         VerticalOrigin) {
-    "use strict";
+    'use strict';
 
     /**
      * A viewport-aligned image positioned in the 3D scene, that is created
@@ -91,6 +91,7 @@ define([
         this._pixelOffset = Cartesian2.clone(defaultValue(options.pixelOffset, Cartesian2.ZERO));
         this._translate = new Cartesian2(0.0, 0.0); // used by labels for glyph vertex translation
         this._eyeOffset = Cartesian3.clone(defaultValue(options.eyeOffset, Cartesian3.ZERO));
+        this._heightReference = defaultValue(options.heightReference, HeightReference.NONE);
         this._verticalOrigin = defaultValue(options.verticalOrigin, VerticalOrigin.CENTER);
         this._horizontalOrigin = defaultValue(options.horizontalOrigin, HorizontalOrigin.CENTER);
         this._scale = defaultValue(options.scale, 1.0);
@@ -102,7 +103,6 @@ define([
         this._scaleByDistance = options.scaleByDistance;
         this._translucencyByDistance = options.translucencyByDistance;
         this._pixelOffsetScaleByDistance = options.pixelOffsetScaleByDistance;
-        this._heightReference = defaultValue(options.heightReference, HeightReference.NONE);
         this._sizeInMeters = defaultValue(options.sizeInMeters, false);
         this._id = options.id;
         this._collection = defaultValue(options.collection, billboardCollection);
@@ -846,9 +846,11 @@ define([
     Billboard._updateClamping = function(collection, owner) {
         var scene = collection._scene;
         if (!defined(scene)) {
+            //>>includeStart('debug', pragmas.debug);
             if (owner._heightReference !== HeightReference.NONE) {
-                throw new DeveloperError('Height reference is not supported.');
+                throw new DeveloperError('Height reference is not supported without a scene.');
             }
+            //>>includeEnd('debug');
             return;
         }
 
@@ -857,7 +859,6 @@ define([
         var surface = globe._surface;
 
         var mode = scene.frameState.mode;
-        var projection = scene.frameState.mapProjection;
 
         var modeChanged = mode !== owner._mode;
         owner._mode = mode;
@@ -895,19 +896,15 @@ define([
         }
         owner._removeCallbackFunc = surface.updateHeight(position, updateFunction);
 
+        Cartographic.clone(position, scratchCartographic);
         var height = globe.getHeight(position);
         if (defined(height)) {
-            Cartographic.clone(position, scratchCartographic);
             scratchCartographic.height = height;
-            if (owner._mode === SceneMode.SCENE3D) {
-                ellipsoid.cartographicToCartesian(scratchCartographic, scratchPosition);
-            } else {
-                projection.project(scratchCartographic, scratchPosition);
-                Cartesian3.fromElements(scratchPosition.z, scratchPosition.x, scratchPosition.y, scratchPosition);
-            }
-
-            updateFunction(scratchPosition);
         }
+
+        ellipsoid.cartographicToCartesian(scratchCartographic, scratchPosition);
+
+        updateFunction(scratchPosition);
     };
 
     Billboard.prototype._loadImage = function() {
@@ -1013,7 +1010,8 @@ define([
     };
 
     /**
-     * Uses a sub-region of the image with the given id as the image for this billboard.
+     * Uses a sub-region of the image with the given id as the image for this billboard,
+     * measured in pixels from the bottom-left.
      *
      * @param {String} id The id of the image to use.
      * @param {BoundingRectangle} subRegion The sub-region of the image.
@@ -1083,34 +1081,20 @@ define([
         return SceneTransforms.computeActualWgs84Position(frameState, tempCartesian3);
     };
 
-    var scratchMatrix4 = new Matrix4();
-    var scratchCartesian4 = new Cartesian4();
-    var scrachEyeOffset = new Cartesian3();
     var scratchCartesian2 = new Cartesian2();
+    var scratchCartesian3 = new Cartesian3();
     var scratchComputePixelOffset = new Cartesian2();
 
+    // This function is basically a stripped-down JavaScript version of BillboardCollectionVS.glsl
     Billboard._computeScreenSpacePosition = function(modelMatrix, position, eyeOffset, pixelOffset, scene, result) {
-        // This function is basically a stripped-down JavaScript version of BillboardCollectionVS.glsl
-        var camera = scene.camera;
-        var view = camera.viewMatrix;
-        var projection = camera.frustum.projectionMatrix;
+        // Model to world coordinates
+        var positionWorld = Matrix4.multiplyByPoint(modelMatrix, position, scratchCartesian3);
 
-        // Model to eye coordinates
-        var mv = Matrix4.multiplyTransformation(view, modelMatrix, scratchMatrix4);
-        var positionEC = Matrix4.multiplyByVector(mv, Cartesian4.fromElements(position.x, position.y, position.z, 1, scratchCartesian4), scratchCartesian4);
-
-        // Apply eye offset, e.g., czm_eyeOffset
-        var zEyeOffset = Cartesian3.multiplyComponents(eyeOffset, Cartesian3.normalize(positionEC, scrachEyeOffset), scrachEyeOffset);
-        positionEC.x += eyeOffset.x + zEyeOffset.x;
-        positionEC.y += eyeOffset.y + zEyeOffset.y;
-        positionEC.z += zEyeOffset.z;
-
-        var positionCC = Matrix4.multiplyByVector(projection, positionEC, scratchCartesian4); // clip coordinates
-        var positionWC = SceneTransforms.clipToGLWindowCoordinates(scene, positionCC, result);
+        // World to window coordinates
+        var positionWC = SceneTransforms.wgs84WithEyeOffsetToWindowCoordinates(scene, positionWorld, eyeOffset, result);
 
         // Apply pixel offset
         pixelOffset = Cartesian2.clone(pixelOffset, scratchComputePixelOffset);
-        pixelOffset.y = -pixelOffset.y;
         var po = Cartesian2.multiplyByScalar(pixelOffset, scene.context.uniformState.resolutionScale, scratchCartesian2);
         positionWC.x += po.x;
         positionWC.y += po.y;
@@ -1131,10 +1115,9 @@ define([
      *
      * @exception {DeveloperError} Billboard must be in a collection.
      *
-     *
      * @example
      * console.log(b.computeScreenSpacePosition(scene).toString());
-     * 
+     *
      * @see Billboard#eyeOffset
      * @see Billboard#pixelOffset
      */
@@ -1162,7 +1145,6 @@ define([
 
         var windowCoordinates = Billboard._computeScreenSpacePosition(modelMatrix, actualPosition,
                 this._eyeOffset, scratchPixelOffset, scene, result);
-        windowCoordinates.y = scene.canvas.clientHeight - windowCoordinates.y;
         return windowCoordinates;
     };
 
@@ -1183,6 +1165,7 @@ define([
                this._scale === other._scale &&
                this._verticalOrigin === other._verticalOrigin &&
                this._horizontalOrigin === other._horizontalOrigin &&
+               this._heightReference === other._heightReference &&
                BoundingRectangle.equals(this._imageSubRegion, other._imageSubRegion) &&
                Color.equals(this._color, other._color) &&
                Cartesian2.equals(this._pixelOffset, other._pixelOffset) &&
@@ -1197,6 +1180,11 @@ define([
         if (defined(this._customData)) {
             this._billboardCollection._scene.globe._surface.removeTileCustomData(this._customData);
             this._customData = undefined;
+        }
+
+        if (defined(this._removeCallbackFunc)) {
+            this._removeCallbackFunc();
+            this._removeCallbackFunc = undefined;
         }
 
         this.image = undefined;

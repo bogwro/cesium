@@ -9,6 +9,7 @@ define([
         '../Core/Matrix4',
         '../Core/writeTextToCanvas',
         './BillboardCollection',
+        './HeightReference',
         './HorizontalOrigin',
         './Label',
         './LabelStyle',
@@ -24,12 +25,13 @@ define([
         Matrix4,
         writeTextToCanvas,
         BillboardCollection,
+        HeightReference,
         HorizontalOrigin,
         Label,
         LabelStyle,
         TextureAtlas,
         VerticalOrigin) {
-    "use strict";
+    'use strict';
 
     // A glyph represents a single character in a particular label.  It may or may
     // not have a billboard, depending on whether the texture info has an index into
@@ -194,6 +196,7 @@ define([
                 billboard.pixelOffset = label._pixelOffset;
                 billboard.horizontalOrigin = HorizontalOrigin.LEFT;
                 billboard.verticalOrigin = label._verticalOrigin;
+                billboard.heightReference = label._heightReference;
                 billboard.scale = label._scale;
                 billboard.pickPrimitive = label;
                 billboard.id = label._id;
@@ -239,7 +242,8 @@ define([
         glyphPixelOffset.x = widthOffset * resolutionScale;
         glyphPixelOffset.y = 0;
 
-        var verticalOrigin = label._verticalOrigin;
+        var heightReference = label._heightReference;
+        var verticalOrigin = (heightReference === HeightReference.NONE) ? label._verticalOrigin : VerticalOrigin.BOTTOM;
         for (glyphIndex = 0; glyphIndex < glyphLength; ++glyphIndex) {
             glyph = glyphs[glyphIndex];
             dimensions = glyph.dimensions;
@@ -438,7 +442,7 @@ define([
      *   text : 'Hello World',
      *   font : '24px Helvetica',
      * });
-     * 
+     *
      * @see LabelCollection#remove
      * @see LabelCollection#removeAll
      */
@@ -469,7 +473,7 @@ define([
      * @example
      * var l = labels.add(...);
      * labels.remove(l);  // Returns true
-     * 
+     *
      * @see LabelCollection#add
      * @see LabelCollection#removeAll
      * @see Label#show
@@ -499,7 +503,7 @@ define([
      * labels.add(...);
      * labels.add(...);
      * labels.removeAll();
-     * 
+     *
      * @see LabelCollection#add
      * @see LabelCollection#remove
      */
@@ -550,7 +554,7 @@ define([
      *   var l = billboards.get(i);
      *   l.show = !l.show;
      * }
-     * 
+     *
      * @see LabelCollection#length
      */
     LabelCollection.prototype.get = function(index) {
@@ -649,7 +653,7 @@ define([
      *
      * @example
      * labels = labels && labels.destroy();
-     * 
+     *
      * @see LabelCollection#isDestroyed
      */
     LabelCollection.prototype.destroy = function() {

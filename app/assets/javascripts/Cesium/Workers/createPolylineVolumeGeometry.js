@@ -20,9 +20,10 @@
  * Portions licensed separately.
  * See https://github.com/AnalyticalGraphicsInc/cesium/blob/master/LICENSE.md for full licensing details.
  */
-(function () {/*global define*/
+(function () {
+/*global define*/
 define('Core/defined',[],function() {
-    "use strict";
+    'use strict';
 
     /**
      * @exports defined
@@ -38,7 +39,7 @@ define('Core/defined',[],function() {
      * }
      */
     function defined(value) {
-        return value !== undefined;
+        return value !== undefined && value !== null;
     }
 
     return defined;
@@ -49,7 +50,7 @@ define('Core/freezeObject',[
         './defined'
     ], function(
         defined) {
-    "use strict";
+    'use strict';
 
     /**
      * Freezes an object, using Object.freeze if available, otherwise returns
@@ -74,7 +75,7 @@ define('Core/defaultValue',[
         './freezeObject'
     ], function(
         freezeObject) {
-    "use strict";
+    'use strict';
 
     /**
      * Returns the first parameter if not undefined, otherwise the second parameter.
@@ -110,7 +111,7 @@ define('Core/DeveloperError',[
         './defined'
     ], function(
         defined) {
-    "use strict";
+    'use strict';
 
     /**
      * Constructs an exception object that is thrown due to a developer error, e.g., invalid argument,
@@ -124,6 +125,7 @@ define('Core/DeveloperError',[
      *
      * @alias DeveloperError
      * @constructor
+     * @extends Error
      *
      * @param {String} [message] The error message for this exception.
      *
@@ -158,6 +160,11 @@ define('Core/DeveloperError',[
          * @readonly
          */
         this.stack = stack;
+    }
+
+    if (defined(Object.create)) {
+        DeveloperError.prototype = Object.create(Error.prototype);
+        DeveloperError.prototype.constructor = DeveloperError;
     }
 
     DeveloperError.prototype.toString = function() {
@@ -394,7 +401,7 @@ define('Core/Math',[
         defaultValue,
         defined,
         DeveloperError) {
-    "use strict";
+    'use strict';
 
     /**
      * Math functions.
@@ -1174,7 +1181,7 @@ define('Core/Cartesian3',[
         DeveloperError,
         freezeObject,
         CesiumMath) {
-    "use strict";
+    'use strict';
 
     /**
      * A 3D Cartesian point.
@@ -1340,6 +1347,63 @@ define('Core/Cartesian3',[
         result.x = array[startingIndex++];
         result.y = array[startingIndex++];
         result.z = array[startingIndex];
+        return result;
+    };
+
+    /**
+     * Flattens an array of Cartesian3s into an array of components.
+     *
+     * @param {Cartesian3[]} array The array of cartesians to pack.
+     * @param {Number[]} result The array onto which to store the result.
+     * @returns {Number[]} The packed array.
+     */
+    Cartesian3.packArray = function(array, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        var length = array.length;
+        if (!defined(result)) {
+            result = new Array(length * 3);
+        } else {
+            result.length = length * 3;
+        }
+
+        for (var i = 0; i < length; ++i) {
+            Cartesian3.pack(array[i], result, i * 3);
+        }
+        return result;
+    };
+
+    /**
+     * Unpacks an array of cartesian components into an array of Cartesian3s.
+     *
+     * @param {Number[]} array The array of components to unpack.
+     * @param {Cartesian3[]} result The array onto which to store the result.
+     * @returns {Cartesian3[]} The unpacked array.
+     */
+    Cartesian3.unpackArray = function(array, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        if (array.length < 3) {
+            throw new DeveloperError('array length cannot be less than 3.');
+        }
+        if (array.length % 3 !== 0) {
+            throw new DeveloperError('array length must be a multiple of 3.');
+        }
+        
+        var length = array.length;
+        if (!defined(result)) {
+            result = new Array(length / 3);
+        } else {
+            result.length = length / 3;
+        }
+
+        for (var i = 0; i < length; i += 3) {
+            var index = i / 3;
+            result[index] = Cartesian3.unpack(array, i, result[index]);
+        }
         return result;
     };
 
@@ -1909,9 +1973,9 @@ define('Core/Cartesian3',[
             throw new DeveloperError('latitude is required');
         }
         
-        var lon = CesiumMath.toRadians(longitude);
-        var lat = CesiumMath.toRadians(latitude);
-        return Cartesian3.fromRadians(lon, lat, height, ellipsoid, result);
+        longitude = CesiumMath.toRadians(longitude);
+        latitude = CesiumMath.toRadians(latitude);
+        return Cartesian3.fromRadians(longitude, latitude, height, ellipsoid, result);
     };
 
     var scratchN = new Cartesian3();
@@ -1972,15 +2036,30 @@ define('Core/Cartesian3',[
      */
     Cartesian3.fromDegreesArray = function(coordinates, ellipsoid, result) {
                 if (!defined(coordinates)) {
-            throw new DeveloperError('positions is required.');
+            throw new DeveloperError('coordinates is required.');
+        }
+        if (coordinates.length < 2) {
+            throw new DeveloperError('coordinates length cannot be less than 2.');
+        }
+        if (coordinates.length % 2 !== 0) {
+            throw new DeveloperError('coordinates length must be a multiple of 2.');
         }
         
-        var pos = new Array(coordinates.length);
-        for (var i = 0; i < coordinates.length; i++) {
-            pos[i] = CesiumMath.toRadians(coordinates[i]);
+        var length = coordinates.length;
+        if (!defined(result)) {
+            result = new Array(length / 2);
+        } else {
+            result.length = length / 2;
         }
 
-        return Cartesian3.fromRadiansArray(pos, ellipsoid, result);
+        for (var i = 0; i < length; i += 2) {
+            var longitude = coordinates[i];
+            var latitude = coordinates[i + 1];
+            var index = i / 2;
+            result[index] = Cartesian3.fromDegrees(longitude, latitude, 0, ellipsoid, result[index]);
+        }
+
+        return result;
     };
 
     /**
@@ -1996,26 +2075,27 @@ define('Core/Cartesian3',[
      */
     Cartesian3.fromRadiansArray = function(coordinates, ellipsoid, result) {
                 if (!defined(coordinates)) {
-            throw new DeveloperError('positions is required.');
+            throw new DeveloperError('coordinates is required.');
         }
         if (coordinates.length < 2) {
-            throw new DeveloperError('positions length cannot be less than 2.');
+            throw new DeveloperError('coordinates length cannot be less than 2.');
         }
         if (coordinates.length % 2 !== 0) {
-            throw new DeveloperError('positions length must be a multiple of 2.');
+            throw new DeveloperError('coordinates length must be a multiple of 2.');
         }
         
         var length = coordinates.length;
         if (!defined(result)) {
-            result = new Array(length/2);
+            result = new Array(length / 2);
         } else {
-            result.length = length/2;
+            result.length = length / 2;
         }
 
-        for ( var i = 0; i < length; i+=2) {
-            var lon = coordinates[i];
-            var lat = coordinates[i+1];
-            result[i/2] = Cartesian3.fromRadians(lon, lat, 0, ellipsoid, result[i/2]);
+        for (var i = 0; i < length; i += 2) {
+            var longitude = coordinates[i];
+            var latitude = coordinates[i + 1];
+            var index = i / 2;
+            result[index] = Cartesian3.fromRadians(longitude, latitude, 0, ellipsoid, result[index]);
         }
 
         return result;
@@ -2024,7 +2104,7 @@ define('Core/Cartesian3',[
     /**
      * Returns an array of Cartesian3 positions given an array of longitude, latitude and height values where longitude and latitude are given in degrees.
      *
-     * @param {Number[]} coordinates A list of longitude, latitude and height values. Values alternate [longitude, latitude, height,, longitude, latitude, height...].
+     * @param {Number[]} coordinates A list of longitude, latitude and height values. Values alternate [longitude, latitude, height, longitude, latitude, height...].
      * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid on which the position lies.
      * @param {Cartesian3[]} [result] An array of Cartesian3 objects to store the result.
      * @returns {Cartesian3[]} The array of positions.
@@ -2034,29 +2114,37 @@ define('Core/Cartesian3',[
      */
     Cartesian3.fromDegreesArrayHeights = function(coordinates, ellipsoid, result) {
                 if (!defined(coordinates)) {
-            throw new DeveloperError('positions is required.');
+            throw new DeveloperError('coordinates is required.');
         }
         if (coordinates.length < 3) {
-            throw new DeveloperError('positions length cannot be less than 3.');
+            throw new DeveloperError('coordinates length cannot be less than 3.');
         }
         if (coordinates.length % 3 !== 0) {
-            throw new DeveloperError('positions length must be a multiple of 3.');
+            throw new DeveloperError('coordinates length must be a multiple of 3.');
         }
         
-        var pos = new Array(coordinates.length);
-        for (var i = 0; i < coordinates.length; i+=3) {
-            pos[i] = CesiumMath.toRadians(coordinates[i]);
-            pos[i+1] = CesiumMath.toRadians(coordinates[i+1]);
-            pos[i+2] = coordinates[i+2];
+        var length = coordinates.length;
+        if (!defined(result)) {
+            result = new Array(length / 3);
+        } else {
+            result.length = length / 3;
         }
 
-        return Cartesian3.fromRadiansArrayHeights(pos, ellipsoid, result);
+        for (var i = 0; i < length; i += 3) {
+            var longitude = coordinates[i];
+            var latitude = coordinates[i + 1];
+            var height = coordinates[i + 2];
+            var index = i / 3;
+            result[index] = Cartesian3.fromDegrees(longitude, latitude, height, ellipsoid, result[index]);
+        }
+
+        return result;
     };
 
     /**
      * Returns an array of Cartesian3 positions given an array of longitude, latitude and height values where longitude and latitude are given in radians.
      *
-     * @param {Number[]} coordinates A list of longitude, latitude and height values. Values alternate [longitude, latitude, height,, longitude, latitude, height...].
+     * @param {Number[]} coordinates A list of longitude, latitude and height values. Values alternate [longitude, latitude, height, longitude, latitude, height...].
      * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid on which the position lies.
      * @param {Cartesian3[]} [result] An array of Cartesian3 objects to store the result.
      * @returns {Cartesian3[]} The array of positions.
@@ -2066,27 +2154,28 @@ define('Core/Cartesian3',[
      */
     Cartesian3.fromRadiansArrayHeights = function(coordinates, ellipsoid, result) {
                 if (!defined(coordinates)) {
-            throw new DeveloperError('positions is required.');
+            throw new DeveloperError('coordinates is required.');
         }
         if (coordinates.length < 3) {
-            throw new DeveloperError('positions length cannot be less than 3.');
+            throw new DeveloperError('coordinates length cannot be less than 3.');
         }
         if (coordinates.length % 3 !== 0) {
-            throw new DeveloperError('positions length must be a multiple of 3.');
+            throw new DeveloperError('coordinates length must be a multiple of 3.');
         }
         
         var length = coordinates.length;
         if (!defined(result)) {
-            result = new Array(length/3);
+            result = new Array(length / 3);
         } else {
-            result.length = length/3;
+            result.length = length / 3;
         }
 
-        for ( var i = 0; i < length; i+=3) {
-            var lon = coordinates[i];
-            var lat = coordinates[i+1];
-            var alt = coordinates[i+2];
-            result[i/3] = Cartesian3.fromRadians(lon, lat, alt, ellipsoid, result[i/3]);
+        for (var i = 0; i < length; i += 3) {
+            var longitude = coordinates[i];
+            var latitude = coordinates[i + 1];
+            var height = coordinates[i + 2];
+            var index = i / 3;
+            result[index] = Cartesian3.fromRadians(longitude, latitude, height, ellipsoid, result[index]);
         }
 
         return result;
@@ -2182,7 +2271,7 @@ define('Core/scaleToGeodeticSurface',[
         defined,
         DeveloperError,
         CesiumMath) {
-    "use strict";
+    'use strict';
 
     var scaleToGeodeticSurfaceIntersection = new Cartesian3();
     var scaleToGeodeticSurfaceGradient = new Cartesian3();
@@ -2323,7 +2412,7 @@ define('Core/Cartographic',[
         freezeObject,
         CesiumMath,
         scaleToGeodeticSurface) {
-    "use strict";
+    'use strict';
 
     /**
      * A position defined by longitude, latitude, and height.
@@ -2578,7 +2667,7 @@ define('Core/defineProperties',[
         './defined'
     ], function(
         defined) {
-    "use strict";
+    'use strict';
 
     var definePropertyWorks = (function() {
         try {
@@ -2628,7 +2717,7 @@ define('Core/Ellipsoid',[
         freezeObject,
         CesiumMath,
         scaleToGeodeticSurface) {
-    "use strict";
+    'use strict';
 
     function initialize(ellipsoid, x, y, z) {
         x = defaultValue(x, 0.0);
@@ -3203,6 +3292,106 @@ define('Core/Ellipsoid',[
 });
 
 /*global define*/
+define('Core/arrayRemoveDuplicates',[
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './Math'
+    ], function(
+        defaultValue,
+        defined,
+        DeveloperError,
+        CesiumMath) {
+    'use strict';
+
+    var removeDuplicatesEpsilon = CesiumMath.EPSILON10;
+
+    /**
+     * Removes adjacent duplicate values in an array of values.
+     *
+     * @param {Object[]} [values] The array of values.
+     * @param {Function} equalsEpsilon Function to compare values with an epsilon. Boolean equalsEpsilon(left, right, epsilon).
+     * @param {Boolean} [wrapAround=false] Compare the last value in the array against the first value.
+     * @returns {Object[]|undefined} A new array of values with no adjacent duplicate values or the input array if no duplicates were found.
+     *
+     * @example
+     * // Returns [(1.0, 1.0, 1.0), (2.0, 2.0, 2.0), (3.0, 3.0, 3.0), (1.0, 1.0, 1.0)]
+     * var values = [
+     *     new Cesium.Cartesian3(1.0, 1.0, 1.0),
+     *     new Cesium.Cartesian3(1.0, 1.0, 1.0),
+     *     new Cesium.Cartesian3(2.0, 2.0, 2.0),
+     *     new Cesium.Cartesian3(3.0, 3.0, 3.0),
+     *     new Cesium.Cartesian3(1.0, 1.0, 1.0)];
+     * var nonDuplicatevalues = Cesium.PolylinePipeline.removeDuplicates(values, Cartesian3.equalsEpsilon);
+     *
+     * @example
+     * // Returns [(1.0, 1.0, 1.0), (2.0, 2.0, 2.0), (3.0, 3.0, 3.0)]
+     * var values = [
+     *     new Cesium.Cartesian3(1.0, 1.0, 1.0),
+     *     new Cesium.Cartesian3(1.0, 1.0, 1.0),
+     *     new Cesium.Cartesian3(2.0, 2.0, 2.0),
+     *     new Cesium.Cartesian3(3.0, 3.0, 3.0),
+     *     new Cesium.Cartesian3(1.0, 1.0, 1.0)];
+     * var nonDuplicatevalues = Cesium.PolylinePipeline.removeDuplicates(values, Cartesian3.equalsEpsilon, true);
+     *
+     * @private
+     */
+    function arrayRemoveDuplicates(values, equalsEpsilon, wrapAround) {
+                if (!defined(equalsEpsilon)) {
+            throw new DeveloperError('equalsEpsilon is required.');
+        }
+        
+        if (!defined(values)) {
+            return undefined;
+        }
+
+        wrapAround = defaultValue(wrapAround, false);
+
+        var length = values.length;
+        if (length < 2) {
+            return values;
+        }
+
+        var i;
+        var v0;
+        var v1;
+
+        for (i = 1; i < length; ++i) {
+            v0 = values[i - 1];
+            v1 = values[i];
+            if (equalsEpsilon(v0, v1, removeDuplicatesEpsilon)) {
+                break;
+            }
+        }
+
+        if (i === length) {
+            if (wrapAround && equalsEpsilon(values[0], values[values.length - 1], removeDuplicatesEpsilon)) {
+                return values.slice(1);
+            }
+            return values;
+        }
+
+        var cleanedvalues = values.slice(0, i);
+        for (; i < length; ++i) {
+            // v0 is set by either the previous loop, or the previous clean point.
+            v1 = values[i];
+            if (!equalsEpsilon(v0, v1, removeDuplicatesEpsilon)) {
+                cleanedvalues.push(v1);
+                v0 = v1;
+            }
+        }
+
+        if (wrapAround && cleanedvalues.length > 1 && equalsEpsilon(cleanedvalues[0], cleanedvalues[cleanedvalues.length - 1], removeDuplicatesEpsilon)) {
+            cleanedvalues.shift();
+        }
+
+        return cleanedvalues;
+    }
+
+    return arrayRemoveDuplicates;
+});
+
+/*global define*/
 define('Core/Cartesian2',[
         './defaultValue',
         './defined',
@@ -3215,7 +3404,7 @@ define('Core/Cartesian2',[
         DeveloperError,
         freezeObject,
         CesiumMath) {
-    "use strict";
+    'use strict';
 
     /**
      * A 2D Cartesian point.
@@ -3352,6 +3541,57 @@ define('Core/Cartesian2',[
         }
         result.x = array[startingIndex++];
         result.y = array[startingIndex];
+        return result;
+    };
+
+    /**
+     * Flattens an array of Cartesian2s into and array of components.
+     *
+     * @param {Cartesian2[]} array The array of cartesians to pack.
+     * @param {Number[]} result The array onto which to store the result.
+     * @returns {Number[]} The packed array.
+     */
+    Cartesian2.packArray = function(array, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        var length = array.length;
+        if (!defined(result)) {
+            result = new Array(length * 2);
+        } else {
+            result.length = length * 2;
+        }
+
+        for (var i = 0; i < length; ++i) {
+            Cartesian2.pack(array[i], result, i * 2);
+        }
+        return result;
+    };
+
+    /**
+     * Unpacks an array of cartesian components into and array of Cartesian2s.
+     *
+     * @param {Number[]} array The array of components to unpack.
+     * @param {Cartesian2[]} result The array onto which to store the result.
+     * @returns {Cartesian2[]} The unpacked array.
+     */
+    Cartesian2.unpackArray = function(array, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        var length = array.length;
+        if (!defined(result)) {
+            result = new Array(length / 2);
+        } else {
+            result.length = length / 2;
+        }
+
+        for (var i = 0; i < length; i += 2) {
+            var index = i / 2;
+            result[index] = Cartesian2.unpack(array, i, result[index]);
+        }
         return result;
     };
 
@@ -3930,7 +4170,7 @@ define('Core/GeographicProjection',[
         defineProperties,
         DeveloperError,
         Ellipsoid) {
-    "use strict";
+    'use strict';
 
     /**
      * A simple map projection where longitude and latitude are linearly mapped to X and Y by multiplying
@@ -4036,7 +4276,7 @@ define('Core/Intersect',[
         './freezeObject'
     ], function(
         freezeObject) {
-    "use strict";
+    'use strict';
 
     /**
      * This enumerated type is used in determining where, relative to the frustum, an
@@ -4093,7 +4333,7 @@ define('Core/Rectangle',[
         Ellipsoid,
         freezeObject,
         CesiumMath) {
-    "use strict";
+    'use strict';
 
     /**
      * A two dimensional region specified as longitude and latitude coordinates.
@@ -4303,6 +4543,61 @@ define('Core/Rectangle',[
 
         for ( var i = 0, len = cartographics.length; i < len; i++) {
             var position = cartographics[i];
+            west = Math.min(west, position.longitude);
+            east = Math.max(east, position.longitude);
+            south = Math.min(south, position.latitude);
+            north = Math.max(north, position.latitude);
+
+            var lonAdjusted = position.longitude >= 0 ?  position.longitude : position.longitude +  CesiumMath.TWO_PI;
+            westOverIDL = Math.min(westOverIDL, lonAdjusted);
+            eastOverIDL = Math.max(eastOverIDL, lonAdjusted);
+        }
+
+        if(east - west > eastOverIDL - westOverIDL) {
+            west = westOverIDL;
+            east = eastOverIDL;
+
+            if (east > CesiumMath.PI) {
+                east = east - CesiumMath.TWO_PI;
+            }
+            if (west > CesiumMath.PI) {
+                west = west - CesiumMath.TWO_PI;
+            }
+        }
+
+        if (!defined(result)) {
+            return new Rectangle(west, south, east, north);
+        }
+
+        result.west = west;
+        result.south = south;
+        result.east = east;
+        result.north = north;
+        return result;
+    };
+
+    /**
+     * Creates the smallest possible Rectangle that encloses all positions in the provided array.
+     *
+     * @param {Cartesian[]} cartesians The list of Cartesian instances.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid the cartesians are on.
+     * @param {Rectangle} [result] The object onto which to store the result, or undefined if a new instance should be created.
+     * @returns {Rectangle} The modified result parameter or a new Rectangle instance if none was provided.
+     */
+    Rectangle.fromCartesianArray = function(cartesians, ellipsoid, result) {
+                if (!defined(cartesians)) {
+            throw new DeveloperError('cartesians is required.');
+        }
+        
+        var west = Number.MAX_VALUE;
+        var east = -Number.MAX_VALUE;
+        var westOverIDL = Number.MAX_VALUE;
+        var eastOverIDL = -Number.MAX_VALUE;
+        var south = Number.MAX_VALUE;
+        var north = -Number.MAX_VALUE;
+
+        for ( var i = 0, len = cartesians.length; i < len; i++) {
+            var position = ellipsoid.cartesianToCartographic(cartesians[i]);
             west = Math.min(west, position.longitude);
             east = Math.max(east, position.longitude);
             south = Math.min(south, position.latitude);
@@ -4842,7 +5137,7 @@ define('Core/BoundingRectangle',[
         GeographicProjection,
         Intersect,
         Rectangle) {
-    "use strict";
+    'use strict';
 
     /**
      * A bounding rectangle given by a corner, width and height.
@@ -4855,6 +5150,7 @@ define('Core/BoundingRectangle',[
      * @param {Number} [height=0.0] The height of the rectangle.
      *
      * @see BoundingSphere
+     * @see Packable
      */
     function BoundingRectangle(x, y, width, height) {
         /**
@@ -4885,6 +5181,60 @@ define('Core/BoundingRectangle',[
          */
         this.height = defaultValue(height, 0.0);
     }
+
+    /**
+     * The number of elements used to pack the object into an array.
+     * @type {Number}
+     */
+    BoundingRectangle.packedLength = 4;
+
+    /**
+     * Stores the provided instance into the provided array.
+     *
+     * @param {BoundingRectangle} value The value to pack.
+     * @param {Number[]} array The array to pack into.
+     * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     */
+    BoundingRectangle.pack = function(value, array, startingIndex) {
+                if (!defined(value)) {
+            throw new DeveloperError('value is required');
+        }
+        if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        array[startingIndex++] = value.x;
+        array[startingIndex++] = value.y;
+        array[startingIndex++] = value.width;
+        array[startingIndex] = value.height;
+    };
+
+    /**
+     * Retrieves an instance from a packed array.
+     *
+     * @param {Number[]} array The packed array.
+     * @param {Number} [startingIndex=0] The starting index of the element to be unpacked.
+     * @param {BoundingRectangle} [result] The object into which to store the result.
+     * @returns {BoundingRectangle} The modified result parameter or a new BoundingRectangle instance if one was not provided.
+     */
+    BoundingRectangle.unpack = function(array, startingIndex, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        startingIndex = defaultValue(startingIndex, 0);
+
+        if (!defined(result)) {
+            result = new BoundingRectangle();
+        }
+        result.x = array[startingIndex++];
+        result.y = array[startingIndex++];
+        result.width = array[startingIndex++];
+        result.height = array[startingIndex];
+        return result;
+    };
 
     /**
      * Computes a bounding rectangle enclosing the list of 2D points.
@@ -5150,7 +5500,7 @@ define('Core/Interval',[
         './defaultValue'
     ], function(
         defaultValue) {
-    "use strict";
+    'use strict';
 
     /**
      * Represents the closed interval [start, stop].
@@ -5183,6 +5533,7 @@ define('Core/Matrix3',[
         './Cartesian3',
         './defaultValue',
         './defined',
+        './defineProperties',
         './DeveloperError',
         './freezeObject',
         './Math'
@@ -5190,10 +5541,11 @@ define('Core/Matrix3',[
         Cartesian3,
         defaultValue,
         defined,
+        defineProperties,
         DeveloperError,
         freezeObject,
         CesiumMath) {
-    "use strict";
+    'use strict';
 
     /**
      * A 3x3 matrix, indexable as a column-major order array.
@@ -6595,6 +6947,20 @@ define('Core/Matrix3',[
      */
     Matrix3.COLUMN2ROW2 = 8;
 
+    defineProperties(Matrix3.prototype, {
+        /**
+         * Gets the number of items in the collection.
+         * @memberof Matrix3.prototype
+         *
+         * @type {Number}
+         */
+        length : {
+            get : function() {
+                return Matrix3.packedLength;
+            }
+        }
+    });
+
     /**
      * Duplicates the provided Matrix3 instance.
      *
@@ -6672,7 +7038,7 @@ define('Core/Cartesian4',[
         DeveloperError,
         freezeObject,
         CesiumMath) {
-    "use strict";
+    'use strict';
 
     /**
      * A 4D Cartesian point.
@@ -6838,6 +7204,57 @@ define('Core/Cartesian4',[
         result.y = array[startingIndex++];
         result.z = array[startingIndex++];
         result.w = array[startingIndex];
+        return result;
+    };
+
+    /**
+     * Flattens an array of Cartesian4s into and array of components.
+     *
+     * @param {Cartesian4[]} array The array of cartesians to pack.
+     * @param {Number[]} result The array onto which to store the result.
+     * @returns {Number[]} The packed array.
+     */
+    Cartesian4.packArray = function(array, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        var length = array.length;
+        if (!defined(result)) {
+            result = new Array(length * 4);
+        } else {
+            result.length = length * 4;
+        }
+
+        for (var i = 0; i < length; ++i) {
+            Cartesian4.pack(array[i], result, i * 4);
+        }
+        return result;
+    };
+
+    /**
+     * Unpacks an array of cartesian components into and array of Cartesian4s.
+     *
+     * @param {Number[]} array The array of components to unpack.
+     * @param {Cartesian4[]} result The array onto which to store the result.
+     * @returns {Cartesian4[]} The unpacked array.
+     */
+    Cartesian4.unpackArray = function(array, result) {
+                if (!defined(array)) {
+            throw new DeveloperError('array is required');
+        }
+        
+        var length = array.length;
+        if (!defined(result)) {
+            result = new Array(length / 4);
+        } else {
+            result.length = length / 4;
+        }
+
+        for (var i = 0; i < length; i += 4) {
+            var index = i / 4;
+            result[index] = Cartesian4.unpack(array, i, result[index]);
+        }
         return result;
     };
 
@@ -7446,7 +7863,7 @@ define('Core/RuntimeError',[
         './defined'
     ], function(
         defined) {
-    "use strict";
+    'use strict';
 
     /**
      * Constructs an exception object that is thrown due to an error that can occur at runtime, e.g.,
@@ -7459,6 +7876,7 @@ define('Core/RuntimeError',[
      *
      * @alias RuntimeError
      * @constructor
+     * @extends Error
      *
      * @param {String} [message] The error message for this exception.
      *
@@ -7494,6 +7912,12 @@ define('Core/RuntimeError',[
          */
         this.stack = stack;
     }
+
+    if (defined(Object.create)) {
+        RuntimeError.prototype = Object.create(Error.prototype);
+        RuntimeError.prototype.constructor = RuntimeError;
+    }
+
     RuntimeError.prototype.toString = function() {
         var str = this.name + ': ' + this.message;
 
@@ -7513,6 +7937,7 @@ define('Core/Matrix4',[
         './Cartesian4',
         './defaultValue',
         './defined',
+        './defineProperties',
         './DeveloperError',
         './freezeObject',
         './Math',
@@ -7523,12 +7948,13 @@ define('Core/Matrix4',[
         Cartesian4,
         defaultValue,
         defined,
+        defineProperties,
         DeveloperError,
         freezeObject,
         CesiumMath,
         Matrix3,
         RuntimeError) {
-    "use strict";
+    'use strict';
 
     /**
      * A 4x4 matrix, indexable as a column-major order array.
@@ -7567,6 +7993,7 @@ define('Core/Matrix4',[
      * @see Matrix4.computePerspectiveOffCenter
      * @see Matrix4.computeInfinitePerspectiveOffCenter
      * @see Matrix4.computeViewportTransformation
+     * @see Matrix4.computeView
      * @see Matrix2
      * @see Matrix3
      * @see Packable
@@ -8034,7 +8461,7 @@ define('Core/Matrix4',[
     };
 
     var fromCameraF = new Cartesian3();
-    var fromCameraS = new Cartesian3();
+    var fromCameraR = new Cartesian3();
     var fromCameraU = new Cartesian3();
 
     /**
@@ -8049,55 +8476,55 @@ define('Core/Matrix4',[
             throw new DeveloperError('camera is required.');
         }
         
-        var eye = camera.eye;
-        var target = camera.target;
+        var position = camera.position;
+        var direction = camera.direction;
         var up = camera.up;
 
-                if (!defined(eye)) {
-            throw new DeveloperError('camera.eye is required.');
+                if (!defined(position)) {
+            throw new DeveloperError('camera.position is required.');
         }
-        if (!defined(target)) {
-            throw new DeveloperError('camera.target is required.');
+        if (!defined(direction)) {
+            throw new DeveloperError('camera.direction is required.');
         }
         if (!defined(up)) {
             throw new DeveloperError('camera.up is required.');
         }
         
-        Cartesian3.normalize(Cartesian3.subtract(target, eye, fromCameraF), fromCameraF);
-        Cartesian3.normalize(Cartesian3.cross(fromCameraF, up, fromCameraS), fromCameraS);
-        Cartesian3.normalize(Cartesian3.cross(fromCameraS, fromCameraF, fromCameraU), fromCameraU);
+        Cartesian3.normalize(direction, fromCameraF);
+        Cartesian3.normalize(Cartesian3.cross(fromCameraF, up, fromCameraR), fromCameraR);
+        Cartesian3.normalize(Cartesian3.cross(fromCameraR, fromCameraF, fromCameraU), fromCameraU);
 
-        var sX = fromCameraS.x;
-        var sY = fromCameraS.y;
-        var sZ = fromCameraS.z;
+        var sX = fromCameraR.x;
+        var sY = fromCameraR.y;
+        var sZ = fromCameraR.z;
         var fX = fromCameraF.x;
         var fY = fromCameraF.y;
         var fZ = fromCameraF.z;
         var uX = fromCameraU.x;
         var uY = fromCameraU.y;
         var uZ = fromCameraU.z;
-        var eyeX = eye.x;
-        var eyeY = eye.y;
-        var eyeZ = eye.z;
-        var t0 = sX * -eyeX + sY * -eyeY+ sZ * -eyeZ;
-        var t1 = uX * -eyeX + uY * -eyeY+ uZ * -eyeZ;
-        var t2 = fX * eyeX + fY * eyeY + fZ * eyeZ;
+        var positionX = position.x;
+        var positionY = position.y;
+        var positionZ = position.z;
+        var t0 = sX * -positionX + sY * -positionY+ sZ * -positionZ;
+        var t1 = uX * -positionX + uY * -positionY+ uZ * -positionZ;
+        var t2 = fX * positionX + fY * positionY + fZ * positionZ;
 
-        //The code below this comment is an optimized
-        //version of the commented lines.
-        //Rather that create two matrices and then multiply,
-        //we just bake in the multiplcation as part of creation.
-        //var rotation = new Matrix4(
-        //                sX,  sY,  sZ, 0.0,
-        //                uX,  uY,  uZ, 0.0,
-        //               -fX, -fY, -fZ, 0.0,
-        //                0.0,  0.0,  0.0, 1.0);
-        //var translation = new Matrix4(
-        //                1.0, 0.0, 0.0, -eye.x,
-        //                0.0, 1.0, 0.0, -eye.y,
-        //                0.0, 0.0, 1.0, -eye.z,
-        //                0.0, 0.0, 0.0, 1.0);
-        //return rotation.multiply(translation);
+        // The code below this comment is an optimized
+        // version of the commented lines.
+        // Rather that create two matrices and then multiply,
+        // we just bake in the multiplcation as part of creation.
+        // var rotation = new Matrix4(
+        //                 sX,  sY,  sZ, 0.0,
+        //                 uX,  uY,  uZ, 0.0,
+        //                -fX, -fY, -fZ, 0.0,
+        //                 0.0,  0.0,  0.0, 1.0);
+        // var translation = new Matrix4(
+        //                 1.0, 0.0, 0.0, -position.x,
+        //                 0.0, 1.0, 0.0, -position.y,
+        //                 0.0, 0.0, 1.0, -position.z,
+        //                 0.0, 0.0, 0.0, 1.0);
+        // return rotation.multiply(translation);
         if (!defined(result)) {
             return new Matrix4(
                     sX,   sY,  sZ, t0,
@@ -8122,7 +8549,6 @@ define('Core/Matrix4',[
         result[14] = t2;
         result[15] = 1.0;
         return result;
-
     };
 
      /**
@@ -8135,14 +8561,14 @@ define('Core/Matrix4',[
       * @param {Matrix4} result The object in which the result will be stored.
       * @returns {Matrix4} The modified result parameter.
       *
-      * @exception {DeveloperError} fovY must be in [0, PI).
+      * @exception {DeveloperError} fovY must be in (0, PI].
       * @exception {DeveloperError} aspectRatio must be greater than zero.
       * @exception {DeveloperError} near must be greater than zero.
       * @exception {DeveloperError} far must be greater than zero.
       */
     Matrix4.computePerspectiveFieldOfView = function(fovY, aspectRatio, near, far, result) {
                 if (fovY <= 0.0 || fovY > Math.PI) {
-            throw new DeveloperError('fovY must be in [0, PI).');
+            throw new DeveloperError('fovY must be in (0, PI].');
         }
         if (aspectRatio <= 0.0) {
             throw new DeveloperError('aspectRatio must be greater than zero.');
@@ -8318,7 +8744,6 @@ define('Core/Matrix4',[
      * @param {Number} bottom The number of meters below of the camera that will be in view.
      * @param {Number} top The number of meters above of the camera that will be in view.
      * @param {Number} near The distance to the near plane in meters.
-     * @param {Number} far The distance to the far plane in meters.
      * @param {Matrix4} result The object in which the result will be stored.
      * @returns {Matrix4} The modified result parameter.
      */
@@ -8428,6 +8853,52 @@ define('Core/Matrix4',[
         result[13] = column3Row1;
         result[14] = column3Row2;
         result[15] = column3Row3;
+        return result;
+    };
+
+    /**
+     * Computes a Matrix4 instance that transforms from world space to view space.
+     *
+     * @param {Cartesian3} position The position of the camera.
+     * @param {Cartesian3} direction The forward direction.
+     * @param {Cartesian3} up The up direction.
+     * @param {Cartesian3} right The right direction.
+     * @param {Matrix4} result The object in which the result will be stored.
+     * @returns {Matrix4} The modified result parameter.
+     */
+    Matrix4.computeView = function(position, direction, up, right, result) {
+                if (!defined(position)) {
+            throw new DeveloperError('position is required');
+        }
+        if (!defined(direction)) {
+            throw new DeveloperError('direction is required');
+        }
+        if (!defined(up)) {
+            throw new DeveloperError('up is required');
+        }
+        if (!defined(right)) {
+            throw new DeveloperError('right is required');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required');
+        }
+        
+        result[0] = right.x;
+        result[1] = up.x;
+        result[2] = -direction.x;
+        result[3] = 0.0;
+        result[4] = right.y;
+        result[5] = up.y;
+        result[6] = -direction.y;
+        result[7] = 0.0;
+        result[8] = right.z;
+        result[9] = up.z;
+        result[10] = -direction.z;
+        result[11] = 0.0;
+        result[12] = -Cartesian3.dot(right, position);
+        result[13] = -Cartesian3.dot(up, position);
+        result[14] = Cartesian3.dot(direction, position);
+        result[15] = 1.0;
         return result;
     };
 
@@ -10123,6 +10594,20 @@ define('Core/Matrix4',[
      */
     Matrix4.COLUMN3ROW3 = 15;
 
+    defineProperties(Matrix4.prototype, {
+        /**
+         * Gets the number of items in the collection.
+         * @memberof Matrix4.prototype
+         *
+         * @type {Number}
+         */
+        length : {
+            get : function() {
+                return Matrix4.packedLength;
+            }
+        }
+    });
+
     /**
      * Duplicates the provided Matrix4 instance.
      *
@@ -10206,7 +10691,7 @@ define('Core/Plane',[
         defined,
         DeveloperError,
         freezeObject) {
-    "use strict";
+    'use strict';
 
     /**
      * A plane in Hessian Normal Form defined by
@@ -10393,7 +10878,7 @@ define('Core/BoundingSphere',[
         Matrix4,
         Plane,
         Rectangle) {
-    "use strict";
+    'use strict';
 
     /**
      * A bounding sphere with a center and a radius.
@@ -11689,7 +12174,7 @@ define('Renderer/WebGLConstants',[
         '../Core/freezeObject'
     ], function(
         freezeObject) {
-    "use strict";
+    'use strict';
 
     /**
      * WebGL constants.
@@ -12285,7 +12770,7 @@ define('Core/Fullscreen',[
     ], function(
         defined,
         defineProperties) {
-    "use strict";
+    'use strict';
 
     var _supportsFullscreen;
     var _names = {
@@ -12453,22 +12938,22 @@ define('Core/Fullscreen',[
 
             // casing of Fullscreen differs across browsers
             name = prefix + 'FullscreenEnabled';
-            if (defined(document[name])) {
+            if (document[name] !== undefined) {
                 _names.fullscreenEnabled = name;
             } else {
                 name = prefix + 'FullScreenEnabled';
-                if (defined(document[name])) {
+                if (document[name] !== undefined) {
                     _names.fullscreenEnabled = name;
                 }
             }
 
             // casing of Fullscreen differs across browsers
             name = prefix + 'FullscreenElement';
-            if (defined(document[name])) {
+            if (document[name] !== undefined) {
                 _names.fullscreenElement = name;
             } else {
                 name = prefix + 'FullScreenElement';
-                if (defined(document[name])) {
+                if (document[name] !== undefined) {
                     _names.fullscreenElement = name;
                 }
             }
@@ -12476,7 +12961,7 @@ define('Core/Fullscreen',[
             // thankfully, event names are all lowercase per spec
             name = prefix + 'fullscreenchange';
             // event names do not have 'on' in the front, but the property on the document does
-            if (defined(document['on' + name])) {
+            if (document['on' + name] !== undefined) {
                 //except on IE
                 if (prefix === 'ms') {
                     name = 'MSFullscreenChange';
@@ -12485,7 +12970,7 @@ define('Core/Fullscreen',[
             }
 
             name = prefix + 'fullscreenerror';
-            if (defined(document['on' + name])) {
+            if (document['on' + name] !== undefined) {
                 //except on IE
                 if (prefix === 'ms') {
                     name = 'MSFullscreenError';
@@ -12502,7 +12987,7 @@ define('Core/Fullscreen',[
      * If fullscreen mode is not supported by the browser, does nothing.
      *
      * @param {Object} element The HTML element which will be placed into fullscreen mode.
-     * @param {HMDVRDevice} vrDevice The VR device.
+     * @param {HMDVRDevice} [vrDevice] The VR device.
      *
      * @example
      * // Put the entire page into fullscreen.
@@ -12533,6 +13018,7 @@ define('Core/Fullscreen',[
 
     return Fullscreen;
 });
+
 /*global define*/
 define('Core/FeatureDetection',[
         './defaultValue',
@@ -12542,7 +13028,7 @@ define('Core/FeatureDetection',[
         defaultValue,
         defined,
         Fullscreen) {
-    "use strict";
+    'use strict';
 
     var theNavigator;
     if (typeof navigator !== 'undefined') {
@@ -12789,7 +13275,7 @@ define('Core/ComponentDatatype',[
         DeveloperError,
         FeatureDetection,
         freezeObject) {
-    "use strict";
+    'use strict';
 
     // Bail out if the browser doesn't support typed arrays, to prevent the setup function
     // from failing, since we won't be able to create a WebGL context anyway.
@@ -13033,7 +13519,7 @@ define('Core/CornerType',[
         './freezeObject'
     ], function(
         freezeObject) {
-    "use strict";
+    'use strict';
 
     /**
      * Style options for corners.
@@ -13079,7 +13565,7 @@ define('Core/GeometryType',[
         './freezeObject'
     ], function(
         freezeObject) {
-    "use strict";
+    'use strict';
 
     /**
      * @private
@@ -13101,7 +13587,7 @@ define('Core/PrimitiveType',[
     ], function(
         WebGLConstants,
         freezeObject) {
-    "use strict";
+    'use strict';
 
     /**
      * The type of a geometric primitive, i.e., points, lines, and triangles.
@@ -13199,7 +13685,7 @@ define('Core/Geometry',[
         DeveloperError,
         GeometryType,
         PrimitiveType) {
-    "use strict";
+    'use strict';
 
     /**
      * A geometry representation with attributes forming vertices and optional index data
@@ -13392,7 +13878,7 @@ define('Core/GeometryAttribute',[
         defaultValue,
         defined,
         DeveloperError) {
-    "use strict";
+    'use strict';
 
     /**
      * Values and type information for geometry attributes.  A {@link Geometry}
@@ -13529,7 +14015,7 @@ define('Core/GeometryAttributes',[
         './defaultValue'
     ], function(
         defaultValue) {
-    "use strict";
+    'use strict';
 
     /**
      * Attributes, which make up a geometry's vertices.  Each property in this object corresponds to a
@@ -13633,7 +14119,7 @@ define('Core/AttributeCompression',[
         defined,
         DeveloperError,
         CesiumMath) {
-    "use strict";
+    'use strict';
 
     /**
      * Attribute compression and decompression functions.
@@ -13892,7 +14378,7 @@ define('Core/barycentricCoordinates',[
         Cartesian3,
         defined,
         DeveloperError) {
-    "use strict";
+    'use strict';
 
     var scratchCartesian1 = new Cartesian3();
     var scratchCartesian2 = new Cartesian3();
@@ -13973,7 +14459,7 @@ define('Core/EncodedCartesian3',[
         Cartesian3,
         defined,
         DeveloperError) {
-    "use strict";
+    'use strict';
 
     /**
      * A fixed-point encoding of a {@link Cartesian3} with 64-bit floating-point components, as two {@link Cartesian3}
@@ -14159,7 +14645,7 @@ define('Core/GeometryInstance',[
         defined,
         DeveloperError,
         Matrix4) {
-    "use strict";
+    'use strict';
 
     /**
      * Geometry instancing allows one {@link Geometry} object to be positions in several
@@ -14289,7 +14775,7 @@ define('Core/IndexDatatype',[
         DeveloperError,
         freezeObject,
         CesiumMath) {
-    "use strict";
+    'use strict';
 
     /**
      * Constants for WebGL index datatypes.  These corresponds to the
@@ -14429,7 +14915,7 @@ define('Core/QuadraticRealPolynomial',[
     ], function(
         DeveloperError,
         CesiumMath) {
-    "use strict";
+    'use strict';
 
     /**
      * Defines functions for 2nd order polynomial functions of one variable with only real coefficients.
@@ -14564,7 +15050,7 @@ define('Core/CubicRealPolynomial',[
     ], function(
         DeveloperError,
         QuadraticRealPolynomial) {
-    "use strict";
+    'use strict';
 
     /**
      * Defines functions for 3rd order polynomial functions of one variable with only real coefficients.
@@ -14804,7 +15290,7 @@ define('Core/QuarticRealPolynomial',[
         DeveloperError,
         CesiumMath,
         QuadraticRealPolynomial) {
-    "use strict";
+    'use strict';
 
     /**
      * Defines functions for 4th order polynomial functions of one variable with only real coefficients.
@@ -15128,7 +15614,7 @@ define('Core/Ray',[
         defaultValue,
         defined,
         DeveloperError) {
-    "use strict";
+    'use strict';
 
     /**
      * Represents a ray that extends infinitely from the provided origin in the provided direction.
@@ -15214,7 +15700,7 @@ define('Core/IntersectionTests',[
         QuadraticRealPolynomial,
         QuarticRealPolynomial,
         Ray) {
-    "use strict";
+    'use strict';
 
     /**
      * Functions for computing the intersection between geometries such as rays, planes, triangles, and ellipsoids.
@@ -15269,7 +15755,19 @@ define('Core/IntersectionTests',[
     var scratchTVec = new Cartesian3();
     var scratchQVec = new Cartesian3();
 
-    function rayTriangle(ray, p0, p1, p2, cullBackFaces) {
+    /**
+     * Computes the intersection of a ray and a triangle as a parametric distance along the input ray.
+     * @memberof IntersectionTests
+     *
+     * @param {Ray} ray The ray.
+     * @param {Cartesian3} p0 The first vertex of the triangle.
+     * @param {Cartesian3} p1 The second vertex of the triangle.
+     * @param {Cartesian3} p2 The third vertex of the triangle.
+     * @param {Boolean} [cullBackFaces=false] If <code>true</code>, will only compute an intersection with the front face of the triangle
+     *                  and return undefined for intersections with the back face.
+     * @returns {Number} The intersection as a parametric distance along the ray, or undefined if there is no intersection.
+     */
+    IntersectionTests.rayTriangleParametric  = function(ray, p0, p1, p2, cullBackFaces) {
                 if (!defined(ray)) {
             throw new DeveloperError('ray is required.');
         }
@@ -15343,10 +15841,10 @@ define('Core/IntersectionTests',[
         }
 
         return t;
-    }
+    };
 
     /**
-     * Computes the intersection of a ray and a triangle.
+     * Computes the intersection of a ray and a triangle as a Cartesian3 coordinate.
      * @memberof IntersectionTests
      *
      * @param {Ray} ray The ray.
@@ -15359,7 +15857,7 @@ define('Core/IntersectionTests',[
      * @returns {Cartesian3} The intersection point or undefined if there is no intersections.
      */
     IntersectionTests.rayTriangle = function(ray, p0, p1, p2, cullBackFaces, result) {
-        var t = rayTriangle(ray, p0, p1, p2, cullBackFaces);
+        var t = IntersectionTests.rayTriangleParametric(ray, p0, p1, p2, cullBackFaces);
         if (!defined(t) || t < 0.0) {
             return undefined;
         }
@@ -15401,7 +15899,7 @@ define('Core/IntersectionTests',[
         Cartesian3.subtract(v1, v0, ray.direction);
         Cartesian3.normalize(ray.direction, ray.direction);
 
-        var t = rayTriangle(ray, p0, p1, p2, cullBackFaces);
+        var t = IntersectionTests.rayTriangleParametric(ray, p0, p1, p2, cullBackFaces);
         if (!defined(t) || t < 0.0 || t > Cartesian3.distance(v0, v1)) {
             return undefined;
         }
@@ -15526,6 +16024,7 @@ define('Core/IntersectionTests',[
         }
         
         var ray = scratchLineSegmentRay;
+        Cartesian3.clone(p0, ray.origin);
         var direction = Cartesian3.subtract(p1, p0, ray.direction);
 
         var maxT = Cartesian3.magnitude(direction);
@@ -16071,7 +16570,7 @@ define('Core/Tipsify',[
         defaultValue,
         defined,
         DeveloperError) {
-    "use strict";
+    'use strict';
 
     /**
      * Encapsulates an algorithm to optimize triangles for the post
@@ -16410,7 +16909,7 @@ define('Core/GeometryPipeline',[
         Plane,
         PrimitiveType,
         Tipsify) {
-    "use strict";
+    'use strict';
 
     /**
      * Content pipeline functions for geometries.
@@ -18489,7 +18988,6 @@ define('Core/GeometryPipeline',[
     var cartesian2Scratch1 = new Cartesian2();
 
     var cartesian3Scratch0 = new Cartesian3();
-    var cartesian3Scratch1 = new Cartesian3();
     var cartesian3Scratch2 = new Cartesian3();
     var cartesian3Scratch3 = new Cartesian3();
     var cartesian3Scratch4 = new Cartesian3();
@@ -18497,6 +18995,46 @@ define('Core/GeometryPipeline',[
     var cartesian3Scratch6 = new Cartesian3();
 
     var cartesian4Scratch0 = new Cartesian4();
+
+    function updateAdjacencyAfterSplit(geometry) {
+        var attributes = geometry.attributes;
+        var positions = attributes.position.values;
+        var prevPositions = attributes.prevPosition.values;
+        var nextPositions = attributes.nextPosition.values;
+
+        var length = positions.length;
+        for (var j = 0; j < length; j += 3) {
+            var position = Cartesian3.unpack(positions, j, cartesian3Scratch0);
+            if (position.x > 0.0) {
+                continue;
+            }
+
+            var prevPosition = Cartesian3.unpack(prevPositions, j, cartesian3Scratch2);
+            if ((position.y < 0.0 && prevPosition.y > 0.0) || (position.y > 0.0 && prevPosition.y < 0.0)) {
+                if (j - 3 > 0) {
+                    prevPositions[j] = positions[j - 3];
+                    prevPositions[j + 1] = positions[j - 2];
+                    prevPositions[j + 2] = positions[j - 1];
+                } else {
+                    Cartesian3.pack(position, prevPositions, j);
+                }
+            }
+
+            var nextPosition = Cartesian3.unpack(nextPositions, j, cartesian3Scratch3);
+            if ((position.y < 0.0 && nextPosition.y > 0.0) || (position.y > 0.0 && nextPosition.y < 0.0)) {
+                if (j + 3 < length) {
+                    nextPositions[j] = positions[j + 3];
+                    nextPositions[j + 1] = positions[j + 4];
+                    nextPositions[j + 2] = positions[j + 5];
+                } else {
+                    Cartesian3.pack(position, nextPositions, j);
+                }
+            }
+        }
+    }
+
+    var offsetScalar = 5.0 * CesiumMath.EPSILON9;
+    var coplanarOffset = CesiumMath.EPSILON6;
 
     function splitLongitudePolyline(instance) {
         var geometry = instance.geometry;
@@ -18516,26 +19054,42 @@ define('Core/GeometryPipeline',[
         var j;
         var index;
 
+        var intersectionFound = false;
+
         var length = positions.length / 3;
         for (i = 0; i < length; i += 4) {
             var i0 = i;
-            var i1 = i + 1;
             var i2 = i + 2;
-            var i3 = i + 3;
 
             var p0 = Cartesian3.fromArray(positions, i0 * 3, cartesian3Scratch0);
-            var p1 = Cartesian3.fromArray(positions, i1 * 3, cartesian3Scratch1);
             var p2 = Cartesian3.fromArray(positions, i2 * 3, cartesian3Scratch2);
-            var p3 = Cartesian3.fromArray(positions, i3 * 3, cartesian3Scratch3);
 
-            if (Math.abs(p0.y) < CesiumMath.EPSILON6) {
-                p0.y = CesiumMath.EPSILON6 * (p2.y < 0.0 ? -1.0 : 1.0);
-                p1.y = p0.y;
+            // Offset points that are close to the 180 longitude and change the previous/next point
+            // to be the same offset point so it can be projected to 2D. There is special handling in the
+            // shader for when position == prevPosition || position == nextPosition.
+            if (Math.abs(p0.y) < coplanarOffset) {
+                p0.y = coplanarOffset * (p2.y < 0.0 ? -1.0 : 1.0);
+                positions[i * 3 + 1] = p0.y;
+                positions[(i + 1) * 3 + 1] = p0.y;
+
+                for (j = i0 * 3; j < i0 * 3 + 4 * 3; j += 3) {
+                    prevPositions[j] = positions[i * 3];
+                    prevPositions[j + 1] = positions[i * 3 + 1];
+                    prevPositions[j + 2] = positions[i * 3 + 2];
+                }
             }
 
-            if (Math.abs(p2.y) < CesiumMath.EPSILON6) {
-                p2.y = CesiumMath.EPSILON6 * (p0.y < 0.0 ? -1.0 : 1.0);
-                p3.y = p2.y;
+            // Do the same but for when the line crosses 180 longitude in the opposite direction.
+            if (Math.abs(p2.y) < coplanarOffset) {
+                p2.y = coplanarOffset * (p0.y < 0.0 ? -1.0 : 1.0);
+                positions[(i + 2) * 3 + 1] = p2.y;
+                positions[(i + 3) * 3 + 1] = p2.y;
+
+                for (j = i0 * 3; j < i0 * 3 + 4 * 3; j += 3) {
+                    nextPositions[j] = positions[(i + 2) * 3];
+                    nextPositions[j + 1] = positions[(i + 2) * 3 + 1];
+                    nextPositions[j + 2] = positions[(i + 2) * 3 + 2];
+                }
             }
 
             var p0Attributes = eastGeometry.attributes;
@@ -18545,8 +19099,10 @@ define('Core/GeometryPipeline',[
 
             var intersection = IntersectionTests.lineSegmentPlane(p0, p2, xzPlane, cartesian3Scratch4);
             if (defined(intersection)) {
+                intersectionFound = true;
+
                 // move point on the xz-plane slightly away from the plane
-                var offset = Cartesian3.multiplyByScalar(Cartesian3.UNIT_Y, 5.0 * CesiumMath.EPSILON9, cartesian3Scratch5);
+                var offset = Cartesian3.multiplyByScalar(Cartesian3.UNIT_Y, offsetScalar, cartesian3Scratch5);
                 if (p0.y < 0.0) {
                     Cartesian3.negate(offset, offset);
                     p0Attributes = westGeometry.attributes;
@@ -18556,33 +19112,33 @@ define('Core/GeometryPipeline',[
                 }
 
                 var offsetPoint = Cartesian3.add(intersection, offset, cartesian3Scratch6);
-                p0Attributes.position.values.push(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z);
+                p0Attributes.position.values.push(p0.x, p0.y, p0.z, p0.x, p0.y, p0.z);
                 p0Attributes.position.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
                 p0Attributes.position.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
+
+                p0Attributes.prevPosition.values.push(prevPositions[i0 * 3], prevPositions[i0 * 3 + 1], prevPositions[i0 * 3 + 2]);
+                p0Attributes.prevPosition.values.push(prevPositions[i0 * 3 + 3], prevPositions[i0 * 3 + 4], prevPositions[i0 * 3 + 5]);
+                p0Attributes.prevPosition.values.push(p0.x, p0.y, p0.z, p0.x, p0.y, p0.z);
+
+                p0Attributes.nextPosition.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
+                p0Attributes.nextPosition.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
+                p0Attributes.nextPosition.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
+                p0Attributes.nextPosition.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
 
                 Cartesian3.negate(offset, offset);
                 Cartesian3.add(intersection, offset, offsetPoint);
                 p2Attributes.position.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
                 p2Attributes.position.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
-                p2Attributes.position.values.push(p2.x, p2.y, p2.z, p3.x, p3.y, p3.z);
+                p2Attributes.position.values.push(p2.x, p2.y, p2.z, p2.x, p2.y, p2.z);
 
-                for (j = i0 * 3; j < i0 * 3 + 2 * 3; ++j) {
-                    p0Attributes.prevPosition.values.push(prevPositions[j]);
-                }
-                p0Attributes.prevPosition.values.push(p0.x, p0.y, p0.z, p0.x, p0.y, p0.z);
-                p2Attributes.prevPosition.values.push(p0.x, p0.y, p0.z, p0.x, p0.y, p0.z);
-                for (j = i2 * 3; j < i2 * 3 + 2 * 3; ++j) {
-                    p2Attributes.prevPosition.values.push(prevPositions[j]);
-                }
+                p2Attributes.prevPosition.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
+                p2Attributes.prevPosition.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
+                p2Attributes.prevPosition.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
+                p2Attributes.prevPosition.values.push(offsetPoint.x, offsetPoint.y, offsetPoint.z);
 
-                for (j = i0 * 3; j < i0 * 3 + 2 * 3; ++j) {
-                    p0Attributes.nextPosition.values.push(nextPositions[j]);
-                }
-                p0Attributes.nextPosition.values.push(p2.x, p2.y, p2.z, p2.x, p2.y, p2.z);
                 p2Attributes.nextPosition.values.push(p2.x, p2.y, p2.z, p2.x, p2.y, p2.z);
-                for (j = i2 * 3; j < i2 * 3 + 2 * 3; ++j) {
-                    p2Attributes.nextPosition.values.push(nextPositions[j]);
-                }
+                p2Attributes.nextPosition.values.push(nextPositions[i2 * 3], nextPositions[i2 * 3 + 1], nextPositions[i2 * 3 + 2]);
+                p2Attributes.nextPosition.values.push(nextPositions[i2 * 3 + 3], nextPositions[i2 * 3 + 4], nextPositions[i2 * 3 + 5]);
 
                 var ew0 = Cartesian2.fromArray(expandAndWidths, i0 * 2, cartesian2Scratch0);
                 var width = Math.abs(ew0.y);
@@ -18654,9 +19210,9 @@ define('Core/GeometryPipeline',[
                 }
 
                 currentAttributes.position.values.push(p0.x, p0.y, p0.z);
-                currentAttributes.position.values.push(p1.x, p1.y, p1.z);
+                currentAttributes.position.values.push(p0.x, p0.y, p0.z);
                 currentAttributes.position.values.push(p2.x, p2.y, p2.z);
-                currentAttributes.position.values.push(p3.x, p3.y, p3.z);
+                currentAttributes.position.values.push(p2.x, p2.y, p2.z);
 
                 for (j = i * 3; j < i * 3 + 4 * 3; ++j) {
                     currentAttributes.prevPosition.values.push(prevPositions[j]);
@@ -18680,6 +19236,11 @@ define('Core/GeometryPipeline',[
                 currentIndices.push(index, index + 2, index + 1);
                 currentIndices.push(index + 1, index + 2, index + 3);
             }
+        }
+
+        if (intersectionFound) {
+            updateAdjacencyAfterSplit(westGeometry);
+            updateAdjacencyAfterSplit(eastGeometry);
         }
 
         updateInstanceAfterSplit(instance, westGeometry, eastGeometry);
@@ -18740,6 +19301,656 @@ define('Core/GeometryPipeline',[
     return GeometryPipeline;
 });
 
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define('ThirdParty/earcut-2.1.1',[],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.earcut = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+'use strict';
+
+module.exports = earcut;
+
+function earcut(data, holeIndices, dim) {
+
+    dim = dim || 2;
+
+    var hasHoles = holeIndices && holeIndices.length,
+        outerLen = hasHoles ? holeIndices[0] * dim : data.length,
+        outerNode = linkedList(data, 0, outerLen, dim, true),
+        triangles = [];
+
+    if (!outerNode) return triangles;
+
+    var minX, minY, maxX, maxY, x, y, size;
+
+    if (hasHoles) outerNode = eliminateHoles(data, holeIndices, outerNode, dim);
+
+    // if the shape is not too simple, we'll use z-order curve hash later; calculate polygon bbox
+    if (data.length > 80 * dim) {
+        minX = maxX = data[0];
+        minY = maxY = data[1];
+
+        for (var i = dim; i < outerLen; i += dim) {
+            x = data[i];
+            y = data[i + 1];
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+        }
+
+        // minX, minY and size are later used to transform coords into integers for z-order calculation
+        size = Math.max(maxX - minX, maxY - minY);
+    }
+
+    earcutLinked(outerNode, triangles, dim, minX, minY, size);
+
+    return triangles;
+}
+
+// create a circular doubly linked list from polygon points in the specified winding order
+function linkedList(data, start, end, dim, clockwise) {
+    var i, last;
+
+    if (clockwise === (signedArea(data, start, end, dim) > 0)) {
+        for (i = start; i < end; i += dim) last = insertNode(i, data[i], data[i + 1], last);
+    } else {
+        for (i = end - dim; i >= start; i -= dim) last = insertNode(i, data[i], data[i + 1], last);
+    }
+
+    if (last && equals(last, last.next)) {
+        removeNode(last);
+        last = last.next;
+    }
+
+    return last;
+}
+
+// eliminate colinear or duplicate points
+function filterPoints(start, end) {
+    if (!start) return start;
+    if (!end) end = start;
+
+    var p = start,
+        again;
+    do {
+        again = false;
+
+        if (!p.steiner && (equals(p, p.next) || area(p.prev, p, p.next) === 0)) {
+            removeNode(p);
+            p = end = p.prev;
+            if (p === p.next) return null;
+            again = true;
+
+        } else {
+            p = p.next;
+        }
+    } while (again || p !== end);
+
+    return end;
+}
+
+// main ear slicing loop which triangulates a polygon (given as a linked list)
+function earcutLinked(ear, triangles, dim, minX, minY, size, pass) {
+    if (!ear) return;
+
+    // interlink polygon nodes in z-order
+    if (!pass && size) indexCurve(ear, minX, minY, size);
+
+    var stop = ear,
+        prev, next;
+
+    // iterate through ears, slicing them one by one
+    while (ear.prev !== ear.next) {
+        prev = ear.prev;
+        next = ear.next;
+
+        if (size ? isEarHashed(ear, minX, minY, size) : isEar(ear)) {
+            // cut off the triangle
+            triangles.push(prev.i / dim);
+            triangles.push(ear.i / dim);
+            triangles.push(next.i / dim);
+
+            removeNode(ear);
+
+            // skipping the next vertice leads to less sliver triangles
+            ear = next.next;
+            stop = next.next;
+
+            continue;
+        }
+
+        ear = next;
+
+        // if we looped through the whole remaining polygon and can't find any more ears
+        if (ear === stop) {
+            // try filtering points and slicing again
+            if (!pass) {
+                earcutLinked(filterPoints(ear), triangles, dim, minX, minY, size, 1);
+
+            // if this didn't work, try curing all small self-intersections locally
+            } else if (pass === 1) {
+                ear = cureLocalIntersections(ear, triangles, dim);
+                earcutLinked(ear, triangles, dim, minX, minY, size, 2);
+
+            // as a last resort, try splitting the remaining polygon into two
+            } else if (pass === 2) {
+                splitEarcut(ear, triangles, dim, minX, minY, size);
+            }
+
+            break;
+        }
+    }
+}
+
+// check whether a polygon node forms a valid ear with adjacent nodes
+function isEar(ear) {
+    var a = ear.prev,
+        b = ear,
+        c = ear.next;
+
+    if (area(a, b, c) >= 0) return false; // reflex, can't be an ear
+
+    // now make sure we don't have other points inside the potential ear
+    var p = ear.next.next;
+
+    while (p !== ear.prev) {
+        if (pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
+            area(p.prev, p, p.next) >= 0) return false;
+        p = p.next;
+    }
+
+    return true;
+}
+
+function isEarHashed(ear, minX, minY, size) {
+    var a = ear.prev,
+        b = ear,
+        c = ear.next;
+
+    if (area(a, b, c) >= 0) return false; // reflex, can't be an ear
+
+    // triangle bbox; min & max are calculated like this for speed
+    var minTX = a.x < b.x ? (a.x < c.x ? a.x : c.x) : (b.x < c.x ? b.x : c.x),
+        minTY = a.y < b.y ? (a.y < c.y ? a.y : c.y) : (b.y < c.y ? b.y : c.y),
+        maxTX = a.x > b.x ? (a.x > c.x ? a.x : c.x) : (b.x > c.x ? b.x : c.x),
+        maxTY = a.y > b.y ? (a.y > c.y ? a.y : c.y) : (b.y > c.y ? b.y : c.y);
+
+    // z-order range for the current triangle bbox;
+    var minZ = zOrder(minTX, minTY, minX, minY, size),
+        maxZ = zOrder(maxTX, maxTY, minX, minY, size);
+
+    // first look for points inside the triangle in increasing z-order
+    var p = ear.nextZ;
+
+    while (p && p.z <= maxZ) {
+        if (p !== ear.prev && p !== ear.next &&
+            pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
+            area(p.prev, p, p.next) >= 0) return false;
+        p = p.nextZ;
+    }
+
+    // then look for points in decreasing z-order
+    p = ear.prevZ;
+
+    while (p && p.z >= minZ) {
+        if (p !== ear.prev && p !== ear.next &&
+            pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
+            area(p.prev, p, p.next) >= 0) return false;
+        p = p.prevZ;
+    }
+
+    return true;
+}
+
+// go through all polygon nodes and cure small local self-intersections
+function cureLocalIntersections(start, triangles, dim) {
+    var p = start;
+    do {
+        var a = p.prev,
+            b = p.next.next;
+
+        if (!equals(a, b) && intersects(a, p, p.next, b) && locallyInside(a, b) && locallyInside(b, a)) {
+
+            triangles.push(a.i / dim);
+            triangles.push(p.i / dim);
+            triangles.push(b.i / dim);
+
+            // remove two nodes involved
+            removeNode(p);
+            removeNode(p.next);
+
+            p = start = b;
+        }
+        p = p.next;
+    } while (p !== start);
+
+    return p;
+}
+
+// try splitting polygon into two and triangulate them independently
+function splitEarcut(start, triangles, dim, minX, minY, size) {
+    // look for a valid diagonal that divides the polygon into two
+    var a = start;
+    do {
+        var b = a.next.next;
+        while (b !== a.prev) {
+            if (a.i !== b.i && isValidDiagonal(a, b)) {
+                // split the polygon in two by the diagonal
+                var c = splitPolygon(a, b);
+
+                // filter colinear points around the cuts
+                a = filterPoints(a, a.next);
+                c = filterPoints(c, c.next);
+
+                // run earcut on each half
+                earcutLinked(a, triangles, dim, minX, minY, size);
+                earcutLinked(c, triangles, dim, minX, minY, size);
+                return;
+            }
+            b = b.next;
+        }
+        a = a.next;
+    } while (a !== start);
+}
+
+// link every hole into the outer loop, producing a single-ring polygon without holes
+function eliminateHoles(data, holeIndices, outerNode, dim) {
+    var queue = [],
+        i, len, start, end, list;
+
+    for (i = 0, len = holeIndices.length; i < len; i++) {
+        start = holeIndices[i] * dim;
+        end = i < len - 1 ? holeIndices[i + 1] * dim : data.length;
+        list = linkedList(data, start, end, dim, false);
+        if (list === list.next) list.steiner = true;
+        queue.push(getLeftmost(list));
+    }
+
+    queue.sort(compareX);
+
+    // process holes from left to right
+    for (i = 0; i < queue.length; i++) {
+        eliminateHole(queue[i], outerNode);
+        outerNode = filterPoints(outerNode, outerNode.next);
+    }
+
+    return outerNode;
+}
+
+function compareX(a, b) {
+    return a.x - b.x;
+}
+
+// find a bridge between vertices that connects hole with an outer ring and and link it
+function eliminateHole(hole, outerNode) {
+    outerNode = findHoleBridge(hole, outerNode);
+    if (outerNode) {
+        var b = splitPolygon(outerNode, hole);
+        filterPoints(b, b.next);
+    }
+}
+
+// David Eberly's algorithm for finding a bridge between hole and outer polygon
+function findHoleBridge(hole, outerNode) {
+    var p = outerNode,
+        hx = hole.x,
+        hy = hole.y,
+        qx = -Infinity,
+        m;
+
+    // find a segment intersected by a ray from the hole's leftmost point to the left;
+    // segment's endpoint with lesser x will be potential connection point
+    do {
+        if (hy <= p.y && hy >= p.next.y) {
+            var x = p.x + (hy - p.y) * (p.next.x - p.x) / (p.next.y - p.y);
+            if (x <= hx && x > qx) {
+                qx = x;
+                if (x === hx) {
+                    if (hy === p.y) return p;
+                    if (hy === p.next.y) return p.next;
+                }
+                m = p.x < p.next.x ? p : p.next;
+            }
+        }
+        p = p.next;
+    } while (p !== outerNode);
+
+    if (!m) return null;
+
+    if (hx === qx) return m.prev; // hole touches outer segment; pick lower endpoint
+
+    // look for points inside the triangle of hole point, segment intersection and endpoint;
+    // if there are no points found, we have a valid connection;
+    // otherwise choose the point of the minimum angle with the ray as connection point
+
+    var stop = m,
+        mx = m.x,
+        my = m.y,
+        tanMin = Infinity,
+        tan;
+
+    p = m.next;
+
+    while (p !== stop) {
+        if (hx >= p.x && p.x >= mx &&
+                pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y)) {
+
+            tan = Math.abs(hy - p.y) / (hx - p.x); // tangential
+
+            if ((tan < tanMin || (tan === tanMin && p.x > m.x)) && locallyInside(p, hole)) {
+                m = p;
+                tanMin = tan;
+            }
+        }
+
+        p = p.next;
+    }
+
+    return m;
+}
+
+// interlink polygon nodes in z-order
+function indexCurve(start, minX, minY, size) {
+    var p = start;
+    do {
+        if (p.z === null) p.z = zOrder(p.x, p.y, minX, minY, size);
+        p.prevZ = p.prev;
+        p.nextZ = p.next;
+        p = p.next;
+    } while (p !== start);
+
+    p.prevZ.nextZ = null;
+    p.prevZ = null;
+
+    sortLinked(p);
+}
+
+// Simon Tatham's linked list merge sort algorithm
+// http://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html
+function sortLinked(list) {
+    var i, p, q, e, tail, numMerges, pSize, qSize,
+        inSize = 1;
+
+    do {
+        p = list;
+        list = null;
+        tail = null;
+        numMerges = 0;
+
+        while (p) {
+            numMerges++;
+            q = p;
+            pSize = 0;
+            for (i = 0; i < inSize; i++) {
+                pSize++;
+                q = q.nextZ;
+                if (!q) break;
+            }
+
+            qSize = inSize;
+
+            while (pSize > 0 || (qSize > 0 && q)) {
+
+                if (pSize === 0) {
+                    e = q;
+                    q = q.nextZ;
+                    qSize--;
+                } else if (qSize === 0 || !q) {
+                    e = p;
+                    p = p.nextZ;
+                    pSize--;
+                } else if (p.z <= q.z) {
+                    e = p;
+                    p = p.nextZ;
+                    pSize--;
+                } else {
+                    e = q;
+                    q = q.nextZ;
+                    qSize--;
+                }
+
+                if (tail) tail.nextZ = e;
+                else list = e;
+
+                e.prevZ = tail;
+                tail = e;
+            }
+
+            p = q;
+        }
+
+        tail.nextZ = null;
+        inSize *= 2;
+
+    } while (numMerges > 1);
+
+    return list;
+}
+
+// z-order of a point given coords and size of the data bounding box
+function zOrder(x, y, minX, minY, size) {
+    // coords are transformed into non-negative 15-bit integer range
+    x = 32767 * (x - minX) / size;
+    y = 32767 * (y - minY) / size;
+
+    x = (x | (x << 8)) & 0x00FF00FF;
+    x = (x | (x << 4)) & 0x0F0F0F0F;
+    x = (x | (x << 2)) & 0x33333333;
+    x = (x | (x << 1)) & 0x55555555;
+
+    y = (y | (y << 8)) & 0x00FF00FF;
+    y = (y | (y << 4)) & 0x0F0F0F0F;
+    y = (y | (y << 2)) & 0x33333333;
+    y = (y | (y << 1)) & 0x55555555;
+
+    return x | (y << 1);
+}
+
+// find the leftmost node of a polygon ring
+function getLeftmost(start) {
+    var p = start,
+        leftmost = start;
+    do {
+        if (p.x < leftmost.x) leftmost = p;
+        p = p.next;
+    } while (p !== start);
+
+    return leftmost;
+}
+
+// check if a point lies within a convex triangle
+function pointInTriangle(ax, ay, bx, by, cx, cy, px, py) {
+    return (cx - px) * (ay - py) - (ax - px) * (cy - py) >= 0 &&
+           (ax - px) * (by - py) - (bx - px) * (ay - py) >= 0 &&
+           (bx - px) * (cy - py) - (cx - px) * (by - py) >= 0;
+}
+
+// check if a diagonal between two polygon nodes is valid (lies in polygon interior)
+function isValidDiagonal(a, b) {
+    return a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) &&
+           locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b);
+}
+
+// signed area of a triangle
+function area(p, q, r) {
+    return (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+}
+
+// check if two points are equal
+function equals(p1, p2) {
+    return p1.x === p2.x && p1.y === p2.y;
+}
+
+// check if two segments intersect
+function intersects(p1, q1, p2, q2) {
+    if ((equals(p1, q1) && equals(p2, q2)) ||
+        (equals(p1, q2) && equals(p2, q1))) return true;
+    return area(p1, q1, p2) > 0 !== area(p1, q1, q2) > 0 &&
+           area(p2, q2, p1) > 0 !== area(p2, q2, q1) > 0;
+}
+
+// check if a polygon diagonal intersects any polygon segments
+function intersectsPolygon(a, b) {
+    var p = a;
+    do {
+        if (p.i !== a.i && p.next.i !== a.i && p.i !== b.i && p.next.i !== b.i &&
+                intersects(p, p.next, a, b)) return true;
+        p = p.next;
+    } while (p !== a);
+
+    return false;
+}
+
+// check if a polygon diagonal is locally inside the polygon
+function locallyInside(a, b) {
+    return area(a.prev, a, a.next) < 0 ?
+        area(a, b, a.next) >= 0 && area(a, a.prev, b) >= 0 :
+        area(a, b, a.prev) < 0 || area(a, a.next, b) < 0;
+}
+
+// check if the middle point of a polygon diagonal is inside the polygon
+function middleInside(a, b) {
+    var p = a,
+        inside = false,
+        px = (a.x + b.x) / 2,
+        py = (a.y + b.y) / 2;
+    do {
+        if (((p.y > py) !== (p.next.y > py)) && (px < (p.next.x - p.x) * (py - p.y) / (p.next.y - p.y) + p.x))
+            inside = !inside;
+        p = p.next;
+    } while (p !== a);
+
+    return inside;
+}
+
+// link two polygon vertices with a bridge; if the vertices belong to the same ring, it splits polygon into two;
+// if one belongs to the outer ring and another to a hole, it merges it into a single ring
+function splitPolygon(a, b) {
+    var a2 = new Node(a.i, a.x, a.y),
+        b2 = new Node(b.i, b.x, b.y),
+        an = a.next,
+        bp = b.prev;
+
+    a.next = b;
+    b.prev = a;
+
+    a2.next = an;
+    an.prev = a2;
+
+    b2.next = a2;
+    a2.prev = b2;
+
+    bp.next = b2;
+    b2.prev = bp;
+
+    return b2;
+}
+
+// create a node and optionally link it with previous one (in a circular doubly linked list)
+function insertNode(i, x, y, last) {
+    var p = new Node(i, x, y);
+
+    if (!last) {
+        p.prev = p;
+        p.next = p;
+
+    } else {
+        p.next = last.next;
+        p.prev = last;
+        last.next.prev = p;
+        last.next = p;
+    }
+    return p;
+}
+
+function removeNode(p) {
+    p.next.prev = p.prev;
+    p.prev.next = p.next;
+
+    if (p.prevZ) p.prevZ.nextZ = p.nextZ;
+    if (p.nextZ) p.nextZ.prevZ = p.prevZ;
+}
+
+function Node(i, x, y) {
+    // vertice index in coordinates array
+    this.i = i;
+
+    // vertex coordinates
+    this.x = x;
+    this.y = y;
+
+    // previous and next vertice nodes in a polygon ring
+    this.prev = null;
+    this.next = null;
+
+    // z-order curve value
+    this.z = null;
+
+    // previous and next nodes in z-order
+    this.prevZ = null;
+    this.nextZ = null;
+
+    // indicates whether this is a steiner point
+    this.steiner = false;
+}
+
+// return a percentage difference between the polygon area and its triangulation area;
+// used to verify correctness of triangulation
+earcut.deviation = function (data, holeIndices, dim, triangles) {
+    var hasHoles = holeIndices && holeIndices.length;
+    var outerLen = hasHoles ? holeIndices[0] * dim : data.length;
+
+    var polygonArea = Math.abs(signedArea(data, 0, outerLen, dim));
+    if (hasHoles) {
+        for (var i = 0, len = holeIndices.length; i < len; i++) {
+            var start = holeIndices[i] * dim;
+            var end = i < len - 1 ? holeIndices[i + 1] * dim : data.length;
+            polygonArea -= Math.abs(signedArea(data, start, end, dim));
+        }
+    }
+
+    var trianglesArea = 0;
+    for (i = 0; i < triangles.length; i += 3) {
+        var a = triangles[i] * dim;
+        var b = triangles[i + 1] * dim;
+        var c = triangles[i + 2] * dim;
+        trianglesArea += Math.abs(
+            (data[a] - data[c]) * (data[b + 1] - data[a + 1]) -
+            (data[a] - data[b]) * (data[c + 1] - data[a + 1]));
+    }
+
+    return polygonArea === 0 && trianglesArea === 0 ? 0 :
+        Math.abs((trianglesArea - polygonArea) / polygonArea);
+};
+
+function signedArea(data, start, end, dim) {
+    var sum = 0;
+    for (var i = start, j = end - dim; i < end; i += dim) {
+        sum += (data[j] - data[i]) * (data[i + 1] + data[j + 1]);
+        j = i;
+    }
+    return sum;
+}
+
+// turn a polygon in a multi-dimensional array form (e.g. as in GeoJSON) into a form Earcut accepts
+earcut.flatten = function (data) {
+    var dim = data[0][0].length,
+        result = {vertices: [], holes: [], dimensions: dim},
+        holeIndex = 0;
+
+    for (var i = 0; i < data.length; i++) {
+        for (var j = 0; j < data[i].length; j++) {
+            for (var d = 0; d < dim; d++) result.vertices.push(data[i][j][d]);
+        }
+        if (i > 0) {
+            holeIndex += data[i - 1].length;
+            result.holes.push(holeIndex);
+        }
+    }
+    return result;
+};
+
+},{}]},{},[1])(1)
+});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm5vZGVfbW9kdWxlcy9icm93c2VyaWZ5L25vZGVfbW9kdWxlcy9icm93c2VyLXBhY2svX3ByZWx1ZGUuanMiLCJzcmMvZWFyY3V0LmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0FDQUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBIiwiZmlsZSI6ImdlbmVyYXRlZC5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzQ29udGVudCI6WyIoZnVuY3Rpb24gZSh0LG4scil7ZnVuY3Rpb24gcyhvLHUpe2lmKCFuW29dKXtpZighdFtvXSl7dmFyIGE9dHlwZW9mIHJlcXVpcmU9PVwiZnVuY3Rpb25cIiYmcmVxdWlyZTtpZighdSYmYSlyZXR1cm4gYShvLCEwKTtpZihpKXJldHVybiBpKG8sITApO3ZhciBmPW5ldyBFcnJvcihcIkNhbm5vdCBmaW5kIG1vZHVsZSAnXCIrbytcIidcIik7dGhyb3cgZi5jb2RlPVwiTU9EVUxFX05PVF9GT1VORFwiLGZ9dmFyIGw9bltvXT17ZXhwb3J0czp7fX07dFtvXVswXS5jYWxsKGwuZXhwb3J0cyxmdW5jdGlvbihlKXt2YXIgbj10W29dWzFdW2VdO3JldHVybiBzKG4/bjplKX0sbCxsLmV4cG9ydHMsZSx0LG4scil9cmV0dXJuIG5bb10uZXhwb3J0c312YXIgaT10eXBlb2YgcmVxdWlyZT09XCJmdW5jdGlvblwiJiZyZXF1aXJlO2Zvcih2YXIgbz0wO288ci5sZW5ndGg7bysrKXMocltvXSk7cmV0dXJuIHN9KSIsIid1c2Ugc3RyaWN0JztcclxuXHJcbm1vZHVsZS5leHBvcnRzID0gZWFyY3V0O1xyXG5cclxuZnVuY3Rpb24gZWFyY3V0KGRhdGEsIGhvbGVJbmRpY2VzLCBkaW0pIHtcclxuXHJcbiAgICBkaW0gPSBkaW0gfHwgMjtcclxuXHJcbiAgICB2YXIgaGFzSG9sZXMgPSBob2xlSW5kaWNlcyAmJiBob2xlSW5kaWNlcy5sZW5ndGgsXHJcbiAgICAgICAgb3V0ZXJMZW4gPSBoYXNIb2xlcyA/IGhvbGVJbmRpY2VzWzBdICogZGltIDogZGF0YS5sZW5ndGgsXHJcbiAgICAgICAgb3V0ZXJOb2RlID0gbGlua2VkTGlzdChkYXRhLCAwLCBvdXRlckxlbiwgZGltLCB0cnVlKSxcclxuICAgICAgICB0cmlhbmdsZXMgPSBbXTtcclxuXHJcbiAgICBpZiAoIW91dGVyTm9kZSkgcmV0dXJuIHRyaWFuZ2xlcztcclxuXHJcbiAgICB2YXIgbWluWCwgbWluWSwgbWF4WCwgbWF4WSwgeCwgeSwgc2l6ZTtcclxuXHJcbiAgICBpZiAoaGFzSG9sZXMpIG91dGVyTm9kZSA9IGVsaW1pbmF0ZUhvbGVzKGRhdGEsIGhvbGVJbmRpY2VzLCBvdXRlck5vZGUsIGRpbSk7XHJcblxyXG4gICAgLy8gaWYgdGhlIHNoYXBlIGlzIG5vdCB0b28gc2ltcGxlLCB3ZSdsbCB1c2Ugei1vcmRlciBjdXJ2ZSBoYXNoIGxhdGVyOyBjYWxjdWxhdGUgcG9seWdvbiBiYm94XHJcbiAgICBpZiAoZGF0YS5sZW5ndGggPiA4MCAqIGRpbSkge1xyXG4gICAgICAgIG1pblggPSBtYXhYID0gZGF0YVswXTtcclxuICAgICAgICBtaW5ZID0gbWF4WSA9IGRhdGFbMV07XHJcblxyXG4gICAgICAgIGZvciAodmFyIGkgPSBkaW07IGkgPCBvdXRlckxlbjsgaSArPSBkaW0pIHtcclxuICAgICAgICAgICAgeCA9IGRhdGFbaV07XHJcbiAgICAgICAgICAgIHkgPSBkYXRhW2kgKyAxXTtcclxuICAgICAgICAgICAgaWYgKHggPCBtaW5YKSBtaW5YID0geDtcclxuICAgICAgICAgICAgaWYgKHkgPCBtaW5ZKSBtaW5ZID0geTtcclxuICAgICAgICAgICAgaWYgKHggPiBtYXhYKSBtYXhYID0geDtcclxuICAgICAgICAgICAgaWYgKHkgPiBtYXhZKSBtYXhZID0geTtcclxuICAgICAgICB9XHJcblxyXG4gICAgICAgIC8vIG1pblgsIG1pblkgYW5kIHNpemUgYXJlIGxhdGVyIHVzZWQgdG8gdHJhbnNmb3JtIGNvb3JkcyBpbnRvIGludGVnZXJzIGZvciB6LW9yZGVyIGNhbGN1bGF0aW9uXHJcbiAgICAgICAgc2l6ZSA9IE1hdGgubWF4KG1heFggLSBtaW5YLCBtYXhZIC0gbWluWSk7XHJcbiAgICB9XHJcblxyXG4gICAgZWFyY3V0TGlua2VkKG91dGVyTm9kZSwgdHJpYW5nbGVzLCBkaW0sIG1pblgsIG1pblksIHNpemUpO1xyXG5cclxuICAgIHJldHVybiB0cmlhbmdsZXM7XHJcbn1cclxuXHJcbi8vIGNyZWF0ZSBhIGNpcmN1bGFyIGRvdWJseSBsaW5rZWQgbGlzdCBmcm9tIHBvbHlnb24gcG9pbnRzIGluIHRoZSBzcGVjaWZpZWQgd2luZGluZyBvcmRlclxyXG5mdW5jdGlvbiBsaW5rZWRMaXN0KGRhdGEsIHN0YXJ0LCBlbmQsIGRpbSwgY2xvY2t3aXNlKSB7XHJcbiAgICB2YXIgaSwgbGFzdDtcclxuXHJcbiAgICBpZiAoY2xvY2t3aXNlID09PSAoc2lnbmVkQXJlYShkYXRhLCBzdGFydCwgZW5kLCBkaW0pID4gMCkpIHtcclxuICAgICAgICBmb3IgKGkgPSBzdGFydDsgaSA8IGVuZDsgaSArPSBkaW0pIGxhc3QgPSBpbnNlcnROb2RlKGksIGRhdGFbaV0sIGRhdGFbaSArIDFdLCBsYXN0KTtcclxuICAgIH0gZWxzZSB7XHJcbiAgICAgICAgZm9yIChpID0gZW5kIC0gZGltOyBpID49IHN0YXJ0OyBpIC09IGRpbSkgbGFzdCA9IGluc2VydE5vZGUoaSwgZGF0YVtpXSwgZGF0YVtpICsgMV0sIGxhc3QpO1xyXG4gICAgfVxyXG5cclxuICAgIGlmIChsYXN0ICYmIGVxdWFscyhsYXN0LCBsYXN0Lm5leHQpKSB7XHJcbiAgICAgICAgcmVtb3ZlTm9kZShsYXN0KTtcclxuICAgICAgICBsYXN0ID0gbGFzdC5uZXh0O1xyXG4gICAgfVxyXG5cclxuICAgIHJldHVybiBsYXN0O1xyXG59XHJcblxyXG4vLyBlbGltaW5hdGUgY29saW5lYXIgb3IgZHVwbGljYXRlIHBvaW50c1xyXG5mdW5jdGlvbiBmaWx0ZXJQb2ludHMoc3RhcnQsIGVuZCkge1xyXG4gICAgaWYgKCFzdGFydCkgcmV0dXJuIHN0YXJ0O1xyXG4gICAgaWYgKCFlbmQpIGVuZCA9IHN0YXJ0O1xyXG5cclxuICAgIHZhciBwID0gc3RhcnQsXHJcbiAgICAgICAgYWdhaW47XHJcbiAgICBkbyB7XHJcbiAgICAgICAgYWdhaW4gPSBmYWxzZTtcclxuXHJcbiAgICAgICAgaWYgKCFwLnN0ZWluZXIgJiYgKGVxdWFscyhwLCBwLm5leHQpIHx8IGFyZWEocC5wcmV2LCBwLCBwLm5leHQpID09PSAwKSkge1xyXG4gICAgICAgICAgICByZW1vdmVOb2RlKHApO1xyXG4gICAgICAgICAgICBwID0gZW5kID0gcC5wcmV2O1xyXG4gICAgICAgICAgICBpZiAocCA9PT0gcC5uZXh0KSByZXR1cm4gbnVsbDtcclxuICAgICAgICAgICAgYWdhaW4gPSB0cnVlO1xyXG5cclxuICAgICAgICB9IGVsc2Uge1xyXG4gICAgICAgICAgICBwID0gcC5uZXh0O1xyXG4gICAgICAgIH1cclxuICAgIH0gd2hpbGUgKGFnYWluIHx8IHAgIT09IGVuZCk7XHJcblxyXG4gICAgcmV0dXJuIGVuZDtcclxufVxyXG5cclxuLy8gbWFpbiBlYXIgc2xpY2luZyBsb29wIHdoaWNoIHRyaWFuZ3VsYXRlcyBhIHBvbHlnb24gKGdpdmVuIGFzIGEgbGlua2VkIGxpc3QpXHJcbmZ1bmN0aW9uIGVhcmN1dExpbmtlZChlYXIsIHRyaWFuZ2xlcywgZGltLCBtaW5YLCBtaW5ZLCBzaXplLCBwYXNzKSB7XHJcbiAgICBpZiAoIWVhcikgcmV0dXJuO1xyXG5cclxuICAgIC8vIGludGVybGluayBwb2x5Z29uIG5vZGVzIGluIHotb3JkZXJcclxuICAgIGlmICghcGFzcyAmJiBzaXplKSBpbmRleEN1cnZlKGVhciwgbWluWCwgbWluWSwgc2l6ZSk7XHJcblxyXG4gICAgdmFyIHN0b3AgPSBlYXIsXHJcbiAgICAgICAgcHJldiwgbmV4dDtcclxuXHJcbiAgICAvLyBpdGVyYXRlIHRocm91Z2ggZWFycywgc2xpY2luZyB0aGVtIG9uZSBieSBvbmVcclxuICAgIHdoaWxlIChlYXIucHJldiAhPT0gZWFyLm5leHQpIHtcclxuICAgICAgICBwcmV2ID0gZWFyLnByZXY7XHJcbiAgICAgICAgbmV4dCA9IGVhci5uZXh0O1xyXG5cclxuICAgICAgICBpZiAoc2l6ZSA/IGlzRWFySGFzaGVkKGVhciwgbWluWCwgbWluWSwgc2l6ZSkgOiBpc0VhcihlYXIpKSB7XHJcbiAgICAgICAgICAgIC8vIGN1dCBvZmYgdGhlIHRyaWFuZ2xlXHJcbiAgICAgICAgICAgIHRyaWFuZ2xlcy5wdXNoKHByZXYuaSAvIGRpbSk7XHJcbiAgICAgICAgICAgIHRyaWFuZ2xlcy5wdXNoKGVhci5pIC8gZGltKTtcclxuICAgICAgICAgICAgdHJpYW5nbGVzLnB1c2gobmV4dC5pIC8gZGltKTtcclxuXHJcbiAgICAgICAgICAgIHJlbW92ZU5vZGUoZWFyKTtcclxuXHJcbiAgICAgICAgICAgIC8vIHNraXBwaW5nIHRoZSBuZXh0IHZlcnRpY2UgbGVhZHMgdG8gbGVzcyBzbGl2ZXIgdHJpYW5nbGVzXHJcbiAgICAgICAgICAgIGVhciA9IG5leHQubmV4dDtcclxuICAgICAgICAgICAgc3RvcCA9IG5leHQubmV4dDtcclxuXHJcbiAgICAgICAgICAgIGNvbnRpbnVlO1xyXG4gICAgICAgIH1cclxuXHJcbiAgICAgICAgZWFyID0gbmV4dDtcclxuXHJcbiAgICAgICAgLy8gaWYgd2UgbG9vcGVkIHRocm91Z2ggdGhlIHdob2xlIHJlbWFpbmluZyBwb2x5Z29uIGFuZCBjYW4ndCBmaW5kIGFueSBtb3JlIGVhcnNcclxuICAgICAgICBpZiAoZWFyID09PSBzdG9wKSB7XHJcbiAgICAgICAgICAgIC8vIHRyeSBmaWx0ZXJpbmcgcG9pbnRzIGFuZCBzbGljaW5nIGFnYWluXHJcbiAgICAgICAgICAgIGlmICghcGFzcykge1xyXG4gICAgICAgICAgICAgICAgZWFyY3V0TGlua2VkKGZpbHRlclBvaW50cyhlYXIpLCB0cmlhbmdsZXMsIGRpbSwgbWluWCwgbWluWSwgc2l6ZSwgMSk7XHJcblxyXG4gICAgICAgICAgICAvLyBpZiB0aGlzIGRpZG4ndCB3b3JrLCB0cnkgY3VyaW5nIGFsbCBzbWFsbCBzZWxmLWludGVyc2VjdGlvbnMgbG9jYWxseVxyXG4gICAgICAgICAgICB9IGVsc2UgaWYgKHBhc3MgPT09IDEpIHtcclxuICAgICAgICAgICAgICAgIGVhciA9IGN1cmVMb2NhbEludGVyc2VjdGlvbnMoZWFyLCB0cmlhbmdsZXMsIGRpbSk7XHJcbiAgICAgICAgICAgICAgICBlYXJjdXRMaW5rZWQoZWFyLCB0cmlhbmdsZXMsIGRpbSwgbWluWCwgbWluWSwgc2l6ZSwgMik7XHJcblxyXG4gICAgICAgICAgICAvLyBhcyBhIGxhc3QgcmVzb3J0LCB0cnkgc3BsaXR0aW5nIHRoZSByZW1haW5pbmcgcG9seWdvbiBpbnRvIHR3b1xyXG4gICAgICAgICAgICB9IGVsc2UgaWYgKHBhc3MgPT09IDIpIHtcclxuICAgICAgICAgICAgICAgIHNwbGl0RWFyY3V0KGVhciwgdHJpYW5nbGVzLCBkaW0sIG1pblgsIG1pblksIHNpemUpO1xyXG4gICAgICAgICAgICB9XHJcblxyXG4gICAgICAgICAgICBicmVhaztcclxuICAgICAgICB9XHJcbiAgICB9XHJcbn1cclxuXHJcbi8vIGNoZWNrIHdoZXRoZXIgYSBwb2x5Z29uIG5vZGUgZm9ybXMgYSB2YWxpZCBlYXIgd2l0aCBhZGphY2VudCBub2Rlc1xyXG5mdW5jdGlvbiBpc0VhcihlYXIpIHtcclxuICAgIHZhciBhID0gZWFyLnByZXYsXHJcbiAgICAgICAgYiA9IGVhcixcclxuICAgICAgICBjID0gZWFyLm5leHQ7XHJcblxyXG4gICAgaWYgKGFyZWEoYSwgYiwgYykgPj0gMCkgcmV0dXJuIGZhbHNlOyAvLyByZWZsZXgsIGNhbid0IGJlIGFuIGVhclxyXG5cclxuICAgIC8vIG5vdyBtYWtlIHN1cmUgd2UgZG9uJ3QgaGF2ZSBvdGhlciBwb2ludHMgaW5zaWRlIHRoZSBwb3RlbnRpYWwgZWFyXHJcbiAgICB2YXIgcCA9IGVhci5uZXh0Lm5leHQ7XHJcblxyXG4gICAgd2hpbGUgKHAgIT09IGVhci5wcmV2KSB7XHJcbiAgICAgICAgaWYgKHBvaW50SW5UcmlhbmdsZShhLngsIGEueSwgYi54LCBiLnksIGMueCwgYy55LCBwLngsIHAueSkgJiZcclxuICAgICAgICAgICAgYXJlYShwLnByZXYsIHAsIHAubmV4dCkgPj0gMCkgcmV0dXJuIGZhbHNlO1xyXG4gICAgICAgIHAgPSBwLm5leHQ7XHJcbiAgICB9XHJcblxyXG4gICAgcmV0dXJuIHRydWU7XHJcbn1cclxuXHJcbmZ1bmN0aW9uIGlzRWFySGFzaGVkKGVhciwgbWluWCwgbWluWSwgc2l6ZSkge1xyXG4gICAgdmFyIGEgPSBlYXIucHJldixcclxuICAgICAgICBiID0gZWFyLFxyXG4gICAgICAgIGMgPSBlYXIubmV4dDtcclxuXHJcbiAgICBpZiAoYXJlYShhLCBiLCBjKSA+PSAwKSByZXR1cm4gZmFsc2U7IC8vIHJlZmxleCwgY2FuJ3QgYmUgYW4gZWFyXHJcblxyXG4gICAgLy8gdHJpYW5nbGUgYmJveDsgbWluICYgbWF4IGFyZSBjYWxjdWxhdGVkIGxpa2UgdGhpcyBmb3Igc3BlZWRcclxuICAgIHZhciBtaW5UWCA9IGEueCA8IGIueCA/IChhLnggPCBjLnggPyBhLnggOiBjLngpIDogKGIueCA8IGMueCA/IGIueCA6IGMueCksXHJcbiAgICAgICAgbWluVFkgPSBhLnkgPCBiLnkgPyAoYS55IDwgYy55ID8gYS55IDogYy55KSA6IChiLnkgPCBjLnkgPyBiLnkgOiBjLnkpLFxyXG4gICAgICAgIG1heFRYID0gYS54ID4gYi54ID8gKGEueCA+IGMueCA/IGEueCA6IGMueCkgOiAoYi54ID4gYy54ID8gYi54IDogYy54KSxcclxuICAgICAgICBtYXhUWSA9IGEueSA+IGIueSA/IChhLnkgPiBjLnkgPyBhLnkgOiBjLnkpIDogKGIueSA+IGMueSA/IGIueSA6IGMueSk7XHJcblxyXG4gICAgLy8gei1vcmRlciByYW5nZSBmb3IgdGhlIGN1cnJlbnQgdHJpYW5nbGUgYmJveDtcclxuICAgIHZhciBtaW5aID0gek9yZGVyKG1pblRYLCBtaW5UWSwgbWluWCwgbWluWSwgc2l6ZSksXHJcbiAgICAgICAgbWF4WiA9IHpPcmRlcihtYXhUWCwgbWF4VFksIG1pblgsIG1pblksIHNpemUpO1xyXG5cclxuICAgIC8vIGZpcnN0IGxvb2sgZm9yIHBvaW50cyBpbnNpZGUgdGhlIHRyaWFuZ2xlIGluIGluY3JlYXNpbmcgei1vcmRlclxyXG4gICAgdmFyIHAgPSBlYXIubmV4dFo7XHJcblxyXG4gICAgd2hpbGUgKHAgJiYgcC56IDw9IG1heFopIHtcclxuICAgICAgICBpZiAocCAhPT0gZWFyLnByZXYgJiYgcCAhPT0gZWFyLm5leHQgJiZcclxuICAgICAgICAgICAgcG9pbnRJblRyaWFuZ2xlKGEueCwgYS55LCBiLngsIGIueSwgYy54LCBjLnksIHAueCwgcC55KSAmJlxyXG4gICAgICAgICAgICBhcmVhKHAucHJldiwgcCwgcC5uZXh0KSA+PSAwKSByZXR1cm4gZmFsc2U7XHJcbiAgICAgICAgcCA9IHAubmV4dFo7XHJcbiAgICB9XHJcblxyXG4gICAgLy8gdGhlbiBsb29rIGZvciBwb2ludHMgaW4gZGVjcmVhc2luZyB6LW9yZGVyXHJcbiAgICBwID0gZWFyLnByZXZaO1xyXG5cclxuICAgIHdoaWxlIChwICYmIHAueiA+PSBtaW5aKSB7XHJcbiAgICAgICAgaWYgKHAgIT09IGVhci5wcmV2ICYmIHAgIT09IGVhci5uZXh0ICYmXHJcbiAgICAgICAgICAgIHBvaW50SW5UcmlhbmdsZShhLngsIGEueSwgYi54LCBiLnksIGMueCwgYy55LCBwLngsIHAueSkgJiZcclxuICAgICAgICAgICAgYXJlYShwLnByZXYsIHAsIHAubmV4dCkgPj0gMCkgcmV0dXJuIGZhbHNlO1xyXG4gICAgICAgIHAgPSBwLnByZXZaO1xyXG4gICAgfVxyXG5cclxuICAgIHJldHVybiB0cnVlO1xyXG59XHJcblxyXG4vLyBnbyB0aHJvdWdoIGFsbCBwb2x5Z29uIG5vZGVzIGFuZCBjdXJlIHNtYWxsIGxvY2FsIHNlbGYtaW50ZXJzZWN0aW9uc1xyXG5mdW5jdGlvbiBjdXJlTG9jYWxJbnRlcnNlY3Rpb25zKHN0YXJ0LCB0cmlhbmdsZXMsIGRpbSkge1xyXG4gICAgdmFyIHAgPSBzdGFydDtcclxuICAgIGRvIHtcclxuICAgICAgICB2YXIgYSA9IHAucHJldixcclxuICAgICAgICAgICAgYiA9IHAubmV4dC5uZXh0O1xyXG5cclxuICAgICAgICBpZiAoIWVxdWFscyhhLCBiKSAmJiBpbnRlcnNlY3RzKGEsIHAsIHAubmV4dCwgYikgJiYgbG9jYWxseUluc2lkZShhLCBiKSAmJiBsb2NhbGx5SW5zaWRlKGIsIGEpKSB7XHJcblxyXG4gICAgICAgICAgICB0cmlhbmdsZXMucHVzaChhLmkgLyBkaW0pO1xyXG4gICAgICAgICAgICB0cmlhbmdsZXMucHVzaChwLmkgLyBkaW0pO1xyXG4gICAgICAgICAgICB0cmlhbmdsZXMucHVzaChiLmkgLyBkaW0pO1xyXG5cclxuICAgICAgICAgICAgLy8gcmVtb3ZlIHR3byBub2RlcyBpbnZvbHZlZFxyXG4gICAgICAgICAgICByZW1vdmVOb2RlKHApO1xyXG4gICAgICAgICAgICByZW1vdmVOb2RlKHAubmV4dCk7XHJcblxyXG4gICAgICAgICAgICBwID0gc3RhcnQgPSBiO1xyXG4gICAgICAgIH1cclxuICAgICAgICBwID0gcC5uZXh0O1xyXG4gICAgfSB3aGlsZSAocCAhPT0gc3RhcnQpO1xyXG5cclxuICAgIHJldHVybiBwO1xyXG59XHJcblxyXG4vLyB0cnkgc3BsaXR0aW5nIHBvbHlnb24gaW50byB0d28gYW5kIHRyaWFuZ3VsYXRlIHRoZW0gaW5kZXBlbmRlbnRseVxyXG5mdW5jdGlvbiBzcGxpdEVhcmN1dChzdGFydCwgdHJpYW5nbGVzLCBkaW0sIG1pblgsIG1pblksIHNpemUpIHtcclxuICAgIC8vIGxvb2sgZm9yIGEgdmFsaWQgZGlhZ29uYWwgdGhhdCBkaXZpZGVzIHRoZSBwb2x5Z29uIGludG8gdHdvXHJcbiAgICB2YXIgYSA9IHN0YXJ0O1xyXG4gICAgZG8ge1xyXG4gICAgICAgIHZhciBiID0gYS5uZXh0Lm5leHQ7XHJcbiAgICAgICAgd2hpbGUgKGIgIT09IGEucHJldikge1xyXG4gICAgICAgICAgICBpZiAoYS5pICE9PSBiLmkgJiYgaXNWYWxpZERpYWdvbmFsKGEsIGIpKSB7XHJcbiAgICAgICAgICAgICAgICAvLyBzcGxpdCB0aGUgcG9seWdvbiBpbiB0d28gYnkgdGhlIGRpYWdvbmFsXHJcbiAgICAgICAgICAgICAgICB2YXIgYyA9IHNwbGl0UG9seWdvbihhLCBiKTtcclxuXHJcbiAgICAgICAgICAgICAgICAvLyBmaWx0ZXIgY29saW5lYXIgcG9pbnRzIGFyb3VuZCB0aGUgY3V0c1xyXG4gICAgICAgICAgICAgICAgYSA9IGZpbHRlclBvaW50cyhhLCBhLm5leHQpO1xyXG4gICAgICAgICAgICAgICAgYyA9IGZpbHRlclBvaW50cyhjLCBjLm5leHQpO1xyXG5cclxuICAgICAgICAgICAgICAgIC8vIHJ1biBlYXJjdXQgb24gZWFjaCBoYWxmXHJcbiAgICAgICAgICAgICAgICBlYXJjdXRMaW5rZWQoYSwgdHJpYW5nbGVzLCBkaW0sIG1pblgsIG1pblksIHNpemUpO1xyXG4gICAgICAgICAgICAgICAgZWFyY3V0TGlua2VkKGMsIHRyaWFuZ2xlcywgZGltLCBtaW5YLCBtaW5ZLCBzaXplKTtcclxuICAgICAgICAgICAgICAgIHJldHVybjtcclxuICAgICAgICAgICAgfVxyXG4gICAgICAgICAgICBiID0gYi5uZXh0O1xyXG4gICAgICAgIH1cclxuICAgICAgICBhID0gYS5uZXh0O1xyXG4gICAgfSB3aGlsZSAoYSAhPT0gc3RhcnQpO1xyXG59XHJcblxyXG4vLyBsaW5rIGV2ZXJ5IGhvbGUgaW50byB0aGUgb3V0ZXIgbG9vcCwgcHJvZHVjaW5nIGEgc2luZ2xlLXJpbmcgcG9seWdvbiB3aXRob3V0IGhvbGVzXHJcbmZ1bmN0aW9uIGVsaW1pbmF0ZUhvbGVzKGRhdGEsIGhvbGVJbmRpY2VzLCBvdXRlck5vZGUsIGRpbSkge1xyXG4gICAgdmFyIHF1ZXVlID0gW10sXHJcbiAgICAgICAgaSwgbGVuLCBzdGFydCwgZW5kLCBsaXN0O1xyXG5cclxuICAgIGZvciAoaSA9IDAsIGxlbiA9IGhvbGVJbmRpY2VzLmxlbmd0aDsgaSA8IGxlbjsgaSsrKSB7XHJcbiAgICAgICAgc3RhcnQgPSBob2xlSW5kaWNlc1tpXSAqIGRpbTtcclxuICAgICAgICBlbmQgPSBpIDwgbGVuIC0gMSA/IGhvbGVJbmRpY2VzW2kgKyAxXSAqIGRpbSA6IGRhdGEubGVuZ3RoO1xyXG4gICAgICAgIGxpc3QgPSBsaW5rZWRMaXN0KGRhdGEsIHN0YXJ0LCBlbmQsIGRpbSwgZmFsc2UpO1xyXG4gICAgICAgIGlmIChsaXN0ID09PSBsaXN0Lm5leHQpIGxpc3Quc3RlaW5lciA9IHRydWU7XHJcbiAgICAgICAgcXVldWUucHVzaChnZXRMZWZ0bW9zdChsaXN0KSk7XHJcbiAgICB9XHJcblxyXG4gICAgcXVldWUuc29ydChjb21wYXJlWCk7XHJcblxyXG4gICAgLy8gcHJvY2VzcyBob2xlcyBmcm9tIGxlZnQgdG8gcmlnaHRcclxuICAgIGZvciAoaSA9IDA7IGkgPCBxdWV1ZS5sZW5ndGg7IGkrKykge1xyXG4gICAgICAgIGVsaW1pbmF0ZUhvbGUocXVldWVbaV0sIG91dGVyTm9kZSk7XHJcbiAgICAgICAgb3V0ZXJOb2RlID0gZmlsdGVyUG9pbnRzKG91dGVyTm9kZSwgb3V0ZXJOb2RlLm5leHQpO1xyXG4gICAgfVxyXG5cclxuICAgIHJldHVybiBvdXRlck5vZGU7XHJcbn1cclxuXHJcbmZ1bmN0aW9uIGNvbXBhcmVYKGEsIGIpIHtcclxuICAgIHJldHVybiBhLnggLSBiLng7XHJcbn1cclxuXHJcbi8vIGZpbmQgYSBicmlkZ2UgYmV0d2VlbiB2ZXJ0aWNlcyB0aGF0IGNvbm5lY3RzIGhvbGUgd2l0aCBhbiBvdXRlciByaW5nIGFuZCBhbmQgbGluayBpdFxyXG5mdW5jdGlvbiBlbGltaW5hdGVIb2xlKGhvbGUsIG91dGVyTm9kZSkge1xyXG4gICAgb3V0ZXJOb2RlID0gZmluZEhvbGVCcmlkZ2UoaG9sZSwgb3V0ZXJOb2RlKTtcclxuICAgIGlmIChvdXRlck5vZGUpIHtcclxuICAgICAgICB2YXIgYiA9IHNwbGl0UG9seWdvbihvdXRlck5vZGUsIGhvbGUpO1xyXG4gICAgICAgIGZpbHRlclBvaW50cyhiLCBiLm5leHQpO1xyXG4gICAgfVxyXG59XHJcblxyXG4vLyBEYXZpZCBFYmVybHkncyBhbGdvcml0aG0gZm9yIGZpbmRpbmcgYSBicmlkZ2UgYmV0d2VlbiBob2xlIGFuZCBvdXRlciBwb2x5Z29uXHJcbmZ1bmN0aW9uIGZpbmRIb2xlQnJpZGdlKGhvbGUsIG91dGVyTm9kZSkge1xyXG4gICAgdmFyIHAgPSBvdXRlck5vZGUsXHJcbiAgICAgICAgaHggPSBob2xlLngsXHJcbiAgICAgICAgaHkgPSBob2xlLnksXHJcbiAgICAgICAgcXggPSAtSW5maW5pdHksXHJcbiAgICAgICAgbTtcclxuXHJcbiAgICAvLyBmaW5kIGEgc2VnbWVudCBpbnRlcnNlY3RlZCBieSBhIHJheSBmcm9tIHRoZSBob2xlJ3MgbGVmdG1vc3QgcG9pbnQgdG8gdGhlIGxlZnQ7XHJcbiAgICAvLyBzZWdtZW50J3MgZW5kcG9pbnQgd2l0aCBsZXNzZXIgeCB3aWxsIGJlIHBvdGVudGlhbCBjb25uZWN0aW9uIHBvaW50XHJcbiAgICBkbyB7XHJcbiAgICAgICAgaWYgKGh5IDw9IHAueSAmJiBoeSA+PSBwLm5leHQueSkge1xyXG4gICAgICAgICAgICB2YXIgeCA9IHAueCArIChoeSAtIHAueSkgKiAocC5uZXh0LnggLSBwLngpIC8gKHAubmV4dC55IC0gcC55KTtcclxuICAgICAgICAgICAgaWYgKHggPD0gaHggJiYgeCA+IHF4KSB7XHJcbiAgICAgICAgICAgICAgICBxeCA9IHg7XHJcbiAgICAgICAgICAgICAgICBpZiAoeCA9PT0gaHgpIHtcclxuICAgICAgICAgICAgICAgICAgICBpZiAoaHkgPT09IHAueSkgcmV0dXJuIHA7XHJcbiAgICAgICAgICAgICAgICAgICAgaWYgKGh5ID09PSBwLm5leHQueSkgcmV0dXJuIHAubmV4dDtcclxuICAgICAgICAgICAgICAgIH1cclxuICAgICAgICAgICAgICAgIG0gPSBwLnggPCBwLm5leHQueCA/IHAgOiBwLm5leHQ7XHJcbiAgICAgICAgICAgIH1cclxuICAgICAgICB9XHJcbiAgICAgICAgcCA9IHAubmV4dDtcclxuICAgIH0gd2hpbGUgKHAgIT09IG91dGVyTm9kZSk7XHJcblxyXG4gICAgaWYgKCFtKSByZXR1cm4gbnVsbDtcclxuXHJcbiAgICBpZiAoaHggPT09IHF4KSByZXR1cm4gbS5wcmV2OyAvLyBob2xlIHRvdWNoZXMgb3V0ZXIgc2VnbWVudDsgcGljayBsb3dlciBlbmRwb2ludFxyXG5cclxuICAgIC8vIGxvb2sgZm9yIHBvaW50cyBpbnNpZGUgdGhlIHRyaWFuZ2xlIG9mIGhvbGUgcG9pbnQsIHNlZ21lbnQgaW50ZXJzZWN0aW9uIGFuZCBlbmRwb2ludDtcclxuICAgIC8vIGlmIHRoZXJlIGFyZSBubyBwb2ludHMgZm91bmQsIHdlIGhhdmUgYSB2YWxpZCBjb25uZWN0aW9uO1xyXG4gICAgLy8gb3RoZXJ3aXNlIGNob29zZSB0aGUgcG9pbnQgb2YgdGhlIG1pbmltdW0gYW5nbGUgd2l0aCB0aGUgcmF5IGFzIGNvbm5lY3Rpb24gcG9pbnRcclxuXHJcbiAgICB2YXIgc3RvcCA9IG0sXHJcbiAgICAgICAgbXggPSBtLngsXHJcbiAgICAgICAgbXkgPSBtLnksXHJcbiAgICAgICAgdGFuTWluID0gSW5maW5pdHksXHJcbiAgICAgICAgdGFuO1xyXG5cclxuICAgIHAgPSBtLm5leHQ7XHJcblxyXG4gICAgd2hpbGUgKHAgIT09IHN0b3ApIHtcclxuICAgICAgICBpZiAoaHggPj0gcC54ICYmIHAueCA+PSBteCAmJlxyXG4gICAgICAgICAgICAgICAgcG9pbnRJblRyaWFuZ2xlKGh5IDwgbXkgPyBoeCA6IHF4LCBoeSwgbXgsIG15LCBoeSA8IG15ID8gcXggOiBoeCwgaHksIHAueCwgcC55KSkge1xyXG5cclxuICAgICAgICAgICAgdGFuID0gTWF0aC5hYnMoaHkgLSBwLnkpIC8gKGh4IC0gcC54KTsgLy8gdGFuZ2VudGlhbFxyXG5cclxuICAgICAgICAgICAgaWYgKCh0YW4gPCB0YW5NaW4gfHwgKHRhbiA9PT0gdGFuTWluICYmIHAueCA+IG0ueCkpICYmIGxvY2FsbHlJbnNpZGUocCwgaG9sZSkpIHtcclxuICAgICAgICAgICAgICAgIG0gPSBwO1xyXG4gICAgICAgICAgICAgICAgdGFuTWluID0gdGFuO1xyXG4gICAgICAgICAgICB9XHJcbiAgICAgICAgfVxyXG5cclxuICAgICAgICBwID0gcC5uZXh0O1xyXG4gICAgfVxyXG5cclxuICAgIHJldHVybiBtO1xyXG59XHJcblxyXG4vLyBpbnRlcmxpbmsgcG9seWdvbiBub2RlcyBpbiB6LW9yZGVyXHJcbmZ1bmN0aW9uIGluZGV4Q3VydmUoc3RhcnQsIG1pblgsIG1pblksIHNpemUpIHtcclxuICAgIHZhciBwID0gc3RhcnQ7XHJcbiAgICBkbyB7XHJcbiAgICAgICAgaWYgKHAueiA9PT0gbnVsbCkgcC56ID0gek9yZGVyKHAueCwgcC55LCBtaW5YLCBtaW5ZLCBzaXplKTtcclxuICAgICAgICBwLnByZXZaID0gcC5wcmV2O1xyXG4gICAgICAgIHAubmV4dFogPSBwLm5leHQ7XHJcbiAgICAgICAgcCA9IHAubmV4dDtcclxuICAgIH0gd2hpbGUgKHAgIT09IHN0YXJ0KTtcclxuXHJcbiAgICBwLnByZXZaLm5leHRaID0gbnVsbDtcclxuICAgIHAucHJldlogPSBudWxsO1xyXG5cclxuICAgIHNvcnRMaW5rZWQocCk7XHJcbn1cclxuXHJcbi8vIFNpbW9uIFRhdGhhbSdzIGxpbmtlZCBsaXN0IG1lcmdlIHNvcnQgYWxnb3JpdGhtXHJcbi8vIGh0dHA6Ly93d3cuY2hpYXJrLmdyZWVuZW5kLm9yZy51ay9+c2d0YXRoYW0vYWxnb3JpdGhtcy9saXN0c29ydC5odG1sXHJcbmZ1bmN0aW9uIHNvcnRMaW5rZWQobGlzdCkge1xyXG4gICAgdmFyIGksIHAsIHEsIGUsIHRhaWwsIG51bU1lcmdlcywgcFNpemUsIHFTaXplLFxyXG4gICAgICAgIGluU2l6ZSA9IDE7XHJcblxyXG4gICAgZG8ge1xyXG4gICAgICAgIHAgPSBsaXN0O1xyXG4gICAgICAgIGxpc3QgPSBudWxsO1xyXG4gICAgICAgIHRhaWwgPSBudWxsO1xyXG4gICAgICAgIG51bU1lcmdlcyA9IDA7XHJcblxyXG4gICAgICAgIHdoaWxlIChwKSB7XHJcbiAgICAgICAgICAgIG51bU1lcmdlcysrO1xyXG4gICAgICAgICAgICBxID0gcDtcclxuICAgICAgICAgICAgcFNpemUgPSAwO1xyXG4gICAgICAgICAgICBmb3IgKGkgPSAwOyBpIDwgaW5TaXplOyBpKyspIHtcclxuICAgICAgICAgICAgICAgIHBTaXplKys7XHJcbiAgICAgICAgICAgICAgICBxID0gcS5uZXh0WjtcclxuICAgICAgICAgICAgICAgIGlmICghcSkgYnJlYWs7XHJcbiAgICAgICAgICAgIH1cclxuXHJcbiAgICAgICAgICAgIHFTaXplID0gaW5TaXplO1xyXG5cclxuICAgICAgICAgICAgd2hpbGUgKHBTaXplID4gMCB8fCAocVNpemUgPiAwICYmIHEpKSB7XHJcblxyXG4gICAgICAgICAgICAgICAgaWYgKHBTaXplID09PSAwKSB7XHJcbiAgICAgICAgICAgICAgICAgICAgZSA9IHE7XHJcbiAgICAgICAgICAgICAgICAgICAgcSA9IHEubmV4dFo7XHJcbiAgICAgICAgICAgICAgICAgICAgcVNpemUtLTtcclxuICAgICAgICAgICAgICAgIH0gZWxzZSBpZiAocVNpemUgPT09IDAgfHwgIXEpIHtcclxuICAgICAgICAgICAgICAgICAgICBlID0gcDtcclxuICAgICAgICAgICAgICAgICAgICBwID0gcC5uZXh0WjtcclxuICAgICAgICAgICAgICAgICAgICBwU2l6ZS0tO1xyXG4gICAgICAgICAgICAgICAgfSBlbHNlIGlmIChwLnogPD0gcS56KSB7XHJcbiAgICAgICAgICAgICAgICAgICAgZSA9IHA7XHJcbiAgICAgICAgICAgICAgICAgICAgcCA9IHAubmV4dFo7XHJcbiAgICAgICAgICAgICAgICAgICAgcFNpemUtLTtcclxuICAgICAgICAgICAgICAgIH0gZWxzZSB7XHJcbiAgICAgICAgICAgICAgICAgICAgZSA9IHE7XHJcbiAgICAgICAgICAgICAgICAgICAgcSA9IHEubmV4dFo7XHJcbiAgICAgICAgICAgICAgICAgICAgcVNpemUtLTtcclxuICAgICAgICAgICAgICAgIH1cclxuXHJcbiAgICAgICAgICAgICAgICBpZiAodGFpbCkgdGFpbC5uZXh0WiA9IGU7XHJcbiAgICAgICAgICAgICAgICBlbHNlIGxpc3QgPSBlO1xyXG5cclxuICAgICAgICAgICAgICAgIGUucHJldlogPSB0YWlsO1xyXG4gICAgICAgICAgICAgICAgdGFpbCA9IGU7XHJcbiAgICAgICAgICAgIH1cclxuXHJcbiAgICAgICAgICAgIHAgPSBxO1xyXG4gICAgICAgIH1cclxuXHJcbiAgICAgICAgdGFpbC5uZXh0WiA9IG51bGw7XHJcbiAgICAgICAgaW5TaXplICo9IDI7XHJcblxyXG4gICAgfSB3aGlsZSAobnVtTWVyZ2VzID4gMSk7XHJcblxyXG4gICAgcmV0dXJuIGxpc3Q7XHJcbn1cclxuXHJcbi8vIHotb3JkZXIgb2YgYSBwb2ludCBnaXZlbiBjb29yZHMgYW5kIHNpemUgb2YgdGhlIGRhdGEgYm91bmRpbmcgYm94XHJcbmZ1bmN0aW9uIHpPcmRlcih4LCB5LCBtaW5YLCBtaW5ZLCBzaXplKSB7XHJcbiAgICAvLyBjb29yZHMgYXJlIHRyYW5zZm9ybWVkIGludG8gbm9uLW5lZ2F0aXZlIDE1LWJpdCBpbnRlZ2VyIHJhbmdlXHJcbiAgICB4ID0gMzI3NjcgKiAoeCAtIG1pblgpIC8gc2l6ZTtcclxuICAgIHkgPSAzMjc2NyAqICh5IC0gbWluWSkgLyBzaXplO1xyXG5cclxuICAgIHggPSAoeCB8ICh4IDw8IDgpKSAmIDB4MDBGRjAwRkY7XHJcbiAgICB4ID0gKHggfCAoeCA8PCA0KSkgJiAweDBGMEYwRjBGO1xyXG4gICAgeCA9ICh4IHwgKHggPDwgMikpICYgMHgzMzMzMzMzMztcclxuICAgIHggPSAoeCB8ICh4IDw8IDEpKSAmIDB4NTU1NTU1NTU7XHJcblxyXG4gICAgeSA9ICh5IHwgKHkgPDwgOCkpICYgMHgwMEZGMDBGRjtcclxuICAgIHkgPSAoeSB8ICh5IDw8IDQpKSAmIDB4MEYwRjBGMEY7XHJcbiAgICB5ID0gKHkgfCAoeSA8PCAyKSkgJiAweDMzMzMzMzMzO1xyXG4gICAgeSA9ICh5IHwgKHkgPDwgMSkpICYgMHg1NTU1NTU1NTtcclxuXHJcbiAgICByZXR1cm4geCB8ICh5IDw8IDEpO1xyXG59XHJcblxyXG4vLyBmaW5kIHRoZSBsZWZ0bW9zdCBub2RlIG9mIGEgcG9seWdvbiByaW5nXHJcbmZ1bmN0aW9uIGdldExlZnRtb3N0KHN0YXJ0KSB7XHJcbiAgICB2YXIgcCA9IHN0YXJ0LFxyXG4gICAgICAgIGxlZnRtb3N0ID0gc3RhcnQ7XHJcbiAgICBkbyB7XHJcbiAgICAgICAgaWYgKHAueCA8IGxlZnRtb3N0LngpIGxlZnRtb3N0ID0gcDtcclxuICAgICAgICBwID0gcC5uZXh0O1xyXG4gICAgfSB3aGlsZSAocCAhPT0gc3RhcnQpO1xyXG5cclxuICAgIHJldHVybiBsZWZ0bW9zdDtcclxufVxyXG5cclxuLy8gY2hlY2sgaWYgYSBwb2ludCBsaWVzIHdpdGhpbiBhIGNvbnZleCB0cmlhbmdsZVxyXG5mdW5jdGlvbiBwb2ludEluVHJpYW5nbGUoYXgsIGF5LCBieCwgYnksIGN4LCBjeSwgcHgsIHB5KSB7XHJcbiAgICByZXR1cm4gKGN4IC0gcHgpICogKGF5IC0gcHkpIC0gKGF4IC0gcHgpICogKGN5IC0gcHkpID49IDAgJiZcclxuICAgICAgICAgICAoYXggLSBweCkgKiAoYnkgLSBweSkgLSAoYnggLSBweCkgKiAoYXkgLSBweSkgPj0gMCAmJlxyXG4gICAgICAgICAgIChieCAtIHB4KSAqIChjeSAtIHB5KSAtIChjeCAtIHB4KSAqIChieSAtIHB5KSA+PSAwO1xyXG59XHJcblxyXG4vLyBjaGVjayBpZiBhIGRpYWdvbmFsIGJldHdlZW4gdHdvIHBvbHlnb24gbm9kZXMgaXMgdmFsaWQgKGxpZXMgaW4gcG9seWdvbiBpbnRlcmlvcilcclxuZnVuY3Rpb24gaXNWYWxpZERpYWdvbmFsKGEsIGIpIHtcclxuICAgIHJldHVybiBhLm5leHQuaSAhPT0gYi5pICYmIGEucHJldi5pICE9PSBiLmkgJiYgIWludGVyc2VjdHNQb2x5Z29uKGEsIGIpICYmXHJcbiAgICAgICAgICAgbG9jYWxseUluc2lkZShhLCBiKSAmJiBsb2NhbGx5SW5zaWRlKGIsIGEpICYmIG1pZGRsZUluc2lkZShhLCBiKTtcclxufVxyXG5cclxuLy8gc2lnbmVkIGFyZWEgb2YgYSB0cmlhbmdsZVxyXG5mdW5jdGlvbiBhcmVhKHAsIHEsIHIpIHtcclxuICAgIHJldHVybiAocS55IC0gcC55KSAqIChyLnggLSBxLngpIC0gKHEueCAtIHAueCkgKiAoci55IC0gcS55KTtcclxufVxyXG5cclxuLy8gY2hlY2sgaWYgdHdvIHBvaW50cyBhcmUgZXF1YWxcclxuZnVuY3Rpb24gZXF1YWxzKHAxLCBwMikge1xyXG4gICAgcmV0dXJuIHAxLnggPT09IHAyLnggJiYgcDEueSA9PT0gcDIueTtcclxufVxyXG5cclxuLy8gY2hlY2sgaWYgdHdvIHNlZ21lbnRzIGludGVyc2VjdFxyXG5mdW5jdGlvbiBpbnRlcnNlY3RzKHAxLCBxMSwgcDIsIHEyKSB7XHJcbiAgICBpZiAoKGVxdWFscyhwMSwgcTEpICYmIGVxdWFscyhwMiwgcTIpKSB8fFxyXG4gICAgICAgIChlcXVhbHMocDEsIHEyKSAmJiBlcXVhbHMocDIsIHExKSkpIHJldHVybiB0cnVlO1xyXG4gICAgcmV0dXJuIGFyZWEocDEsIHExLCBwMikgPiAwICE9PSBhcmVhKHAxLCBxMSwgcTIpID4gMCAmJlxyXG4gICAgICAgICAgIGFyZWEocDIsIHEyLCBwMSkgPiAwICE9PSBhcmVhKHAyLCBxMiwgcTEpID4gMDtcclxufVxyXG5cclxuLy8gY2hlY2sgaWYgYSBwb2x5Z29uIGRpYWdvbmFsIGludGVyc2VjdHMgYW55IHBvbHlnb24gc2VnbWVudHNcclxuZnVuY3Rpb24gaW50ZXJzZWN0c1BvbHlnb24oYSwgYikge1xyXG4gICAgdmFyIHAgPSBhO1xyXG4gICAgZG8ge1xyXG4gICAgICAgIGlmIChwLmkgIT09IGEuaSAmJiBwLm5leHQuaSAhPT0gYS5pICYmIHAuaSAhPT0gYi5pICYmIHAubmV4dC5pICE9PSBiLmkgJiZcclxuICAgICAgICAgICAgICAgIGludGVyc2VjdHMocCwgcC5uZXh0LCBhLCBiKSkgcmV0dXJuIHRydWU7XHJcbiAgICAgICAgcCA9IHAubmV4dDtcclxuICAgIH0gd2hpbGUgKHAgIT09IGEpO1xyXG5cclxuICAgIHJldHVybiBmYWxzZTtcclxufVxyXG5cclxuLy8gY2hlY2sgaWYgYSBwb2x5Z29uIGRpYWdvbmFsIGlzIGxvY2FsbHkgaW5zaWRlIHRoZSBwb2x5Z29uXHJcbmZ1bmN0aW9uIGxvY2FsbHlJbnNpZGUoYSwgYikge1xyXG4gICAgcmV0dXJuIGFyZWEoYS5wcmV2LCBhLCBhLm5leHQpIDwgMCA/XHJcbiAgICAgICAgYXJlYShhLCBiLCBhLm5leHQpID49IDAgJiYgYXJlYShhLCBhLnByZXYsIGIpID49IDAgOlxyXG4gICAgICAgIGFyZWEoYSwgYiwgYS5wcmV2KSA8IDAgfHwgYXJlYShhLCBhLm5leHQsIGIpIDwgMDtcclxufVxyXG5cclxuLy8gY2hlY2sgaWYgdGhlIG1pZGRsZSBwb2ludCBvZiBhIHBvbHlnb24gZGlhZ29uYWwgaXMgaW5zaWRlIHRoZSBwb2x5Z29uXHJcbmZ1bmN0aW9uIG1pZGRsZUluc2lkZShhLCBiKSB7XHJcbiAgICB2YXIgcCA9IGEsXHJcbiAgICAgICAgaW5zaWRlID0gZmFsc2UsXHJcbiAgICAgICAgcHggPSAoYS54ICsgYi54KSAvIDIsXHJcbiAgICAgICAgcHkgPSAoYS55ICsgYi55KSAvIDI7XHJcbiAgICBkbyB7XHJcbiAgICAgICAgaWYgKCgocC55ID4gcHkpICE9PSAocC5uZXh0LnkgPiBweSkpICYmIChweCA8IChwLm5leHQueCAtIHAueCkgKiAocHkgLSBwLnkpIC8gKHAubmV4dC55IC0gcC55KSArIHAueCkpXHJcbiAgICAgICAgICAgIGluc2lkZSA9ICFpbnNpZGU7XHJcbiAgICAgICAgcCA9IHAubmV4dDtcclxuICAgIH0gd2hpbGUgKHAgIT09IGEpO1xyXG5cclxuICAgIHJldHVybiBpbnNpZGU7XHJcbn1cclxuXHJcbi8vIGxpbmsgdHdvIHBvbHlnb24gdmVydGljZXMgd2l0aCBhIGJyaWRnZTsgaWYgdGhlIHZlcnRpY2VzIGJlbG9uZyB0byB0aGUgc2FtZSByaW5nLCBpdCBzcGxpdHMgcG9seWdvbiBpbnRvIHR3bztcclxuLy8gaWYgb25lIGJlbG9uZ3MgdG8gdGhlIG91dGVyIHJpbmcgYW5kIGFub3RoZXIgdG8gYSBob2xlLCBpdCBtZXJnZXMgaXQgaW50byBhIHNpbmdsZSByaW5nXHJcbmZ1bmN0aW9uIHNwbGl0UG9seWdvbihhLCBiKSB7XHJcbiAgICB2YXIgYTIgPSBuZXcgTm9kZShhLmksIGEueCwgYS55KSxcclxuICAgICAgICBiMiA9IG5ldyBOb2RlKGIuaSwgYi54LCBiLnkpLFxyXG4gICAgICAgIGFuID0gYS5uZXh0LFxyXG4gICAgICAgIGJwID0gYi5wcmV2O1xyXG5cclxuICAgIGEubmV4dCA9IGI7XHJcbiAgICBiLnByZXYgPSBhO1xyXG5cclxuICAgIGEyLm5leHQgPSBhbjtcclxuICAgIGFuLnByZXYgPSBhMjtcclxuXHJcbiAgICBiMi5uZXh0ID0gYTI7XHJcbiAgICBhMi5wcmV2ID0gYjI7XHJcblxyXG4gICAgYnAubmV4dCA9IGIyO1xyXG4gICAgYjIucHJldiA9IGJwO1xyXG5cclxuICAgIHJldHVybiBiMjtcclxufVxyXG5cclxuLy8gY3JlYXRlIGEgbm9kZSBhbmQgb3B0aW9uYWxseSBsaW5rIGl0IHdpdGggcHJldmlvdXMgb25lIChpbiBhIGNpcmN1bGFyIGRvdWJseSBsaW5rZWQgbGlzdClcclxuZnVuY3Rpb24gaW5zZXJ0Tm9kZShpLCB4LCB5LCBsYXN0KSB7XHJcbiAgICB2YXIgcCA9IG5ldyBOb2RlKGksIHgsIHkpO1xyXG5cclxuICAgIGlmICghbGFzdCkge1xyXG4gICAgICAgIHAucHJldiA9IHA7XHJcbiAgICAgICAgcC5uZXh0ID0gcDtcclxuXHJcbiAgICB9IGVsc2Uge1xyXG4gICAgICAgIHAubmV4dCA9IGxhc3QubmV4dDtcclxuICAgICAgICBwLnByZXYgPSBsYXN0O1xyXG4gICAgICAgIGxhc3QubmV4dC5wcmV2ID0gcDtcclxuICAgICAgICBsYXN0Lm5leHQgPSBwO1xyXG4gICAgfVxyXG4gICAgcmV0dXJuIHA7XHJcbn1cclxuXHJcbmZ1bmN0aW9uIHJlbW92ZU5vZGUocCkge1xyXG4gICAgcC5uZXh0LnByZXYgPSBwLnByZXY7XHJcbiAgICBwLnByZXYubmV4dCA9IHAubmV4dDtcclxuXHJcbiAgICBpZiAocC5wcmV2WikgcC5wcmV2Wi5uZXh0WiA9IHAubmV4dFo7XHJcbiAgICBpZiAocC5uZXh0WikgcC5uZXh0Wi5wcmV2WiA9IHAucHJldlo7XHJcbn1cclxuXHJcbmZ1bmN0aW9uIE5vZGUoaSwgeCwgeSkge1xyXG4gICAgLy8gdmVydGljZSBpbmRleCBpbiBjb29yZGluYXRlcyBhcnJheVxyXG4gICAgdGhpcy5pID0gaTtcclxuXHJcbiAgICAvLyB2ZXJ0ZXggY29vcmRpbmF0ZXNcclxuICAgIHRoaXMueCA9IHg7XHJcbiAgICB0aGlzLnkgPSB5O1xyXG5cclxuICAgIC8vIHByZXZpb3VzIGFuZCBuZXh0IHZlcnRpY2Ugbm9kZXMgaW4gYSBwb2x5Z29uIHJpbmdcclxuICAgIHRoaXMucHJldiA9IG51bGw7XHJcbiAgICB0aGlzLm5leHQgPSBudWxsO1xyXG5cclxuICAgIC8vIHotb3JkZXIgY3VydmUgdmFsdWVcclxuICAgIHRoaXMueiA9IG51bGw7XHJcblxyXG4gICAgLy8gcHJldmlvdXMgYW5kIG5leHQgbm9kZXMgaW4gei1vcmRlclxyXG4gICAgdGhpcy5wcmV2WiA9IG51bGw7XHJcbiAgICB0aGlzLm5leHRaID0gbnVsbDtcclxuXHJcbiAgICAvLyBpbmRpY2F0ZXMgd2hldGhlciB0aGlzIGlzIGEgc3RlaW5lciBwb2ludFxyXG4gICAgdGhpcy5zdGVpbmVyID0gZmFsc2U7XHJcbn1cclxuXHJcbi8vIHJldHVybiBhIHBlcmNlbnRhZ2UgZGlmZmVyZW5jZSBiZXR3ZWVuIHRoZSBwb2x5Z29uIGFyZWEgYW5kIGl0cyB0cmlhbmd1bGF0aW9uIGFyZWE7XHJcbi8vIHVzZWQgdG8gdmVyaWZ5IGNvcnJlY3RuZXNzIG9mIHRyaWFuZ3VsYXRpb25cclxuZWFyY3V0LmRldmlhdGlvbiA9IGZ1bmN0aW9uIChkYXRhLCBob2xlSW5kaWNlcywgZGltLCB0cmlhbmdsZXMpIHtcclxuICAgIHZhciBoYXNIb2xlcyA9IGhvbGVJbmRpY2VzICYmIGhvbGVJbmRpY2VzLmxlbmd0aDtcclxuICAgIHZhciBvdXRlckxlbiA9IGhhc0hvbGVzID8gaG9sZUluZGljZXNbMF0gKiBkaW0gOiBkYXRhLmxlbmd0aDtcclxuXHJcbiAgICB2YXIgcG9seWdvbkFyZWEgPSBNYXRoLmFicyhzaWduZWRBcmVhKGRhdGEsIDAsIG91dGVyTGVuLCBkaW0pKTtcclxuICAgIGlmIChoYXNIb2xlcykge1xyXG4gICAgICAgIGZvciAodmFyIGkgPSAwLCBsZW4gPSBob2xlSW5kaWNlcy5sZW5ndGg7IGkgPCBsZW47IGkrKykge1xyXG4gICAgICAgICAgICB2YXIgc3RhcnQgPSBob2xlSW5kaWNlc1tpXSAqIGRpbTtcclxuICAgICAgICAgICAgdmFyIGVuZCA9IGkgPCBsZW4gLSAxID8gaG9sZUluZGljZXNbaSArIDFdICogZGltIDogZGF0YS5sZW5ndGg7XHJcbiAgICAgICAgICAgIHBvbHlnb25BcmVhIC09IE1hdGguYWJzKHNpZ25lZEFyZWEoZGF0YSwgc3RhcnQsIGVuZCwgZGltKSk7XHJcbiAgICAgICAgfVxyXG4gICAgfVxyXG5cclxuICAgIHZhciB0cmlhbmdsZXNBcmVhID0gMDtcclxuICAgIGZvciAoaSA9IDA7IGkgPCB0cmlhbmdsZXMubGVuZ3RoOyBpICs9IDMpIHtcclxuICAgICAgICB2YXIgYSA9IHRyaWFuZ2xlc1tpXSAqIGRpbTtcclxuICAgICAgICB2YXIgYiA9IHRyaWFuZ2xlc1tpICsgMV0gKiBkaW07XHJcbiAgICAgICAgdmFyIGMgPSB0cmlhbmdsZXNbaSArIDJdICogZGltO1xyXG4gICAgICAgIHRyaWFuZ2xlc0FyZWEgKz0gTWF0aC5hYnMoXHJcbiAgICAgICAgICAgIChkYXRhW2FdIC0gZGF0YVtjXSkgKiAoZGF0YVtiICsgMV0gLSBkYXRhW2EgKyAxXSkgLVxyXG4gICAgICAgICAgICAoZGF0YVthXSAtIGRhdGFbYl0pICogKGRhdGFbYyArIDFdIC0gZGF0YVthICsgMV0pKTtcclxuICAgIH1cclxuXHJcbiAgICByZXR1cm4gcG9seWdvbkFyZWEgPT09IDAgJiYgdHJpYW5nbGVzQXJlYSA9PT0gMCA/IDAgOlxyXG4gICAgICAgIE1hdGguYWJzKCh0cmlhbmdsZXNBcmVhIC0gcG9seWdvbkFyZWEpIC8gcG9seWdvbkFyZWEpO1xyXG59O1xyXG5cclxuZnVuY3Rpb24gc2lnbmVkQXJlYShkYXRhLCBzdGFydCwgZW5kLCBkaW0pIHtcclxuICAgIHZhciBzdW0gPSAwO1xyXG4gICAgZm9yICh2YXIgaSA9IHN0YXJ0LCBqID0gZW5kIC0gZGltOyBpIDwgZW5kOyBpICs9IGRpbSkge1xyXG4gICAgICAgIHN1bSArPSAoZGF0YVtqXSAtIGRhdGFbaV0pICogKGRhdGFbaSArIDFdICsgZGF0YVtqICsgMV0pO1xyXG4gICAgICAgIGogPSBpO1xyXG4gICAgfVxyXG4gICAgcmV0dXJuIHN1bTtcclxufVxyXG5cclxuLy8gdHVybiBhIHBvbHlnb24gaW4gYSBtdWx0aS1kaW1lbnNpb25hbCBhcnJheSBmb3JtIChlLmcuIGFzIGluIEdlb0pTT04pIGludG8gYSBmb3JtIEVhcmN1dCBhY2NlcHRzXHJcbmVhcmN1dC5mbGF0dGVuID0gZnVuY3Rpb24gKGRhdGEpIHtcclxuICAgIHZhciBkaW0gPSBkYXRhWzBdWzBdLmxlbmd0aCxcclxuICAgICAgICByZXN1bHQgPSB7dmVydGljZXM6IFtdLCBob2xlczogW10sIGRpbWVuc2lvbnM6IGRpbX0sXHJcbiAgICAgICAgaG9sZUluZGV4ID0gMDtcclxuXHJcbiAgICBmb3IgKHZhciBpID0gMDsgaSA8IGRhdGEubGVuZ3RoOyBpKyspIHtcclxuICAgICAgICBmb3IgKHZhciBqID0gMDsgaiA8IGRhdGFbaV0ubGVuZ3RoOyBqKyspIHtcclxuICAgICAgICAgICAgZm9yICh2YXIgZCA9IDA7IGQgPCBkaW07IGQrKykgcmVzdWx0LnZlcnRpY2VzLnB1c2goZGF0YVtpXVtqXVtkXSk7XHJcbiAgICAgICAgfVxyXG4gICAgICAgIGlmIChpID4gMCkge1xyXG4gICAgICAgICAgICBob2xlSW5kZXggKz0gZGF0YVtpIC0gMV0ubGVuZ3RoO1xyXG4gICAgICAgICAgICByZXN1bHQuaG9sZXMucHVzaChob2xlSW5kZXgpO1xyXG4gICAgICAgIH1cclxuICAgIH1cclxuICAgIHJldHVybiByZXN1bHQ7XHJcbn07XHJcbiJdfQ==
+;
 /*global define*/
 define('Core/AxisAlignedBoundingBox',[
         './Cartesian3',
@@ -18753,7 +19964,7 @@ define('Core/AxisAlignedBoundingBox',[
         defined,
         DeveloperError,
         Intersect) {
-    "use strict";
+    'use strict';
 
     /**
      * Creates an instance of an AxisAlignedBoundingBox from the minimum and maximum points along the x, y, and z axes.
@@ -19728,7 +20939,7 @@ define('Core/binarySearch',[
     ], function(
         defined,
         DeveloperError) {
-    "use strict";
+    'use strict';
 
     /**
      * Finds an item in a sorted array.
@@ -19805,7 +21016,7 @@ define('Core/binarySearch',[
 
 /*global define*/
 define('Core/EarthOrientationParametersSample',[],function() {
-    "use strict";
+    'use strict';
 
     /**
      * A set of Earth Orientation Parameters (EOP) sampled at a time.
@@ -20179,7 +21390,7 @@ return sprintf;
 
 /*global define*/
 define('Core/GregorianDate',[],function() {
-    "use strict";
+    'use strict';
 
     /**
      * Represents a Gregorian date in a more precise format than the JavaScript Date object.
@@ -20240,7 +21451,7 @@ define('Core/isLeapYear',[
         './DeveloperError'
     ], function(
         DeveloperError) {
-    "use strict";
+    'use strict';
 
     /**
      * Determines if a given date is a leap year.
@@ -20266,7 +21477,7 @@ define('Core/isLeapYear',[
 
 /*global define*/
 define('Core/LeapSecond',[],function() {
-    "use strict";
+    'use strict';
 
     /**
      * Describes a single leap second, which is constructed from a {@link JulianDate} and a
@@ -20300,7 +21511,7 @@ define('Core/TimeConstants',[
         './freezeObject'
     ], function(
         freezeObject) {
-    "use strict";
+    'use strict';
 
     /**
      * Constants for time conversions like those done by {@link JulianDate}.
@@ -20393,7 +21604,7 @@ define('Core/TimeStandard',[
         './freezeObject'
     ], function(
         freezeObject) {
-    "use strict";
+    'use strict';
 
     /**
      * Provides the type of time standards which JulianDate can take as input.
@@ -20445,7 +21656,7 @@ define('Core/JulianDate',[
         LeapSecond,
         TimeConstants,
         TimeStandard) {
-    "use strict";
+    'use strict';
 
     var gregorianDateScratch = new GregorianDate();
     var daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -20594,8 +21805,8 @@ define('Core/JulianDate',[
      * @alias JulianDate
      * @constructor
      *
-     * @param {Number} julianDayNumber The Julian Day Number representing the number of whole days.  Fractional days will also be handled correctly.
-     * @param {Number} secondsOfDay The number of seconds into the current Julian Day Number.  Fractional seconds, negative seconds and seconds greater than a day will be handled correctly.
+     * @param {Number} [julianDayNumber=0.0] The Julian Day Number representing the number of whole days.  Fractional days will also be handled correctly.
+     * @param {Number} [secondsOfDay=0.0] The number of seconds into the current Julian Day Number.  Fractional seconds, negative seconds and seconds greater than a day will be handled correctly.
      * @param {TimeStandard} [timeStandard=TimeStandard.UTC] The time standard in which the first two parameters are defined.
      */
     function JulianDate(julianDayNumber, secondsOfDay, timeStandard) {
@@ -21418,7 +22629,7 @@ define('Core/clone',[
         './defaultValue'
     ], function(
         defaultValue) {
-    "use strict";
+    'use strict';
 
     /**
      * Clones an object, returning a new object containing the same properties.
@@ -21455,7 +22666,7 @@ define('Core/clone',[
 
 /*global define*/
 define('Core/parseResponseHeaders',[], function() {
-    "use strict";
+    'use strict';
 
     /**
      * Parses the result of XMLHttpRequest's getAllResponseHeaders() method into
@@ -21504,7 +22715,7 @@ define('Core/RequestErrorEvent',[
     ], function(
         defined,
         parseResponseHeaders) {
-    "use strict";
+    'use strict';
 
     /**
      * An event that is raised when a request encounters an error.
@@ -21579,7 +22790,7 @@ define('Core/loadWithXhr',[
         DeveloperError,
         RequestErrorEvent,
         RuntimeError) {
-    "use strict";
+    'use strict';
 
     /**
      * Asynchronously loads the given URL.  Returns a promise that will resolve to
@@ -21750,7 +22961,7 @@ define('Core/loadText',[
         './loadWithXhr'
     ], function(
         loadWithXhr) {
-    "use strict";
+    'use strict';
 
     /**
      * Asynchronously loads the given URL as text.  Returns a promise that will resolve to
@@ -21800,7 +23011,7 @@ define('Core/loadJson',[
         defined,
         DeveloperError,
         loadText) {
-    "use strict";
+    'use strict';
 
     var defaultHeaders = {
         Accept : 'application/json,*/*;q=0.01'
@@ -21883,7 +23094,7 @@ define('Core/EarthOrientationParameters',[
         RuntimeError,
         TimeConstants,
         TimeStandard) {
-    "use strict";
+    'use strict';
 
     /**
      * Specifies Earth polar motion coordinates and the difference between UT1 and UTC.
@@ -22528,7 +23739,7 @@ define('Core/getAbsoluteUri',[
         defaultValue,
         defined,
         DeveloperError) {
-    "use strict";
+    'use strict';
 
     /**
      * Given a relative Uri and a base Uri, returns the absolute Uri of the relative Uri.
@@ -22556,19 +23767,126 @@ define('Core/getAbsoluteUri',[
 });
 
 /*global define*/
+define('Core/joinUrls',[
+        '../ThirdParty/Uri',
+        './defaultValue',
+        './defined',
+        './DeveloperError'
+    ], function(
+        Uri,
+        defaultValue,
+        defined,
+        DeveloperError) {
+    'use strict';
+
+    /**
+     * Function for joining URLs in a manner that is aware of query strings and fragments.
+     * This is useful when the base URL has a query string that needs to be maintained
+     * (e.g. a presigned base URL).
+     * @param {String|Uri} first The base URL.
+     * @param {String|Uri} second The URL path to join to the base URL.  If this URL is absolute, it is returned unmodified.
+     * @param {Boolean} [appendSlash=true] The boolean determining whether there should be a forward slash between first and second.
+     * @private
+     */
+    function joinUrls(first, second, appendSlash) {
+                if (!defined(first)) {
+            throw new DeveloperError('first is required');
+        }
+        if (!defined(second)) {
+            throw new DeveloperError('second is required');
+        }
+        
+        appendSlash = defaultValue(appendSlash, true);
+
+        if (!(first instanceof Uri)) {
+            first = new Uri(first);
+        }
+
+        if (!(second instanceof Uri)) {
+            second = new Uri(second);
+        }
+
+        // Uri.isAbsolute returns false for a URL like '//foo.com'.  So if we have an authority but
+        // not a scheme, add a scheme matching the page's scheme.
+        if (defined(second.authority) && !defined(second.scheme)) {
+            if (typeof document !== 'undefined' && defined(document.location) && defined(document.location.href)) {
+                second.scheme = new Uri(document.location.href).scheme;
+            } else {
+                // Not in a browser?  Use the first URL's scheme instead.
+                second.scheme = first.scheme;
+            }
+        }
+
+        // If the second URL is absolute, use it for the scheme, authority, and path.
+        var baseUri = first;
+        if (second.isAbsolute()) {
+            baseUri = second;
+        }
+
+        var url = '';
+        if (defined(baseUri.scheme)) {
+            url += baseUri.scheme + ':';
+        }
+        if (defined(baseUri.authority)) {
+            url += '//' + baseUri.authority;
+
+            if (baseUri.path !== '' && baseUri.path !== '/') {
+                url = url.replace(/\/?$/, '/');
+                baseUri.path = baseUri.path.replace(/^\/?/g, '');
+            }
+        }
+
+        // Combine the paths (only if second is relative).
+        if (baseUri === first) {
+            if (appendSlash) {
+                url += first.path.replace(/\/?$/, '/') + second.path.replace(/^\/?/g, '');
+            } else {
+                url += first.path + second.path;
+            }
+        } else {
+            url += second.path;
+        }
+
+        // Combine the queries and fragments.
+        var hasFirstQuery = defined(first.query);
+        var hasSecondQuery = defined(second.query);
+        if (hasFirstQuery && hasSecondQuery) {
+            url += '?' + first.query + '&' + second.query;
+        } else if (hasFirstQuery && !hasSecondQuery) {
+            url += '?' + first.query;
+        } else if (!hasFirstQuery && hasSecondQuery) {
+            url += '?' + second.query;
+        }
+
+        var hasSecondFragment = defined(second.fragment);
+        if (defined(first.fragment) && !hasSecondFragment) {
+            url += '#' + first.fragment;
+        } else if (hasSecondFragment) {
+            url += '#' + second.fragment;
+        }
+
+        return url;
+    }
+
+    return joinUrls;
+});
+
+/*global define*/
 define('Core/buildModuleUrl',[
         '../ThirdParty/Uri',
         './defined',
         './DeveloperError',
         './getAbsoluteUri',
+        './joinUrls',
         'require'
     ], function(
         Uri,
         defined,
         DeveloperError,
         getAbsoluteUri,
+        joinUrls,
         require) {
-    "use strict";
+    'use strict';
     /*global CESIUM_BASE_URL*/
 
     var cesiumScriptRegex = /((?:.*\/)|^)cesium[\w-]*\.js(?:\W|$)/i;
@@ -22612,7 +23930,7 @@ define('Core/buildModuleUrl',[
     }
 
     function buildModuleUrlFromBaseUrl(moduleID) {
-        return new Uri(moduleID).resolve(getCesiumBaseUrl()).toString();
+        return joinUrls(getCesiumBaseUrl(), moduleID);
     }
 
     var implementation;
@@ -22663,7 +23981,7 @@ define('Core/buildModuleUrl',[
 
 /*global define*/
 define('Core/Iau2006XysSample',[],function() {
-    "use strict";
+    'use strict';
 
     /**
      * An IAU 2006 XYS value sampled at a particular time.
@@ -22719,7 +24037,7 @@ define('Core/Iau2006XysData',[
         JulianDate,
         loadJson,
         TimeStandard) {
-    "use strict";
+    'use strict';
 
     /**
      * A set of IAU2006 XYS data that is used to evaluate the transformation between the International
@@ -22985,7 +24303,7 @@ define('Core/Quaternion',[
         freezeObject,
         CesiumMath,
         Matrix3) {
-    "use strict";
+    'use strict';
 
     /**
      * A set of 4-dimensional coordinates used to represent rotation in 3-dimensional space.
@@ -24067,6 +25385,7 @@ define('Core/Transforms',[
         './Cartesian2',
         './Cartesian3',
         './Cartesian4',
+        './Cartographic',
         './defaultValue',
         './defined',
         './DeveloperError',
@@ -24086,6 +25405,7 @@ define('Core/Transforms',[
         Cartesian2,
         Cartesian3,
         Cartesian4,
+        Cartographic,
         defaultValue,
         defined,
         DeveloperError,
@@ -24100,7 +25420,7 @@ define('Core/Transforms',[
         Matrix4,
         Quaternion,
         TimeConstants) {
-    "use strict";
+    'use strict';
 
     /**
      * Contains functions for transforming positions to various reference frames.
@@ -24436,6 +25756,38 @@ define('Core/Transforms',[
         return Matrix4.multiply(result, hprMatrix, result);
     };
 
+    /**
+     * Computes a 4x4 transformation matrix from a reference frame with axes computed from the heading-pitch-roll angles
+     * centered at the provided origin to the provided ellipsoid's fixed reference frame. Heading is the rotation from the local north
+     * direction where a positive angle is increasing eastward. Pitch is the rotation from the local east-north plane. Positive pitch angles
+     * are above the plane. Negative pitch angles are below the plane. Roll is the first rotation applied about the local east axis.
+     *
+     * @param {Cartesian3} origin The center point of the local reference frame.
+     * @param {Number} heading The heading angle in radians.
+     * @param {Number} pitch The pitch angle in radians.
+     * @param {Number} roll The roll angle in radians.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
+     * @param {Matrix4} [result] The object onto which to store the result.
+     * @returns {Matrix4} The modified result parameter or a new Matrix4 instance if none was provided.
+     *
+     * @example
+     * // Get the transform from local heading-pitch-roll at cartographic (0.0, 0.0) to Earth's fixed frame.
+     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var heading = -Cesium.Math.PI_OVER_TWO;
+     * var pitch = Cesium.Math.PI_OVER_FOUR;
+     * var roll = 0.0;
+     * var transform = Cesium.Transforms.aircraftHeadingPitchRollToFixedFrame(center, heading, pitch, roll);
+     *
+     * @private
+     */
+    Transforms.aircraftHeadingPitchRollToFixedFrame = function(origin, heading, pitch, roll, ellipsoid, result) {
+        // checks for required parameters happen in the called functions
+        var hprQuaternion = Quaternion.fromHeadingPitchRoll(heading, pitch, roll, scratchHPRQuaternion);
+        var hprMatrix = Matrix4.fromTranslationQuaternionRotationScale(Cartesian3.ZERO, hprQuaternion, scratchScale, scratchHPRMatrix4);
+        result = Transforms.northEastDownToFixedFrame(origin, ellipsoid, result);
+        return Matrix4.multiply(result, hprMatrix, result);
+    };
+
     var scratchENUMatrix4 = new Matrix4();
     var scratchHPRMatrix3 = new Matrix3();
 
@@ -24464,6 +25816,37 @@ define('Core/Transforms',[
     Transforms.headingPitchRollQuaternion = function(origin, heading, pitch, roll, ellipsoid, result) {
         // checks for required parameters happen in the called functions
         var transform = Transforms.headingPitchRollToFixedFrame(origin, heading, pitch, roll, ellipsoid, scratchENUMatrix4);
+        var rotation = Matrix4.getRotation(transform, scratchHPRMatrix3);
+        return Quaternion.fromRotationMatrix(rotation, result);
+    };
+
+    /**
+     * Computes a quaternion from a reference frame with axes computed from the heading-pitch-roll angles
+     * centered at the provided origin. Heading is the rotation from the local north
+     * direction where a positive angle is increasing eastward. Pitch is the rotation from the local east-north plane. Positive pitch angles
+     * are above the plane. Negative pitch angles are below the plane. Roll is the first rotation applied about the local east axis.
+     *
+     * @param {Cartesian3} origin The center point of the local reference frame.
+     * @param {Number} heading The heading angle in radians.
+     * @param {Number} pitch The pitch angle in radians.
+     * @param {Number} roll The roll angle in radians.
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid whose fixed frame is used in the transformation.
+     * @param {Quaternion} [result] The object onto which to store the result.
+     * @returns {Quaternion} The modified result parameter or a new Quaternion instance if none was provided.
+     *
+     * @example
+     * // Get the quaternion from local heading-pitch-roll at cartographic (0.0, 0.0) to Earth's fixed frame.
+     * var center = Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+     * var heading = -Cesium.Math.PI_OVER_TWO;
+     * var pitch = Cesium.Math.PI_OVER_FOUR;
+     * var roll = 0.0;
+     * var quaternion = Cesium.Transforms.aircraftHeadingPitchRollQuaternion(center, heading, pitch, roll);
+     *
+     * @private
+     */
+    Transforms.aircraftHeadingPitchRollQuaternion = function(origin, heading, pitch, roll, ellipsoid, result) {
+        // checks for required parameters happen in the called functions
+        var transform = Transforms.aircraftHeadingPitchRollToFixedFrame(origin, heading, pitch, roll, ellipsoid, scratchENUMatrix4);
         var rotation = Matrix4.getRotation(transform, scratchHPRMatrix3);
         return Quaternion.fromRotationMatrix(rotation, result);
     };
@@ -24867,6 +26250,79 @@ define('Core/Transforms',[
         return result;
     };
 
+    var scratchCartographic = new Cartographic();
+    var scratchCartesian3Projection = new Cartesian3();
+    var scratchCartesian3 = new Cartesian3();
+    var scratchCartesian4Origin = new Cartesian4();
+    var scratchCartesian4NewOrigin = new Cartesian4();
+    var scratchCartesian4NewXAxis = new Cartesian4();
+    var scratchCartesian4NewYAxis = new Cartesian4();
+    var scratchCartesian4NewZAxis = new Cartesian4();
+    var scratchFromENU = new Matrix4();
+    var scratchToENU = new Matrix4();
+
+    /**
+     * @private
+     */
+    Transforms.basisTo2D = function(projection, matrix, result) {
+                if (!defined(projection)) {
+            throw new DeveloperError('projection is required.');
+        }
+        if (!defined(matrix)) {
+            throw new DeveloperError('matrix is required.');
+        }
+        if (!defined(result)) {
+            throw new DeveloperError('result is required.');
+        }
+        
+        var ellipsoid = projection.ellipsoid;
+
+        var origin = Matrix4.getColumn(matrix, 3, scratchCartesian4Origin);
+        var cartographic = ellipsoid.cartesianToCartographic(origin, scratchCartographic);
+
+        var fromENU = Transforms.eastNorthUpToFixedFrame(origin, ellipsoid, scratchFromENU);
+        var toENU = Matrix4.inverseTransformation(fromENU, scratchToENU);
+
+        var projectedPosition = projection.project(cartographic, scratchCartesian3Projection);
+        var newOrigin = scratchCartesian4NewOrigin;
+        newOrigin.x = projectedPosition.z;
+        newOrigin.y = projectedPosition.x;
+        newOrigin.z = projectedPosition.y;
+        newOrigin.w = 1.0;
+
+        var xAxis = Matrix4.getColumn(matrix, 0, scratchCartesian3);
+        var xScale = Cartesian3.magnitude(xAxis);
+        var newXAxis = Matrix4.multiplyByVector(toENU, xAxis, scratchCartesian4NewXAxis);
+        Cartesian4.fromElements(newXAxis.z, newXAxis.x, newXAxis.y, 0.0, newXAxis);
+
+        var yAxis = Matrix4.getColumn(matrix, 1, scratchCartesian3);
+        var yScale = Cartesian3.magnitude(yAxis);
+        var newYAxis = Matrix4.multiplyByVector(toENU, yAxis, scratchCartesian4NewYAxis);
+        Cartesian4.fromElements(newYAxis.z, newYAxis.x, newYAxis.y, 0.0, newYAxis);
+
+        var zAxis = Matrix4.getColumn(matrix, 2, scratchCartesian3);
+        var zScale = Cartesian3.magnitude(zAxis);
+
+        var newZAxis = scratchCartesian4NewZAxis;
+        Cartesian3.cross(newXAxis, newYAxis, newZAxis);
+        Cartesian3.normalize(newZAxis, newZAxis);
+        Cartesian3.cross(newYAxis, newZAxis, newXAxis);
+        Cartesian3.normalize(newXAxis, newXAxis);
+        Cartesian3.cross(newZAxis, newXAxis, newYAxis);
+        Cartesian3.normalize(newYAxis, newYAxis);
+
+        Cartesian3.multiplyByScalar(newXAxis, xScale, newXAxis);
+        Cartesian3.multiplyByScalar(newYAxis, yScale, newYAxis);
+        Cartesian3.multiplyByScalar(newZAxis, zScale, newZAxis);
+
+        Matrix4.setColumn(result, 0, newXAxis, result);
+        Matrix4.setColumn(result, 1, newYAxis, result);
+        Matrix4.setColumn(result, 2, newZAxis, result);
+        Matrix4.setColumn(result, 3, newOrigin, result);
+
+        return result;
+    };
+
     return Transforms;
 });
 
@@ -24903,7 +26359,7 @@ define('Core/EllipsoidTangentPlane',[
         Plane,
         Ray,
         Transforms) {
-    "use strict";
+    'use strict';
 
     var scratchCart4 = new Cartesian4();
     /**
@@ -25213,7 +26669,7 @@ define('Core/pointInsideTriangle',[
     ], function(
         barycentricCoordinates,
         Cartesian3) {
-    "use strict";
+    'use strict';
 
     var coords = new Cartesian3();
 
@@ -25245,6 +26701,479 @@ define('Core/pointInsideTriangle',[
 });
 
 /*global define*/
+define('Core/Queue',[
+        '../Core/defineProperties'
+    ], function(
+        defineProperties) {
+    'use strict';
+
+    /**
+     * A queue that can enqueue items at the end, and dequeue items from the front.
+     *
+     * @alias Queue
+     * @constructor
+     */
+    function Queue() {
+        this._array = [];
+        this._offset = 0;
+        this._length = 0;
+    }
+
+    defineProperties(Queue.prototype, {
+        /**
+         * The length of the queue.
+         *
+         * @memberof Queue.prototype
+         *
+         * @type {Number}
+         * @readonly
+         */
+        length : {
+            get : function() {
+                return this._length;
+            }
+        }
+    });
+
+    /**
+     * Enqueues the specified item.
+     *
+     * @param {Object} item The item to enqueue.
+     */
+    Queue.prototype.enqueue = function(item) {
+        this._array.push(item);
+        this._length++;
+    };
+
+    /**
+     * Dequeues an item.  Returns undefined if the queue is empty.
+     *
+     * @returns {Object} The the dequeued item.
+     */
+    Queue.prototype.dequeue = function() {
+        if (this._length === 0) {
+            return undefined;
+        }
+
+        var array = this._array;
+        var offset = this._offset;
+        var item = array[offset];
+        array[offset] = undefined;
+
+        offset++;
+        if ((offset > 10) && (offset * 2 > array.length)) {
+            //compact array
+            this._array = array.slice(offset);
+            offset = 0;
+        }
+
+        this._offset = offset;
+        this._length--;
+
+        return item;
+    };
+
+    /**
+     * Returns the item at the front of the queue.  Returns undefined if the queue is empty.
+     *
+     * @returns {Object} The item at the front of the queue.
+     */
+    Queue.prototype.peek = function() {
+        if (this._length === 0) {
+            return undefined;
+        }
+
+        return this._array[this._offset];
+    };
+
+    /**
+     * Check whether this queue contains the specified item.
+     *
+     * @param {Object} item The item to search for.
+     */
+    Queue.prototype.contains = function(item) {
+        return this._array.indexOf(item) !== -1;
+    };
+
+    /**
+     * Remove all items from the queue.
+     */
+    Queue.prototype.clear = function() {
+        this._array.length = this._offset = this._length = 0;
+    };
+
+    /**
+     * Sort the items in the queue in-place.
+     *
+     * @param {Queue~Comparator} compareFunction A function that defines the sort order.
+     */
+    Queue.prototype.sort = function(compareFunction) {
+        if (this._offset > 0) {
+            //compact array
+            this._array = this._array.slice(this._offset);
+            this._offset = 0;
+        }
+
+        this._array.sort(compareFunction);
+    };
+
+    /**
+     * A function used to compare two items while sorting a queue.
+     * @callback Queue~Comparator
+     *
+     * @param {Object} a An item in the array.
+     * @param {Object} b An item in the array.
+     * @returns {Number} Returns a negative value if <code>a</code> is less than <code>b</code>,
+     *          a positive value if <code>a</code> is greater than <code>b</code>, or
+     *          0 if <code>a</code> is equal to <code>b</code>.
+     *
+     * @example
+     * function compareNumbers(a, b) {
+     *     return a - b;
+     * }
+     */
+
+    return Queue;
+});
+
+/*global define*/
+define('Core/WindingOrder',[
+        '../Renderer/WebGLConstants',
+        './freezeObject'
+    ], function(
+        WebGLConstants,
+        freezeObject) {
+    'use strict';
+
+    /**
+     * Winding order defines the order of vertices for a triangle to be considered front-facing.
+     *
+     * @exports WindingOrder
+     */
+    var WindingOrder = {
+        /**
+         * Vertices are in clockwise order.
+         *
+         * @type {Number}
+         * @constant
+         */
+        CLOCKWISE : WebGLConstants.CW,
+
+        /**
+         * Vertices are in counter-clockwise order.
+         *
+         * @type {Number}
+         * @constant
+         */
+        COUNTER_CLOCKWISE : WebGLConstants.CCW,
+
+        /**
+         * @private
+         */
+        validate : function(windingOrder) {
+            return windingOrder === WindingOrder.CLOCKWISE ||
+                   windingOrder === WindingOrder.COUNTER_CLOCKWISE;
+        }
+    };
+
+    return freezeObject(WindingOrder);
+});
+/*global define*/
+define('Core/PolygonPipeline',[
+        '../ThirdParty/earcut-2.1.1',
+        './Cartesian2',
+        './Cartesian3',
+        './ComponentDatatype',
+        './defaultValue',
+        './defined',
+        './DeveloperError',
+        './Ellipsoid',
+        './EllipsoidTangentPlane',
+        './Geometry',
+        './GeometryAttribute',
+        './Math',
+        './pointInsideTriangle',
+        './PrimitiveType',
+        './Queue',
+        './WindingOrder'
+    ], function(
+        earcut,
+        Cartesian2,
+        Cartesian3,
+        ComponentDatatype,
+        defaultValue,
+        defined,
+        DeveloperError,
+        Ellipsoid,
+        EllipsoidTangentPlane,
+        Geometry,
+        GeometryAttribute,
+        CesiumMath,
+        pointInsideTriangle,
+        PrimitiveType,
+        Queue,
+        WindingOrder) {
+    'use strict';
+
+    var scaleToGeodeticHeightN = new Cartesian3();
+    var scaleToGeodeticHeightP = new Cartesian3();
+
+    /**
+     * @private
+     */
+    var PolygonPipeline = {};
+
+    /**
+     * @exception {DeveloperError} At least three positions are required.
+     */
+    PolygonPipeline.computeArea2D = function(positions) {
+                if (!defined(positions)) {
+            throw new DeveloperError('positions is required.');
+        }
+        if (positions.length < 3) {
+            throw new DeveloperError('At least three positions are required.');
+        }
+        
+        var length = positions.length;
+        var area = 0.0;
+
+        for ( var i0 = length - 1, i1 = 0; i1 < length; i0 = i1++) {
+            var v0 = positions[i0];
+            var v1 = positions[i1];
+
+            area += (v0.x * v1.y) - (v1.x * v0.y);
+        }
+
+        return area * 0.5;
+    };
+
+    /**
+     * @returns {WindingOrder} The winding order.
+     *
+     * @exception {DeveloperError} At least three positions are required.
+     */
+    PolygonPipeline.computeWindingOrder2D = function(positions) {
+        var area = PolygonPipeline.computeArea2D(positions);
+        return (area > 0.0) ? WindingOrder.COUNTER_CLOCKWISE : WindingOrder.CLOCKWISE;
+    };
+
+    /**
+     * Triangulate a polygon.
+     *
+     * @param {Cartesian2[]} positions Cartesian2 array containing the vertices of the polygon
+     * @param {Number[]} [holes] An array of the staring indices of the holes.
+     * @returns {Number[]} Index array representing triangles that fill the polygon
+     */
+    PolygonPipeline.triangulate = function(positions, holes) {
+                if (!defined(positions)) {
+            throw new DeveloperError('positions is required.');
+        }
+        
+        var flattenedPositions = Cartesian2.packArray(positions);
+        return earcut(flattenedPositions, holes, 2);
+    };
+
+    var subdivisionV0Scratch = new Cartesian3();
+    var subdivisionV1Scratch = new Cartesian3();
+    var subdivisionV2Scratch = new Cartesian3();
+    var subdivisionS0Scratch = new Cartesian3();
+    var subdivisionS1Scratch = new Cartesian3();
+    var subdivisionS2Scratch = new Cartesian3();
+    var subdivisionMidScratch = new Cartesian3();
+
+    /**
+     * Subdivides positions and raises points to the surface of the ellipsoid.
+     *
+     * @param {Ellipsoid} ellipsoid The ellipsoid the polygon in on.
+     * @param {Cartesian3[]} positions An array of {@link Cartesian3} positions of the polygon.
+     * @param {Number[]} indices An array of indices that determines the triangles in the polygon.
+     * @param {Number} [granularity=CesiumMath.RADIANS_PER_DEGREE] The distance, in radians, between each latitude and longitude. Determines the number of positions in the buffer.
+     *
+     * @exception {DeveloperError} At least three indices are required.
+     * @exception {DeveloperError} The number of indices must be divisable by three.
+     * @exception {DeveloperError} Granularity must be greater than zero.
+     */
+    PolygonPipeline.computeSubdivision = function(ellipsoid, positions, indices, granularity) {
+        granularity = defaultValue(granularity, CesiumMath.RADIANS_PER_DEGREE);
+
+                if (!defined(ellipsoid)) {
+            throw new DeveloperError('ellipsoid is required.');
+        }
+        if (!defined(positions)) {
+            throw new DeveloperError('positions is required.');
+        }
+        if (!defined(indices)) {
+            throw new DeveloperError('indices is required.');
+        }
+        if (indices.length < 3) {
+            throw new DeveloperError('At least three indices are required.');
+        }
+        if (indices.length % 3 !== 0) {
+            throw new DeveloperError('The number of indices must be divisable by three.');
+        }
+        if (granularity <= 0.0) {
+            throw new DeveloperError('granularity must be greater than zero.');
+        }
+        
+        // triangles that need (or might need) to be subdivided.
+        var triangles = indices.slice(0);
+
+        // New positions due to edge splits are appended to the positions list.
+        var i;
+        var length = positions.length;
+        var subdividedPositions = new Array(length * 3);
+        var q = 0;
+        for (i = 0; i < length; i++) {
+            var item = positions[i];
+            subdividedPositions[q++] = item.x;
+            subdividedPositions[q++] = item.y;
+            subdividedPositions[q++] = item.z;
+        }
+
+        var subdividedIndices = [];
+
+        // Used to make sure shared edges are not split more than once.
+        var edges = {};
+
+        var radius = ellipsoid.maximumRadius;
+        var minDistance = CesiumMath.chordLength(granularity, radius);
+        var minDistanceSqrd = minDistance * minDistance;
+
+        while (triangles.length > 0) {
+            var i2 = triangles.pop();
+            var i1 = triangles.pop();
+            var i0 = triangles.pop();
+
+            var v0 = Cartesian3.fromArray(subdividedPositions, i0 * 3, subdivisionV0Scratch);
+            var v1 = Cartesian3.fromArray(subdividedPositions, i1 * 3, subdivisionV1Scratch);
+            var v2 = Cartesian3.fromArray(subdividedPositions, i2 * 3, subdivisionV2Scratch);
+
+            var s0 = Cartesian3.multiplyByScalar(Cartesian3.normalize(v0, subdivisionS0Scratch), radius, subdivisionS0Scratch);
+            var s1 = Cartesian3.multiplyByScalar(Cartesian3.normalize(v1, subdivisionS1Scratch), radius, subdivisionS1Scratch);
+            var s2 = Cartesian3.multiplyByScalar(Cartesian3.normalize(v2, subdivisionS2Scratch), radius, subdivisionS2Scratch);
+
+            var g0 = Cartesian3.magnitudeSquared(Cartesian3.subtract(s0, s1, subdivisionMidScratch));
+            var g1 = Cartesian3.magnitudeSquared(Cartesian3.subtract(s1, s2, subdivisionMidScratch));
+            var g2 = Cartesian3.magnitudeSquared(Cartesian3.subtract(s2, s0, subdivisionMidScratch));
+
+            var max = Math.max(g0, g1, g2);
+            var edge;
+            var mid;
+
+            // if the max length squared of a triangle edge is greater than the chord length of squared
+            // of the granularity, subdivide the triangle
+            if (max > minDistanceSqrd) {
+                if (g0 === max) {
+                    edge = Math.min(i0, i1) + ' ' + Math.max(i0, i1);
+
+                    i = edges[edge];
+                    if (!defined(i)) {
+                        mid = Cartesian3.add(v0, v1, subdivisionMidScratch);
+                        Cartesian3.multiplyByScalar(mid, 0.5, mid);
+                        subdividedPositions.push(mid.x, mid.y, mid.z);
+                        i = subdividedPositions.length / 3 - 1;
+                        edges[edge] = i;
+                    }
+
+                    triangles.push(i0, i, i2);
+                    triangles.push(i, i1, i2);
+                } else if (g1 === max) {
+                    edge = Math.min(i1, i2) + ' ' + Math.max(i1, i2);
+
+                    i = edges[edge];
+                    if (!defined(i)) {
+                        mid = Cartesian3.add(v1, v2, subdivisionMidScratch);
+                        Cartesian3.multiplyByScalar(mid, 0.5, mid);
+                        subdividedPositions.push(mid.x, mid.y, mid.z);
+                        i = subdividedPositions.length / 3 - 1;
+                        edges[edge] = i;
+                    }
+
+                    triangles.push(i1, i, i0);
+                    triangles.push(i, i2, i0);
+                } else if (g2 === max) {
+                    edge = Math.min(i2, i0) + ' ' + Math.max(i2, i0);
+
+                    i = edges[edge];
+                    if (!defined(i)) {
+                        mid = Cartesian3.add(v2, v0, subdivisionMidScratch);
+                        Cartesian3.multiplyByScalar(mid, 0.5, mid);
+                        subdividedPositions.push(mid.x, mid.y, mid.z);
+                        i = subdividedPositions.length / 3 - 1;
+                        edges[edge] = i;
+                    }
+
+                    triangles.push(i2, i, i1);
+                    triangles.push(i, i0, i1);
+                }
+            } else {
+                subdividedIndices.push(i0);
+                subdividedIndices.push(i1);
+                subdividedIndices.push(i2);
+            }
+        }
+
+        return new Geometry({
+            attributes : {
+                position : new GeometryAttribute({
+                    componentDatatype : ComponentDatatype.DOUBLE,
+                    componentsPerAttribute : 3,
+                    values : subdividedPositions
+                })
+            },
+            indices : subdividedIndices,
+            primitiveType : PrimitiveType.TRIANGLES
+        });
+    };
+
+    /**
+     * Scales each position of a geometry's position attribute to a height, in place.
+     *
+     * @param {Number[]} positions The array of numbers representing the positions to be scaled
+     * @param {Number} [height=0.0] The desired height to add to the positions
+     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid on which the positions lie.
+     * @param {Boolean} [scaleToSurface=true] <code>true</code> if the positions need to be scaled to the surface before the height is added.
+     * @returns {Number[]} The input array of positions, scaled to height
+     */
+    PolygonPipeline.scaleToGeodeticHeight = function(positions, height, ellipsoid, scaleToSurface) {
+        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
+
+        var n = scaleToGeodeticHeightN;
+        var p = scaleToGeodeticHeightP;
+
+        height = defaultValue(height, 0.0);
+        scaleToSurface = defaultValue(scaleToSurface, true);
+
+        if (defined(positions)) {
+            var length = positions.length;
+
+            for ( var i = 0; i < length; i += 3) {
+                Cartesian3.fromArray(positions, i, p);
+
+                if (scaleToSurface) {
+                    p = ellipsoid.scaleToGeodeticSurface(p, p);
+                }
+
+                if (height !== 0) {
+                    n = ellipsoid.geodeticSurfaceNormal(p, n);
+
+                    Cartesian3.multiplyByScalar(n, height, n);
+                    Cartesian3.add(p, n, p);
+                }
+
+                positions[i] = p.x;
+                positions[i + 1] = p.y;
+                positions[i + 2] = p.z;
+            }
+        }
+
+        return positions;
+    };
+
+    return PolygonPipeline;
+});
+
+/*global define*/
 define('Core/EllipsoidGeodesic',[
         './Cartesian3',
         './Cartographic',
@@ -25263,7 +27192,7 @@ define('Core/EllipsoidGeodesic',[
         DeveloperError,
         Ellipsoid,
         CesiumMath) {
-    "use strict";
+    'use strict';
 
     function setConstants(ellipsoidGeodesic) {
         var uSquared = ellipsoidGeodesic._uSquared;
@@ -25659,7 +27588,7 @@ define('Core/isArray',[
         './defined'
     ], function(
         defined) {
-    "use strict";
+    'use strict';
 
     /**
      * Tests an object to see if it is an array.
@@ -25704,7 +27633,7 @@ define('Core/PolylinePipeline',[
         CesiumMath,
         Matrix4,
         Plane) {
-    "use strict";
+    'use strict';
 
     /**
      * @private
@@ -25817,7 +27746,7 @@ define('Core/PolylinePipeline',[
      * var positions = polyline.positions;
      * var modelMatrix = polylines.modelMatrix;
      * var segments = Cesium.PolylinePipeline.wrapLongitude(positions, modelMatrix);
-     * 
+     *
      * @see PolygonPipeline.wrapLongitude
      * @see Polyline
      * @see PolylineCollection
@@ -25877,61 +27806,6 @@ define('Core/PolylinePipeline',[
             positions : cartesians,
             lengths : segments
         };
-    };
-
-    var removeDuplicatesEpsilon = CesiumMath.EPSILON10;
-
-    /**
-     * Removes adjacent duplicate positions in an array of positions.
-     *
-     * @param {Cartesian3[]} positions The array of positions.
-     * @returns {Cartesian3[]|undefined} A new array of positions with no adjacent duplicate positions or the input array if no duplicates were found.
-     *
-     * @example
-     * // Returns [(1.0, 1.0, 1.0), (2.0, 2.0, 2.0)]
-     * var positions = [
-     *     new Cesium.Cartesian3(1.0, 1.0, 1.0),
-     *     new Cesium.Cartesian3(1.0, 1.0, 1.0),
-     *     new Cesium.Cartesian3(2.0, 2.0, 2.0)];
-     * var nonDuplicatePositions = Cesium.PolylinePipeline.removeDuplicates(positions);
-     */
-    PolylinePipeline.removeDuplicates = function(positions) {
-                if (!defined(positions)) {
-            throw new DeveloperError('positions is required.');
-        }
-        
-        var length = positions.length;
-        if (length < 2) {
-            return positions;
-        }
-
-        var i;
-        var v0;
-        var v1;
-
-        for (i = 1; i < length; ++i) {
-            v0 = positions[i - 1];
-            v1 = positions[i];
-            if (Cartesian3.equalsEpsilon(v0, v1, removeDuplicatesEpsilon)) {
-                break;
-            }
-        }
-
-        if (i === length) {
-            return positions;
-        }
-
-        var cleanedPositions = positions.slice(0, i);
-        for (; i < length; ++i) {
-            // v0 is set by either the previous loop, or the previous clean point.
-            v1 = positions[i];
-            if (!Cartesian3.equalsEpsilon(v0, v1, removeDuplicatesEpsilon)) {
-                cleanedPositions.push(Cartesian3.clone(v1));
-                v0 = v1;
-            }
-        }
-
-        return cleanedPositions;
     };
 
     /**
@@ -26051,1219 +27925,6 @@ define('Core/PolylinePipeline',[
 });
 
 /*global define*/
-define('Core/Queue',[
-        '../Core/defineProperties'
-    ], function(
-        defineProperties) {
-    "use strict";
-
-    /**
-     * A queue that can enqueue items at the end, and dequeue items from the front.
-     *
-     * @alias Queue
-     * @constructor
-     */
-    function Queue() {
-        this._array = [];
-        this._offset = 0;
-        this._length = 0;
-    }
-
-    defineProperties(Queue.prototype, {
-        /**
-         * The length of the queue.
-         *
-         * @memberof Queue.prototype
-         *
-         * @type {Number}
-         * @readonly
-         */
-        length : {
-            get : function() {
-                return this._length;
-            }
-        }
-    });
-
-    /**
-     * Enqueues the specified item.
-     *
-     * @param {Object} item The item to enqueue.
-     */
-    Queue.prototype.enqueue = function(item) {
-        this._array.push(item);
-        this._length++;
-    };
-
-    /**
-     * Dequeues an item.  Returns undefined if the queue is empty.
-     *
-     * @returns {Object} The the dequeued item.
-     */
-    Queue.prototype.dequeue = function() {
-        if (this._length === 0) {
-            return undefined;
-        }
-
-        var array = this._array;
-        var offset = this._offset;
-        var item = array[offset];
-        array[offset] = undefined;
-
-        offset++;
-        if ((offset > 10) && (offset * 2 > array.length)) {
-            //compact array
-            this._array = array.slice(offset);
-            offset = 0;
-        }
-
-        this._offset = offset;
-        this._length--;
-
-        return item;
-    };
-
-    /**
-     * Returns the item at the front of the queue.  Returns undefined if the queue is empty.
-     *
-     * @returns {Object} The item at the front of the queue.
-     */
-    Queue.prototype.peek = function() {
-        if (this._length === 0) {
-            return undefined;
-        }
-
-        return this._array[this._offset];
-    };
-
-    /**
-     * Check whether this queue contains the specified item.
-     *
-     * @param {Object} item The item to search for.
-     */
-    Queue.prototype.contains = function(item) {
-        return this._array.indexOf(item) !== -1;
-    };
-
-    /**
-     * Remove all items from the queue.
-     */
-    Queue.prototype.clear = function() {
-        this._array.length = this._offset = this._length = 0;
-    };
-
-    /**
-     * Sort the items in the queue in-place.
-     *
-     * @param {Queue~Comparator} compareFunction A function that defines the sort order.
-     */
-    Queue.prototype.sort = function(compareFunction) {
-        if (this._offset > 0) {
-            //compact array
-            this._array = this._array.slice(this._offset);
-            this._offset = 0;
-        }
-
-        this._array.sort(compareFunction);
-    };
-
-    /**
-     * A function used to compare two items while sorting a queue.
-     * @callback Queue~Comparator
-     *
-     * @param {Object} a An item in the array.
-     * @param {Object} b An item in the array.
-     * @returns {Number} Returns a negative value if <code>a</code> is less than <code>b</code>,
-     *          a positive value if <code>a</code> is greater than <code>b</code>, or
-     *          0 if <code>a</code> is equal to <code>b</code>.
-     *
-     * @example
-     * function compareNumbers(a, b) {
-     *     return a - b;
-     * }
-     */
-
-    return Queue;
-});
-
-/*global define*/
-define('Core/WindingOrder',[
-        '../Renderer/WebGLConstants',
-        './freezeObject'
-    ], function(
-        WebGLConstants,
-        freezeObject) {
-    "use strict";
-
-    /**
-     * Winding order defines the order of vertices for a triangle to be considered front-facing.
-     *
-     * @exports WindingOrder
-     */
-    var WindingOrder = {
-        /**
-         * Vertices are in clockwise order.
-         *
-         * @type {Number}
-         * @constant
-         */
-        CLOCKWISE : WebGLConstants.CW,
-
-        /**
-         * Vertices are in counter-clockwise order.
-         *
-         * @type {Number}
-         * @constant
-         */
-        COUNTER_CLOCKWISE : WebGLConstants.CCW,
-
-        /**
-         * @private
-         */
-        validate : function(windingOrder) {
-            return windingOrder === WindingOrder.CLOCKWISE ||
-                   windingOrder === WindingOrder.COUNTER_CLOCKWISE;
-        }
-    };
-
-    return freezeObject(WindingOrder);
-});
-/*global define*/
-define('Core/PolygonPipeline',[
-        './Cartesian2',
-        './Cartesian3',
-        './ComponentDatatype',
-        './defaultValue',
-        './defined',
-        './DeveloperError',
-        './Ellipsoid',
-        './EllipsoidTangentPlane',
-        './Geometry',
-        './GeometryAttribute',
-        './Math',
-        './pointInsideTriangle',
-        './PolylinePipeline',
-        './PrimitiveType',
-        './Queue',
-        './WindingOrder'
-    ], function(
-        Cartesian2,
-        Cartesian3,
-        ComponentDatatype,
-        defaultValue,
-        defined,
-        DeveloperError,
-        Ellipsoid,
-        EllipsoidTangentPlane,
-        Geometry,
-        GeometryAttribute,
-        CesiumMath,
-        pointInsideTriangle,
-        PolylinePipeline,
-        PrimitiveType,
-        Queue,
-        WindingOrder) {
-    "use strict";
-
-    var uScratch = new Cartesian2();
-    var vScratch = new Cartesian2();
-    function isTipConvex(p0, p1, p2) {
-        var u = Cartesian2.subtract(p1, p0, uScratch);
-        var v = Cartesian2.subtract(p2, p1, vScratch);
-
-        // Use the sign of the z component of the cross product
-        return ((u.x * v.y) - (u.y * v.x)) >= 0.0;
-    }
-
-    /**
-     * Returns the index of the vertex with the maximum X value.
-     *
-     * @param {Cartesian2[]} positions An array of the Cartesian points defining the polygon's vertices.
-     * @returns {Number} The index of the positions with the maximum X value.
-     *
-     * @private
-     */
-    function getRightmostPositionIndex(positions) {
-        var maximumX = positions[0].x;
-        var rightmostPositionIndex = 0;
-        for ( var i = 0; i < positions.length; i++) {
-            if (positions[i].x > maximumX) {
-                maximumX = positions[i].x;
-                rightmostPositionIndex = i;
-            }
-        }
-        return rightmostPositionIndex;
-    }
-
-    /**
-     * Returns the index of the ring that contains the rightmost vertex.
-     *
-     * @param {Cartesian2[]} rings An array of arrays of Cartesians. Each array contains the vertices defining a polygon.
-     * @returns {Number} The index of the ring containing the rightmost vertex.
-     *
-     * @private
-     */
-    function getRightmostRingIndex(rings) {
-        var rightmostX = rings[0][0].x;
-        var rightmostRingIndex = 0;
-        for ( var ring = 0; ring < rings.length; ring++) {
-            var maximumX = rings[ring][getRightmostPositionIndex(rings[ring])].x;
-            if (maximumX > rightmostX) {
-                rightmostX = maximumX;
-                rightmostRingIndex = ring;
-            }
-        }
-
-        return rightmostRingIndex;
-    }
-
-    /**
-     * Returns a list containing the reflex vertices for a given polygon.
-     *
-     * @param {Cartesian2[]} polygon An array of Cartesian elements defining the polygon.
-     * @returns {Cartesian2[]}
-     *
-     * @private
-     */
-    function getReflexVertices(polygon) {
-        var reflexVertices = [];
-        for ( var i = 0; i < polygon.length; i++) {
-            var p0 = polygon[((i - 1) + polygon.length) % polygon.length];
-            var p1 = polygon[i];
-            var p2 = polygon[(i + 1) % polygon.length];
-
-            if (!isTipConvex(p0, p1, p2)) {
-                reflexVertices.push(p1);
-            }
-        }
-        return reflexVertices;
-    }
-
-    /**
-     * Returns true if the given point is contained in the list of positions.
-     *
-     * @param {Cartesian2[]} positions A list of Cartesian elements defining a polygon.
-     * @param {Cartesian2} point The point to check.
-     * @returns {Number} The index of <code>point</code> in <code>positions</code> or -1 if it was not found.
-     *
-     * @private
-     */
-    function isVertex(positions, point) {
-        for ( var i = 0; i < positions.length; i++) {
-            if (Cartesian2.equals(point, positions[i])) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Given a point inside a polygon, find the nearest point directly to the right that lies on one of the polygon's edges.
-     *
-     * @param {Cartesian2} point A point inside the polygon defined by <code>ring</code>.
-     * @param {Cartesian2[]} ring A list of Cartesian points defining a polygon.
-     * @param {Number[]} [edgeIndices]  An array containing the indices two endpoints of the edge containing the intersection.
-     * @returns {Cartesian2} The intersection point.
-     *
-     * @private
-     */
-    var distScratch = new Cartesian2();
-    function intersectPointWithRing(point, ring, edgeIndices) {
-        edgeIndices = defaultValue(edgeIndices, []);
-
-        var minDistance = Number.MAX_VALUE;
-        var rightmostVertexIndex = getRightmostPositionIndex(ring);
-        var intersection = new Cartesian2(ring[rightmostVertexIndex].x, point.y);
-        edgeIndices.push(rightmostVertexIndex);
-        edgeIndices.push((rightmostVertexIndex + 1) % ring.length);
-
-        var boundaryMinX = ring[0].x;
-        var boundaryMaxX = boundaryMinX;
-        for ( var i = 1; i < ring.length; ++i) {
-            if (ring[i].x < boundaryMinX) {
-                boundaryMinX = ring[i].x;
-            } else if (ring[i].x > boundaryMaxX) {
-                boundaryMaxX = ring[i].x;
-            }
-        }
-        boundaryMaxX += (boundaryMaxX - boundaryMinX);
-        var point2 = new Cartesian3(boundaryMaxX, point.y, 0.0);
-
-        // Find the nearest intersection.
-        for (i = 0; i < ring.length; i++) {
-            var v1 = ring[i];
-            var v2 = ring[(i + 1) % ring.length];
-
-            if (((v1.x >= point.x) || (v2.x >= point.x)) && (((v1.y >= point.y) && (v2.y <= point.y)) || ((v1.y <= point.y) && (v2.y >= point.y)))) {
-                var temp = ((v2.y - v1.y) * (point2.x - point.x)) - ((v2.x - v1.x) * (point2.y - point.y));
-                if (temp !== 0.0) {
-                    temp = 1.0 / temp;
-                    var ua = (((v2.x - v1.x) * (point.y - v1.y)) - ((v2.y - v1.y) * (point.x - v1.x))) * temp;
-                    var ub = (((point2.x - point.x) * (point.y - v1.y)) - ((point2.y - point.y) * (point.x - v1.x))) * temp;
-                    if ((ua >= 0.0) && (ua <= 1.0) && (ub >= 0.0) && (ub <= 1.0)) {
-                        var tempIntersection = new Cartesian2(point.x + ua * (point2.x - point.x), point.y + ua * (point2.y - point.y));
-                        var dist = Cartesian2.subtract(tempIntersection, point, distScratch);
-                        temp = Cartesian2.magnitudeSquared(dist);
-                        if (temp < minDistance) {
-                            intersection = tempIntersection;
-                            minDistance = temp;
-                            edgeIndices[0] = i;
-                            edgeIndices[1] = (i + 1) % ring.length;
-                        }
-                    }
-                }
-            }
-        }
-
-        return intersection;
-    }
-
-    /**
-     * Given an outer ring and multiple inner rings, determine the point on the outer ring that is visible
-     * to the rightmost vertex of the rightmost inner ring.
-     *
-     * @param {Cartesian2[]} outerRing An array of Cartesian points defining the outer boundary of the polygon.
-     * @param {Cartesian2[]} innerRings An array of arrays of Cartesian points, where each array represents a hole in the polygon.
-     * @returns {Number} The index of the vertex in <code>outerRing</code> that is mutually visible to the rightmost vertex in <code>inenrRing</code>.
-     *
-     * @private
-     */
-    var v1Scratch = new Cartesian2(1.0, 0.0);
-    var v2Scratch = new Cartesian2();
-    function getMutuallyVisibleVertexIndex(outerRing, innerRings) {
-        var innerRingIndex = getRightmostRingIndex(innerRings);
-        var innerRing = innerRings[innerRingIndex];
-        var innerRingVertexIndex = getRightmostPositionIndex(innerRing);
-        var innerRingVertex = innerRing[innerRingVertexIndex];
-        var edgeIndices = [];
-        var intersection = intersectPointWithRing(innerRingVertex, outerRing, edgeIndices);
-
-        var visibleVertex = isVertex(outerRing, intersection);
-        if (visibleVertex !== -1) {
-            return visibleVertex;
-        }
-
-        // Set P to be the edge endpoint closest to the inner ring vertex
-        var d1 = Cartesian2.magnitudeSquared(Cartesian2.subtract(outerRing[edgeIndices[0]], innerRingVertex, v1Scratch));
-        var d2 = Cartesian2.magnitudeSquared(Cartesian2.subtract(outerRing[edgeIndices[1]], innerRingVertex, v1Scratch));
-        var p = (d1 < d2) ? outerRing[edgeIndices[0]] : outerRing[edgeIndices[1]];
-
-        var reflexVertices = getReflexVertices(outerRing);
-        var reflexIndex = reflexVertices.indexOf(p);
-        if (reflexIndex !== -1) {
-            reflexVertices.splice(reflexIndex, 1); // Do not include p if it happens to be reflex.
-        }
-
-        var pointsInside = [];
-        for ( var i = 0; i < reflexVertices.length; i++) {
-            var vertex = reflexVertices[i];
-            if (pointInsideTriangle(vertex, innerRingVertex, intersection, p)) {
-                pointsInside.push(vertex);
-            }
-        }
-
-        // If all reflexive vertices are outside the triangle formed by points
-        // innerRingVertex, intersection and P, then P is the visible vertex.
-        // Otherwise, return the reflex vertex that minimizes the angle between <1,0> and <k, reflex>.
-        var minAngle = Number.MAX_VALUE;
-        if (pointsInside.length > 0) {
-            var v1 = Cartesian2.fromElements(1.0, 0.0, v1Scratch);
-            for (i = 0; i < pointsInside.length; i++) {
-                var v2 = Cartesian2.subtract(pointsInside[i], innerRingVertex, v2Scratch);
-                var denominator = Cartesian2.magnitude(v1) * Cartesian2.magnitudeSquared(v2);
-                if (denominator !== 0) {
-                    var angle = Math.abs(CesiumMath.acosClamped(Cartesian2.dot(v1, v2) / denominator));
-                    if (angle < minAngle) {
-                        minAngle = angle;
-                        p = pointsInside[i];
-                    }
-                }
-            }
-        }
-
-        return outerRing.indexOf(p);
-    }
-
-    /**
-     * Given a polygon defined by an outer ring with one or more inner rings (holes), return a single list of points representing
-     * a polygon with the rightmost hole added to it. The added hole is removed from <code>innerRings</code>.
-     *
-     * @param {Cartesian2[]} outerRing An array of Cartesian points defining the outer boundary of the polygon.
-     * @param {Cartesian2[]} innerRings An array of arrays of Cartesian points, where each array represents a hole in the polygon.
-     * @returns {Cartesian2[]} A single list of Cartesian points defining the polygon, including the eliminated inner ring.
-     *
-     * @private
-     */
-    function eliminateHole(outerRing, innerRings, ellipsoid) {
-        // Check that the holes are defined in the winding order opposite that of the outer ring.
-        var windingOrder = PolygonPipeline.computeWindingOrder2D(outerRing);
-        for ( var i = 0; i < innerRings.length; i++) {
-            var ring = innerRings[i];
-
-            // Ensure each hole's first and last points are the same.
-            if (!Cartesian3.equals(ring[0], ring[ring.length - 1])) {
-                ring.push(ring[0]);
-            }
-
-            var innerWindingOrder = PolygonPipeline.computeWindingOrder2D(ring);
-            if (innerWindingOrder === windingOrder) {
-                ring.reverse();
-            }
-        }
-
-        // Project points onto a tangent plane to find the mutually visible vertex.
-        var tangentPlane = EllipsoidTangentPlane.fromPoints(outerRing, ellipsoid);
-        var tangentOuterRing = tangentPlane.projectPointsOntoPlane(outerRing);
-        var tangentInnerRings = [];
-        for (i = 0; i < innerRings.length; i++) {
-            tangentInnerRings.push(tangentPlane.projectPointsOntoPlane(innerRings[i]));
-        }
-
-        var visibleVertexIndex = getMutuallyVisibleVertexIndex(tangentOuterRing, tangentInnerRings);
-        var innerRingIndex = getRightmostRingIndex(tangentInnerRings);
-        var innerRingVertexIndex = getRightmostPositionIndex(tangentInnerRings[innerRingIndex]);
-
-        var innerRing = innerRings[innerRingIndex];
-        var newPolygonVertices = [];
-
-        for (i = 0; i < outerRing.length; i++) {
-            newPolygonVertices.push(outerRing[i]);
-        }
-
-        var j;
-        var holeVerticesToAdd = [];
-
-        // If the rightmost inner vertex is not the starting and ending point of the ring,
-        // then some other point is duplicated in the inner ring and should be skipped once.
-        if (innerRingVertexIndex !== 0) {
-            for (j = 0; j <= innerRing.length; j++) {
-                var index = (j + innerRingVertexIndex) % innerRing.length;
-                if (index !== 0) {
-                    holeVerticesToAdd.push(innerRing[index]);
-                }
-            }
-        } else {
-            for (j = 0; j < innerRing.length; j++) {
-                holeVerticesToAdd.push(innerRing[(j + innerRingVertexIndex) % innerRing.length]);
-            }
-        }
-
-        var lastVisibleVertexIndex = newPolygonVertices.lastIndexOf(outerRing[visibleVertexIndex]);
-
-        holeVerticesToAdd.push(outerRing[lastVisibleVertexIndex]);
-
-        var front = newPolygonVertices.slice(0, lastVisibleVertexIndex + 1);
-        var back = newPolygonVertices.slice(lastVisibleVertexIndex + 1);
-        newPolygonVertices = front.concat(holeVerticesToAdd, back);
-
-        innerRings.splice(innerRingIndex, 1);
-
-        return newPolygonVertices;
-    }
-
-    function getRandomIndex(length) {
-        var random = CesiumMath.nextRandomNumber();
-        var i = Math.floor(random * length);
-        if (i === length) {
-            i--;
-        }
-        return i;
-    }
-
-    function indexedEdgeCrossZ(p0Index, p1Index, vertexIndex, array) {
-        var p0 = array[p0Index].position;
-        var p1 = array[p1Index].position;
-        var v = array[vertexIndex].position;
-
-        var vx = v.x;
-        var vy = v.y;
-
-        // (p0 - v).cross(p1 - v).z
-        var leftX = p0.x - vx;
-        var leftY = p0.y - vy;
-        var rightX = p1.x - vx;
-        var rightY = p1.y - vy;
-
-        return leftX * rightY - leftY * rightX;
-    }
-
-    function crossZ(p0, p1) {
-        // p0.cross(p1).z
-        return p0.x * p1.y - p0.y * p1.x;
-    }
-
-    /**
-     * Checks to make sure vertex is not superfluous.
-     *
-     * @param {Number} index Index of vertex.
-     * @param {Number} pArray Array of vertices.
-     *
-     * @exception {DeveloperError} Superfluous vertex found.
-     *
-     * @private
-     */
-    function validateVertex(index, pArray) {
-        var length = pArray.length;
-        var before = CesiumMath.mod(index - 1, length);
-        var after = CesiumMath.mod(index + 1, length);
-
-        // check if adjacent edges are parallel
-        if (indexedEdgeCrossZ(before, after, index, pArray) === 0.0) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Checks whether cut parallel to side is internal.
-     *
-     *  e.g.
-     *
-     *  7_________6
-     *  |         |
-     *  | 4 ______|
-     *  |  |       5
-     *  |  |______2     Is cut from 1 to 6 internal? No.
-     *  | 3       |
-     *  |_________|
-     * 0           1
-     *
-     * Note that this function simply checks whether the cut is longer or shorter.
-     *
-     * An important valid cut:
-     *
-     * Polygon:
-     *
-     * 0 ___2__4
-     *  |  /\  |
-     *  | /  \ |   Is cut 0 to 2 or 2 to 4 internal? Yes.
-     *  |/    \|
-     * 1       3
-     *
-     * This situation can occur and the only solution is a cut along a parallel
-     * side.
-     *
-     * This method is technically incomplete, however, for the following case:
-     *
-     *  7_________6
-     *  |         |
-     *  |         |______4
-     *  |          5     |    Now is 1 to 6 internal? Yes, but we'll never need it.
-     *  |         2______|
-     *  |         |      5
-     *  |_________|
-     * 0           1
-     *
-     * In this case, although the cut from 1 to 6 is valid, the side 1-2 is
-     * shorter and thus this cut will be called invalid. Assuming there are no
-     * superfluous vertices (a requirement for this method to work), however,
-     * we'll never need this cut because we can always find cut 2-5 as a substitute.
-     *
-     * @param {Cartesian2} side
-     * @param {Cartesian2} cut
-     * @returns {Boolean}
-     *
-     * @private
-     */
-    function isInternalToParallelSide(side, cut) {
-        return Cartesian2.magnitudeSquared(cut) < Cartesian2.magnitudeSquared(side);
-    }
-
-    var INTERNAL = -1;
-    var EXTERNAL = -2;
-
-    /**
-     * Determine whether the cut formed between the two vertices is internal
-     * to the angle formed by the sides connecting at the first vertex.
-     *
-     * @param {Number} a1i Index of first vertex.
-     * @param {Number} a2i Index of second vertex.
-     * @param {Array} pArray Array of <code>{ position, index }</code> objects representing the polygon.
-     * @returns {Number} If INTERNAL, the cut formed between the two vertices is internal to the angle at vertex 1.
-     * If EXTERNAL, then the cut formed between the two vertices is external to the angle at vertex 1. If the value
-     * is greater than or equal to zero, then the value is the index of an invalid vertex.
-     *
-     * @private
-     */
-    var s1Scratch = new Cartesian3();
-    var s2Scratch = new Cartesian3();
-    var cutScratch = new Cartesian3();
-    function internalCut(a1i, a2i, pArray) {
-        // Make sure vertex is valid
-        if (!validateVertex(a1i, pArray)) {
-            return a1i;
-        }
-
-        // Get the nodes from the array
-        var a1Position = pArray[a1i].position;
-        var a2Position = pArray[a2i].position;
-        var length = pArray.length;
-
-        // Define side and cut vectors
-        var before = CesiumMath.mod(a1i - 1, length);
-        if (!validateVertex(before, pArray)) {
-            return before;
-        }
-
-        var after = CesiumMath.mod(a1i + 1, length);
-        if (!validateVertex(after, pArray)) {
-            return after;
-        }
-
-        var s1 = Cartesian2.subtract(pArray[before].position, a1Position, s1Scratch);
-        var s2 = Cartesian2.subtract(pArray[after].position, a1Position, s2Scratch);
-        var cut = Cartesian2.subtract(a2Position, a1Position, cutScratch);
-
-        var leftEdgeCutZ = crossZ(s1, cut);
-        var rightEdgeCutZ = crossZ(s2, cut);
-
-        if (leftEdgeCutZ === 0.0) { // cut is parallel to (a1i - 1, a1i) edge
-            return isInternalToParallelSide(s1, cut) ? INTERNAL : EXTERNAL;
-        } else if (rightEdgeCutZ === 0.0) { // cut is parallel to (a1i + 1, a1i) edge
-            return isInternalToParallelSide(s2, cut) ? INTERNAL : EXTERNAL;
-        } else {
-            var z = crossZ(s1, s2);
-            if (z < 0.0) { // angle at a1i is less than 180 degrees
-                return leftEdgeCutZ < 0.0 && rightEdgeCutZ > 0.0 ? INTERNAL : EXTERNAL; // Cut is in-between sides
-            } else if (z > 0.0) { // angle at a1i is greater than 180 degrees
-                return leftEdgeCutZ > 0.0 && rightEdgeCutZ < 0.0 ? EXTERNAL : INTERNAL; // Cut is in-between sides
-            }
-        }
-    }
-
-    /**
-     * Determine whether number is between n1 and n2.
-     * Do not include number === n1 or number === n2.
-     * Do include n1 === n2 === number.
-     *
-     * @param {Number} number The number tested.
-     * @param {Number} n1 First bound.
-     * @param {Number} n2 Secound bound.
-     * @returns {Boolean} number is between n1 and n2.
-     *
-     * @private
-     */
-    function isBetween(number, n1, n2) {
-        return ((number > n1 || number > n2) && (number < n1 || number < n2)) || (n1 === n2 && n1 === number);
-    }
-
-    var sqrEpsilon = CesiumMath.EPSILON14;
-    var eScratch = new Cartesian2();
-
-    function linesIntersection(p0, d0, p1, d1) {
-        var e = Cartesian2.subtract(p1, p0, eScratch);
-        var cross = d0.x * d1.y - d0.y * d1.x;
-        var sqrCross = cross * cross;
-        var sqrLen0 = Cartesian2.magnitudeSquared(d0);
-        var sqrLen1 = Cartesian2.magnitudeSquared(d1);
-        if (sqrCross > sqrEpsilon * sqrLen0 * sqrLen1) {
-            // lines of the segments are not parallel
-            var s = (e.x * d1.y - e.y * d1.x) / cross;
-            return Cartesian2.add(p0, Cartesian2.multiplyByScalar(d0, s, eScratch), eScratch);
-        }
-
-        // lines of the segments are parallel (they cannot be the same line)
-        return undefined;
-    }
-
-    /**
-     * Determine whether this segment intersects any other polygon sides.
-     *
-     * @param {Cartesian2} a1 Position of first vertex.
-     * @param {Cartesian2} a2 Position of second vertex.
-     * @param {Array} pArray Array of <code>{ position, index }</code> objects representing polygon.
-     * @returns {Boolean} The segment between a1 and a2 intersect another polygon side.
-     *
-     * @private
-     */
-    var aDirectionScratch = new Cartesian2();
-    var bDirectionScratch = new Cartesian2();
-
-    function intersectsSide(a1, a2, pArray) {
-        var aDirection = Cartesian2.subtract(a2, a1, aDirectionScratch);
-
-        var length = pArray.length;
-        for (var i = 0; i < length; i++) {
-            var b1 = pArray[i].position;
-            var b2 = pArray[CesiumMath.mod(i + 1, length)].position;
-
-            // If there's a duplicate point, there's no intersection here.
-            if (Cartesian2.equals(a1, b1) || Cartesian2.equals(a2, b2) || Cartesian2.equals(a1, b2) || Cartesian2.equals(a2, b1)) {
-                continue;
-            }
-
-            var bDirection = Cartesian2.subtract(b2, b1, bDirectionScratch);
-            var intersection = linesIntersection(a1, aDirection, b1, bDirection);
-            if (!defined(intersection)) {
-                continue;
-            }
-
-            // If intersection is on an endpoint, count no intersection
-            if (Cartesian2.equals(intersection, a1) || Cartesian2.equals(intersection, a2) || Cartesian2.equals(intersection, b1) || Cartesian2.equals(intersection, b2)) {
-                continue;
-            }
-
-            // Is intersection point between segments?
-            var intX = intersection.x;
-            var intY = intersection.y;
-            var intersects = isBetween(intX, a1.x, a2.x) && isBetween(intY, a1.y, a2.y) && isBetween(intX, b1.x, b2.x) && isBetween(intY, b1.y, b2.y);
-
-            // If intersecting, the cut is not clean
-            if (intersects) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    var CLEAN_CUT = -1;
-    var INVALID_CUT = -2;
-
-    /**
-     * Determine whether a cut between two polygon vertices is clean.
-     *
-     * @param {Number} a1i Index of first vertex.
-     * @param {Number} a2i Index of second vertex.
-     * @param {Array} pArray Array of <code>{ position, index }</code> objects representing the polygon.
-     * @returns {Number} If CLEAN_CUT, a cut from the first vertex to the second is internal and does not cross any other sides.
-     * If INVALID_CUT, then the vertices were valid but a cut could not be made. If the value is greater than or equal to zero,
-     * then the value is the index of an invalid vertex.
-     *
-     * @private
-     */
-    function cleanCut(a1i, a2i, pArray) {
-        var internalCut12 = internalCut(a1i, a2i, pArray);
-        if (internalCut12 >= 0) {
-            return internalCut12;
-        }
-
-        var internalCut21 = internalCut(a2i, a1i, pArray);
-        if (internalCut21 >= 0) {
-            return internalCut21;
-        }
-
-        if (internalCut12 === INTERNAL && internalCut21 === INTERNAL &&
-                !intersectsSide(pArray[a1i].position, pArray[a2i].position, pArray) &&
-                !Cartesian2.equals(pArray[a1i].position, pArray[a2i].position)) {
-            return CLEAN_CUT;
-        }
-
-        return INVALID_CUT;
-    }
-
-    function triangleInLine(pArray) {
-        // Get two sides. If they're parallel, so is the last.
-        return indexedEdgeCrossZ(1, 2, 0, pArray) === 0.0;
-    }
-
-    /**
-     * This recursive algorithm takes a polygon, randomly selects two vertices
-     * which form a clean cut through the polygon, and divides the polygon
-     * then continues to "chop" the two resulting polygons.
-     *
-     * @param {Array} nodeArray Array of <code>{ position, index }</code> objects representing polygon
-     * @returns {Number[]} Index array representing triangles that fill the polygon
-     *
-     * @exception {DeveloperError} Invalid polygon: must have at least three vertices.
-     *
-     * @private
-     */
-    function randomChop(nodeArray) {
-        // Determine & verify number of vertices
-        var numVertices = nodeArray.length;
-
-        // Is it already a triangle?
-        if (numVertices === 3) {
-            // Only return triangle if it has area (not a line)
-            if (!triangleInLine(nodeArray)) {
-                return [nodeArray[0].index, nodeArray[1].index, nodeArray[2].index];
-            }
-
-            // If it's a line, we don't need it.
-            return [];
-        } else if (nodeArray.length < 3) {
-            throw new DeveloperError('Invalid polygon: must have at least three vertices.');
-        }
-
-        // Search for clean cut
-        var tries = 0;
-        var maxTries = nodeArray.length * 10;
-
-        var cutResult = INVALID_CUT;
-        var index1;
-        var index2;
-
-        while (cutResult < CLEAN_CUT && tries++ < maxTries) {
-            // Generate random indices
-            index1 = getRandomIndex(nodeArray.length);
-            index2 = index1 + 1;
-            while (Math.abs(index1 - index2) < 2 || Math.abs(index1 - index2) > nodeArray.length - 2) {
-                index2 = getRandomIndex(nodeArray.length);
-            }
-
-            // Make sure index2 is bigger
-            if (index1 > index2) {
-                var index = index1;
-                index1 = index2;
-                index2 = index;
-            }
-
-            cutResult = cleanCut(index1, index2, nodeArray);
-        }
-
-        if (cutResult === CLEAN_CUT) {
-            // Divide polygon
-            var nodeArray2 = nodeArray.splice(index1, (index2 - index1 + 1), nodeArray[index1], nodeArray[index2]);
-
-            // Chop up resulting polygons
-            return randomChop(nodeArray).concat(randomChop(nodeArray2));
-        } else if (cutResult >= 0) {
-            // Eliminate superfluous vertex and start over
-            nodeArray.splice(cutResult, 1);
-            return randomChop(nodeArray);
-        }
-
-        // No clean cut could be found
-        return [];
-    }
-
-    var scaleToGeodeticHeightN = new Cartesian3();
-    var scaleToGeodeticHeightP = new Cartesian3();
-
-    /**
-     * @private
-     */
-    var PolygonPipeline = {};
-
-    /**
-     * Cleans up a simple polygon by removing duplicate adjacent positions and making
-     * the first position not equal the last position.
-     *
-     * @exception {DeveloperError} At least three positions are required.
-     */
-    PolygonPipeline.removeDuplicates = function(positions) {
-                if (!defined(positions)) {
-            throw new DeveloperError('positions is required.');
-        }
-        
-        var cleanedPositions = PolylinePipeline.removeDuplicates(positions);
-        if (Cartesian3.equals(cleanedPositions[0], cleanedPositions[cleanedPositions.length - 1])) {
-            return cleanedPositions.slice(1);
-        }
-        return cleanedPositions;
-    };
-
-    /**
-     * @exception {DeveloperError} At least three positions are required.
-     */
-    PolygonPipeline.computeArea2D = function(positions) {
-                if (!defined(positions)) {
-            throw new DeveloperError('positions is required.');
-        }
-        if (positions.length < 3) {
-            throw new DeveloperError('At least three positions are required.');
-        }
-        
-        var length = positions.length;
-        var area = 0.0;
-
-        for ( var i0 = length - 1, i1 = 0; i1 < length; i0 = i1++) {
-            var v0 = positions[i0];
-            var v1 = positions[i1];
-
-            area += (v0.x * v1.y) - (v1.x * v0.y);
-        }
-
-        return area * 0.5;
-    };
-
-    /**
-     * @returns {WindingOrder} The winding order.
-     *
-     * @exception {DeveloperError} At least three positions are required.
-     */
-    PolygonPipeline.computeWindingOrder2D = function(positions) {
-        var area = PolygonPipeline.computeArea2D(positions);
-        return (area > 0.0) ? WindingOrder.COUNTER_CLOCKWISE : WindingOrder.CLOCKWISE;
-    };
-
-    /**
-     * Triangulate a polygon.
-     *
-     * @param {Cartesian2[]} positions - Cartesian2 array containing the vertices of the polygon
-     * @returns {Number[]} - Index array representing triangles that fill the polygon
-     *
-     * @exception {DeveloperError} At least three positions are required.
-     */
-    PolygonPipeline.triangulate = function(positions) {
-                if (!defined(positions)) {
-            throw new DeveloperError('positions is required.');
-        }
-        if (positions.length < 3) {
-            throw new DeveloperError('At least three positions are required.');
-        }
-        
-        var length = positions.length;
-        // Keep track of indices for later
-        var nodeArray = [];
-        for ( var i = 0; i < length; ++i) {
-            nodeArray[i] = {
-                position : positions[i],
-                index : i
-            };
-        }
-
-        // Recursive chop
-        return randomChop(nodeArray);
-    };
-
-    var subdivisionV0Scratch = new Cartesian3();
-    var subdivisionV1Scratch = new Cartesian3();
-    var subdivisionV2Scratch = new Cartesian3();
-    var subdivisionS0Scratch = new Cartesian3();
-    var subdivisionS1Scratch = new Cartesian3();
-    var subdivisionS2Scratch = new Cartesian3();
-    var subdivisionMidScratch = new Cartesian3();
-
-    /**
-     * Subdivides positions and raises points to the surface of the ellipsoid.
-     *
-     * @param {Ellipsoid} ellipsoid The ellipsoid the polygon in on.
-     * @param {Cartesian3[]} positions An array of {@link Cartesian3} positions of the polygon.
-     * @param {Number[]} indices An array of indices that determines the triangles in the polygon.
-     * @param {Number} [granularity=CesiumMath.RADIANS_PER_DEGREE] The distance, in radians, between each latitude and longitude. Determines the number of positions in the buffer.
-     *
-     * @exception {DeveloperError} At least three indices are required.
-     * @exception {DeveloperError} The number of indices must be divisable by three.
-     * @exception {DeveloperError} Granularity must be greater than zero.
-     */
-    PolygonPipeline.computeSubdivision = function(ellipsoid, positions, indices, granularity) {
-        granularity = defaultValue(granularity, CesiumMath.RADIANS_PER_DEGREE);
-
-                if (!defined(ellipsoid)) {
-            throw new DeveloperError('ellipsoid is required.');
-        }
-        if (!defined(positions)) {
-            throw new DeveloperError('positions is required.');
-        }
-        if (!defined(indices)) {
-            throw new DeveloperError('indices is required.');
-        }
-        if (indices.length < 3) {
-            throw new DeveloperError('At least three indices are required.');
-        }
-        if (indices.length % 3 !== 0) {
-            throw new DeveloperError('The number of indices must be divisable by three.');
-        }
-        if (granularity <= 0.0) {
-            throw new DeveloperError('granularity must be greater than zero.');
-        }
-        
-        // triangles that need (or might need) to be subdivided.
-        var triangles = indices.slice(0);
-
-        // New positions due to edge splits are appended to the positions list.
-        var i;
-        var length = positions.length;
-        var subdividedPositions = new Array(length * 3);
-        var q = 0;
-        for (i = 0; i < length; i++) {
-            var item = positions[i];
-            subdividedPositions[q++] = item.x;
-            subdividedPositions[q++] = item.y;
-            subdividedPositions[q++] = item.z;
-        }
-
-        var subdividedIndices = [];
-
-        // Used to make sure shared edges are not split more than once.
-        var edges = {};
-
-        var radius = ellipsoid.maximumRadius;
-        var minDistance = CesiumMath.chordLength(granularity, radius);
-        var minDistanceSqrd = minDistance * minDistance;
-
-        while (triangles.length > 0) {
-            var i2 = triangles.pop();
-            var i1 = triangles.pop();
-            var i0 = triangles.pop();
-
-            var v0 = Cartesian3.fromArray(subdividedPositions, i0 * 3, subdivisionV0Scratch);
-            var v1 = Cartesian3.fromArray(subdividedPositions, i1 * 3, subdivisionV1Scratch);
-            var v2 = Cartesian3.fromArray(subdividedPositions, i2 * 3, subdivisionV2Scratch);
-
-            var s0 = Cartesian3.multiplyByScalar(Cartesian3.normalize(v0, subdivisionS0Scratch), radius, subdivisionS0Scratch);
-            var s1 = Cartesian3.multiplyByScalar(Cartesian3.normalize(v1, subdivisionS1Scratch), radius, subdivisionS1Scratch);
-            var s2 = Cartesian3.multiplyByScalar(Cartesian3.normalize(v2, subdivisionS2Scratch), radius, subdivisionS2Scratch);
-
-            var g0 = Cartesian3.magnitudeSquared(Cartesian3.subtract(s0, s1, subdivisionMidScratch));
-            var g1 = Cartesian3.magnitudeSquared(Cartesian3.subtract(s1, s2, subdivisionMidScratch));
-            var g2 = Cartesian3.magnitudeSquared(Cartesian3.subtract(s2, s0, subdivisionMidScratch));
-
-            var max = Math.max(g0, g1, g2);
-            var edge;
-            var mid;
-
-            // if the max length squared of a triangle edge is greater than the chord length of squared
-            // of the granularity, subdivide the triangle
-            if (max > minDistanceSqrd) {
-                if (g0 === max) {
-                    edge = Math.min(i0, i1) + ' ' + Math.max(i0, i1);
-
-                    i = edges[edge];
-                    if (!defined(i)) {
-                        mid = Cartesian3.add(v0, v1, subdivisionMidScratch);
-                        Cartesian3.multiplyByScalar(mid, 0.5, mid);
-                        subdividedPositions.push(mid.x, mid.y, mid.z);
-                        i = subdividedPositions.length / 3 - 1;
-                        edges[edge] = i;
-                    }
-
-                    triangles.push(i0, i, i2);
-                    triangles.push(i, i1, i2);
-                } else if (g1 === max) {
-                    edge = Math.min(i1, i2) + ' ' + Math.max(i1, i2);
-
-                    i = edges[edge];
-                    if (!defined(i)) {
-                        mid = Cartesian3.add(v1, v2, subdivisionMidScratch);
-                        Cartesian3.multiplyByScalar(mid, 0.5, mid);
-                        subdividedPositions.push(mid.x, mid.y, mid.z);
-                        i = subdividedPositions.length / 3 - 1;
-                        edges[edge] = i;
-                    }
-
-                    triangles.push(i1, i, i0);
-                    triangles.push(i, i2, i0);
-                } else if (g2 === max) {
-                    edge = Math.min(i2, i0) + ' ' + Math.max(i2, i0);
-
-                    i = edges[edge];
-                    if (!defined(i)) {
-                        mid = Cartesian3.add(v2, v0, subdivisionMidScratch);
-                        Cartesian3.multiplyByScalar(mid, 0.5, mid);
-                        subdividedPositions.push(mid.x, mid.y, mid.z);
-                        i = subdividedPositions.length / 3 - 1;
-                        edges[edge] = i;
-                    }
-
-                    triangles.push(i2, i, i1);
-                    triangles.push(i, i0, i1);
-                }
-            } else {
-                subdividedIndices.push(i0);
-                subdividedIndices.push(i1);
-                subdividedIndices.push(i2);
-            }
-        }
-
-        return new Geometry({
-            attributes : {
-                position : new GeometryAttribute({
-                    componentDatatype : ComponentDatatype.DOUBLE,
-                    componentsPerAttribute : 3,
-                    values : subdividedPositions
-                })
-            },
-            indices : subdividedIndices,
-            primitiveType : PrimitiveType.TRIANGLES
-        });
-    };
-
-    /**
-     * Scales each position of a geometry's position attribute to a height, in place.
-     *
-     * @param {Geometry} geometry The geometry whose positions are to be scaled.
-     * @param {Number} [height=0.0] The desired height to add to the positions of the geometry.
-     * @param {Ellipsoid} [ellipsoid=Ellipsoid.WGS84] The ellipsoid on which the positions lie.
-     * @param {Boolean} [scaleToSurface=true] <code>true</code> if the positions need to be scaled to the surface before the height is added.
-     * @returns {Geometry} The same geometry whose positions where scaled.
-     */
-    PolygonPipeline.scaleToGeodeticHeight = function(geometry, height, ellipsoid, scaleToSurface) {
-        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-
-        var n = scaleToGeodeticHeightN;
-        var p = scaleToGeodeticHeightP;
-
-        height = defaultValue(height, 0.0);
-        scaleToSurface = defaultValue(scaleToSurface, true);
-
-        if (defined(geometry) && defined(geometry.attributes) && defined(geometry.attributes.position)) {
-            var positions = geometry.attributes.position.values;
-            var length = positions.length;
-
-            for ( var i = 0; i < length; i += 3) {
-                Cartesian3.fromArray(positions, i, p);
-
-                if (scaleToSurface) {
-                    p = ellipsoid.scaleToGeodeticSurface(p, p);
-                }
-
-                if (height !== 0) {
-                    n = ellipsoid.geodeticSurfaceNormal(p, n);
-
-                    Cartesian3.multiplyByScalar(n, height, n);
-                    Cartesian3.add(p, n, p);
-                }
-
-                positions[i] = p.x;
-                positions[i + 1] = p.y;
-                positions[i + 2] = p.z;
-            }
-        }
-
-        return geometry;
-    };
-
-    /**
-     * Given a polygon defined by an outer ring with one or more inner rings (holes), return a single list of points representing
-     * a polygon defined by the outer ring with the inner holes removed.
-     *
-     * @param {Cartesian2[]} outerRing An array of Cartesian points defining the outer boundary of the polygon.
-     * @param {Cartesian2[]} innerRings An array of arrays of Cartesian points, where each array represents a hole in the polygon.
-     * @returns {Cartesian2[]} A single list of Cartesian points defining the polygon, including the eliminated inner ring.
-     *
-     * @exception {DeveloperError} <code>outerRing</code> must not be empty.
-     *
-     * @example
-     * // Simplifying a polygon with multiple holes.
-     * outerRing = Cesium.PolygonPipeline.eliminateHoles(outerRing, innerRings);
-     * polygon.positions = outerRing;
-     */
-    PolygonPipeline.eliminateHoles = function(outerRing, innerRings, ellipsoid) {
-                if (!defined(outerRing)) {
-            throw new DeveloperError('outerRing is required.');
-        }
-        if (outerRing.length === 0) {
-            throw new DeveloperError('outerRing must not be empty.');
-        }
-        if (!defined(innerRings)) {
-            throw new DeveloperError('innerRings is required.');
-        }
-        
-        ellipsoid = defaultValue(ellipsoid, Ellipsoid.WGS84);
-
-        var innerRingsCopy = [];
-        for ( var i = 0; i < innerRings.length; i++) {
-            var innerRing = [];
-            for ( var j = 0; j < innerRings[i].length; j++) {
-                innerRing.push(Cartesian3.clone(innerRings[i][j]));
-            }
-            innerRingsCopy.push(innerRing);
-        }
-
-        var newPolygonVertices = outerRing;
-        while (innerRingsCopy.length > 0) {
-            newPolygonVertices = eliminateHole(newPolygonVertices, innerRingsCopy, ellipsoid);
-        }
-        return newPolygonVertices;
-    };
-
-    return PolygonPipeline;
-});
-
-/*global define*/
 define('Core/PolylineVolumeGeometryLibrary',[
         './Cartesian2',
         './Cartesian3',
@@ -27290,7 +27951,7 @@ define('Core/PolylineVolumeGeometryLibrary',[
         PolylinePipeline,
         Quaternion,
         Transforms) {
-    "use strict";
+    'use strict';
 
     var scratch2Array = [new Cartesian3(), new Cartesian3()];
     var scratchCartesian1 = new Cartesian3();
@@ -27686,7 +28347,7 @@ define('Core/VertexFormat',[
         defined,
         DeveloperError,
         freezeObject) {
-    "use strict";
+    'use strict';
 
     /**
      * A vertex format defines what attributes make up a vertex.  A VertexFormat can be provided
@@ -27980,6 +28641,7 @@ define('Core/VertexFormat',[
 
 /*global define*/
 define('Core/PolylineVolumeGeometry',[
+        './arrayRemoveDuplicates',
         './BoundingRectangle',
         './BoundingSphere',
         './Cartesian2',
@@ -27997,12 +28659,12 @@ define('Core/PolylineVolumeGeometry',[
         './IndexDatatype',
         './Math',
         './PolygonPipeline',
-        './PolylinePipeline',
         './PolylineVolumeGeometryLibrary',
         './PrimitiveType',
         './VertexFormat',
         './WindingOrder'
     ], function(
+        arrayRemoveDuplicates,
         BoundingRectangle,
         BoundingSphere,
         Cartesian2,
@@ -28020,12 +28682,11 @@ define('Core/PolylineVolumeGeometry',[
         IndexDatatype,
         CesiumMath,
         PolygonPipeline,
-        PolylinePipeline,
         PolylineVolumeGeometryLibrary,
         PrimitiveType,
         VertexFormat,
         WindingOrder) {
-    "use strict";
+    'use strict';
 
     function computeAttributes(combinedPositions, shape, boundingRectangle, vertexFormat) {
         var attributes = new GeometryAttributes();
@@ -28349,7 +29010,7 @@ define('Core/PolylineVolumeGeometry',[
      */
     PolylineVolumeGeometry.createGeometry = function(polylineVolumeGeometry) {
         var positions = polylineVolumeGeometry._positions;
-        var cleanPositions = PolylinePipeline.removeDuplicates(positions);
+        var cleanPositions = arrayRemoveDuplicates(positions, Cartesian3.equalsEpsilon);
         var shape2D = polylineVolumeGeometry._shape;
         shape2D = PolylineVolumeGeometryLibrary.removeDuplicatesFromShape(shape2D);
 
@@ -28378,7 +29039,7 @@ define('Workers/createPolylineVolumeGeometry',[
         defined,
         Ellipsoid,
         PolylineVolumeGeometry) {
-    "use strict";
+    'use strict';
 
     function createPolylineVolumeGeometry(polylineVolumeGeometry, offset) {
         if (defined(offset)) {

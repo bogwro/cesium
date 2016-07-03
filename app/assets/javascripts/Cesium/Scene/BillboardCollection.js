@@ -26,10 +26,12 @@ define([
         '../Shaders/BillboardCollectionVS',
         './Billboard',
         './BlendingState',
+        './HeightReference',
         './HorizontalOrigin',
         './Pass',
         './SceneMode',
-        './TextureAtlas'
+        './TextureAtlas',
+        './VerticalOrigin'
     ], function(
         AttributeCompression,
         BoundingSphere,
@@ -57,11 +59,13 @@ define([
         BillboardCollectionVS,
         Billboard,
         BlendingState,
+        HeightReference,
         HorizontalOrigin,
         Pass,
         SceneMode,
-        TextureAtlas) {
-    "use strict";
+        TextureAtlas,
+        VerticalOrigin) {
+    'use strict';
 
     var SHOW_INDEX = Billboard.SHOW_INDEX;
     var POSITION_INDEX = Billboard.POSITION_INDEX;
@@ -86,7 +90,7 @@ define([
         positionLowAndRotation : 1,
         compressedAttribute0 : 2,        // pixel offset, translate, horizontal origin, vertical origin, show, direction, texture coordinates
         compressedAttribute1 : 3,        // aligned axis, translucency by distance, image width
-        compressedAttribute2 : 4,        // image height, color, pick color, 15 bits free
+        compressedAttribute2 : 4,        // image height, color, pick color, size in meters, valid aligned axis, 13 bits free
         eyeOffset : 5,                   // 4 bytes free
         scaleByDistance : 6,
         pixelOffsetScaleByDistance : 7
@@ -237,7 +241,7 @@ define([
          *   image : 'url/to/image',
          *   position : new Cesium.Cartesian3(0.0, 0.0, 1000000.0) // up
          * });
-         * 
+         *
          * @see Transforms.eastNorthUpToFixedFrame
          */
         this.modelMatrix = Matrix4.clone(defaultValue(options.modelMatrix, Matrix4.IDENTITY));
@@ -281,6 +285,17 @@ define([
                 return that._textureAtlas.texture;
             }
         };
+
+        var scene = this._scene;
+        if (defined(scene)) {
+            this._removeCallbackFunc = scene.terrainProviderChanged.addEventListener(function() {
+                var billboards = this._billboards;
+                var length = billboards.length;
+                for (var i=0;i<length;++i) {
+                    billboards[i]._updateClamping();
+                }
+            }, this);
+        }
     }
 
     defineProperties(BillboardCollection.prototype, {
@@ -394,7 +409,7 @@ define([
      * var b = billboards.add({
      *   position : Cesium.Cartesian3.fromDegrees(longitude, latitude, height)
      * });
-     * 
+     *
      * @see BillboardCollection#remove
      * @see BillboardCollection#removeAll
      */
@@ -426,7 +441,7 @@ define([
      * @example
      * var b = billboards.add(...);
      * billboards.remove(b);  // Returns true
-     * 
+     *
      * @see BillboardCollection#add
      * @see BillboardCollection#removeAll
      * @see Billboard#show
@@ -456,7 +471,7 @@ define([
      * billboards.add(...);
      * billboards.add(...);
      * billboards.removeAll();
-     * 
+     *
      * @see BillboardCollection#add
      * @see BillboardCollection#remove
      */
@@ -533,7 +548,7 @@ define([
      *   var b = billboards.get(i);
      *   b.show = !b.show;
      * }
-     * 
+     *
      * @see BillboardCollection#length
      */
     BillboardCollection.prototype.get = function(index) {
@@ -774,7 +789,8 @@ define([
         billboardCollection._maxPixelOffset = Math.max(billboardCollection._maxPixelOffset, Math.abs(pixelOffsetX + translateX), Math.abs(-pixelOffsetY + translateY));
 
         var horizontalOrigin = billboard.horizontalOrigin;
-        var verticalOrigin = billboard.verticalOrigin;
+        var heightReference = billboard._heightReference;
+        var verticalOrigin = (heightReference === HeightReference.NONE) ? billboard._verticalOrigin : VerticalOrigin.BOTTOM;
         var show = billboard.show;
 
         // If the color alpha is zero, do not show this billboard.  This lets us avoid providing
@@ -784,7 +800,7 @@ define([
         }
 
         billboardCollection._allHorizontalCenter = billboardCollection._allHorizontalCenter && horizontalOrigin === HorizontalOrigin.CENTER;
-        billboardCollection._allVerticalCenter = billboardCollection._allVerticalCenter && verticalOrigin === HorizontalOrigin.CENTER;
+        billboardCollection._allVerticalCenter = billboardCollection._allVerticalCenter && verticalOrigin === VerticalOrigin.CENTER;
 
         var bottomLeftX = 0;
         var bottomLeftY = 0;
@@ -923,6 +939,7 @@ define([
         var color = billboard.color;
         var pickColor = billboard.getPickId(context).color;
         var sizeInMeters = billboard.sizeInMeters ? 1.0 : 0.0;
+        var validAlignedAxis = Math.abs(Cartesian3.magnitudeSquared(billboard.alignedAxis) - 1.0) < CesiumMath.EPSILON6 ? 1.0 : 0.0;
 
         billboardCollection._allSizedInMeters = billboardCollection._allSizedInMeters && sizeInMeters === 1.0;
 
@@ -954,7 +971,8 @@ define([
         blue = Color.floatToByte(pickColor.blue);
         var compressed1 = red * LEFT_SHIFT16 + green * LEFT_SHIFT8 + blue;
 
-        var compressed2 = Color.floatToByte(color.alpha) * LEFT_SHIFT16 + Color.floatToByte(pickColor.alpha) * LEFT_SHIFT8 + sizeInMeters;
+        var compressed2 = Color.floatToByte(color.alpha) * LEFT_SHIFT16 + Color.floatToByte(pickColor.alpha) * LEFT_SHIFT8;
+        compressed2 += sizeInMeters * 2.0 + validAlignedAxis;
 
         if (billboardCollection._instanced) {
             i = billboard._index;
@@ -972,7 +990,13 @@ define([
         var i;
         var writer = vafWriters[attributeLocations.eyeOffset];
         var eyeOffset = billboard.eyeOffset;
-        billboardCollection._maxEyeOffset = Math.max(billboardCollection._maxEyeOffset, Math.abs(eyeOffset.x), Math.abs(eyeOffset.y), Math.abs(eyeOffset.z));
+
+        // For billboards that are clamped to ground, move it slightly closer to the camera
+        var eyeOffsetZ = eyeOffset.z;
+        if (billboard._heightReference !== HeightReference.NONE) {
+            eyeOffsetZ *= 1.005;
+        }
+        billboardCollection._maxEyeOffset = Math.max(billboardCollection._maxEyeOffset, Math.abs(eyeOffset.x), Math.abs(eyeOffset.y), Math.abs(eyeOffsetZ));
 
         if (billboardCollection._instanced) {
             var width = 0;
@@ -996,13 +1020,13 @@ define([
             var compressedTexCoordsRange = AttributeCompression.compressTextureCoordinates(scratchCartesian2);
 
             i = billboard._index;
-            writer(i, eyeOffset.x, eyeOffset.y, eyeOffset.z, compressedTexCoordsRange);
+            writer(i, eyeOffset.x, eyeOffset.y, eyeOffsetZ, compressedTexCoordsRange);
         } else {
             i = billboard._index * 4;
-            writer(i + 0, eyeOffset.x, eyeOffset.y, eyeOffset.z, 0.0);
-            writer(i + 1, eyeOffset.x, eyeOffset.y, eyeOffset.z, 0.0);
-            writer(i + 2, eyeOffset.x, eyeOffset.y, eyeOffset.z, 0.0);
-            writer(i + 3, eyeOffset.x, eyeOffset.y, eyeOffset.z, 0.0);
+            writer(i + 0, eyeOffset.x, eyeOffset.y, eyeOffsetZ, 0.0);
+            writer(i + 1, eyeOffset.x, eyeOffset.y, eyeOffsetZ, 0.0);
+            writer(i + 2, eyeOffset.x, eyeOffset.y, eyeOffsetZ, 0.0);
+            writer(i + 3, eyeOffset.x, eyeOffset.y, eyeOffsetZ, 0.0);
         }
     }
 
@@ -1258,6 +1282,7 @@ define([
 
                 if (properties[IMAGE_INDEX_INDEX] || properties[ALIGNED_AXIS_INDEX] || properties[TRANSLUCENCY_BY_DISTANCE_INDEX]) {
                     writers.push(writeCompressedAttrib1);
+                    writers.push(writeCompressedAttrib2);
                 }
 
                 if (properties[IMAGE_INDEX_INDEX] || properties[COLOR_INDEX]) {
@@ -1390,9 +1415,6 @@ define([
                 if (this._shaderPixelOffsetScaleByDistance) {
                     vs.defines.push('EYE_DISTANCE_PIXEL_OFFSET');
                 }
-                if (defined(this._scene)) {
-                    vs.defines.push('CLAMPED_TO_GROUND');
-                }
 
                 this._sp = ShaderProgram.replaceCache({
                     context : context,
@@ -1472,9 +1494,6 @@ define([
                 }
                 if (this._shaderPixelOffsetScaleByDistance) {
                     vs.defines.push('EYE_DISTANCE_PIXEL_OFFSET');
-                }
-                if (defined(this._scene)) {
-                    vs.defines.push('CLAMPED_TO_GROUND');
                 }
 
                 fs = new ShaderSource({
@@ -1556,10 +1575,15 @@ define([
      *
      * @example
      * billboards = billboards && billboards.destroy();
-     * 
+     *
      * @see BillboardCollection#isDestroyed
      */
     BillboardCollection.prototype.destroy = function() {
+        if (defined(this._removeCallbackFunc)) {
+            this._removeCallbackFunc();
+            this._removeCallbackFunc = undefined;
+        }
+
         this._textureAtlas = this._destroyTextureAtlas && this._textureAtlas && this._textureAtlas.destroy();
         this._sp = this._sp && this._sp.destroy();
         this._spPick = this._spPick && this._spPick.destroy();

@@ -3,6 +3,7 @@ define([
         './Cartesian3',
         './defaultValue',
         './defined',
+        './defineProperties',
         './DeveloperError',
         './EllipseGeometry',
         './Ellipsoid',
@@ -12,12 +13,13 @@ define([
         Cartesian3,
         defaultValue,
         defined,
+        defineProperties,
         DeveloperError,
         EllipseGeometry,
         Ellipsoid,
         CesiumMath,
         VertexFormat) {
-    "use strict";
+    'use strict';
 
     /**
      * A description of a circle on the ellipsoid. Circle geometry can be rendered with both {@link Primitive} and {@link GroundPrimitive}.
@@ -56,9 +58,6 @@ define([
         //>>includeStart('debug', pragmas.debug);
         if (!defined(radius)) {
             throw new DeveloperError('radius is required.');
-        }
-        if (radius <= 0.0) {
-            throw new DeveloperError('radius must be greater than zero.');
         }
         //>>includeEnd('debug');
 
@@ -150,7 +149,7 @@ define([
      * Computes the geometric representation of a circle on an ellipsoid, including its vertices, indices, and a bounding sphere.
      *
      * @param {CircleGeometry} circleGeometry A description of the circle.
-     * @returns {Geometry} The computed vertices and indices.
+     * @returns {Geometry|undefined} The computed vertices and indices.
      */
     CircleGeometry.createGeometry = function(circleGeometry) {
         return EllipseGeometry.createGeometry(circleGeometry._ellipseGeometry);
@@ -177,6 +176,17 @@ define([
             vertexFormat : VertexFormat.POSITION_ONLY
         });
     };
+    
+    defineProperties(CircleGeometry.prototype, {
+        /**
+         * @private
+         */
+        rectangle : {
+            get : function() {
+                return this._ellipseGeometry.rectangle;
+            }
+        }
+    });
 
     return CircleGeometry;
 });

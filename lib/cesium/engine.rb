@@ -35,10 +35,8 @@ module Cesium
         Cesium/Workers/createVerticesFromQuantizedTerrainMesh.js
         Cesium/Workers/createWallGeometry.js
         Cesium/Workers/createWallOutlineGeometry.js
-        Cesium/Workers/sanitizeHtml.js
         Cesium/Workers/transferTypedArrayTest.js
         Cesium/Workers/upsampleQuantizedTerrainMesh.js
-        Cesium/Workers/Workers.profile.js
       )
       app.config.assets.precompile += cesium_sources
     end
