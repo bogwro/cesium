@@ -610,25 +610,29 @@ define('Core/Math',[
     };
 
     /**
-     * Converts a scalar value in the range [-1.0, 1.0] to a 8-bit 2's complement number.
+     * Converts a scalar value in the range [-1.0, 1.0] to a SNORM in the range [0, rangeMax]
      * @param {Number} value The scalar value in the range [-1.0, 1.0]
-     * @returns {Number} The 8-bit 2's complement number, where 0 maps to -1.0 and 255 maps to 1.0.
+     * @param {Number} [rangeMax=255] The maximum value in the mapped range, 255 by default.
+     * @returns {Number} A SNORM value, where 0 maps to -1.0 and rangeMax maps to 1.0.
      *
      * @see CesiumMath.fromSNorm
      */
-    CesiumMath.toSNorm = function(value) {
-        return Math.round((CesiumMath.clamp(value, -1.0, 1.0) * 0.5 + 0.5) * 255.0);
+    CesiumMath.toSNorm = function(value, rangeMax) {
+        rangeMax = defaultValue(rangeMax, 255);
+        return Math.round((CesiumMath.clamp(value, -1.0, 1.0) * 0.5 + 0.5) * rangeMax);
     };
 
     /**
-     * Converts a SNORM value in the range [0, 255] to a scalar in the range [-1.0, 1.0].
+     * Converts a SNORM value in the range [0, rangeMax] to a scalar in the range [-1.0, 1.0].
      * @param {Number} value SNORM value in the range [0, 255]
+     * @param {Number} [rangeMax=255] The maximum value in the SNORM range, 255 by default.
      * @returns {Number} Scalar in the range [-1.0, 1.0].
      *
      * @see CesiumMath.toSNorm
      */
-    CesiumMath.fromSNorm = function(value) {
-        return CesiumMath.clamp(value, 0.0, 255.0) / 255.0 * 2.0 - 1.0;
+    CesiumMath.fromSNorm = function(value, rangeMax) {
+        rangeMax = defaultValue(rangeMax, 255);
+        return CesiumMath.clamp(value, 0.0, rangeMax) / rangeMax * 2.0 - 1.0;
     };
 
     /**
@@ -1309,6 +1313,8 @@ define('Core/Cartesian3',[
      * @param {Cartesian3} value The value to pack.
      * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     *
+     * @returns {Number[]} The array that was packed into
      */
     Cartesian3.pack = function(value, array, startingIndex) {
                 if (!defined(value)) {
@@ -1324,6 +1330,8 @@ define('Core/Cartesian3',[
         array[startingIndex++] = value.x;
         array[startingIndex++] = value.y;
         array[startingIndex] = value.z;
+
+        return array;
     };
 
     /**
@@ -2967,6 +2975,8 @@ define('Core/Ellipsoid',[
      * @param {Ellipsoid} value The value to pack.
      * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     *
+     * @returns {Number[]} The array that was packed into
      */
     Ellipsoid.pack = function(value, array, startingIndex) {
                 if (!defined(value)) {
@@ -2979,6 +2989,8 @@ define('Core/Ellipsoid',[
         startingIndex = defaultValue(startingIndex, 0);
 
         Cartesian3.pack(value._radii, array, startingIndex);
+
+        return array;
     };
 
     /**
@@ -3554,6 +3566,8 @@ define('Core/Matrix3',[
      * @param {Matrix3} value The value to pack.
      * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     *
+     * @returns {Number[]} The array that was packed into
      */
     Matrix3.pack = function(value, array, startingIndex) {
                 if (!defined(value)) {
@@ -3575,6 +3589,8 @@ define('Core/Matrix3',[
         array[startingIndex++] = value[6];
         array[startingIndex++] = value[7];
         array[startingIndex++] = value[8];
+
+        return array;
     };
 
     /**
@@ -4416,7 +4432,7 @@ define('Core/Matrix3',[
      * @example
      * // Instead of Cesium.Matrix3.multiply(m, Cesium.Matrix3.fromScale(scale), m);
      * Cesium.Matrix3.multiplyByScale(m, scale, m);
-     * 
+     *
      * @see Matrix3.fromScale
      * @see Matrix3.multiplyByUniformScale
      */
@@ -5122,6 +5138,8 @@ define('Core/Cartesian4',[
      * @param {Cartesian4} value The value to pack.
      * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     *
+     * @returns {Number[]} The array that was packed into
      */
     Cartesian4.pack = function(value, array, startingIndex) {
                 if (!defined(value)) {
@@ -5137,6 +5155,8 @@ define('Core/Cartesian4',[
         array[startingIndex++] = value.y;
         array[startingIndex++] = value.z;
         array[startingIndex] = value.w;
+
+        return array;
     };
 
     /**
@@ -5989,6 +6009,8 @@ define('Core/Matrix4',[
      * @param {Matrix4} value The value to pack.
      * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     *
+     * @returns {Number[]} The array that was packed into
      */
     Matrix4.pack = function(value, array, startingIndex) {
                 if (!defined(value)) {
@@ -6017,6 +6039,8 @@ define('Core/Matrix4',[
         array[startingIndex++] = value[13];
         array[startingIndex++] = value[14];
         array[startingIndex] = value[15];
+
+        return array;
     };
 
     /**
@@ -7621,7 +7645,7 @@ define('Core/Matrix4',[
      * @example
      * // Instead of Cesium.Matrix4.multiply(m, Cesium.Matrix4.fromUniformScale(scale), m);
      * Cesium.Matrix4.multiplyByUniformScale(m, scale, m);
-     * 
+     *
      * @see Matrix4.fromUniformScale
      * @see Matrix4.multiplyByScale
      */
@@ -7658,7 +7682,7 @@ define('Core/Matrix4',[
      * @example
      * // Instead of Cesium.Matrix4.multiply(m, Cesium.Matrix4.fromScale(scale), m);
      * Cesium.Matrix4.multiplyByScale(m, scale, m);
-     * 
+     *
      * @see Matrix4.fromScale
      * @see Matrix4.multiplyByUniformScale
      */
@@ -8910,6 +8934,8 @@ define('Core/Rectangle',[
      * @param {Rectangle} value The value to pack.
      * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     *
+     * @returns {Number[]} The array that was packed into
      */
     Rectangle.pack = function(value, array, startingIndex) {
                 if (!defined(value)) {
@@ -8926,6 +8952,8 @@ define('Core/Rectangle',[
         array[startingIndex++] = value.south;
         array[startingIndex++] = value.east;
         array[startingIndex] = value.north;
+
+        return array;
     };
 
     /**
@@ -10417,6 +10445,8 @@ define('Core/BoundingSphere',[
      * @param {BoundingSphere} value The value to pack.
      * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     *
+     * @returns {Number[]} The array that was packed into
      */
     BoundingSphere.pack = function(value, array, startingIndex) {
                 if (!defined(value)) {
@@ -10434,6 +10464,8 @@ define('Core/BoundingSphere',[
         array[startingIndex++] = center.y;
         array[startingIndex++] = center.z;
         array[startingIndex] = value.radius;
+
+        return array;
     };
 
     /**
@@ -11045,6 +11077,8 @@ define('Core/Cartesian2',[
      * @param {Cartesian2} value The value to pack.
      * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     *
+     * @returns {Number[]} The array that was packed into
      */
     Cartesian2.pack = function(value, array, startingIndex) {
                 if (!defined(value)) {
@@ -11058,6 +11092,8 @@ define('Core/Cartesian2',[
 
         array[startingIndex++] = value.x;
         array[startingIndex] = value.y;
+
+        return array;
     };
 
     /**
@@ -13958,6 +13994,8 @@ define('Core/VertexFormat',[
      * @param {VertexFormat} value The value to pack.
      * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     *
+     * @returns {Number[]} The array that was packed into
      */
     VertexFormat.pack = function(value, array, startingIndex) {
                 if (!defined(value)) {
@@ -13975,6 +14013,8 @@ define('Core/VertexFormat',[
         array[startingIndex++] = value.binormal ? 1.0 : 0.0;
         array[startingIndex++] = value.tangent ? 1.0 : 0.0;
         array[startingIndex++] = value.color ? 1.0 : 0.0;
+
+        return array;
     };
 
     /**
@@ -14135,6 +14175,8 @@ define('Core/EllipsoidGeometry',[
      * @param {EllipsoidGeometry} value The value to pack.
      * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     *
+     * @returns {Number[]} The array that was packed into
      */
     EllipsoidGeometry.pack = function(value, array, startingIndex) {
                 if (!defined(value)) {
@@ -14154,6 +14196,8 @@ define('Core/EllipsoidGeometry',[
 
         array[startingIndex++] = value._stackPartitions;
         array[startingIndex]   = value._slicePartitions;
+
+        return array;
     };
 
     var scratchRadii = new Cartesian3();
@@ -14495,13 +14539,15 @@ define('Core/SphereGeometry',[
      * @param {SphereGeometry} value The value to pack.
      * @param {Number[]} array The array to pack into.
      * @param {Number} [startingIndex=0] The index into the array at which to start packing the elements.
+     *
+     * @returns {Number[]} The array that was packed into
      */
     SphereGeometry.pack = function(value, array, startingIndex) {
                 if (!defined(value)) {
             throw new DeveloperError('value is required');
         }
         
-        EllipsoidGeometry.pack(value._ellipsoidGeometry, array, startingIndex);
+        return EllipsoidGeometry.pack(value._ellipsoidGeometry, array, startingIndex);
     };
 
     var scratchEllipsoidGeometry = new EllipsoidGeometry();
